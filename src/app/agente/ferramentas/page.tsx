@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Layers,
   Smartphone,
+  Timer,
 } from 'lucide-react';
 
 interface ToolCardItem {
@@ -33,6 +34,19 @@ interface ToolCardItem {
 
 const LEAN_TOOLS: ToolCardItem[] = [
   {
+    id: 'cronoanalise',
+    href: '/agente/ferramentas/cronoanalise',
+    title: 'Cronoanálise & Estudo de Tempos Lean',
+    badge: 'Chão de Fábrica',
+    badgeColor: '#2563eb',
+    description:
+      'Cronômetro avançado para medição de tempos de ciclo, paradas de linha (NVA), cálculo de Valor Agregado (%) e gráficos de Pareto em tempo real.',
+    icon: Timer,
+    iconColor: '#2563eb',
+    iconBg: '#eff6ff',
+    highlights: ['Multi-Cronômetro por Motivo', 'Classificação VA vs NVA', 'Pareto & Exportação Excel'],
+  },
+  {
     id: 'calc-roi',
     href: '/agente/ferramentas/calculadora-roi',
     title: 'Calculadora de Horas & Custo Evitado',
@@ -41,8 +55,8 @@ const LEAN_TOOLS: ToolCardItem[] = [
     description:
       'Calcule em segundos as horas economizadas no mês/ano e o Custo Evitado Real (R$) a partir do tempo de ciclo antes e depois da melhoria.',
     icon: Calculator,
-    iconColor: '#2563eb',
-    iconBg: '#eff6ff',
+    iconColor: '#059669',
+    iconBg: '#ecfdf5',
     highlights: ['Horas/Mês & Horas/Ano', 'Custo Evitado (R$)', 'Fácil cópia para o Kanban'],
   },
   {

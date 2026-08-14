@@ -1,0 +1,943 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  Timer,
+  Play,
+  Pause,
+  Square,
+  RotateCcw,
+  Plus,
+  Trash2,
+  Download,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Sparkles,
+  ArrowLeft,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  HelpCircle,
+  Tag,
+  Zap,
+  Layers,
+  FileSpreadsheet,
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+
+interface TimeRecord {
+  id: string;
+  date: string;
+  motivo: string;
+  timeSeconds: number;
+  type: 'VA' | 'NVA'; // Valor Agregado vs Não Agregado (Desperdício)
+}
+
+interface MotivoConfig {
+  name: string;
+  type: 'VA' | 'NVA';
+  color: string;
+}
+
+const DEFAULT_MOTIVOS: MotivoConfig[] = [
+  { name: 'Ciclo Produtivo Padrão', type: 'VA', color: '#10b981' },
+  { name: 'Troca de Ferramenta / Setup', type: 'NVA', color: '#f59e0b' },
+  { name: 'Falta de Material / Peças', type: 'NVA', color: '#ef4444' },
+  { name: 'Ajuste de Máquina / Regulagem', type: 'NVA', color: '#8b5cf6' },
+  { name: 'Inspeção / Controle de Qualidade', type: 'VA', color: '#06b6d4' },
+  { name: 'Micro-parada / Travamento', type: 'NVA', color: '#ec4899' },
+  { name: 'Espera / Movimentação', type: 'NVA', color: '#64748b' },
+];
+
+export default function CronoanalisePage() {
+  const router = useRouter();
+
+  // Storage states
+  const [motivos, setMotivos] = useState<MotivoConfig[]>([]);
+  const [records, setRecords] = useState<TimeRecord[]>([]);
+  const [newMotivoText, setNewMotivoText] = useState('');
+  const [newMotivoType, setNewMotivoType] = useState<'VA' | 'NVA'>('NVA');
+
+  // Active timers state: motivo -> { startTime, elapsedMs, isRunning }
+  const [activeTimers, setActiveTimers] = useState<{
+    [motivo: string]: { startTime: number; elapsedMs: number; isRunning: boolean };
+  }>({});
+
+  // Focused stopwatch mode
+  const [focusedMotivo, setFocusedMotivo] = useState<string | null>(null);
+  const [taktTargetSeconds, setTaktTargetSeconds] = useState<number>(60);
+  const [hourlyRate, setHourlyRate] = useState<number>(35);
+
+  // Load from localStorage
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem('lean_crono_records');
+      const savedMotivos = localStorage.getItem('lean_crono_motivos');
+      if (savedData) {
+        setRecords(JSON.parse(savedData));
+      }
+      if (savedMotivos) {
+        setMotivos(JSON.parse(savedMotivos));
+      } else {
+        setMotivos(DEFAULT_MOTIVOS);
+        localStorage.setItem('lean_crono_motivos', JSON.stringify(DEFAULT_MOTIVOS));
+      }
+    } catch (e) {
+      console.error('Error loading crono data:', e);
+    }
+  }, []);
+
+  // Save records to localStorage
+  const saveRecords = (newRecords: TimeRecord[]) => {
+    setRecords(newRecords);
+    localStorage.setItem('lean_crono_records', JSON.stringify(newRecords));
+  };
+
+  // Save motivos to localStorage
+  const saveMotivos = (newMotivos: MotivoConfig[]) => {
+    setMotivos(newMotivos);
+    localStorage.setItem('lean_crono_motivos', JSON.stringify(newMotivos));
+  };
+
+  // Timer Tick Interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTimers((prev) => {
+        let hasRunning = false;
+        const updated = { ...prev };
+        const now = Date.now();
+
+        Object.keys(updated).forEach((m) => {
+          if (updated[m]?.isRunning) {
+            hasRunning = true;
+            updated[m] = {
+              ...updated[m],
+              elapsedMs: now - updated[m].startTime,
+            };
+          }
+        });
+
+        return hasRunning ? updated : prev;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Timer Actions
+  const handleStartTimer = (motivo: string) => {
+    const now = Date.now();
+    setActiveTimers((prev) => {
+      const current = prev[motivo];
+      const start = current ? now - current.elapsedMs : now;
+      return {
+        ...prev,
+        [motivo]: {
+          startTime: start,
+          elapsedMs: current ? current.elapsedMs : 0,
+          isRunning: true,
+        },
+      };
+    });
+    setFocusedMotivo(motivo);
+  };
+
+  const handlePauseTimer = (motivo: string) => {
+    setActiveTimers((prev) => {
+      if (!prev[motivo]) return prev;
+      return {
+        ...prev,
+        [motivo]: {
+          ...prev[motivo],
+          isRunning: false,
+        },
+      };
+    });
+  };
+
+  const handleStopAndSaveTimer = (motivo: string) => {
+    const timer = activeTimers[motivo];
+    if (!timer) return;
+
+    const seconds = Math.max(1, Math.round(timer.elapsedMs / 1000));
+    const motivoCfg = motivos.find((m) => m.name === motivo);
+    const type = motivoCfg ? motivoCfg.type : 'NVA';
+
+    const newRecord: TimeRecord = {
+      id: 'REC-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      date: new Date().toLocaleString('pt-BR'),
+      motivo,
+      timeSeconds: seconds,
+      type,
+    };
+
+    saveRecords([newRecord, ...records]);
+
+    // Reset this timer
+    setActiveTimers((prev) => {
+      const next = { ...prev };
+      delete next[motivo];
+      return next;
+    });
+
+    if (focusedMotivo === motivo) {
+      setFocusedMotivo(null);
+    }
+  };
+
+  const handleResetTimer = (motivo: string) => {
+    setActiveTimers((prev) => {
+      const next = { ...prev };
+      delete next[motivo];
+      return next;
+    });
+  };
+
+  // Add new Motivo
+  const handleAddMotivo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMotivoText.trim()) return;
+    const name = newMotivoText.trim();
+    if (motivos.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+      alert('Este motivo já existe na lista!');
+      return;
+    }
+
+    const palette = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#0891b2', '#059669', '#4b5563'];
+    const randomColor = palette[motivos.length % palette.length];
+
+    const newConfig: MotivoConfig = {
+      name,
+      type: newMotivoType,
+      color: randomColor,
+    };
+
+    const updated = [...motivos, newConfig];
+    saveMotivos(updated);
+    setNewMotivoText('');
+  };
+
+  // Delete Motivo
+  const handleDeleteMotivo = (name: string) => {
+    if (confirm(`Deseja remover o motivo "${name}"?`)) {
+      const updated = motivos.filter((m) => m.name !== name);
+      saveMotivos(updated);
+      handleResetTimer(name);
+    }
+  };
+
+  // Delete Record
+  const handleDeleteRecord = (id: string) => {
+    const updated = records.filter((r) => r.id !== id);
+    saveRecords(updated);
+  };
+
+  // Clear all data
+  const handleClearAll = () => {
+    if (confirm('Tem certeza de que deseja apagar todo o histórico de tempos gravados?')) {
+      saveRecords([]);
+      setActiveTimers({});
+      setFocusedMotivo(null);
+    }
+  };
+
+  // Export CSV
+  const handleDownloadCSV = () => {
+    if (records.length === 0) {
+      alert('Nenhum dado cronometrado para exportar.');
+      return;
+    }
+
+    let csv = '\uFEFF'; // UTF-8 BOM for Excel
+    csv += 'ID,Data/Hora,Motivo,Tipo Lean,Tempo (Segundos),Tempo Formatado (MM:SS),Custo Estimado (R$)\n';
+
+    records.forEach((r) => {
+      const mins = Math.floor(r.timeSeconds / 60);
+      const secs = r.timeSeconds % 60;
+      const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      const cost = ((r.timeSeconds / 3600) * hourlyRate).toFixed(2);
+      const safeDate = r.date.replace(/"/g, '""');
+      const safeMotivo = r.motivo.replace(/"/g, '""');
+      csv += `"${r.id}","${safeDate}","${safeMotivo}","${r.type}",${r.timeSeconds},"${formatted}",${cost}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `cronoanalise_lean_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Format MM:SS or HH:MM:SS
+  const formatTime = (ms: number) => {
+    const totalSecs = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSecs / 3600);
+    const minutes = Math.floor((totalSecs % 3600) / 60);
+    const seconds = totalSecs % 60;
+    const decimal = Math.floor((ms % 1000) / 100);
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes
+        .toString()
+        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')}.${decimal}`;
+  };
+
+  // KPIs Calculations
+  const totalSeconds = useMemo(() => {
+    return records.reduce((acc, r) => acc + r.timeSeconds, 0);
+  }, [records]);
+
+  const vaSeconds = useMemo(() => {
+    return records.filter((r) => r.type === 'VA').reduce((acc, r) => acc + r.timeSeconds, 0);
+  }, [records]);
+
+  const nvaSeconds = useMemo(() => {
+    return records.filter((r) => r.type === 'NVA').reduce((acc, r) => acc + r.timeSeconds, 0);
+  }, [records]);
+
+  const vaPercentage = totalSeconds > 0 ? ((vaSeconds / totalSeconds) * 100).toFixed(1) : '0.0';
+  const nvaPercentage = totalSeconds > 0 ? ((nvaSeconds / totalSeconds) * 100).toFixed(1) : '0.0';
+
+  const estimatedWastedCost = useMemo(() => {
+    const wastedHours = nvaSeconds / 3600;
+    return wastedHours * hourlyRate;
+  }, [nvaSeconds, hourlyRate]);
+
+  // Aggregated Motivo Stats
+  const motivoStats = useMemo(() => {
+    const map: { [key: string]: { totalTime: number; count: number; type: 'VA' | 'NVA' } } = {};
+    records.forEach((r) => {
+      if (!map[r.motivo]) {
+        map[r.motivo] = { totalTime: 0, count: 0, type: r.type };
+      }
+      map[r.motivo].totalTime += r.timeSeconds;
+      map[r.motivo].count += 1;
+    });
+
+    return Object.entries(map)
+      .map(([name, data]) => ({
+        name,
+        totalTime: data.totalTime,
+        avgTime: Math.round(data.totalTime / data.count),
+        count: data.count,
+        type: data.type,
+        percentage: totalSeconds > 0 ? ((data.totalTime / totalSeconds) * 100).toFixed(1) : '0',
+      }))
+      .sort((a, b) => b.totalTime - a.totalTime); // Pareto order
+  }, [records, totalSeconds]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Top Header & Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link
+            href="/agente/ferramentas"
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <ArrowLeft size={16} /> Voltar ao Hub
+          </Link>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  backgroundColor: '#eff6ff',
+                  color: '#2563eb',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '9999px',
+                }}
+              >
+                YAMAZUMI & CRONOANÁLISE
+              </span>
+            </div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: '0.2rem 0 0 0' }}>
+              Cronômetro de Estudo de Tempos & Paradas Lean
+            </h2>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleDownloadCSV}
+            disabled={records.length === 0}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.6 : 1 }}
+          >
+            <Download size={14} /> Exportar CSV (Excel)
+          </button>
+          <button
+            onClick={handleClearAll}
+            disabled={records.length === 0}
+            className="btn btn-danger btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.6 : 1 }}
+          >
+            <Trash2 size={14} /> Limpar
+          </button>
+        </div>
+      </div>
+
+      {/* Main KPI Highlights */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1rem',
+        }}
+      >
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #2563eb' }}>
+          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+            Tempo Total Amostrado
+          </span>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>
+            {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s
+          </h3>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{records.length} medições registradas</span>
+        </div>
+
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #10b981' }}>
+          <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>
+            Valor Agregado (VA)
+          </span>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>
+            {vaPercentage}%
+          </h3>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{Math.floor(vaSeconds / 60)}m {vaSeconds % 60}s produtivo</span>
+        </div>
+
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #ef4444' }}>
+          <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>
+            Desperdício / Paradas (NVA)
+          </span>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc2626', marginTop: '0.25rem' }}>
+            {nvaPercentage}%
+          </h3>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{Math.floor(nvaSeconds / 60)}m {nvaSeconds % 60}s não agregado</span>
+        </div>
+
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b' }}>
+          <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 700, textTransform: 'uppercase' }}>
+            Custo Oportunidade / Perda
+          </span>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>
+            {formatCurrency(estimatedWastedCost)}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
+            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Custo H/H:</span>
+            <input
+              type="number"
+              value={hourlyRate}
+              onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
+              style={{ width: '45px', padding: '0.1rem 0.25rem', fontSize: '0.7rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+            />
+            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>R$/h</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Studio Grid: Left (Active Studio & Motivos) / Right (Analytics & Charts) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.5rem',
+          alignItems: 'start',
+        }}
+      >
+        {/* LEFT COLUMN: Cronômetros Ativos & Botões de Motivos */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Main Focused Timer Box */}
+          <div
+            className="card"
+            style={{
+              padding: '1.5rem',
+              backgroundColor: '#0f172a',
+              color: '#ffffff',
+              borderRadius: '16px',
+              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.4)',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {focusedMotivo ? `Cronômetro Ativo: ${focusedMotivo}` : 'Selecione um Motivo Abaixo'}
+              </span>
+              {focusedMotivo && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '9999px',
+                    backgroundColor: motivos.find((m) => m.name === focusedMotivo)?.type === 'VA' ? '#065f46' : '#991b1b',
+                    color: '#ffffff',
+                  }}
+                >
+                  {motivos.find((m) => m.name === focusedMotivo)?.type === 'VA' ? '🟢 Valor Agregado' : '🔴 Desperdício'}
+                </span>
+              )}
+            </div>
+
+            {/* Display Big Digital Time */}
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '3.25rem',
+                fontWeight: 900,
+                letterSpacing: '0.04em',
+                color: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '#38bdf8' : '#f8fafc',
+                margin: '0.5rem 0',
+                textShadow: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '0 0 20px rgba(56, 189, 248, 0.5)' : 'none',
+              }}
+            >
+              {focusedMotivo && activeTimers[focusedMotivo]
+                ? formatTime(activeTimers[focusedMotivo].elapsedMs)
+                : '00:00.0'}
+            </div>
+
+            {/* Focused Controls */}
+            {focusedMotivo && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+                {activeTimers[focusedMotivo]?.isRunning ? (
+                  <button
+                    onClick={() => handlePauseTimer(focusedMotivo)}
+                    className="btn"
+                    style={{
+                      backgroundColor: '#f59e0b',
+                      color: '#000000',
+                      fontWeight: 700,
+                      padding: '0.6rem 1.25rem',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <Pause size={18} /> Pausar
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStartTimer(focusedMotivo)}
+                    className="btn"
+                    style={{
+                      backgroundColor: '#10b981',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      padding: '0.6rem 1.25rem',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <Play size={18} /> Iniciar
+                  </button>
+                )}
+
+                <button
+                  onClick={() => handleStopAndSaveTimer(focusedMotivo)}
+                  className="btn"
+                  style={{
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '0.6rem 1.25rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                  }}
+                >
+                  <Square size={18} /> Parar & Gravar
+                </button>
+
+                <button
+                  onClick={() => handleResetTimer(focusedMotivo)}
+                  className="btn"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    color: '#cbd5e1',
+                    padding: '0.6rem 0.85rem',
+                    borderRadius: '10px',
+                  }}
+                  title="Zerar sem salvar"
+                >
+                  <RotateCcw size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Reason / Motivo Buttons Grid */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Tag size={16} color="#2563eb" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  Selecione o Motivo para Cronometrar
+                </h4>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{motivos.length} categorias</span>
+            </div>
+
+            {/* Quick Add Form */}
+            <form onSubmit={handleAddMotivo} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Novo motivo (ex: Troca de Broca)..."
+                value={newMotivoText}
+                onChange={(e) => setNewMotivoText(e.target.value)}
+                style={{ flex: 1, minWidth: '160px', fontSize: '0.8125rem' }}
+              />
+              <select
+                value={newMotivoType}
+                onChange={(e) => setNewMotivoType(e.target.value as 'VA' | 'NVA')}
+                className="form-select"
+                style={{ width: 'auto', fontSize: '0.8125rem' }}
+              >
+                <option value="NVA">🔴 Desperdício (NVA)</option>
+                <option value="VA">🟢 Valor Agregado (VA)</option>
+              </select>
+              <button type="submit" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Plus size={14} /> Adicionar
+              </button>
+            </form>
+
+            {/* Button Cards List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+              {motivos.map((m) => {
+                const active = activeTimers[m.name];
+                const isRunning = active?.isRunning;
+                const isFocused = focusedMotivo === m.name;
+
+                return (
+                  <div
+                    key={m.name}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '10px',
+                      backgroundColor: isRunning ? '#f0fdf4' : isFocused ? '#eff6ff' : '#f8fafc',
+                      border: isRunning
+                        ? '2px solid #10b981'
+                        : isFocused
+                        ? '2px solid #2563eb'
+                        : '1px solid #e2e8f0',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                      <span
+                        style={{
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          backgroundColor: m.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <strong style={{ fontSize: '0.84375rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {m.name}
+                          </strong>
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 700,
+                              padding: '0.1rem 0.35rem',
+                              borderRadius: '4px',
+                              backgroundColor: m.type === 'VA' ? '#ecfdf5' : '#fef2f2',
+                              color: m.type === 'VA' ? '#059669' : '#dc2626',
+                            }}
+                          >
+                            {m.type}
+                          </span>
+                        </div>
+                        {active && (
+                          <div style={{ fontSize: '0.75rem', color: '#2563eb', fontFamily: 'monospace', fontWeight: 700 }}>
+                            ⏱️ {formatTime(active.elapsedMs)} {isRunning ? '(Em andamento...)' : '(Pausado)'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                      {isRunning ? (
+                        <>
+                          <button
+                            onClick={() => handlePauseTimer(m.name)}
+                            className="btn btn-warning btn-sm"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                            title="Pausar"
+                          >
+                            <Pause size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleStopAndSaveTimer(m.name)}
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                            title="Parar e Gravar"
+                          >
+                            <Square size={14} />
+                          </button>
+                        </>
+                      ) : active ? (
+                        <>
+                          <button
+                            onClick={() => handleStartTimer(m.name)}
+                            className="btn btn-success btn-sm"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                            title="Retomar"
+                          >
+                            <Play size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleStopAndSaveTimer(m.name)}
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem' }}
+                            title="Gravar"
+                          >
+                            <Square size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleStartTimer(m.name)}
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: '0.4rem 0.75rem', fontSize: '0.78125rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                          <Play size={13} /> Iniciar
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleDeleteMotivo(m.name)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94a3b8',
+                          cursor: 'pointer',
+                          padding: '0.3rem',
+                        }}
+                        title="Excluir motivo"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Gráficos & Estatísticas Yamazumi / Pareto */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Pareto & Bar Analysis */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <BarChart3 size={16} color="#2563eb" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  Gráfico de Pareto & Distribuição de Tempos
+                </h4>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Tempo acumulado</span>
+            </div>
+
+            {motivoStats.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
+                <Clock size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.4 }} />
+                <p style={{ fontSize: '0.84375rem', margin: 0 }}>Nenhuma medição realizada ainda.</p>
+                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                  Inicie o cronômetro ao lado para gerar o estudo gráfico de tempos.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {motivoStats.map((item) => {
+                  const maxTime = motivoStats[0]?.totalTime || 1;
+                  const barWidth = Math.max(5, (item.totalTime / maxTime) * 100);
+                  const isVA = item.type === 'VA';
+
+                  return (
+                    <div key={item.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem', fontSize: '0.8125rem' }}>
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                          {item.name} <span style={{ color: '#64748b', fontSize: '0.75rem' }}>({item.count}x)</span>
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Média: {item.avgTime}s</span>
+                          <strong style={{ color: isVA ? '#059669' : '#dc2626' }}>
+                            {item.totalTime}s ({item.percentage}%)
+                          </strong>
+                        </div>
+                      </div>
+                      <div style={{ width: '100%', height: '10px', backgroundColor: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: `${barWidth}%`,
+                            height: '100%',
+                            backgroundColor: isVA ? '#10b981' : '#ef4444',
+                            borderRadius: '9999px',
+                            transition: 'width 0.3s ease',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Direct Lean Integration: Enviar Desperdício para o ROI */}
+          {nvaSeconds > 0 && (
+            <div
+              className="card"
+              style={{
+                padding: '1.25rem',
+                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                color: '#ffffff',
+                borderRadius: '14px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <Sparkles size={16} color="#fbbf24" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                  Oportunidade de Kaizen Detectada!
+                </h4>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: '#c7d2fe', lineHeight: 1.4, margin: '0 0 1rem 0' }}>
+                Você identificou <strong>{Math.floor(nvaSeconds / 60)} minutos</strong> de paradas e desperdícios.
+                Transforme esta perda em um projeto de melhoria com ROI comprovado!
+              </p>
+              <Link
+                href="/agente/ferramentas/calculadora-roi"
+                className="btn"
+                style={{
+                  backgroundColor: '#fbbf24',
+                  color: '#000000',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  padding: '0.6rem 1rem',
+                  borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <Zap size={15} /> Abrir Calculadora de ROI com estes Dados
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Historical Data Table */}
+      <div className="card" style={{ padding: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+              Histórico Detalhado de Medições ({records.length})
+            </h4>
+            <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0 }}>
+              Registro cronológico de todas as amostragens de tempo coletadas
+            </p>
+          </div>
+        </div>
+
+        {records.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+            Nenhum registro gravado ainda.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>DATA / HORA</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>MOTIVO</th>
+                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>TIPO LEAN</th>
+                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>TEMPO (SEG)</th>
+                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>FORMATADO</th>
+                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>AÇÃO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((rec) => {
+                  const mins = Math.floor(rec.timeSeconds / 60);
+                  const secs = rec.timeSeconds % 60;
+                  const formatted = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                  const isVA = rec.type === 'VA';
+
+                  return (
+                    <tr key={rec.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#475569' }}>{rec.date}</td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.84375rem', fontWeight: 600, color: '#0f172a' }}>{rec.motivo}</td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '4px',
+                            backgroundColor: isVA ? '#ecfdf5' : '#fef2f2',
+                            color: isVA ? '#059669' : '#dc2626',
+                          }}
+                        >
+                          {isVA ? '🟢 Valor Agregado' : '🔴 Desperdício'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.84375rem', fontFamily: 'monospace' }}>
+                        {rec.timeSeconds}s
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.84375rem', fontWeight: 700, fontFamily: 'monospace', color: '#0f172a' }}>
+                        {formatted}
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleDeleteRecord(rec.id)}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            padding: '0.3rem',
+                          }}
+                          title="Excluir este registro"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
