@@ -283,7 +283,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               mobileSelectedCol !== 'all'
                 ? '1fr'
                 : undefined,
-            minWidth: mobileSelectedCol !== 'all' ? '100%' : '1100px',
+            width: '100%',
+            minWidth: '100%',
           }}
         >
           {visibleColumns.map((status) => {

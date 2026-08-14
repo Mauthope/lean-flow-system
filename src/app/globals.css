@@ -128,6 +128,7 @@ code, pre {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
   min-height: 100vh;
   background-color: var(--bg-primary);
   overflow-x: hidden;
@@ -142,9 +143,12 @@ code, pre {
   box-sizing: border-box;
 }
 
+/* ================= RESPONSIVE BREAKPOINTS ================= */
+
+/* Tablet & Mobile (<= 1024px) */
 @media (max-width: 1024px) {
   .content-body {
-    padding: 1rem 0.75rem 5.5rem 0.75rem !important;
+    padding: 1rem 0.875rem 5.5rem 0.875rem !important;
   }
 
   .app-sidebar {
@@ -153,9 +157,9 @@ code, pre {
     left: 0 !important;
     bottom: 0 !important;
     height: 100vh !important;
-    transform: translateX(-100%);
+    transform: translateX(-100%) !important;
     z-index: 100 !important;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   }
 
   .app-sidebar.mobile-open {
@@ -173,9 +177,37 @@ code, pre {
   .mobile-only-btn {
     display: inline-flex !important;
   }
+
+  .mobile-column-pills {
+    display: flex !important;
+  }
+
+  .kanban-wrapper {
+    overflow-x: auto;
+  }
 }
 
+/* Desktop & Widescreen (>= 1025px) */
 @media (min-width: 1025px) {
+  .app-topbar {
+    height: 70px !important;
+    padding: 0 2rem !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .topbar-actions {
+    flex-wrap: nowrap !important;
+    gap: 0.875rem !important;
+  }
+
+  .app-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    transform: none !important;
+    z-index: 40 !important;
+  }
+
   .mobile-hamburger-btn {
     display: none !important;
   }
@@ -187,8 +219,23 @@ code, pre {
   .mobile-only-btn {
     display: none !important;
   }
+
+  .mobile-column-pills {
+    display: none !important;
+  }
+
+  .kanban-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .kanban-wrapper {
+    overflow-x: visible !important;
+  }
 }
 
+/* Small Smartphone (<= 640px) */
 @media (max-width: 640px) {
   .content-body {
     padding: 0.75rem 0.5rem 5.5rem 0.5rem !important;
@@ -197,17 +244,12 @@ code, pre {
   .form-control,
   .form-select,
   .form-textarea {
-    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+    font-size: 16px !important;
     padding: 0.75rem !important;
   }
 
   .btn {
-    min-height: 42px;
-  }
-
-  .kanban-grid {
-    min-width: 100% !important;
-    grid-template-columns: 1fr !important;
+    min-height: 40px;
   }
 }
 
@@ -362,15 +404,14 @@ code, pre {
 /* Kanban Board Styling */
 .kanban-wrapper {
   width: 100%;
-  overflow-x: auto;
   padding-bottom: 1.5rem;
 }
 
 .kanban-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(290px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.25rem;
-  min-width: 1200px;
+  width: 100%;
   align-items: start;
 }
 
