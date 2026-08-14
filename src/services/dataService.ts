@@ -6,6 +6,8 @@ import {
   DashboardMetrics,
   ActionStatus,
   LeanWasteCategory,
+  LeanCostBreakdown,
+  ActionChecklistItem,
 } from '../lib/types';
 import {
   STORAGE_KEYS,

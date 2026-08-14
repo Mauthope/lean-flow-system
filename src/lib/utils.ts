@@ -71,55 +71,63 @@ export function generateId(prefix: string = 'id'): string {
 
 export const WASTE_CATEGORIES: Record<
   LeanWasteCategory,
-  { label: string; description: string; icon: string; badgeColor: string }
+  { label: string; description: string; icon: string; badgeColor: string; color: string }
 > = {
   superproducao: {
     label: 'Superprodução',
     description: 'Produzir mais ou antes do necessário',
     icon: 'Layers',
     badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
+    color: '#9333ea',
   },
   espera: {
     label: 'Tempo de Espera',
     description: 'Aguardar materiais, aprovações ou pessoas',
     icon: 'Clock',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
+    color: '#d97706',
   },
   transporte: {
     label: 'Transporte Excessivo',
     description: 'Movimentação desnecessária de materiais/arquivos',
     icon: 'Truck',
     badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+    color: '#2563eb',
   },
   processamento_excessivo: {
     label: 'Processamento Excessivo',
     description: 'Etapas de trabalho que não agregam valor ao cliente',
     icon: 'Cpu',
     badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    color: '#4f46e5',
   },
   estoque: {
     label: 'Estoque / Acúmulo',
     description: 'Excesso de matéria-prima, itens em processo ou pendências',
     icon: 'Boxes',
     badgeColor: 'bg-orange-100 text-orange-800 border-orange-200',
+    color: '#ea580c',
   },
   movimentacao: {
     label: 'Movimentação Desnecessária',
     description: 'Deslocamento de pessoas para buscar ferramentas ou dados',
     icon: 'Activity',
     badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+    color: '#0891b2',
   },
   defeitos: {
     label: 'Defeitos & Retrabalho',
     description: 'Erros na execução, refações ou não conformidades',
     icon: 'AlertTriangle',
     badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
+    color: '#e11d48',
   },
   talento_subutilizado: {
     label: 'Talento Subutilizado',
     description: 'Não aproveitar o conhecimento e ideias da equipe',
     icon: 'Users',
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    color: '#059669',
   },
 };
 

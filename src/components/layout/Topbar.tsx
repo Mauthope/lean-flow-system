@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
+import { dataService } from '@/services/dataService';
 
 export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?: () => void }> = ({
   title,
