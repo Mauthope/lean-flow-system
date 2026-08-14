@@ -1,0 +1,516 @@
+import { Tenant, Sector, User, LeanAction } from './types';
+
+const STORAGE_KEYS = {
+  TENANTS: 'lean_flow_tenants',
+  CURRENT_TENANT: 'lean_flow_current_tenant',
+  SECTORS: 'lean_flow_sectors',
+  USERS: 'lean_flow_users',
+  ACTIONS: 'lean_flow_actions',
+  CURRENT_USER: 'lean_flow_current_user',
+};
+
+export const INITIAL_TENANT: Tenant = {
+  id: 'tenant_nexus_01',
+  name: 'Nexus Lean Manufacturing & Services',
+  slug: 'nexus-lean',
+  cnpjOrCode: '18.234.567/0001-89',
+  plan: 'enterprise',
+  createdAt: '2026-01-10T08:00:00.000Z',
+};
+
+export const INITIAL_SECTORS: Sector[] = [
+  {
+    id: 'sec_qualidade',
+    tenantId: 'tenant_nexus_01',
+    name: 'Qualidade & Garantia',
+    code: 'QUAL',
+    description: 'Inspeção, auditorias de processo, eliminação de não-conformidades e 5S',
+    color: '#2563eb',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'sec_manutencao',
+    tenantId: 'tenant_nexus_01',
+    name: 'Manutenção Preditiva & TPM',
+    code: 'MANUT',
+    description: 'Manutenção autônoma, TPM, redução de MTTR e disponibilidade de máquinas',
+    color: '#d97706',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'sec_logistica',
+    tenantId: 'tenant_nexus_01',
+    name: 'Logística & Supply Chain',
+    code: 'LOG',
+    description: 'Milk-run, kanban de materiais, fluxo contínuo e redução de estoques intermediários',
+    color: '#059669',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'sec_engenharia',
+    tenantId: 'tenant_nexus_01',
+    name: 'Engenharia de Processos',
+    code: 'ENG',
+    description: 'Balanceamento de linhas, padronização de trabalho e automação de baixo custo (Jidoka)',
+    color: '#7c3aed',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'sec_operacoes',
+    tenantId: 'tenant_nexus_01',
+    name: 'Operações & Montagem',
+    code: 'OPS',
+    description: 'Células de manufatura, ritmo Takt Time e operação puxada',
+    color: '#0891b2',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+];
+
+export const INITIAL_USERS: User[] = [
+  {
+    id: 'usr_admin_01',
+    tenantId: 'tenant_nexus_01',
+    name: 'Mauricio Grigol',
+    email: 'admin@nexuslean.com',
+    role: 'admin',
+    jobTitle: 'Supervisor & Lean Master',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'usr_agent_01',
+    tenantId: 'tenant_nexus_01',
+    name: 'Carlos Silva',
+    email: 'carlos.silva@nexuslean.com',
+    role: 'agent',
+    sectorId: 'sec_qualidade',
+    sectorName: 'Qualidade & Garantia',
+    jobTitle: 'Especialista em Redução de Retrabalho',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-12T09:00:00.000Z',
+  },
+  {
+    id: 'usr_agent_02',
+    tenantId: 'tenant_nexus_01',
+    name: 'Juliana Mendes',
+    email: 'juliana.mendes@nexuslean.com',
+    role: 'agent',
+    sectorId: 'sec_manutencao',
+    sectorName: 'Manutenção Preditiva & TPM',
+    jobTitle: 'Analista TPM & Confiabilidade',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-12T09:30:00.000Z',
+  },
+  {
+    id: 'usr_agent_03',
+    tenantId: 'tenant_nexus_01',
+    name: 'Roberto Rocha',
+    email: 'roberto.rocha@nexuslean.com',
+    role: 'agent',
+    sectorId: 'sec_logistica',
+    sectorName: 'Logística & Supply Chain',
+    jobTitle: 'Coordenador de Fluxo de Materiais',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-15T10:00:00.000Z',
+  },
+  {
+    id: 'usr_agent_04',
+    tenantId: 'tenant_nexus_01',
+    name: 'Fernanda Lima',
+    email: 'fernanda.lima@nexuslean.com',
+    role: 'agent',
+    sectorId: 'sec_engenharia',
+    sectorName: 'Engenharia de Processos',
+    jobTitle: 'Engenheira de Kaizen & Métodos',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-18T11:00:00.000Z',
+  },
+];
+
+export const INITIAL_ACTIONS: LeanAction[] = [
+  {
+    id: 'act_001',
+    protocol: 'LEAN-2026-8801',
+    tenantId: 'tenant_nexus_01',
+    title: 'Otimização de Setup Rápido (SMED) na Prensa Hidráulica 04',
+    description: 'Redução do tempo de troca de matrizes de 48 para 14 minutos, eliminando gargalo na célula principal.',
+    wasteCategory: 'espera',
+    originSectorId: 'sec_operacoes',
+    originSectorName: 'Operações & Montagem',
+    targetSectorId: 'sec_engenharia',
+    targetSectorName: 'Engenharia de Processos',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_agent_04',
+    assignedAgentName: 'Fernanda Lima',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    status: 'concluida',
+    priority: 'alta',
+    estimatedCostAvoided: 52000,
+    actualCostAvoided: 58400,
+    hoursSaved: 168,
+    createdAt: '2026-02-01T08:30:00.000Z',
+    updatedAt: '2026-02-18T17:00:00.000Z',
+    startedAt: '2026-02-02T09:00:00.000Z',
+    completedAt: '2026-02-18T16:45:00.000Z',
+    dueDate: '2026-02-20',
+    notes: [
+      {
+        id: 'note_1',
+        authorId: 'usr_agent_04',
+        authorName: 'Fernanda Lima',
+        authorRole: 'agent',
+        text: 'Mapeamento em vídeo concluído. Identificadas 6 operações externas executadas como internas.',
+        createdAt: '2026-02-05T14:20:00.000Z',
+      },
+      {
+        id: 'note_2',
+        authorId: 'usr_admin_01',
+        authorName: 'Mauricio Grigol',
+        authorRole: 'admin',
+        text: 'Excelente ganho de OEE verificado no turno da manhã. Custo evitado homologado.',
+        createdAt: '2026-02-18T17:00:00.000Z',
+      },
+    ],
+    checklist: [
+      {
+        id: 'ck_1',
+        label: 'Filmar e cronometrar 3 trocas de ferramentas',
+        startDate: '2026-02-02',
+        endDate: '2026-02-04',
+        status: 'concluida',
+        responsibleName: 'Fernanda Lima',
+        durationHours: 12,
+        observations: 'Gravados 3 setups com 2 câmeras sincronizadas.',
+        completed: true,
+        completedAt: '2026-02-04T10:00:00.000Z',
+      },
+      {
+        id: 'ck_2',
+        label: 'Separar setup interno do setup externo',
+        startDate: '2026-02-05',
+        endDate: '2026-02-08',
+        status: 'concluida',
+        responsibleName: 'Fernanda Lima',
+        durationHours: 16,
+        observations: 'Pré-aquecimento de matriz transferido para operação externa.',
+        completed: true,
+        completedAt: '2026-02-08T11:30:00.000Z',
+      },
+      {
+        id: 'ck_3',
+        label: 'Instalar engates rápidos pneumáticos',
+        startDate: '2026-02-09',
+        endDate: '2026-02-14',
+        status: 'concluida',
+        responsibleName: 'Juliana Mendes',
+        durationHours: 24,
+        observations: 'Eliminados 16 parafusos manuais por clamp hidráulico.',
+        completed: true,
+        completedAt: '2026-02-14T15:00:00.000Z',
+      },
+      {
+        id: 'ck_4',
+        label: 'Criar procedimento padrão de trabalho (SOP / LPP)',
+        startDate: '2026-02-15',
+        endDate: '2026-02-18',
+        status: 'concluida',
+        responsibleName: 'Fernanda Lima',
+        durationHours: 8,
+        observations: 'Documento SOP-SMED-04 homologado e fixado no posto.',
+        completed: true,
+        completedAt: '2026-02-18T16:00:00.000Z',
+      },
+    ],
+    rootCauseAnalysis: 'Operadores realizavam busca de ferramentas enquanto a máquina estava desligada.',
+    standardWorkUpdated: true,
+  },
+  {
+    id: 'act_002',
+    protocol: 'LEAN-2026-8802',
+    tenantId: 'tenant_nexus_01',
+    title: 'Poka-Yoke contra inversão de conectores chicote elétrico Mod. B',
+    description: 'Desenvolvimento de gabarito físico à prova de erros para impedir montagem invertida e queima de placas.',
+    wasteCategory: 'defeitos',
+    originSectorId: 'sec_qualidade',
+    originSectorName: 'Qualidade & Garantia',
+    targetSectorId: 'sec_qualidade',
+    targetSectorName: 'Qualidade & Garantia',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_agent_01',
+    assignedAgentName: 'Carlos Silva',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    status: 'concluida',
+    priority: 'critica',
+    estimatedCostAvoided: 78000,
+    actualCostAvoided: 84200,
+    hoursSaved: 210,
+    createdAt: '2026-02-10T10:15:00.000Z',
+    updatedAt: '2026-02-28T14:30:00.000Z',
+    startedAt: '2026-02-11T08:00:00.000Z',
+    completedAt: '2026-02-28T14:30:00.000Z',
+    dueDate: '2026-03-01',
+    notes: [
+      {
+        id: 'note_3',
+        authorId: 'usr_agent_01',
+        authorName: 'Carlos Silva',
+        authorRole: 'agent',
+        text: 'Gabarito 3D impresso e testado com 0 falhas em 500 ciclos consecutivos.',
+        createdAt: '2026-02-25T16:00:00.000Z',
+      },
+    ],
+    checklist: [
+      { id: 'ck_5', label: 'Análise de modos de falha (FMEA)', completed: true },
+      { id: 'ck_6', label: 'Prototipação do dispositivo Poka-Yoke', completed: true },
+      { id: 'ck_7', label: 'Validação e homologação pelo controle de qualidade', completed: true },
+    ],
+    rootCauseAnalysis: 'Simetria geométrica dos pinos permitia encaixe invertido com pouca força manual.',
+    standardWorkUpdated: true,
+  },
+  {
+    id: 'act_003',
+    protocol: 'LEAN-2026-8803',
+    tenantId: 'tenant_nexus_01',
+    title: 'Implementação de Rota de Abastecimento Milk-Run para Linha 2',
+    description: 'Substituição de entregas por batelada em empilhadeiras por trenzinho com horários sincronizados.',
+    wasteCategory: 'transporte',
+    originSectorId: 'sec_logistica',
+    originSectorName: 'Logística & Supply Chain',
+    targetSectorId: 'sec_logistica',
+    targetSectorName: 'Logística & Supply Chain',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_agent_03',
+    assignedAgentName: 'Roberto Rocha',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    status: 'em_andamento',
+    priority: 'alta',
+    estimatedCostAvoided: 36000,
+    actualCostAvoided: 0,
+    hoursSaved: 95,
+    createdAt: '2026-03-01T09:00:00.000Z',
+    updatedAt: '2026-03-05T11:00:00.000Z',
+    startedAt: '2026-03-02T08:00:00.000Z',
+    dueDate: '2026-03-25',
+    notes: [
+      {
+        id: 'note_4',
+        authorId: 'usr_agent_03',
+        authorName: 'Roberto Rocha',
+        authorRole: 'agent',
+        text: 'Dimensionado carrinho rebocador e mapeadas 12 paradas padrão.',
+        createdAt: '2026-03-04T15:30:00.000Z',
+      },
+    ],
+    checklist: [
+      { id: 'ck_8', label: 'Cálculo do volume médio horário por posto', completed: true },
+      { id: 'ck_9', label: 'Demarcação visual do piso (faixas amarelas)', completed: true },
+      { id: 'ck_10', label: 'Treinamento dos operadores no ciclo de 20 minutos', completed: false },
+      { id: 'ck_11', label: 'Medição de WIP (Work in Process) antes e depois', completed: false },
+    ],
+  },
+  {
+    id: 'act_004',
+    protocol: 'LEAN-2026-8804',
+    tenantId: 'tenant_nexus_01',
+    title: 'Lubrificação Autônoma e Sensor de Vibração no Compressor Principal',
+    description: 'Instalação de telemetria IoT preventiva para evitar paradas inesperadas da linha pneumática.',
+    wasteCategory: 'espera',
+    originSectorId: 'sec_manutencao',
+    originSectorName: 'Manutenção Preditiva & TPM',
+    targetSectorId: 'sec_manutencao',
+    targetSectorName: 'Manutenção Preditiva & TPM',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_agent_02',
+    assignedAgentName: 'Juliana Mendes',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    status: 'em_andamento',
+    priority: 'critica',
+    estimatedCostAvoided: 65000,
+    actualCostAvoided: 0,
+    hoursSaved: 80,
+    createdAt: '2026-03-02T13:45:00.000Z',
+    updatedAt: '2026-03-06T10:00:00.000Z',
+    startedAt: '2026-03-03T09:00:00.000Z',
+    dueDate: '2026-03-18',
+    notes: [
+      {
+        id: 'note_5',
+        authorId: 'usr_agent_02',
+        authorName: 'Juliana Mendes',
+        authorRole: 'agent',
+        text: 'Sensores instalados. Calibrando thresholds de alarme de aquecimento.',
+        createdAt: '2026-03-05T17:10:00.000Z',
+      },
+    ],
+    checklist: [
+      { id: 'ck_12', label: 'Instalar sensores de vibração e temperatura', completed: true },
+      { id: 'ck_13', label: 'Configurar cartão de inspeção autônoma (LPP)', completed: false },
+      { id: 'ck_14', label: 'Integrar alertas ao painel supervisor', completed: false },
+    ],
+  },
+  {
+    id: 'act_005',
+    protocol: 'LEAN-2026-8805',
+    tenantId: 'tenant_nexus_01',
+    title: 'Excesso de impressão em papel de ordens de serviço no almoxarifado',
+    description: 'Demanda enviada pelo operador da expedição. Cada ordem consome 4 vias impressas que são descartadas no final do dia.',
+    wasteCategory: 'processamento_excessivo',
+    originSectorId: 'sec_logistica',
+    originSectorName: 'Logística & Supply Chain',
+    isPublicDemand: true,
+    requesterName: 'Marcos Vinícius de Paula',
+    requesterEmail: 'marcos.paula@empresa.com.br',
+    requesterDepartment: 'Expedição / Turno 2',
+    status: 'aberta',
+    priority: 'media',
+    estimatedCostAvoided: 14500,
+    actualCostAvoided: 0,
+    hoursSaved: 45,
+    createdAt: '2026-03-06T08:10:00.000Z',
+    updatedAt: '2026-03-06T08:10:00.000Z',
+    notes: [],
+    checklist: [],
+  },
+  {
+    id: 'act_006',
+    protocol: 'LEAN-2026-8806',
+    tenantId: 'tenant_nexus_01',
+    title: 'Tempo de espera de empilhadeiras no recebimento de bobinas de aço',
+    description: 'Caminhões aguardam até 3 horas no pátio por falta de agendamento por janela horária (slot delivery).',
+    wasteCategory: 'espera',
+    originSectorId: 'sec_logistica',
+    originSectorName: 'Logística & Supply Chain',
+    isPublicDemand: true,
+    requesterName: 'Ana Beatriz Souza',
+    requesterEmail: 'ana.souza@fornecedora.com',
+    requesterDepartment: 'Transportadora Parceira',
+    status: 'aberta',
+    priority: 'alta',
+    estimatedCostAvoided: 42000,
+    actualCostAvoided: 0,
+    hoursSaved: 110,
+    createdAt: '2026-03-06T09:40:00.000Z',
+    updatedAt: '2026-03-06T09:40:00.000Z',
+    notes: [],
+    checklist: [],
+  },
+  {
+    id: 'act_007',
+    protocol: 'LEAN-2026-8807',
+    tenantId: 'tenant_nexus_01',
+    title: 'Solicitação de compra de segundo gerador a diesel para backup',
+    description: 'Solicitação para adquirir equipamento de R$ 120.000 para uso exclusivo de backup não prioritário.',
+    wasteCategory: 'superproducao',
+    originSectorId: 'sec_manutencao',
+    originSectorName: 'Manutenção Preditiva & TPM',
+    isPublicDemand: true,
+    requesterName: 'Lucas Ferreira',
+    requesterEmail: 'lucas.ferreira@empresa.com.br',
+    requesterDepartment: 'Infraestrutura',
+    status: 'nao_aprovada',
+    priority: 'baixa',
+    estimatedCostAvoided: 0,
+    actualCostAvoided: 0,
+    hoursSaved: 0,
+    rejectionReason: 'Redundância desnecessária. O plano de manutenção preditiva e contrato de locação sob demanda cobrem a exigência técnica com custo 90% menor.',
+    triagedAt: '2026-03-05T16:00:00.000Z',
+    triagedBy: 'Mauricio Grigol (Admin)',
+    createdAt: '2026-03-04T11:20:00.000Z',
+    updatedAt: '2026-03-05T16:00:00.000Z',
+    notes: [
+      {
+        id: 'note_6',
+        authorId: 'usr_admin_01',
+        authorName: 'Mauricio Grigol',
+        authorRole: 'admin',
+        text: 'Demanda recusada na triagem. Proposta não alinhada com as prioridades Lean do trimestre.',
+        createdAt: '2026-03-05T16:00:00.000Z',
+      },
+    ],
+    checklist: [],
+  },
+  {
+    id: 'act_008',
+    protocol: 'LEAN-2026-8808',
+    tenantId: 'tenant_nexus_01',
+    title: 'Redução de Sucata por Corte Incorreto de Chapas na Guilhotina CNC',
+    description: 'Aplicação de algoritmo de nesting inteligente para aproveitamento de 94% da chapa (anteriormente 81%).',
+    wasteCategory: 'defeitos',
+    originSectorId: 'sec_qualidade',
+    originSectorName: 'Qualidade & Garantia',
+    targetSectorId: 'sec_qualidade',
+    targetSectorName: 'Qualidade & Garantia',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_agent_01',
+    assignedAgentName: 'Carlos Silva',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    status: 'concluida',
+    priority: 'alta',
+    estimatedCostAvoided: 45000,
+    actualCostAvoided: 49100,
+    hoursSaved: 75,
+    createdAt: '2026-02-15T08:00:00.000Z',
+    updatedAt: '2026-03-01T15:00:00.000Z',
+    startedAt: '2026-02-16T09:00:00.000Z',
+    completedAt: '2026-03-01T14:40:00.000Z',
+    dueDate: '2026-03-05',
+    notes: [],
+    checklist: [],
+    rootCauseAnalysis: 'Falta de software automatizado de encaixe de peças na geometria do corte.',
+    standardWorkUpdated: true,
+  },
+];
+
+export function getStoredData<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') return defaultValue;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      localStorage.setItem(key, JSON.stringify(defaultValue));
+      return defaultValue;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`Error loading key "${key}" from localStorage:`, err);
+    return defaultValue;
+  }
+}
+
+export function setStoredData<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.error(`Error saving key "${key}" to localStorage:`, err);
+  }
+}
+
+export function initializeLocalStorage(): void {
+  if (typeof window === 'undefined') return;
+
+  if (!localStorage.getItem(STORAGE_KEYS.TENANTS)) {
+    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify([INITIAL_TENANT]));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT)) {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(INITIAL_TENANT));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SECTORS)) {
+    localStorage.setItem(STORAGE_KEYS.SECTORS, JSON.stringify(INITIAL_SECTORS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.ACTIONS)) {
+    localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0])); // Default Admin
+  }
+}
+
+export { STORAGE_KEYS };
