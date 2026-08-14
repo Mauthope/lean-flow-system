@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
@@ -28,6 +29,7 @@ import {
   Sparkles,
   Layers,
   FileCheck,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -268,28 +270,50 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             <WasteCategoryBadge category={action.wasteCategory} />
           </div>
 
-          {/* Status Changer Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Mudar Status da Ação:</span>
-            <select
-              value={action.status}
-              onChange={(e) => handleStatusChange(e.target.value as ActionStatus)}
+          {/* Status Changer Dropdown & Full Page Link */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <Link
+              href={`/admin/projetos/${action.id}`}
+              target="_blank"
+              className="btn btn-secondary btn-sm"
               style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                fontSize: '0.75rem',
                 padding: '0.35rem 0.65rem',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                color: '#0f172a',
-                background: '#ffffff',
-                cursor: 'pointer',
+                color: '#2563eb',
+                fontWeight: 700,
+                textDecoration: 'none',
               }}
+              title="Abrir este projeto em uma página dedicada com todas as informações e ações feitas"
             >
-              <option value="aberta">Aberta</option>
-              <option value="em_andamento">Em Andamento</option>
-              <option value="concluida">Concluída (com ROI)</option>
-              {isAdmin && <option value="nao_aprovada">Não Aprovada</option>}
-            </select>
+              <ExternalLink size={13} />
+              <span>Ver Página Completa</span>
+            </Link>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Status:</span>
+              <select
+                value={action.status}
+                onChange={(e) => handleStatusChange(e.target.value as ActionStatus)}
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  background: '#ffffff',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="aberta">Aberta</option>
+                <option value="em_andamento">Em Andamento</option>
+                <option value="concluida">Concluída (com ROI)</option>
+                {isAdmin && <option value="nao_aprovada">Não Aprovada</option>}
+              </select>
+            </div>
           </div>
         </div>
 

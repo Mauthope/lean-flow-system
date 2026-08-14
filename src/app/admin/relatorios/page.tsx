@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { formatCurrency, formatDateTime, WASTE_CATEGORIES } from '@/lib/utils';
@@ -14,9 +16,11 @@ import {
   Clock,
   Building2,
   Award,
+  ExternalLink,
 } from 'lucide-react';
 
 export default function AdminRelatoriosPage() {
+  const router = useRouter();
   const { dataVersion } = useAuth();
 
   const metrics = useMemo(() => {
@@ -169,15 +173,34 @@ export default function AdminRelatoriosPage() {
       </div>
 
       {/* Breakdown Table */}
-      <div className="card">
-        <div className="card-header">
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a' }}>
-            Detalhamento de Todas as Ações Concluídas com Custo Evitado
-          </h3>
+      <div className="card" style={{ borderRadius: '16px' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Detalhamento de Todas as Ações Concluídas com Custo Evitado
+              </h3>
+              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+                Clique em qualquer projeto da lista para abrir a página completa com a memória de cálculo e todas as ações realizadas.
+              </p>
+            </div>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                backgroundColor: '#ecfdf5',
+                color: '#047857',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '9999px',
+              }}
+            >
+              {completedActions.length} Projetos Concluídos
+            </span>
+          </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <th style={{ padding: '0.875rem 1.25rem' }}>Protocolo / Ação</th>
@@ -186,7 +209,8 @@ export default function AdminRelatoriosPage() {
                 <th style={{ padding: '0.875rem 1rem' }}>Agente</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Estimado</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Real Homologado</th>
-                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Data Conclusão</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Data Conclusão</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -195,10 +219,17 @@ export default function AdminRelatoriosPage() {
                 return (
                   <tr
                     key={action.id}
-                    style={{ borderBottom: '1px solid #f1f5f9' }}
+                    onClick={() => router.push(`/admin/projetos/${action.id}`)}
+                    style={{
+                      borderBottom: '1px solid #f1f5f9',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.15s ease',
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <td style={{ padding: '0.875rem 1.25rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 700, color: '#64748b' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 700, color: '#2563eb' }}>
                         {action.protocol}
                       </span>
                       <p style={{ fontWeight: 700, color: '#0f172a', marginTop: '0.15rem' }}>{action.title}</p>
@@ -230,8 +261,28 @@ export default function AdminRelatoriosPage() {
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857', fontSize: '0.9375rem' }}>
                       {formatCurrency(action.actualCostAvoided)}
                     </td>
-                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center', color: '#64748b', fontSize: '0.8125rem' }}>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.8125rem' }}>
                       {formatDateTime(action.completedAt)}
+                    </td>
+                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
+                      <Link
+                        href={`/admin/projetos/${action.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          fontSize: '0.75rem',
+                          padding: '0.35rem 0.65rem',
+                          textDecoration: 'none',
+                          color: '#2563eb',
+                          fontWeight: 700,
+                        }}
+                      >
+                        <span>Abrir Projeto</span>
+                        <ExternalLink size={12} />
+                      </Link>
                     </td>
                   </tr>
                 );
