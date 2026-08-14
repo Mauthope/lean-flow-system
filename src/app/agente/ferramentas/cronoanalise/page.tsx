@@ -794,17 +794,17 @@ export default function CronoanalisePage() {
           </div>
 
           <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>TEMPO MÉDIO ($\\bar{x}$)</span>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>TEMPO MÉDIO (x̄)</span>
             <strong style={{ fontSize: '1.25rem', color: '#0f172a' }}>{statsCalc.mean}s</strong>
           </div>
 
           <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>DESVIO PADRÃO ($s$)</span>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>DESVIO PADRÃO (s)</span>
             <strong style={{ fontSize: '1.25rem', color: '#0f172a' }}>{statsCalc.stdDev}s</strong>
           </div>
 
           <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>COEF. VARIAÇÃO ($CV$)</span>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>COEF. VARIAÇÃO (CV)</span>
             <strong style={{ fontSize: '1.25rem', color: statsCalc.cv > 30 ? '#dc2626' : '#059669' }}>
               {statsCalc.cv}%
             </strong>
@@ -819,7 +819,7 @@ export default function CronoanalisePage() {
             }}
           >
             <span style={{ fontSize: '0.7rem', color: statsCalc.isReliable ? '#166534' : '#92400e', fontWeight: 700, display: 'block' }}>
-              AMOSTRAS MÍNIMAS ($N'$)
+              AMOSTRAS MÍNIMAS (N&apos;)
             </span>
             <strong style={{ fontSize: '1.25rem', color: statsCalc.isReliable ? '#166534' : '#92400e' }}>
               {statsCalc.requiredN} {statsCalc.isReliable ? '✅' : `(faltam ${statsCalc.pendingSamples})`}
@@ -845,7 +845,7 @@ export default function CronoanalisePage() {
             <>
               <CheckCircle2 size={20} color="#059669" />
               <div>
-                <strong>Amostragem com Confiabilidade Atingida!</strong> O estudo atual com {statsCalc.sampleSizeCurrent} tomadas atende a exigência mínima de {statsCalc.requiredN} medições com <strong>{(confidenceLevel * 100).toFixed(0)}% de confiança</strong> e margem de erro $\le {(toleratedError * 100).toFixed(0)}\%$.
+                <strong>Amostragem com Confiabilidade Atingida!</strong> O estudo atual com {statsCalc.sampleSizeCurrent} tomadas atende a exigência mínima de {statsCalc.requiredN} medições com <strong>{(confidenceLevel * 100).toFixed(0)}% de confiança</strong> e margem de erro ≤ {(toleratedError * 100).toFixed(0)}%.
               </div>
             </>
           ) : (
