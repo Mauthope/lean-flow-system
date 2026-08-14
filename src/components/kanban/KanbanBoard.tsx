@@ -31,6 +31,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const [selectedWaste, setSelectedWaste] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedAgent, setSelectedAgent] = useState<string>('all');
+  const [mobileSelectedCol, setMobileSelectedCol] = useState<string>('all');
 
   // Filter actions
   const filteredActions = useMemo(() => {
@@ -87,25 +88,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   const columns: ActionStatus[] = ['aberta', 'em_andamento', 'concluida', 'nao_aprovada'];
 
+  const visibleColumns = mobileSelectedCol === 'all'
+    ? columns
+    : columns.filter((c) => c === mobileSelectedCol);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Filter Bar */}
       <div
         style={{
           backgroundColor: '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: '12px',
-          padding: '1rem 1.25rem',
+          padding: '0.875rem 1rem',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '1rem',
+          gap: '0.75rem',
           boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
         }}
       >
         {/* Search */}
-        <div style={{ position: 'relative', minWidth: '260px', flex: 1 }}>
+        <div style={{ position: 'relative', minWidth: '220px', flex: 1 }}>
           <Search
             size={16}
             color="#94a3b8"
@@ -122,13 +127,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </div>
 
         {/* Selects */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {/* Sector Filter */}
           <select
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
           >
             <option value="all">🏢 Todos os Setores</option>
             {sectors.map((s) => (
@@ -143,7 +148,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             value={selectedWaste}
             onChange={(e) => setSelectedWaste(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
           >
             <option value="all">⚡ Todos os Desperdícios</option>
             {Object.entries(WASTE_CATEGORIES).map(([key, cat]) => (
@@ -158,7 +163,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             value={selectedPriority}
             onChange={(e) => setSelectedPriority(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
           >
             <option value="all">🎯 Todas Prioridades</option>
             <option value="critica">Crítica</option>
@@ -173,7 +178,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               value={selectedAgent}
               onChange={(e) => setSelectedAgent(e.target.value)}
               className="form-select"
-              style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }}
+              style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
             >
               <option value="all">👤 Todos os Agentes</option>
               {allAgents.map((ag) => (
@@ -189,7 +194,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             onClick={onRefresh}
             className="btn btn-secondary btn-sm"
             title="Recarregar dados"
-            style={{ padding: '0.5rem 0.75rem' }}
+            style={{ padding: '0.45rem 0.65rem' }}
           >
             <RefreshCw size={14} />
           </button>
@@ -198,7 +203,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             <button
               onClick={onNewAction}
               className="btn btn-primary btn-sm"
-              style={{ padding: '0.5rem 0.85rem' }}
+              style={{ padding: '0.45rem 0.75rem' }}
             >
               <Plus size={15} /> Nova Ação
             </button>
@@ -206,10 +211,82 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </div>
       </div>
 
-      {/* Kanban 4 Columns Grid */}
+      {/* Mobile-Friendly Column Switcher Pills */}
+      <div
+        className="mobile-column-pills"
+        style={{
+          display: 'flex',
+          gap: '0.4rem',
+          overflowX: 'auto',
+          paddingBottom: '0.25rem',
+          scrollbarWidth: 'none',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setMobileSelectedCol('all')}
+          style={{
+            padding: '0.45rem 0.85rem',
+            borderRadius: '9999px',
+            fontSize: '0.78125rem',
+            fontWeight: 700,
+            border: mobileSelectedCol === 'all' ? '2px solid #2563eb' : '1px solid #e2e8f0',
+            backgroundColor: mobileSelectedCol === 'all' ? '#eff6ff' : '#ffffff',
+            color: mobileSelectedCol === 'all' ? '#1d4ed8' : '#64748b',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          📋 Todas ({filteredActions.length})
+        </button>
+
+        {columns.map((status) => {
+          const count = filteredActions.filter((a) => a.status === status).length;
+          const labelMap = {
+            aberta: '🔵 Abertas',
+            em_andamento: '🟡 Em Andamento',
+            concluida: '🟢 Concluídas',
+            nao_aprovada: '🔴 Recusadas',
+          };
+          const isSelected = mobileSelectedCol === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setMobileSelectedCol(status)}
+              style={{
+                padding: '0.45rem 0.85rem',
+                borderRadius: '9999px',
+                fontSize: '0.78125rem',
+                fontWeight: 700,
+                border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                color: isSelected ? '#1d4ed8' : '#64748b',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {labelMap[status]} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Kanban Columns Grid */}
       <div className="kanban-wrapper">
-        <div className="kanban-grid">
-          {columns.map((status) => {
+        <div
+          className="kanban-grid"
+          style={{
+            gridTemplateColumns:
+              mobileSelectedCol !== 'all'
+                ? '1fr'
+                : undefined,
+            minWidth: mobileSelectedCol !== 'all' ? '100%' : '1100px',
+          }}
+        >
+          {visibleColumns.map((status) => {
             const colActions = filteredActions.filter((a) => a.status === status);
             return (
               <KanbanColumn

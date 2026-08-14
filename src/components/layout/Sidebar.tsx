@@ -22,6 +22,7 @@ import {
   Wrench,
   Calculator,
   HelpCircle,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -38,7 +39,7 @@ interface NavSection {
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { currentUser, currentTenant } = useAuth();
+  const { currentUser, currentTenant, isMobileMenuOpen, setIsMobileMenuOpen } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -85,70 +86,110 @@ export const Sidebar: React.FC = () => {
   const currentNav = isAdmin ? adminNav : agentNav;
 
   return (
-    <aside
-      style={{
-        width: '270px',
-        backgroundColor: '#0b1329',
-        color: '#f8fafc',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-        flexShrink: 0,
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-      }}
-    >
-      {/* Brand & Organization */}
-      <div
+    <>
+      {/* Mobile Backdrop Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 90,
+            animation: 'fadeIn 0.2s ease',
+          }}
+        />
+      )}
+
+      <aside
+        className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
         style={{
-          padding: '1.5rem 1.25rem',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          width: '270px',
+          backgroundColor: '#0b1329',
+          color: '#f8fafc',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.75rem',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          flexShrink: 0,
+          height: '100vh',
+          position: 'sticky',
+          top: 0,
+          zIndex: 95,
+          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              backgroundColor: '#2563eb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '1.1rem',
-              color: '#ffffff',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
-            }}
-          >
-            LN
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', color: '#ffffff' }}>
-                LeanFlow
-              </span>
-              <span
+        {/* Brand & Organization */}
+        <div
+          style={{
+            padding: '1.25rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div
                 style={{
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  backgroundColor: 'rgba(37, 99, 235, 0.25)',
-                  color: '#60a5fa',
-                  padding: '0.1rem 0.35rem',
-                  borderRadius: '4px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  backgroundColor: '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '1.1rem',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
                 }}
               >
-                PRO
-              </span>
+                LN
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', color: '#ffffff' }}>
+                    LeanFlow
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      backgroundColor: 'rgba(37, 99, 235, 0.25)',
+                      color: '#60a5fa',
+                      padding: '0.1rem 0.35rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    PRO
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Fluxo Contínuo & ROI</p>
+              </div>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Fluxo Contínuo & ROI</p>
+
+            {/* Close Button for Mobile Drawer */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="mobile-only-btn"
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: 'none',
+                color: '#ffffff',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={18} />
+            </button>
           </div>
-        </div>
 
         {/* Tenant Pill */}
         <div
@@ -227,6 +268,7 @@ export const Sidebar: React.FC = () => {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -359,5 +401,6 @@ export const Sidebar: React.FC = () => {
         </Link>
       </div>
     </aside>
+  </>
   );
 };

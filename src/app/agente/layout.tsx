@@ -3,6 +3,7 @@
 import React from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export default function AgentLayout({
   children,
@@ -15,6 +16,7 @@ export default function AgentLayout({
       <div className="main-content">
         <Topbar />
         <main className="content-body">{children}</main>
+        <MobileBottomNav />
       </div>
     </div>
   );

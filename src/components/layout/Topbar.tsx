@@ -18,6 +18,7 @@ import {
   Award,
   Code,
   CheckCircle2,
+  Menu,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
@@ -29,7 +30,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, allUsers, switchUser, refreshData } = useAuth();
+  const { currentUser, allUsers, switchUser, refreshData, toggleMobileMenu } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
@@ -48,30 +49,55 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
   return (
     <header
+      className="app-topbar"
       style={{
-        height: '70px',
+        minHeight: '64px',
         backgroundColor: '#ffffff',
         borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 2rem',
+        padding: '0.65rem 1.25rem',
         position: 'sticky',
         top: 0,
         zIndex: 30,
         boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
       }}
     >
-      {/* Title & Context */}
-      <div>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
-          {title || (isAdmin ? 'Painel do Supervisor Lean' : 'Meu Fluxo de Trabalho Lean')}
-        </h1>
-        {subtitle && <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>{subtitle}</p>}
+      {/* Left: Mobile Toggle & Page Title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <button
+          onClick={toggleMobileMenu}
+          className="mobile-hamburger-btn"
+          aria-label="Abrir menu de navegação"
+          style={{
+            backgroundColor: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            width: '38px',
+            height: '38px',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#0f172a',
+          }}
+        >
+          <Menu size={20} />
+        </button>
+
+        <div>
+          <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+            {title || (isAdmin ? 'Painel do Supervisor Lean' : 'Meu Fluxo de Trabalho Lean')}
+          </h1>
+          {subtitle && <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>{subtitle}</p>}
+        </div>
       </div>
 
       {/* Actions & Persona Switcher */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
         {/* Quick Demo Persona Switcher */}
         <div
           style={{

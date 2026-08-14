@@ -16,6 +16,9 @@ interface AuthContextType {
   logout: () => void;
   refreshData: () => void;
   dataVersion: number;
+  isMobileMenuOpen: boolean;
+  setIsMobileMenuOpen: (open: boolean) => void;
+  toggleMobileMenu: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [allAgents, setAllAgents] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dataVersion, setDataVersion] = useState(1);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const loadSession = useCallback(() => {
     initializeLocalStorage();
@@ -73,6 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setDataVersion((v) => v + 1);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -86,6 +94,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshData,
         dataVersion,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
+        toggleMobileMenu,
       }}
     >
       {children}

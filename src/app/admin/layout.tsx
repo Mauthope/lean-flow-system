@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { NewActionModal } from '@/components/forms/NewActionModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,6 +21,7 @@ export default function AdminLayout({
       <div className="main-content">
         <Topbar onNewAction={() => setIsNewActionOpen(true)} />
         <main className="content-body">{children}</main>
+        <MobileBottomNav />
       </div>
 
       <NewActionModal
