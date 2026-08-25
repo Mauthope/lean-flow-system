@@ -163,8 +163,15 @@ export const STATUS_CONFIG: Record<
     textClass: 'text-amber-700',
     borderClass: 'border-amber-200',
   },
+  aguardando_aprovacao: {
+    label: 'Aguardando Aprovação',
+    badgeColor: 'bg-purple-500/10 text-purple-700 border-purple-300',
+    bgClass: 'bg-purple-50',
+    textClass: 'text-purple-700',
+    borderClass: 'border-purple-200',
+  },
   concluida: {
-    label: 'Concluídas',
+    label: 'Homologadas / Concluídas',
     badgeColor: 'bg-emerald-500/10 text-emerald-700 border-emerald-300',
     bgClass: 'bg-emerald-50',
     textClass: 'text-emerald-700',

@@ -880,9 +880,9 @@ export default function LandingPage() {
                   <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Priorização sistemática com Gravidade × Urgência × Tendência (1 a 125).</p>
                 </div>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <span style={{ fontSize: '1.5rem' }}>🔍</span>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>5 Porquês & Ishikawa</h4>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Investigação profunda de causa raiz para bloqueio de reincidências.</p>
+                  <span style={{ fontSize: '1.5rem' }}>📊</span>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>5 Porquês & Pareto 80/20</h4>
+                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Investigação profunda de causa raiz e priorização das causas vitais pelo princípio 80/20.</p>
                 </div>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   <span style={{ fontSize: '1.5rem' }}>📄</span>

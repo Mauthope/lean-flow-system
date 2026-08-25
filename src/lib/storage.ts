@@ -206,6 +206,11 @@ export const INITIAL_ACTIONS: LeanAction[] = [
       '4. Por que as ferramentas não estavam organizadas? Porque os operadores buscavam chaves e torquímetros no almoxarifado durante a parada.',
       '5. Causa Raiz: Ausência de metodologia SMED padronizada, falta de carrinho dedicado de ferramentas 5S e ausência de pré-aquecimento externo.'
     ],
+    pareto: {
+      chartImageName: 'Pareto_Setup_Extrusora03.png',
+      vitalCausesSummary: '82% do tempo improdutivo de setup é causado por 2 fatores vitais: 1. Limpeza e aquecimento térmico do cabeçote com máquina parada (48%) e 2. Procura e deslocamento para buscar ferramentas (34%).',
+      cumulativeImpactPercentage: 82,
+    },
     ishikawa: {
       method: 'Ausência de procedimento SMED separando setup interno de externo',
       machine: 'Extrusora sem engates rápidos pneumáticos e cabeçote sem aquecedor externo',
@@ -355,8 +360,12 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentId: 'usr_rafitec_agent_02',
     assignedAgentName: 'Juliana Mendes',
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    status: 'concluida',
+    status: 'aguardando_aprovacao',
     priority: 'alta',
+    submittedForApproval: true,
+    submittedForApprovalAt: '2026-02-22T14:30:00.000Z',
+    submittedForApprovalBy: 'Juliana Mendes',
+    masterApproved: false,
     
     // Metodologia PDCA
     pdcaStage: 'check',
@@ -366,6 +375,11 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     baselineValue: 42,
     targetGoalValue: 8,
     achievedValue: 6,
+    pareto: {
+      chartImageName: 'Pareto_Quebras_Fita_Tecelagem.png',
+      vitalCausesSummary: '80% das quebras de fita ocorriam em apenas 2 pontos: 1. Atrito na gaiola de bobinas (52%) e 2. Variação de espessura na fita PP de urdume (28%).',
+      cumulativeImpactPercentage: 80,
+    },
     projectCosts: {
       partsAndEquipment: 3200,
       thirdPartyServices: 800,
@@ -544,7 +558,9 @@ export function initializeLocalStorage(): void {
     !tenantsStr ||
     tenantsStr.includes('nexus') ||
     !actionsStr ||
-    !actionsStr.includes('pdcaStage');
+    !actionsStr.includes('pdcaStage') ||
+    !actionsStr.includes('pareto') ||
+    !actionsStr.includes('aguardando_aprovacao');
 
   if (isStale) {
     localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));

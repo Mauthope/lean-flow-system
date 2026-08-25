@@ -92,7 +92,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
   };
 
-  const columns: ActionStatus[] = ['aberta', 'em_andamento', 'concluida', 'nao_aprovada'];
+  const columns: ActionStatus[] = ['aberta', 'em_andamento', 'aguardando_aprovacao', 'concluida', 'nao_aprovada'];
 
   const visibleColumns = mobileSelectedCol === 'all'
     ? columns
@@ -249,9 +249,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
         {columns.map((status) => {
           const count = filteredActions.filter((a) => a.status === status).length;
-          const labelMap = {
+          const labelMap: Record<ActionStatus, string> = {
             aberta: '🔵 Abertas',
             em_andamento: '🟡 Em Andamento',
+            aguardando_aprovacao: '🟣 Aguardando Homologação',
             concluida: '🟢 Concluídas',
             nao_aprovada: '🔴 Recusadas',
           };

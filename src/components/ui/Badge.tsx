@@ -10,6 +10,7 @@ export function StatusBadge({ status }: { status: ActionStatus }) {
   const styles: Record<ActionStatus, { bg: string; text: string; border: string }> = {
     aberta: { bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
     em_andamento: { bg: '#fffbeb', text: '#b45309', border: '#fde68a' },
+    aguardando_aprovacao: { bg: '#faf5ff', text: '#7c3aed', border: '#ddd6fe' },
     concluida: { bg: '#ecfdf5', text: '#047857', border: '#a7f3d0' },
     nao_aprovada: { bg: '#fef2f2', text: '#b91c1c', border: '#fecaca' },
   };

@@ -1,6 +1,6 @@
 export type UserRole = 'admin' | 'agent';
 
-export type ActionStatus = 'aberta' | 'em_andamento' | 'concluida' | 'nao_aprovada';
+export type ActionStatus = 'aberta' | 'em_andamento' | 'aguardando_aprovacao' | 'concluida' | 'nao_aprovada';
 
 export type ActionPriority = 'baixa' | 'media' | 'alta' | 'critica';
 
@@ -98,7 +98,16 @@ export interface ProjectInvestmentCosts {
   totalCost?: number;            // Soma total do investimento
 }
 
-// Ishikawa 6M (Causas Raízes)
+// Comprovação & Análise por Gráfico de Pareto (Regra 80/20)
+export interface ParetoAnalysis {
+  chartImageUrl?: string;              // Imagem do Gráfico de Pareto (Upload Base64 ou URL)
+  chartImageName?: string;             // Nome do arquivo da imagem
+  vitalCausesSummary?: string;         // Resumo das causas vitais (os 20% que geram 80% do problema)
+  cumulativeImpactPercentage?: number; // Ex: 82 (%)
+  topCauses?: { cause: string; percentage: number }[];
+}
+
+// Ishikawa 6M (Causas Raízes - compatibilidade)
 export interface IshikawaAnalysis {
   method?: string;       // Método de trabalho
   machine?: string;      // Máquinas e ferramentas
@@ -152,7 +161,7 @@ export interface LeanAction {
   // ================= METODOLOGIA PDCA =================
   pdcaStage?: PDCAMethodologyStage; // 'plan' | 'do' | 'check' | 'act'
 
-  // [P - PLAN: Diagnóstico, Metas & Causa Raiz]
+  // [P - PLAN: Diagnóstico, Metas, 5 Porquês & Pareto 80/20]
   problemStatement?: string;             // Declaração detalhada do problema
   targetMetricName?: string;             // Ex: "Tempo de Setup (SMED)", "Taxa de Refugo (%)"
   targetMetricUnit?: string;             // Ex: "minutos", "%", "peças/h", "R$/mês"
@@ -160,7 +169,8 @@ export interface LeanAction {
   targetGoalValue?: number;              // Meta planejada (ex: 15)
   currentProblemCostMonthly?: number;    // Custo mensal do problema não resolvido (R$/mês)
   fiveWhys?: string[];                   // Lista dos 5 Porquês
-  ishikawa?: IshikawaAnalysis;           // Diagrama de Causa e Efeito (6M)
+  pareto?: ParetoAnalysis;               // Comprovação por Gráfico de Pareto 80/20
+  ishikawa?: IshikawaAnalysis;           // Diagrama de Causa e Efeito (6M - legado)
 
   // [D - DO: Execução 5W2H & Testes Piloto]
   checklist: ActionChecklistItem[];      // Plano de Ação 5W2H
@@ -179,11 +189,14 @@ export interface LeanAction {
   hoursSaved: number;                    // Horas de trabalho / máquina recuperadas
   attachments?: ProjectAttachment[];     // Anexos em PDF com memorial de cálculo e evidências
 
-  // [A - ACT: Padronização, Yokoten & Homologação]
+  // [A - ACT: Padronização, Yokoten, Submissão & Homologação Master]
   standardWorkUpdated?: boolean;         // SOP / Instrução de Trabalho atualizada?
   standardWorkDocRef?: string;           // Código do POP / SOP (ex: "POP-EXT-042 rev 03")
   yokotenReplication?: string;           // Lições aprendidas & Linhas para replicação (ex: "Extrusoras 01, 02 e 04")
   lessonsLearned?: string;               // Resumo das lições aprendidas
+  submittedForApproval?: boolean;        // Submetido pelo Agente para Homologação Master?
+  submittedForApprovalAt?: string;       // Data de envio para homologação
+  submittedForApprovalBy?: string;       // Nome do Agente que enviou
   masterApproved?: boolean;              // Homologado pela Entidade Master?
   masterApprovedAt?: string;             // Data de homologação
   masterApprovedBy?: string;             // Responsável pela homologação Master

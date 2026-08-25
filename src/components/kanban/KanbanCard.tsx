@@ -25,6 +25,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   onQuickMove,
   isAgentView,
 }) => {
+  const isAwaitingApproval = action.status === 'aguardando_aprovacao' || (action.submittedForApproval && !action.masterApproved);
   const isCompleted = action.status === 'concluida';
   const isRejected = action.status === 'nao_aprovada';
   const isInProgress = action.status === 'em_andamento';
@@ -45,15 +46,17 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         backgroundColor: '#ffffff',
         borderRadius: '12px',
         padding: '1rem',
-        border: '1px solid #e2e8f0',
+        border: isAwaitingApproval ? '1.5px solid #d8b4fe' : '1px solid #e2e8f0',
         borderLeft: isCompleted
           ? '4px solid #10b981'
+          : isAwaitingApproval
+          ? '4px solid #7c3aed'
           : isInProgress
           ? '4px solid #f59e0b'
           : isRejected
           ? '4px solid #ef4444'
           : '4px solid #3b82f6',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        boxShadow: isAwaitingApproval ? '0 4px 12px rgba(124, 58, 237, 0.08)' : '0 1px 3px rgba(0, 0, 0, 0.05)',
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         display: 'flex',
@@ -124,6 +127,27 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       >
         {action.title}
       </h4>
+
+      {isAwaitingApproval && (
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            backgroundColor: '#faf5ff',
+            border: '1px solid #c084fc',
+            color: '#7e22ce',
+            padding: '0.25rem 0.5rem',
+            borderRadius: '6px',
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            letterSpacing: '0.01em',
+          }}
+        >
+          <span>🟡</span>
+          <span>AGUARDANDO APROVAÇÃO MASTER</span>
+        </div>
+      )}
 
       {/* Bottom Info: Prazo & Responsável */}
       <div

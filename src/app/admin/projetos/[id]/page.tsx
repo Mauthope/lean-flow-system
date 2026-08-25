@@ -46,6 +46,9 @@ import {
   FileSpreadsheet,
   Eye,
   File,
+  BarChart3,
+  Image as ImageIcon,
+  Send,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -71,13 +74,11 @@ export default function AdminProjectDetailPage() {
   const [problemStatement, setProblemStatement] = useState('');
   const [fiveWhys, setFiveWhys] = useState<string[]>(['', '', '', '', '']);
   
-  // Ishikawa 6M
-  const [ishikawaMethod, setIshikawaMethod] = useState('');
-  const [ishikawaMachine, setIshikawaMachine] = useState('');
-  const [ishikawaMaterial, setIshikawaMaterial] = useState('');
-  const [ishikawaManpower, setIshikawaManpower] = useState('');
-  const [ishikawaMeasurement, setIshikawaMeasurement] = useState('');
-  const [ishikawaEnvironment, setIshikawaEnvironment] = useState('');
+  // Pareto 80/20 Analysis & Chart Image
+  const [paretoImageUrl, setParetoImageUrl] = useState<string>('');
+  const [paretoImageName, setParetoImageName] = useState<string>('');
+  const [paretoVitalCauses, setParetoVitalCauses] = useState<string>('');
+  const [paretoCumulativePercent, setParetoCumulativePercent] = useState<number | ''>(80);
 
   // Costs (Investimento Capex/Opex)
   const [partsAndEquipment, setPartsAndEquipment] = useState<number>(0);
@@ -139,12 +140,15 @@ export default function AdminProjectDetailPage() {
             ? found.fiveWhys
             : ['1. ', '2. ', '3. ', '4. ', '5. ']
         );
-        setIshikawaMethod(found.ishikawa?.method || '');
-        setIshikawaMachine(found.ishikawa?.machine || '');
-        setIshikawaMaterial(found.ishikawa?.material || '');
-        setIshikawaManpower(found.ishikawa?.manpower || '');
-        setIshikawaMeasurement(found.ishikawa?.measurement || '');
-        setIshikawaEnvironment(found.ishikawa?.environment || '');
+        setParetoImageUrl(found.pareto?.chartImageUrl || '');
+        setParetoImageName(found.pareto?.chartImageName || '');
+        setParetoVitalCauses(
+          found.pareto?.vitalCausesSummary ||
+            '80% das perdas concentradas nas 2 causas vitais prioritárias identificadas no gráfico de Pareto.'
+        );
+        setParetoCumulativePercent(
+          found.pareto?.cumulativeImpactPercentage !== undefined ? found.pareto.cumulativeImpactPercentage : 80
+        );
 
         // D - DO
         setChecklistItems(found.checklist || []);
@@ -214,13 +218,11 @@ export default function AdminProjectDetailPage() {
       achievedValue: achievedValue === '' ? undefined : Number(achievedValue),
       currentProblemCostMonthly: currentProblemCostMonthly === '' ? undefined : Number(currentProblemCostMonthly),
       fiveWhys,
-      ishikawa: {
-        method: ishikawaMethod,
-        machine: ishikawaMachine,
-        material: ishikawaMaterial,
-        manpower: ishikawaManpower,
-        measurement: ishikawaMeasurement,
-        environment: ishikawaEnvironment,
+      pareto: {
+        chartImageUrl: paretoImageUrl,
+        chartImageName: paretoImageName,
+        vitalCausesSummary: paretoVitalCauses,
+        cumulativeImpactPercentage: paretoCumulativePercent === '' ? 80 : Number(paretoCumulativePercent),
       },
       pilotArea,
       pilotTestObservations,
@@ -257,6 +259,71 @@ export default function AdminProjectDetailPage() {
     setIsSaved(true);
     refreshData();
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleParetoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !action) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setParetoImageUrl(dataUrl);
+      setParetoImageName(file.name);
+      const updatedPareto = {
+        chartImageUrl: dataUrl,
+        chartImageName: file.name,
+        vitalCausesSummary: paretoVitalCauses,
+        cumulativeImpactPercentage: paretoCumulativePercent === '' ? 80 : Number(paretoCumulativePercent),
+      };
+      dataService.updateAction(action.id, { pareto: updatedPareto });
+      refreshData();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveParetoImage = () => {
+    if (!action) return;
+    setParetoImageUrl('');
+    setParetoImageName('');
+    dataService.updateAction(action.id, {
+      pareto: {
+        chartImageUrl: '',
+        chartImageName: '',
+        vitalCausesSummary: paretoVitalCauses,
+        cumulativeImpactPercentage: paretoCumulativePercent === '' ? 80 : Number(paretoCumulativePercent),
+      },
+    });
+    refreshData();
+  };
+
+  const handleAgentSubmitForApproval = () => {
+    if (!action) return;
+    const updated = dataService.updateAction(action.id, {
+      status: 'aguardando_aprovacao',
+      submittedForApproval: true,
+      submittedForApprovalAt: new Date().toISOString(),
+      submittedForApprovalBy: currentUser?.name || 'Agente Lean',
+    });
+    setAction(updated);
+    refreshData();
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+  };
+
+  const handleMasterApprove = () => {
+    if (!action) return;
+    const updated = dataService.updateAction(action.id, {
+      status: 'concluida',
+      pdcaStage: 'act',
+      masterApproved: true,
+      masterApprovedAt: new Date().toISOString(),
+      masterApprovedBy: currentUser?.name || 'Rafitec',
+      actualCostAvoided: totalGrossSavings > 0 ? totalGrossSavings : action.estimatedCostAvoided,
+    });
+    setAction(updated);
+    refreshData();
+    confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -365,21 +432,6 @@ export default function AdminProjectDetailPage() {
     setNewActionEnd('');
     setNewActionHours('');
     refreshData();
-  };
-
-  const handleMasterApprove = () => {
-    if (!action) return;
-    const updated = dataService.updateAction(action.id, {
-      status: 'concluida',
-      pdcaStage: 'act',
-      masterApproved: true,
-      masterApprovedAt: new Date().toISOString(),
-      masterApprovedBy: currentUser?.name || 'Rafitec',
-      actualCostAvoided: totalGrossSavings > 0 ? totalGrossSavings : action.estimatedCostAvoided,
-    });
-    setAction(updated);
-    refreshData();
-    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
   const handleCopyLink = () => {
@@ -730,39 +782,172 @@ export default function AdminProjectDetailPage() {
             </div>
           </div>
 
-          {/* Card: Ishikawa 6M */}
+          {/* Card: Comprovação por Gráfico de Pareto (Regra 80/20) */}
           <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <Layers size={20} color="#2563eb" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                1.3 Diagrama de Ishikawa (Espinha de Peixe / 6M)
-              </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BarChart3 size={20} color="#2563eb" />
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    1.3 Comprovação por Gráfico de Pareto (Regra 80/20)
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.15rem 0 0' }}>
+                    Identifique e comprove visualmente os 20% das causas vitais que geram 80% das perdas.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    color: '#1e40af',
+                    backgroundColor: '#eff6ff',
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '8px',
+                    border: '1px solid #bfdbfe',
+                  }}
+                >
+                  ⚡ REGRA 80/20
+                </span>
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>📐 Método (Procedimentos)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaMethod} onChange={(e) => setIshikawaMethod(e.target.value)} placeholder="Instruções, rotinas, divisão de tarefas..." />
+            {/* Pareto Content: Image & Vital Causes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem' }}>
+              {/* Left Column: Pareto Chart Image / Visualizer */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#334155' }}>
+                  📊 Imagem do Gráfico de Pareto Gerado:
+                </span>
+
+                {paretoImageUrl ? (
+                  <div
+                    style={{
+                      position: 'relative',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    }}
+                  >
+                    <img
+                      src={paretoImageUrl}
+                      alt="Gráfico de Pareto 80/20"
+                      style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', backgroundColor: '#f8fafc' }}
+                    />
+                    <div
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: '#ffffff',
+                        borderTop: '1px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <span style={{ color: '#475569', fontWeight: 600 }}>{paretoImageName || 'Grafico_Pareto_80_20.png'}</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveParetoImage}
+                        className="btn btn-sm"
+                        style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', padding: '0.2rem 0.5rem' }}
+                      >
+                        <Trash2 size={12} /> Remover Imagem
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: '1.5rem 1rem',
+                      borderRadius: '12px',
+                      border: '1.5px dashed #93c5fd',
+                      backgroundColor: '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      gap: '0.75rem',
+                    }}
+                  >
+                    {/* Simulated SVG Pareto illustration */}
+                    <div style={{ width: '100%', maxWidth: '260px', height: '100px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                      <div style={{ width: '22%', height: '85%', backgroundColor: '#2563eb', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.65rem', fontWeight: 800 }}>48%</div>
+                      <div style={{ width: '22%', height: '60%', backgroundColor: '#3b82f6', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.65rem', fontWeight: 800 }}>34%</div>
+                      <div style={{ width: '22%', height: '22%', backgroundColor: '#93c5fd', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e3a8a', fontSize: '0.65rem', fontWeight: 700 }}>11%</div>
+                      <div style={{ width: '22%', height: '12%', backgroundColor: '#bfdbfe', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e3a8a', fontSize: '0.65rem', fontWeight: 700 }}>7%</div>
+                    </div>
+
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#0f172a', display: 'block' }}>
+                        Carregue a imagem do Gráfico de Pareto (Excel / Minitab / Foto)
+                      </strong>
+                      <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
+                        Formatos suportados: PNG, JPG, JPEG, WEBP, SVG
+                      </span>
+                    </div>
+
+                    <label
+                      className="btn btn-primary btn-sm"
+                      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                    >
+                      <ImageIcon size={14} /> Selecionar Imagem do Pareto
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleParetoImageUpload}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>⚙️ Máquina (Equipamentos)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaMachine} onChange={(e) => setIshikawaMachine(e.target.value)} placeholder="Condição das matrizes, engates, sensores..." />
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>📦 Material (Insumos)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaMaterial} onChange={(e) => setIshikawaMaterial(e.target.value)} placeholder="Resina PP, masterbatch, fios, alças..." />
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>👥 Mão de Obra (Pessoas)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaManpower} onChange={(e) => setIshikawaManpower(e.target.value)} placeholder="Treinamento, sincronia da equipe, habilidades..." />
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>📏 Medição (Calibração)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaMeasurement} onChange={(e) => setIshikawaMeasurement(e.target.value)} placeholder="Cronometragem, tolerâncias, instrumentos..." />
-              </div>
-              <div style={{ backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                <strong style={{ fontSize: '0.8125rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>🌱 Meio Ambiente (Condições)</strong>
-                <textarea className="form-control" rows={2} value={ishikawaEnvironment} onChange={(e) => setIshikawaEnvironment(e.target.value)} placeholder="Iluminação, layout 5S, calor, ruído..." />
+
+              {/* Right Column: Vital Causes Formulation */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem' }}>
+                    🎯 Causas Vitais Identificadas (os 20% priorizados no Pareto):
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows={4}
+                    value={paretoVitalCauses}
+                    onChange={(e) => setParetoVitalCauses(e.target.value)}
+                    placeholder="Descreva quais são as causas vitais que correspondem a 80% do problema..."
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700 }}>
+                      % Impacto Acumulado Resolvido:
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        value={paretoCumulativePercent}
+                        onChange={(e) => setParetoCumulativePercent(e.target.value === '' ? '' : Number(e.target.value))}
+                        placeholder="80"
+                      />
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2563eb' }}>%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block' }}>
+                      Foco de Ataque Lean:
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
+                      ✓ Alta Prioridade no Plano 5W2H
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1488,8 +1673,16 @@ export default function AdminProjectDetailPage() {
             style={{
               padding: '1.75rem',
               borderRadius: '16px',
-              border: action.masterApproved ? '2px solid #10b981' : '1px dashed #cbd5e1',
-              backgroundColor: action.masterApproved ? '#f0fdf4' : '#ffffff',
+              border: action.masterApproved
+                ? '2px solid #10b981'
+                : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                ? '2px solid #a855f7'
+                : '1px dashed #cbd5e1',
+              backgroundColor: action.masterApproved
+                ? '#f0fdf4'
+                : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                ? '#faf5ff'
+                : '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1497,45 +1690,119 @@ export default function AdminProjectDetailPage() {
               gap: '1.25rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
               <div
                 style={{
-                  width: '50px',
-                  height: '50px',
+                  width: '52px',
+                  height: '52px',
                   borderRadius: '14px',
-                  backgroundColor: action.masterApproved ? '#10b981' : '#f1f5f9',
-                  color: action.masterApproved ? '#ffffff' : '#64748b',
+                  backgroundColor: action.masterApproved
+                    ? '#10b981'
+                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                    ? '#9333ea'
+                    : '#f1f5f9',
+                  color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 900,
-                  fontSize: '1.3rem',
+                  fontSize: '1.35rem',
                 }}
               >
-                {action.masterApproved ? '✓' : '🏢'}
+                {action.masterApproved ? '✓' : action.status === 'aguardando_aprovacao' || action.submittedForApproval ? '⏳' : '🏢'}
               </div>
+
               <div>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: action.masterApproved ? '#065f46' : '#0f172a', margin: 0 }}>
-                  {action.masterApproved ? 'Projeto Homologado pela Entidade Master' : 'Homologação Pendente pela Gestão Master'}
-                </h4>
-                <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0.2rem 0 0' }}>
+                <h4
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    color: action.masterApproved
+                      ? '#065f46'
+                      : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                      ? '#6b21a8'
+                      : '#0f172a',
+                    margin: 0,
+                  }}
+                >
                   {action.masterApproved
-                    ? `Validado por ${action.masterApprovedBy || 'Rafitec'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado aos relatórios financeiros.`
+                    ? 'Projeto Homologado pela Entidade Master'
+                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                    ? 'Aguardando Homologação da Entidade Master'
+                    : currentUser?.role === 'agent'
+                    ? 'Submeter Projeto para Homologação Master'
+                    : 'Homologação Pendente pela Gestão Master'}
+                </h4>
+
+                <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0.25rem 0 0' }}>
+                  {action.masterApproved
+                    ? `Validado por ${action.masterApprovedBy || 'Rafitec'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos.`
+                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
+                    ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)}. Sinalizado no Kanban Geral para homologação pelo Supervisor.`
+                    : currentUser?.role === 'agent'
+                    ? 'Finalizou os 4 quadrantes do PDCA? Submeta para que o supervisor homologue no Kanban Geral da Entidade.'
                     : 'A aprovação oficializa a conclusão do ciclo PDCA e valida o custo evitado na DRE da empresa.'}
                 </p>
               </div>
             </div>
 
-            {!action.masterApproved && (
-              <button
-                onClick={handleMasterApprove}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#059669', borderColor: '#059669' }}
-              >
-                <CheckCircle2 size={16} />
-                <span>Homologar Projeto & Concluir Ciclo PDCA</span>
-              </button>
-            )}
+            {/* Actions for Agent vs Supervisor */}
+            <div>
+              {action.masterApproved ? (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '10px',
+                    backgroundColor: '#dcfce7',
+                    color: '#15803d',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                  }}
+                >
+                  <CheckCircle2 size={16} /> Homologado ✓
+                </span>
+              ) : currentUser?.role === 'agent' ? (
+                <button
+                  type="button"
+                  onClick={handleAgentSubmitForApproval}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    backgroundColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : '#2563eb',
+                    borderColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : '#2563eb',
+                  }}
+                >
+                  <Send size={15} />
+                  <span>
+                    {action.status === 'aguardando_aprovacao'
+                      ? 'Reenviar para Homologação Master'
+                      : 'Submeter para Homologação Master'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleMasterApprove}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    backgroundColor: '#059669',
+                    borderColor: '#059669',
+                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Homologar Projeto & Concluir Ciclo PDCA</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

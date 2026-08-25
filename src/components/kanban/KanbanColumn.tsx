@@ -45,8 +45,15 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       bgBadge: '#fffbeb',
       textBadge: '#b45309',
     },
+    aguardando_aprovacao: {
+      title: 'Aguardando Homologação',
+      subtitle: 'Submetidas para validação Master',
+      dotColor: '#9333ea',
+      bgBadge: '#faf5ff',
+      textBadge: '#7e22ce',
+    },
     concluida: {
-      title: 'Concluídas',
+      title: 'Concluídas / Homologadas',
       subtitle: 'Melhorias Lean consolidadas',
       dotColor: '#10b981',
       bgBadge: '#ecfdf5',
