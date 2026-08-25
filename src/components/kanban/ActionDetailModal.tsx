@@ -406,48 +406,48 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         {isCompleted && action.costBreakdown && (
           <div
             style={{
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
               borderRadius: '10px',
               padding: '0.875rem 1.125rem',
             }}
           >
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
               📊 Composição das Fontes de Economia & Custo Evitado:
             </span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {(action.costBreakdown.productionIncrease || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   🚀 Aumento de Produção: {formatCurrency(action.costBreakdown.productionIncrease!)}
                 </span>
               )}
               {(action.costBreakdown.scrapReduction || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   ♻️ Redução de Refugo/Matéria: {formatCurrency(action.costBreakdown.scrapReduction!)}
                 </span>
               )}
               {(action.costBreakdown.laborSavings || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   👷‍♂️ Mão de Obra / Horas: {formatCurrency(action.costBreakdown.laborSavings!)}
                 </span>
               )}
               {(action.costBreakdown.machineDowntime || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   ⚙️ Paradas de Máquina Evitadas: {formatCurrency(action.costBreakdown.machineDowntime!)}
                 </span>
               )}
               {(action.costBreakdown.toolingAndEnergy || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   ⚡ Energia & Ferramental: {formatCurrency(action.costBreakdown.toolingAndEnergy!)}
                 </span>
               )}
               {(action.costBreakdown.logisticsAndFreight || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   📦 Fretes & Logística: {formatCurrency(action.costBreakdown.logisticsAndFreight!)}
                 </span>
               )}
               {(action.costBreakdown.otherSavings || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#ffffff', color: '#15803d', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid #86efac' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                   ➕ {action.costBreakdown.otherSavingsDescription || 'Outros Custos'}: {formatCurrency(action.costBreakdown.otherSavings!)}
                 </span>
               )}
@@ -742,8 +742,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0.875rem 1rem',
-            backgroundColor: '#ffffff',
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#090e1a',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '10px',
           }}
         >
@@ -754,11 +754,11 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
               }
               alt={action.assignedAgentName || 'Agent'}
-              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }}
+              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255, 255, 255, 0.2)' }}
             />
             <div>
-              <p style={{ fontSize: '0.725rem', color: '#64748b' }}>Agente Responsável:</p>
-              <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
+              <p style={{ fontSize: '0.725rem', color: '#94a3b8' }}>Agente Responsável:</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                 {action.assignedAgentName || 'Não atribuído'}
               </p>
             </div>
@@ -766,8 +766,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
           {action.dueDate && (
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: '0.725rem', color: '#64748b' }}>Prazo Estimado:</p>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a' }}>
+              <p style={{ fontSize: '0.725rem', color: '#94a3b8' }}>Prazo Estimado:</p>
+              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
                 📅 {action.dueDate}
               </p>
             </div>
@@ -779,11 +779,11 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         {/* ========================================================================= */}
         <div
           style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e2e8f0',
+            backgroundColor: '#090e1a',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '14px',
             padding: '1.25rem',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
           }}
         >
           <div
@@ -795,17 +795,17 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
               gap: '0.75rem',
               marginBottom: '1rem',
               paddingBottom: '0.75rem',
-              borderBottom: '1px solid #f1f5f9',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FileCheck size={18} color="#2563eb" />
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                <FileCheck size={18} color="#22d3ee" />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
                   Registro de Atividades & Padronização Lean
                 </h3>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.2rem' }}>
+              <p style={{ fontSize: '0.78125rem', color: '#94a3b8', marginTop: '0.2rem', margin: 0 }}>
                 Cronograma operacional, datas de execução e procedimentos padronizados (SOP / LPP)
               </p>
             </div>
@@ -815,8 +815,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 700,
-                  backgroundColor: '#f1f5f9',
-                  color: '#475569',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  color: '#cbd5e1',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   padding: '0.2rem 0.6rem',
                   borderRadius: '9999px',
                 }}
@@ -841,8 +842,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             <form
               onSubmit={handleAddActivityRecord}
               style={{
-                backgroundColor: '#f8fafc',
-                border: '1px solid #cbd5e1',
+                backgroundColor: '#060a13',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: '12px',
                 padding: '1.25rem',
                 marginBottom: '1.25rem',

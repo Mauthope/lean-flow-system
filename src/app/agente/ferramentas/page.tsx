@@ -38,12 +38,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/cronoanalise',
     title: 'Cronoanálise & Estudo de Tempos Lean',
     badge: 'Chão de Fábrica',
-    badgeColor: '#2563eb',
+    badgeColor: '#22d3ee',
     description:
       'Cronômetro avançado para medição de tempos de ciclo, paradas de linha (NVA), cálculo de Valor Agregado (%) e gráficos de Pareto em tempo real.',
     icon: Timer,
-    iconColor: '#2563eb',
-    iconBg: '#eff6ff',
+    iconColor: '#22d3ee',
+    iconBg: 'rgba(6, 182, 212, 0.15)',
     highlights: ['Multi-Cronômetro por Motivo', 'Classificação VA vs NVA', 'Pareto & Exportação Excel'],
   },
   {
@@ -51,12 +51,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/calculadora-roi',
     title: 'Calculadora de Horas & Custo Evitado',
     badge: 'Essencial',
-    badgeColor: '#059669',
+    badgeColor: '#34d399',
     description:
       'Calcule em segundos as horas economizadas no mês/ano e o Custo Evitado Real (R$) a partir do tempo de ciclo antes e depois da melhoria.',
     icon: Calculator,
-    iconColor: '#059669',
-    iconBg: '#ecfdf5',
+    iconColor: '#34d399',
+    iconBg: 'rgba(16, 185, 129, 0.15)',
     highlights: ['Horas/Mês & Horas/Ano', 'Custo Evitado (R$)', 'Fácil cópia para o Kanban'],
   },
   {
@@ -64,12 +64,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/5-porques',
     title: 'Investigação dos 5 Porquês (Causa Raiz)',
     badge: 'Diagnóstico',
-    badgeColor: '#2563eb',
+    badgeColor: '#c084fc',
     description:
       'Descubra a causa raiz fundamental de defeitos e paradas de máquina para criar contramedidas eficazes e definitivas.',
     icon: HelpCircle,
-    iconColor: '#7c3aed',
-    iconBg: '#f5f3ff',
+    iconColor: '#c084fc',
+    iconBg: 'rgba(168, 85, 247, 0.15)',
     highlights: ['5 Níveis de Causalidade', 'Contramedida & SOP', 'Exportação de texto'],
   },
   {
@@ -77,12 +77,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/matriz-gut',
     title: 'Matriz GUT de Priorização',
     badge: 'Decisão',
-    badgeColor: '#d97706',
+    badgeColor: '#fbbf24',
     description:
       'Avalie Gravidade, Urgência e Tendência (G × U × T) para saber com precisão científica qual problema deve ser atacado primeiro.',
     icon: Target,
-    iconColor: '#ea580c',
-    iconBg: '#fff7ed',
+    iconColor: '#fbbf24',
+    iconBg: 'rgba(245, 158, 11, 0.15)',
     highlights: ['Score de 1 a 125', 'Classificação de Risco', 'Critérios objetivos'],
   },
   {
@@ -90,12 +90,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/8-desperdicios',
     title: 'Guia dos 8 Desperdícios Lean (Muda)',
     badge: 'Consulta',
-    badgeColor: '#4b5563',
+    badgeColor: '#94a3b8',
     description:
       'Dicionário prático com exemplos reais de chão de fábrica para identificar Superprodução, Espera, Transporte, Estoque e Defeitos.',
     icon: Lightbulb,
-    iconColor: '#eab308',
-    iconBg: '#fefce8',
+    iconColor: '#fbbf24',
+    iconBg: 'rgba(245, 158, 11, 0.15)',
     highlights: ['8 Desperdícios (Muda)', 'Exemplos Operacionais', 'Dicas de Eliminação'],
   },
   {
@@ -103,12 +103,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/gerador-sop',
     title: 'Gerador de Procedimento Padrão (SOP)',
     badge: 'Padronização',
-    badgeColor: '#0891b2',
+    badgeColor: '#22d3ee',
     description:
       'Crie rapidamente a Folha de Instrução de Trabalho e Lição Ponto a Ponto (LPP) para garantir que a melhoria não se perca.',
     icon: FileCheck,
-    iconColor: '#0891b2',
-    iconBg: '#ecfeff',
+    iconColor: '#22d3ee',
+    iconBg: 'rgba(6, 182, 212, 0.15)',
     highlights: ['Passo a Passo Padrão', 'Pontos Críticos de Segurança', 'Imprimível / PDF'],
   },
   {
@@ -116,12 +116,12 @@ const LEAN_TOOLS: ToolCardItem[] = [
     href: '/agente/ferramentas/auditoria-5s',
     title: 'Checklist Rápido de Auditoria 5S',
     badge: 'Auditoria',
-    badgeColor: '#10b981',
+    badgeColor: '#34d399',
     description:
       'Avalie a conformidade dos 5 Sensos (Utilização, Organização, Limpeza, Padronização e Disciplina) diretamente no posto de trabalho.',
     icon: CheckSquare,
-    iconColor: '#10b981',
-    iconBg: '#f0fdf4',
+    iconColor: '#34d399',
+    iconBg: 'rgba(16, 185, 129, 0.15)',
     highlights: ['5 Sensos do Kaizen', 'Cálculo de Conformidade %', 'Plano de Ação Imediato'],
   },
 ];
@@ -132,7 +132,7 @@ export default function LeanToolsIndexPage() {
       {/* Header Banner */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #0b1329 0%, #1e3a8a 100%)',
+          background: 'linear-gradient(135deg, #091326 0%, #0d2d3a 100%)',
           borderRadius: '16px',
           padding: '1.75rem 2rem',
           color: '#ffffff',
@@ -141,7 +141,8 @@ export default function LeanToolsIndexPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1.25rem',
-          boxShadow: '0 10px 25px -5px rgba(11, 19, 41, 0.3)',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
         }}
       >
         <div>
@@ -149,11 +150,12 @@ export default function LeanToolsIndexPage() {
             <span
               style={{
                 fontSize: '0.725rem',
-                fontWeight: 700,
-                backgroundColor: 'rgba(59, 130, 246, 0.3)',
-                color: '#93c5fd',
+                fontWeight: 800,
+                backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                color: '#22d3ee',
                 padding: '0.15rem 0.5rem',
                 borderRadius: '9999px',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.3rem',
@@ -162,7 +164,7 @@ export default function LeanToolsIndexPage() {
               <Sparkles size={12} /> HUB DE MÉTODOS LEAN
             </span>
           </div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
             Ferramentas Operacionais Lean
           </h2>
           <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '620px', marginTop: '0.25rem' }}>
@@ -176,14 +178,14 @@ export default function LeanToolsIndexPage() {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
             padding: '0.625rem 1rem',
             borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
           }}
         >
-          <Smartphone size={20} color="#93c5fd" />
-          <span style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 600 }}>
+          <Smartphone size={20} color="#22d3ee" />
+          <span style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700 }}>
             Telas Otimizadas para Celular
           </span>
         </div>
@@ -210,7 +212,8 @@ export default function LeanToolsIndexPage() {
                 padding: '1.5rem',
                 borderRadius: '16px',
                 transition: 'all 0.2s ease',
-                border: '1px solid #e2e8f0',
+                backgroundColor: '#0f172a',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
               <div>
@@ -229,6 +232,7 @@ export default function LeanToolsIndexPage() {
                       height: '46px',
                       borderRadius: '12px',
                       backgroundColor: tool.iconBg,
+                      border: `1px solid ${tool.iconColor}44`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -240,12 +244,12 @@ export default function LeanToolsIndexPage() {
                   <span
                     style={{
                       fontSize: '0.725rem',
-                      fontWeight: 700,
-                      backgroundColor: `${tool.badgeColor}15`,
+                      fontWeight: 800,
+                      backgroundColor: `${tool.badgeColor}18`,
                       color: tool.badgeColor,
                       padding: '0.2rem 0.6rem',
                       borderRadius: '9999px',
-                      border: `1px solid ${tool.badgeColor}30`,
+                      border: `1px solid ${tool.badgeColor}44`,
                       textTransform: 'uppercase',
                     }}
                   >
@@ -258,14 +262,15 @@ export default function LeanToolsIndexPage() {
                   style={{
                     fontSize: '1.15rem',
                     fontWeight: 800,
-                    color: '#0f172a',
+                    color: '#ffffff',
                     marginBottom: '0.5rem',
                     lineHeight: 1.3,
+                    fontFamily: 'var(--font-heading)',
                   }}
                 >
                   {tool.title}
                 </h3>
-                <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
                   {tool.description}
                 </p>
 
@@ -277,8 +282,9 @@ export default function LeanToolsIndexPage() {
                       style={{
                         fontSize: '0.725rem',
                         fontWeight: 600,
-                        backgroundColor: '#f1f5f9',
-                        color: '#334155',
+                        backgroundColor: '#090e1a',
+                        color: '#cbd5e1',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         padding: '0.2rem 0.5rem',
                         borderRadius: '6px',
                       }}

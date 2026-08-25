@@ -42,13 +42,13 @@ export const MobileBottomNav: React.FC = () => {
         left: 0,
         right: 0,
         height: '62px',
-        backgroundColor: '#ffffff',
-        borderTop: '1px solid #e2e8f0',
+        backgroundColor: '#060a13',
+        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
         display: 'none', // Controlled by CSS @media (max-width: 1024px)
         alignItems: 'center',
         justifyContent: 'space-around',
         zIndex: 80,
-        boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)',
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)',
         padding: '0 0.5rem',
       }}
     >
@@ -66,7 +66,7 @@ export const MobileBottomNav: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.2rem',
-              color: isActive ? '#2563eb' : '#64748b',
+              color: isActive ? '#22d3ee' : '#94a3b8',
               textDecoration: 'none',
               fontSize: '0.6875rem',
               fontWeight: isActive ? 800 : 600,
@@ -76,7 +76,7 @@ export const MobileBottomNav: React.FC = () => {
               transition: 'color 0.15s ease',
             }}
           >
-            <Icon size={19} color={isActive ? '#2563eb' : '#64748b'} />
+            <Icon size={19} color={isActive ? '#22d3ee' : '#94a3b8'} />
             <span>{item.label}</span>
           </Link>
         );
@@ -91,18 +91,17 @@ export const MobileBottomNav: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '0.2rem',
-          color: '#64748b',
+          color: '#94a3b8',
           backgroundColor: 'transparent',
           border: 'none',
           fontSize: '0.6875rem',
           fontWeight: 600,
           padding: '0.35rem 0.5rem',
           borderRadius: '8px',
-          minWidth: '54px',
           cursor: 'pointer',
         }}
       >
-        <Menu size={19} color="#64748b" />
+        <Menu size={19} color="#94a3b8" />
         <span>Menu</span>
       </button>
     </nav>

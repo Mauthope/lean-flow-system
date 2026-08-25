@@ -62,10 +62,10 @@ export default function AdminTriagemPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Central de Triagem de Demandas Públicas
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
             Analise as sugestões e problemas abertos por colaboradores e fornecedores via link público
           </p>
         </div>
@@ -76,15 +76,15 @@ export default function AdminTriagemPage() {
           className="btn btn-secondary btn-sm"
           style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
         >
-          <ExternalLink size={14} /> Abrir Link Público
+          <ExternalLink size={14} color="#22d3ee" /> Abrir Link Público
         </Link>
       </div>
 
       {/* Filter and Tabs */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '12px',
           padding: '1rem',
           display: 'flex',
@@ -94,17 +94,17 @@ export default function AdminTriagemPage() {
           gap: '1rem',
         }}
       >
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setFilterType('pending')}
             style={{
               padding: '0.45rem 0.85rem',
               borderRadius: '8px',
-              border: filterType === 'pending' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-              backgroundColor: filterType === 'pending' ? '#eff6ff' : '#ffffff',
-              color: filterType === 'pending' ? '#1d4ed8' : '#64748b',
+              border: filterType === 'pending' ? '1px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: filterType === 'pending' ? 'rgba(6, 182, 212, 0.16)' : '#090e1a',
+              color: filterType === 'pending' ? '#22d3ee' : '#94a3b8',
               fontSize: '0.8125rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -119,11 +119,11 @@ export default function AdminTriagemPage() {
             style={{
               padding: '0.45rem 0.85rem',
               borderRadius: '8px',
-              border: filterType === 'all' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-              backgroundColor: filterType === 'all' ? '#eff6ff' : '#ffffff',
-              color: filterType === 'all' ? '#1d4ed8' : '#64748b',
+              border: filterType === 'all' ? '1px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: filterType === 'all' ? 'rgba(6, 182, 212, 0.16)' : '#090e1a',
+              color: filterType === 'all' ? '#22d3ee' : '#94a3b8',
               fontSize: '0.8125rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: 'pointer',
             }}
           >
@@ -135,11 +135,11 @@ export default function AdminTriagemPage() {
             style={{
               padding: '0.45rem 0.85rem',
               borderRadius: '8px',
-              border: filterType === 'rejected' ? '2px solid #ef4444' : '1px solid #e2e8f0',
-              backgroundColor: filterType === 'rejected' ? '#fef2f2' : '#ffffff',
-              color: filterType === 'rejected' ? '#b91c1c' : '#64748b',
+              border: filterType === 'rejected' ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: filterType === 'rejected' ? 'rgba(239, 68, 68, 0.15)' : '#090e1a',
+              color: filterType === 'rejected' ? '#f87171' : '#94a3b8',
               fontSize: '0.8125rem',
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: 'pointer',
             }}
           >
@@ -172,11 +172,11 @@ export default function AdminTriagemPage() {
             style={{
               padding: '3rem 2rem',
               textAlign: 'center',
-              color: '#64748b',
+              color: '#94a3b8',
             }}
           >
-            <Inbox size={40} color="#cbd5e1" style={{ margin: '0 auto 1rem' }} />
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>
+            <Inbox size={40} color="#64748b" style={{ margin: '0 auto 1rem' }} />
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Nenhuma demanda encontrada nesta categoria
             </h3>
             <p style={{ fontSize: '0.8125rem', color: '#94a3b8', marginTop: '0.25rem' }}>
@@ -208,8 +208,8 @@ export default function AdminTriagemPage() {
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: '0.75rem',
-                          fontWeight: 700,
-                          color: '#64748b',
+                          fontWeight: 800,
+                          color: '#22d3ee',
                         }}
                       >
                         {demand.protocol}
@@ -217,31 +217,31 @@ export default function AdminTriagemPage() {
                       <StatusBadge status={demand.status} />
                       <PriorityBadge priority={demand.priority} />
                       <WasteCategoryBadge category={demand.wasteCategory} />
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        Setor: <strong>{demand.originSectorName}</strong>
+                      <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                        Setor: <strong style={{ color: '#ffffff' }}>{demand.originSectorName}</strong>
                       </span>
                     </div>
 
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.4rem' }}>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
                       {demand.title}
                     </h3>
-                    <p style={{ fontSize: '0.875rem', color: '#475569', lineHeight: 1.45, marginBottom: '0.75rem' }}>
+                    <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.45, marginBottom: '0.75rem' }}>
                       {demand.description}
                     </p>
 
                     {/* Rejection Note */}
                     {isRejected && (
-                      <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.75rem' }}>
-                        <p style={{ fontSize: '0.8125rem', color: '#991b1b', fontWeight: 600 }}>
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '8px', padding: '0.625rem', marginBottom: '0.75rem' }}>
+                        <p style={{ fontSize: '0.8125rem', color: '#f87171', fontWeight: 600 }}>
                           Justificativa da Recusa: {demand.rejectionReason}
                         </p>
                       </div>
                     )}
 
                     {/* Solicitante info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: '#64748b' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: '#94a3b8' }}>
                       <span>
-                        👤 Solicitante: <strong>{demand.requesterName}</strong> {demand.requesterDepartment ? `(${demand.requesterDepartment})` : ''}
+                        👤 Solicitante: <strong style={{ color: '#f8fafc' }}>{demand.requesterName}</strong> {demand.requesterDepartment ? `(${demand.requesterDepartment})` : ''}
                       </span>
                       <span>📧 {demand.requesterEmail}</span>
                       <span>📅 Recebido em {formatDateTime(demand.createdAt)}</span>
@@ -252,8 +252,8 @@ export default function AdminTriagemPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                     {isAssigned && (
                       <div style={{ textAlign: 'right', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Agente Responsável</span>
-                        <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#059669' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Agente Responsável</span>
+                        <p style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34d399' }}>
                           ✓ {demand.assignedAgentName}
                         </p>
                       </div>

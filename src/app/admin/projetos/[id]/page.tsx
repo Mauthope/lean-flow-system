@@ -452,7 +452,7 @@ export default function AdminProjectDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#64748b' }}>
+      <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#94a3b8' }}>
         <p style={{ fontSize: '1rem', fontWeight: 600 }}>Carregando dados completos do projeto PDCA...</p>
       </div>
     );
@@ -460,9 +460,9 @@ export default function AdminProjectDetailPage() {
 
   if (!action) {
     return (
-      <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '3rem auto' }}>
+      <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '600px', margin: '3rem auto', backgroundColor: '#0f172a' }}>
         <AlertTriangle size={48} color="#f59e0b" style={{ margin: '0 auto 1rem' }} />
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>
           Projeto Não Encontrado
         </h3>
         <Link href={currentUser?.role === 'agent' ? '/agente/kanban' : '/admin/kanban'} className="btn btn-primary btn-sm">
@@ -480,14 +480,14 @@ export default function AdminProjectDetailPage() {
           <Link
             href={currentUser?.role === 'agent' ? '/agente/kanban' : '/admin/kanban'}
             className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#cbd5e1' }}
           >
-            <ArrowLeft size={15} /> Voltar ao Kanban
+            <ArrowLeft size={15} color="#22d3ee" /> Voltar ao Kanban
           </Link>
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 10, 19, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+              <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 10, 19, 0.8)', border: '1px solid rgba(255, 255, 255, 0.12)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
                 {action.protocol}
               </span>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
@@ -512,14 +512,14 @@ export default function AdminProjectDetailPage() {
             <span>{isSaved ? 'Alterações Salvas!' : 'Salvar Projeto'}</span>
           </button>
 
-          <button onClick={handleCopyLink} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <button onClick={handleCopyLink} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}>
             <Share2 size={14} /> {copied ? 'Copiado!' : 'Compartilhar'}
           </button>
 
           <button
             onClick={handlePrint}
             className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}
             title="Visualizar e Imprimir Relatório A3 Paisagem (4 Quadrantes PDCA)"
           >
             <Printer size={14} /> Relatório A3 (Paisagem)
@@ -552,6 +552,7 @@ export default function AdminProjectDetailPage() {
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'plan' ? '0 0 15px rgba(6, 182, 212, 0.2)' : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -578,6 +579,7 @@ export default function AdminProjectDetailPage() {
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'do' ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -604,6 +606,7 @@ export default function AdminProjectDetailPage() {
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'check' ? '0 0 15px rgba(168, 85, 247, 0.2)' : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -630,6 +633,7 @@ export default function AdminProjectDetailPage() {
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
+            boxShadow: activeTab === 'act' ? '0 0 15px rgba(16, 185, 129, 0.2)' : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -651,17 +655,17 @@ export default function AdminProjectDetailPage() {
       {activeTab === 'plan' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Card: Definição do Problema & Meta */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <BookOpen size={20} color="#2563eb" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <BookOpen size={20} color="#22d3ee" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 1.1 Definição do Problema & Meta do Projeto
               </h3>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
                   Declaração Formal do Problema / Oportunidade:
                 </label>
                 <textarea
@@ -670,35 +674,38 @@ export default function AdminProjectDetailPage() {
                   value={problemStatement}
                   onChange={(e) => setProblemStatement(e.target.value)}
                   placeholder="Descreva o que está ocorrendo no chão de fábrica, qual máquina/setor e o impacto gerado..."
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                 />
               </div>
 
               {/* Indicadores Baseline vs Meta */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Nome do Indicador-Chave:</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Nome do Indicador-Chave:</label>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Ex: Tempo de Setup da Extrusora"
                     value={targetMetricName}
                     onChange={(e) => setTargetMetricName(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Unidade de Medida:</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Unidade de Medida:</label>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Ex: minutos, %, peças/h"
                     value={targetMetricUnit}
                     onChange={(e) => setTargetMetricUnit(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f87171' }}>
                     🔴 Baseline Inicial (Antes):
                   </label>
                   <input
@@ -707,11 +714,12 @@ export default function AdminProjectDetailPage() {
                     placeholder="Ex: 52"
                     value={baselineValue}
                     onChange={(e) => setBaselineValue(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(239, 68, 68, 0.35)', color: '#f87171', fontWeight: 800 }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#34d399' }}>
                     🟢 Meta Alvo (Planejado):
                   </label>
                   <input
@@ -720,11 +728,12 @@ export default function AdminProjectDetailPage() {
                     placeholder="Ex: 15"
                     value={targetGoalValue}
                     onChange={(e) => setTargetGoalValue(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(16, 185, 129, 0.35)', color: '#34d399', fontWeight: 800 }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbbf24' }}>
                     ⚠️ Custo do Problema (R$/mês):
                   </label>
                   <input
@@ -733,6 +742,7 @@ export default function AdminProjectDetailPage() {
                     placeholder="Ex: 18500"
                     value={currentProblemCostMonthly}
                     onChange={(e) => setCurrentProblemCostMonthly(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(245, 158, 11, 0.35)', color: '#fbbf24', fontWeight: 800 }}
                   />
                 </div>
               </div>
@@ -740,10 +750,10 @@ export default function AdminProjectDetailPage() {
           </div>
 
           {/* Card: 5 Porquês */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <HelpCircle size={20} color="#2563eb" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <HelpCircle size={20} color="#22d3ee" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 1.2 Análise dos 5 Porquês (Causa Raiz)
               </h3>
             </div>
@@ -756,12 +766,13 @@ export default function AdminProjectDetailPage() {
                       width: '28px',
                       height: '28px',
                       borderRadius: '50%',
-                      backgroundColor: index === 4 ? '#ef4444' : '#eff6ff',
-                      color: index === 4 ? '#ffffff' : '#2563eb',
+                      backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                      color: index === 4 ? '#f87171' : '#22d3ee',
+                      border: `1px solid ${index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontWeight: 800,
+                      fontWeight: 900,
                       fontSize: '0.75rem',
                       flexShrink: 0,
                     }}
@@ -772,9 +783,10 @@ export default function AdminProjectDetailPage() {
                     type="text"
                     className="form-control"
                     style={{
-                      fontWeight: index === 4 ? 700 : 400,
-                      borderColor: index === 4 ? '#fca5a5' : undefined,
-                      backgroundColor: index === 4 ? '#fff5f5' : undefined,
+                      fontWeight: index === 4 ? 800 : 400,
+                      borderColor: index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.12)',
+                      backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.08)' : '#090e1a',
+                      color: '#ffffff',
                     }}
                     placeholder={index === 4 ? '5. Causa Raiz definitiva...' : `Por quê ${index + 1}...`}
                     value={why}
@@ -790,15 +802,15 @@ export default function AdminProjectDetailPage() {
           </div>
 
           {/* Card: Comprovação por Gráfico de Pareto (Regra 80/20) */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BarChart3 size={20} color="#2563eb" />
+                <BarChart3 size={20} color="#22d3ee" />
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                     1.3 Comprovação por Gráfico de Pareto (Regra 80/20)
                   </h3>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.15rem 0 0' }}>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
                     Identifique e comprove visualmente os 20% das causas vitais que geram 80% das perdas.
                   </p>
                 </div>
@@ -809,11 +821,11 @@ export default function AdminProjectDetailPage() {
                   style={{
                     fontSize: '0.75rem',
                     fontWeight: 800,
-                    color: '#1e40af',
-                    backgroundColor: '#eff6ff',
+                    color: '#22d3ee',
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
                     padding: '0.25rem 0.65rem',
                     borderRadius: '8px',
-                    border: '1px solid #bfdbfe',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
                   }}
                 >
                   ⚡ REGRA 80/20
@@ -825,7 +837,7 @@ export default function AdminProjectDetailPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem' }}>
               {/* Left Column: Pareto Chart Image / Visualizer */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#334155' }}>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#cbd5e1' }}>
                   📊 Imagem do Gráfico de Pareto Gerado:
                 </span>
 
@@ -835,33 +847,33 @@ export default function AdminProjectDetailPage() {
                       position: 'relative',
                       borderRadius: '12px',
                       overflow: 'hidden',
-                      border: '1px solid #cbd5e1',
-                      backgroundColor: '#ffffff',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      backgroundColor: '#090e1a',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
                     }}
                   >
                     <img
                       src={paretoImageUrl}
                       alt="Gráfico de Pareto 80/20"
-                      style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', backgroundColor: '#f8fafc' }}
+                      style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', backgroundColor: '#090e1a' }}
                     />
                     <div
                       style={{
                         padding: '0.5rem 0.75rem',
-                        backgroundColor: '#ffffff',
-                        borderTop: '1px solid #e2e8f0',
+                        backgroundColor: '#0d1527',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         fontSize: '0.75rem',
                       }}
                     >
-                      <span style={{ color: '#475569', fontWeight: 600 }}>{paretoImageName || 'Grafico_Pareto_80_20.png'}</span>
+                      <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{paretoImageName || 'Grafico_Pareto_80_20.png'}</span>
                       <button
                         type="button"
                         onClick={handleRemoveParetoImage}
                         className="btn btn-sm"
-                        style={{ backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca', padding: '0.2rem 0.5rem' }}
+                        style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.2rem 0.5rem' }}
                       >
                         <Trash2 size={12} /> Remover Imagem
                       </button>
@@ -872,8 +884,8 @@ export default function AdminProjectDetailPage() {
                     style={{
                       padding: '1.5rem 1rem',
                       borderRadius: '12px',
-                      border: '1.5px dashed #93c5fd',
-                      backgroundColor: '#f8fafc',
+                      border: '1.5px dashed rgba(6, 182, 212, 0.4)',
+                      backgroundColor: '#090e1a',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -882,18 +894,18 @@ export default function AdminProjectDetailPage() {
                     }}
                   >
                     {/* Simulated SVG Pareto illustration */}
-                    <div style={{ width: '100%', maxWidth: '260px', height: '100px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                      <div style={{ width: '22%', height: '85%', backgroundColor: '#2563eb', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.65rem', fontWeight: 800 }}>48%</div>
-                      <div style={{ width: '22%', height: '60%', backgroundColor: '#3b82f6', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.65rem', fontWeight: 800 }}>34%</div>
-                      <div style={{ width: '22%', height: '22%', backgroundColor: '#93c5fd', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e3a8a', fontSize: '0.65rem', fontWeight: 700 }}>11%</div>
-                      <div style={{ width: '22%', height: '12%', backgroundColor: '#bfdbfe', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1e3a8a', fontSize: '0.65rem', fontWeight: 700 }}>7%</div>
+                    <div style={{ width: '100%', maxWidth: '260px', height: '100px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#060a13', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ width: '22%', height: '85%', backgroundColor: '#06b6d4', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 900 }}>48%</div>
+                      <div style={{ width: '22%', height: '60%', backgroundColor: '#14b8a6', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 900 }}>34%</div>
+                      <div style={{ width: '22%', height: '22%', backgroundColor: '#38bdf8', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 800 }}>11%</div>
+                      <div style={{ width: '22%', height: '12%', backgroundColor: '#64748b', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.65rem', fontWeight: 700 }}>7%</div>
                     </div>
 
                     <div>
-                      <strong style={{ fontSize: '0.85rem', color: '#0f172a', display: 'block' }}>
+                      <strong style={{ fontSize: '0.85rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
                         Carregue a imagem do Gráfico de Pareto (Excel / Minitab / Foto)
                       </strong>
-                      <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
+                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
                         Formatos suportados: PNG, JPG, JPEG, WEBP, SVG
                       </span>
                     </div>
@@ -917,7 +929,7 @@ export default function AdminProjectDetailPage() {
               {/* Right Column: Vital Causes Formulation */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem' }}>
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#cbd5e1' }}>
                     🎯 Causas Vitais Identificadas (os 20% priorizados no Pareto):
                   </label>
                   <textarea
@@ -926,12 +938,13 @@ export default function AdminProjectDetailPage() {
                     value={paretoVitalCauses}
                     onChange={(e) => setParetoVitalCauses(e.target.value)}
                     placeholder="Descreva quais são as causas vitais que correspondem a 80% do problema..."
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: '#090e1a', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>
                       % Impacto Acumulado Resolvido:
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -941,16 +954,17 @@ export default function AdminProjectDetailPage() {
                         value={paretoCumulativePercent}
                         onChange={(e) => setParetoCumulativePercent(e.target.value === '' ? '' : Number(e.target.value))}
                         placeholder="80"
+                        style={{ backgroundColor: '#060a13', borderColor: 'rgba(6, 182, 212, 0.35)', color: '#22d3ee', fontWeight: 800 }}
                       />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#2563eb' }}>%</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee' }}>%</span>
                     </div>
                   </div>
 
                   <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#475569', display: 'block' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', display: 'block' }}>
                       Foco de Ataque Lean:
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
                       ✓ Alta Prioridade no Plano 5W2H
                     </span>
                   </div>
@@ -967,11 +981,11 @@ export default function AdminProjectDetailPage() {
       {activeTab === 'do' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* 5W2H Action Plan Table */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckSquare size={20} color="#d97706" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                <CheckSquare size={20} color="#fbbf24" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   2.1 Plano de Ação 5W2H & Execução ({checklistItems.filter((c) => c.completed).length}/{checklistItems.length} concluídas)
                 </h3>
               </div>
@@ -990,8 +1004,8 @@ export default function AdminProjectDetailPage() {
                     style={{
                       padding: '1rem',
                       borderRadius: '12px',
-                      border: item.completed ? '1.5px solid #a7f3d0' : '1px solid #e2e8f0',
-                      backgroundColor: item.completed ? '#f0fdf4' : '#ffffff',
+                      border: item.completed ? '1.5px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+                      backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.12)' : '#090e1a',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -1004,13 +1018,13 @@ export default function AdminProjectDetailPage() {
                         type="checkbox"
                         checked={item.completed}
                         onChange={() => handleToggleChecklistItem(item.id)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10b981' }}
                       />
                       <div>
-                        <strong style={{ fontSize: '0.9rem', color: item.completed ? '#065f46' : '#0f172a', textDecoration: item.completed ? 'line-through' : 'none' }}>
+                        <strong style={{ fontSize: '0.9rem', color: item.completed ? '#34d399' : '#ffffff', textDecoration: item.completed ? 'line-through' : 'none', fontFamily: 'var(--font-heading)' }}>
                           {index + 1}. {item.label}
                         </strong>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#64748b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#94a3b8' }}>
                           <span>👤 {item.responsibleName || 'Agente'}</span>
                           {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
                           {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
@@ -1022,11 +1036,12 @@ export default function AdminProjectDetailPage() {
                     <span
                       style={{
                         fontSize: '0.725rem',
-                        fontWeight: 700,
+                        fontWeight: 800,
                         padding: '0.2rem 0.6rem',
                         borderRadius: '6px',
-                        backgroundColor: item.completed ? '#dcfce7' : '#f1f5f9',
-                        color: item.completed ? '#15803d' : '#475569',
+                        backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                        color: item.completed ? '#34d399' : '#94a3b8',
+                        border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
                       }}
                     >
                       {item.completed ? 'Concluída ✓' : 'Pendente'}
@@ -1037,62 +1052,67 @@ export default function AdminProjectDetailPage() {
             </div>
 
             {/* Add Action Form */}
-            <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem' }}>
+            <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem' }}>
                 ➕ Adicionar Nova Atividade 5W2H:
               </span>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 80px auto', gap: '0.5rem', alignItems: 'end' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem' }}>O que fazer (Ação): *</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>O que fazer (Ação): *</label>
                   <input
                     type="text"
                     className="form-control form-control-sm"
                     placeholder="Ex: Instalar engates rápidos"
                     value={newActionLabel}
                     onChange={(e) => setNewActionLabel(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     required
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Responsável (Quem):</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Responsável (Quem):</label>
                   <input
                     type="text"
                     className="form-control form-control-sm"
                     placeholder="Ex: Juliana Mendes"
                     value={newActionResp}
                     onChange={(e) => setNewActionResp(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Data Início:</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Início:</label>
                   <input
                     type="date"
                     className="form-control form-control-sm"
                     value={newActionStart}
                     onChange={(e) => setNewActionStart(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Data Fim:</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Fim:</label>
                   <input
                     type="date"
                     className="form-control form-control-sm"
                     value={newActionEnd}
                     onChange={(e) => setNewActionEnd(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem' }}>Horas:</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Horas:</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     placeholder="12"
                     value={newActionHours}
                     onChange={(e) => setNewActionHours(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
@@ -1111,35 +1131,35 @@ export default function AdminProjectDetailPage() {
       {activeTab === 'check' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Real Indicator Achieved (Antes vs Depois) */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <TrendingUp size={20} color="#7c3aed" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <TrendingUp size={20} color="#c084fc" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 3.1 Eficácia Técnica (Antes vs. Depois)
               </h3>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-              <div style={{ padding: '1rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#991b1b', textTransform: 'uppercase' }}>🔴 Baseline Inicial (Antes):</span>
-                <strong style={{ fontSize: '1.4rem', color: '#991b1b', display: 'block', marginTop: '0.25rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>🔴 Baseline Inicial (Antes):</span>
+                <strong style={{ fontSize: '1.4rem', color: '#f87171', display: 'block', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
                   {baselineValue || '—'} {targetMetricUnit}
                 </strong>
               </div>
 
-              <div style={{ padding: '1rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase' }}>🎯 Meta Planejada:</span>
-                <strong style={{ fontSize: '1.4rem', color: '#1e40af', display: 'block', marginTop: '0.25rem' }}>
+              <div style={{ padding: '1rem', backgroundColor: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.35)', borderRadius: '12px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>🎯 Meta Planejada:</span>
+                <strong style={{ fontSize: '1.4rem', color: '#22d3ee', display: 'block', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
                   {targetGoalValue || '—'} {targetMetricUnit}
                 </strong>
               </div>
 
-              <div style={{ padding: '1rem', backgroundColor: '#ecfdf5', border: '1.5px solid #10b981', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#065f46', textTransform: 'uppercase' }}>🟢 Resultado Real Atingido (Depois):</span>
+              <div style={{ padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1.5px solid rgba(16, 185, 129, 0.4)', borderRadius: '12px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>🟢 Resultado Real Atingido (Depois):</span>
                 <input
                   type="number"
                   className="form-control"
-                  style={{ marginTop: '0.35rem', fontWeight: 900, fontSize: '1.2rem', color: '#065f46' }}
+                  style={{ marginTop: '0.35rem', fontWeight: 900, fontSize: '1.2rem', color: '#34d399', backgroundColor: '#090e1a', borderColor: 'rgba(16, 185, 129, 0.4)' }}
                   placeholder="Ex: 16"
                   value={achievedValue}
                   onChange={(e) => setAchievedValue(e.target.value === '' ? '' : Number(e.target.value))}
@@ -1151,136 +1171,146 @@ export default function AdminProjectDetailPage() {
           {/* DRE Financeira do Projeto: CUSTOS vs GANHOS */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
             {/* 🔴 COLUNA 1: CUSTOS / INVESTIMENTO DO PROJETO (Capex + Opex) */}
-            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #ef4444' }}>
+            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #ef4444', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <TrendingDown size={18} color="#ef4444" />
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                     Custos do Projeto (Investimento)
                   </h3>
                 </div>
-                <strong style={{ fontSize: '1.1rem', color: '#dc2626' }}>
+                <strong style={{ fontSize: '1.1rem', color: '#f87171', fontFamily: 'var(--font-heading)' }}>
                   {formatCurrency(totalInvestmentCost)}
                 </strong>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>🔧 Peças, Dispositivos & Sensores (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>🔧 Peças, Dispositivos & Sensores (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={partsAndEquipment}
                     onChange={(e) => setPartsAndEquipment(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>⚙️ Serviços de Terceiros / Usinagem (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚙️ Serviços de Terceiros / Usinagem (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={thirdPartyServices}
                     onChange={(e) => setThirdPartyServices(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>⏱️ Horas Equipe (h):</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⏱️ Horas Equipe (h):</label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
                       value={internalLaborHours}
                       onChange={(e) => setInternalLaborHours(Number(e.target.value) || 0)}
+                      style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     />
                   </div>
 
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem' }}>💰 Custo/Hora (R$/h):</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>💰 Custo/Hora (R$/h):</label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
                       value={laborHourlyRate}
                       onChange={(e) => setLaborHourlyRate(Number(e.target.value) || 45)}
+                      style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     />
                   </div>
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>💡 Outras Despesas Operacionais (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>💡 Outras Despesas Operacionais (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={otherCosts}
                     onChange={(e) => setOtherCosts(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
               </div>
             </div>
 
             {/* 🟢 COLUNA 2: GANHOS BRUTOS / CUSTO EVITADO (7 Fontes) */}
-            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #10b981' }}>
+            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <TrendingUp size={18} color="#10b981" />
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  <TrendingUp size={18} color="#34d399" />
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                     Ganhos Brutos (7 Fontes)
                   </h3>
                 </div>
-                <strong style={{ fontSize: '1.1rem', color: '#059669' }}>
+                <strong style={{ fontSize: '1.1rem', color: '#34d399', fontFamily: 'var(--font-heading)' }}>
                   {formatCurrency(totalGrossSavings)}
                 </strong>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>⚙️ Redução de Paradas de Máquina / OEE (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚙️ Redução de Paradas de Máquina / OEE (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={machineDowntime}
                     onChange={(e) => setMachineDowntime(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>⏱️ Mão de Obra / Horas Economizadas (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⏱️ Mão de Obra / Horas Economizadas (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={laborSavings}
                     onChange={(e) => setLaborSavings(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>♻️ Redução de Refugo / Matéria-Prima (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>♻️ Redução de Refugo / Matéria-Prima (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={scrapReduction}
                     onChange={(e) => setScrapReduction(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>⚡ Ferramental, Energia & Insumos (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚡ Ferramental, Energia & Insumos (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={toolingAndEnergy}
                     onChange={(e) => setToolingAndEnergy(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem' }}>📈 Aumento de Produção / Capacidade Extra (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>📈 Aumento de Produção / Capacidade Extra (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
                     value={productionIncrease}
                     onChange={(e) => setProductionIncrease(Number(e.target.value) || 0)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
               </div>
@@ -1291,62 +1321,63 @@ export default function AdminProjectDetailPage() {
           <div
             style={{
               padding: '1.75rem',
-              backgroundColor: '#0f172a',
+              backgroundColor: '#090e1a',
               color: '#ffffff',
               borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: '1.5rem',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
             }}
           >
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
                 💰 RETORNO LÍQUIDO (LUCRO REAL)
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#34d399', display: 'block', marginTop: '0.35rem' }}>
+              <strong style={{ fontSize: '1.8rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrency(netSavings)}
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                Ganhos Brutos ({formatCurrency(totalGrossSavings)}) - Investimento ({formatCurrency(totalInvestmentCost)})
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Ganhos ({formatCurrency(totalGrossSavings)}) - Custos ({formatCurrency(totalInvestmentCost)})
               </span>
             </div>
 
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
                 📊 RETORNO SOBRE O INVESTIMENTO (ROI)
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#38bdf8', display: 'block', marginTop: '0.35rem' }}>
+              <strong style={{ fontSize: '1.8rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {roiPercentage}%
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                Para cada R$ 1,00 investido, a fábrica obteve {formatCurrency(totalInvestmentCost > 0 ? totalGrossSavings / totalInvestmentCost : 0)} de retorno.
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Para cada R$ 1,00 investido, retorno de {formatCurrency(totalInvestmentCost > 0 ? totalGrossSavings / totalInvestmentCost : 0)}.
               </span>
             </div>
 
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
                 ⏱️ TEMPO DE PAYBACK
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem' }}>
+              <strong style={{ fontSize: '1.8rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {paybackMonths} meses
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                Tempo para recuperar 100% do investimento com base na economia mensal.
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                Recuperação de 100% do valor investido.
               </span>
             </div>
           </div>
 
           {/* 3.3 ANEXOS DE MEMORIAL DE CÁLCULO & DOCUMENTOS TÉCNICOS (PDF) */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Paperclip size={20} color="#7c3aed" />
+                <Paperclip size={20} color="#c084fc" />
                 <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                     3.3 Memorial de Cálculo & Anexos Comprobatórios (PDF)
                   </h3>
-                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.15rem 0 0' }}>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
                     Anexe o memorial de cálculo detalhado, relatórios de cronoanálise, planilhas ou fotos para auditoria e homologação.
                   </p>
                 </div>
@@ -1354,12 +1385,12 @@ export default function AdminProjectDetailPage() {
               <span
                 style={{
                   fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: '#6d28d9',
-                  backgroundColor: '#f5f3ff',
+                  fontWeight: 800,
+                  color: '#c084fc',
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
                   padding: '0.25rem 0.65rem',
                   borderRadius: '8px',
-                  border: '1px solid #ddd6fe',
+                  border: '1px solid rgba(168, 85, 247, 0.35)',
                 }}
               >
                 {attachments.length} documento(s) anexado(s)
@@ -1373,14 +1404,14 @@ export default function AdminProjectDetailPage() {
                   style={{
                     padding: '2rem',
                     textAlign: 'center',
-                    border: '1.5px dashed #cbd5e1',
+                    border: '1.5px dashed rgba(255, 255, 255, 0.12)',
                     borderRadius: '12px',
-                    backgroundColor: '#f8fafc',
-                    color: '#64748b',
+                    backgroundColor: '#090e1a',
+                    color: '#94a3b8',
                   }}
                 >
-                  <FileText size={32} color="#94a3b8" style={{ margin: '0 auto 0.5rem' }} />
-                  <strong style={{ display: 'block', fontSize: '0.875rem', color: '#334155' }}>
+                  <FileText size={32} color="#64748b" style={{ margin: '0 auto 0.5rem' }} />
+                  <strong style={{ display: 'block', fontSize: '0.875rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                     Nenhum memorial de cálculo anexado ainda
                   </strong>
                   <span style={{ fontSize: '0.75rem' }}>
@@ -1398,14 +1429,13 @@ export default function AdminProjectDetailPage() {
                       style={{
                         padding: '1rem 1.25rem',
                         borderRadius: '12px',
-                        border: '1px solid #e2e8f0',
-                        backgroundColor: '#ffffff',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundColor: '#090e1a',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
                         gap: '1rem',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: '280px' }}>
@@ -1414,13 +1444,13 @@ export default function AdminProjectDetailPage() {
                             width: '42px',
                             height: '42px',
                             borderRadius: '10px',
-                            backgroundColor: isPdf ? '#fef2f2' : isSpreadsheet ? '#ecfdf5' : '#f5f3ff',
-                            color: isPdf ? '#dc2626' : isSpreadsheet ? '#059669' : '#7c3aed',
+                            backgroundColor: isPdf ? 'rgba(239, 68, 68, 0.15)' : isSpreadsheet ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                            color: isPdf ? '#f87171' : isSpreadsheet ? '#34d399' : '#c084fc',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0,
-                            border: `1px solid ${isPdf ? '#fecaca' : isSpreadsheet ? '#a7f3d0' : '#ddd6fe'}`,
+                            border: `1px solid ${isPdf ? 'rgba(239, 68, 68, 0.35)' : isSpreadsheet ? 'rgba(16, 185, 129, 0.35)' : 'rgba(168, 85, 247, 0.35)'}`,
                           }}
                         >
                           {isPdf ? <FileText size={22} /> : isSpreadsheet ? <FileSpreadsheet size={22} /> : <File size={22} />}
@@ -1428,7 +1458,7 @@ export default function AdminProjectDetailPage() {
 
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{att.name}</strong>
+                            <strong style={{ fontSize: '0.9rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>{att.name}</strong>
                             <span
                               style={{
                                 fontSize: '0.675rem',
@@ -1436,8 +1466,9 @@ export default function AdminProjectDetailPage() {
                                 padding: '0.1rem 0.45rem',
                                 borderRadius: '6px',
                                 textTransform: 'uppercase',
-                                backgroundColor: att.category === 'memorial_calculo' ? '#eff6ff' : '#f1f5f9',
-                                color: att.category === 'memorial_calculo' ? '#1d4ed8' : '#475569',
+                                backgroundColor: att.category === 'memorial_calculo' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.06)',
+                                color: att.category === 'memorial_calculo' ? '#22d3ee' : '#94a3b8',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
                               }}
                             >
                               {att.category === 'memorial_calculo'
@@ -1449,17 +1480,17 @@ export default function AdminProjectDetailPage() {
                                 : 'Anexo Geral'}
                             </span>
                             {att.sizeFormatted && (
-                              <span style={{ fontSize: '0.725rem', color: '#64748b' }}>({att.sizeFormatted})</span>
+                              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>({att.sizeFormatted})</span>
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#64748b' }}>
-                            <span>👤 Enviado por: <strong>{att.uploadedBy || 'Agente'}</strong></span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+                            <span>👤 Enviado por: <strong style={{ color: '#f8fafc' }}>{att.uploadedBy || 'Agente'}</strong></span>
                             <span>📅 {formatDateTime(att.uploadedAt)}</span>
                           </div>
 
                           {att.description && (
-                            <p style={{ fontSize: '0.78125rem', color: '#475569', margin: '0.35rem 0 0', fontStyle: 'italic' }}>
+                            <p style={{ fontSize: '0.78125rem', color: '#cbd5e1', margin: '0.35rem 0 0', fontStyle: 'italic' }}>
                               “{att.description}”
                             </p>
                           )}
@@ -1472,7 +1503,7 @@ export default function AdminProjectDetailPage() {
                           type="button"
                           onClick={() => handleDownloadAttachment(att)}
                           className="btn btn-secondary btn-sm"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}
                           title="Visualizar ou baixar arquivo"
                         >
                           <Download size={14} /> <span>Baixar / Visualizar</span>
@@ -1486,9 +1517,9 @@ export default function AdminProjectDetailPage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.35rem',
-                            backgroundColor: '#fff1f2',
-                            color: '#e11d48',
-                            border: '1px solid #fecdd3',
+                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                            color: '#f87171',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
                           }}
                           title="Remover este anexo"
                         >
@@ -1504,28 +1535,29 @@ export default function AdminProjectDetailPage() {
             {/* Upload Area */}
             <div
               style={{
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#090e1a',
                 padding: '1.25rem',
                 borderRadius: '14px',
-                border: '1.5px dashed #cbd5e1',
+                border: '1.5px dashed rgba(6, 182, 212, 0.35)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-                <UploadCloud size={18} color="#7c3aed" />
-                <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>
+                <UploadCloud size={18} color="#22d3ee" />
+                <strong style={{ fontSize: '0.85rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                   Anexar Novo Documento / Memorial de Cálculo (PDF, Planilha ou Imagem):
                 </strong>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 1fr', gap: '0.75rem', alignItems: 'end' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
                     Categoria do Documento:
                   </label>
                   <select
                     className="form-control form-control-sm"
                     value={newAttachmentCategory}
                     onChange={(e: any) => setNewAttachmentCategory(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   >
                     <option value="memorial_calculo">📑 Memorial de Cálculo Financeiro</option>
                     <option value="relatorio_tecnico">📊 Relatório Técnico / Cronoanálise</option>
@@ -1535,7 +1567,7 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
                     Descrição / Nota (opcional):
                   </label>
                   <input
@@ -1544,11 +1576,12 @@ export default function AdminProjectDetailPage() {
                     placeholder="Ex: Planilha de cálculo de OEE e perdas térmicas"
                     value={newAttachmentDesc}
                     onChange={(e) => setNewAttachmentDesc(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
                     Selecione o Arquivo (.pdf, .xlsx, .csv, .png):
                   </label>
                   <input
@@ -1556,7 +1589,7 @@ export default function AdminProjectDetailPage() {
                     className="form-control form-control-sm"
                     accept=".pdf,.xlsx,.csv,.xls,.docx,.doc,.png,.jpg,.jpeg"
                     onChange={handleFileUpload}
-                    style={{ padding: '0.35rem 0.5rem', cursor: 'pointer' }}
+                    style={{ padding: '0.35rem 0.5rem', cursor: 'pointer', backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
               </div>
@@ -1571,70 +1604,73 @@ export default function AdminProjectDetailPage() {
       {activeTab === 'act' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Card: Padronização POP / SOP */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <FileCheck size={20} color="#059669" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <FileCheck size={20} color="#34d399" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 4.1 Padronização da Rotina (POP / SOP)
               </h3>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
-              <div style={{ backgroundColor: '#f0fdf4', padding: '1rem', borderRadius: '12px', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <input
                   type="checkbox"
                   id="sopCheck"
                   checked={standardWorkUpdated}
                   onChange={(e) => setStandardWorkUpdated(e.target.checked)}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }}
                 />
-                <label htmlFor="sopCheck" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', cursor: 'pointer' }}>
+                <label htmlFor="sopCheck" style={{ fontSize: '0.85rem', fontWeight: 800, color: '#34d399', cursor: 'pointer' }}>
                   Procedimento Operacional Padrão atualizado e equipe treinada
                 </label>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Código / Referência do Documento:</label>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>Código / Referência do Documento:</label>
                 <input
                   type="text"
                   className="form-control"
                   placeholder="Ex: POP-EXT-042 rev 03 (Troca Rápida de Matriz)"
                   value={standardWorkDocRef}
                   onChange={(e) => setStandardWorkDocRef(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                 />
               </div>
             </div>
           </div>
 
           {/* Card: Yokoten & Lições Aprendidas */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <Award size={20} color="#059669" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <Award size={20} color="#34d399" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 4.2 Yokoten (Replicação em Outras Linhas) & Lições Aprendidas
               </h3>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Linhas / Máquinas para Replicação (Yokoten):</label>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>Linhas / Máquinas para Replicação (Yokoten):</label>
                 <textarea
                   className="form-control"
                   rows={3}
                   placeholder="Ex: Replicar o kit SMED e carrinho de ferramentas nas Extrusoras 01, 02 e 04 no ciclo seguinte..."
                   value={yokotenReplication}
                   onChange={(e) => setYokotenReplication(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                 />
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Lições Aprendidas durante a Execução:</label>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>Lições Aprendidas durante a Execução:</label>
                 <textarea
                   className="form-control"
                   rows={3}
                   placeholder="Ex: O pré-aquecimento externo foi responsável por 80% do ganho sem grandes investimentos..."
                   value={lessonsLearned}
                   onChange={(e) => setLessonsLearned(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                 />
               </div>
             </div>
@@ -1647,15 +1683,15 @@ export default function AdminProjectDetailPage() {
               padding: '1.75rem',
               borderRadius: '16px',
               border: action.masterApproved
-                ? '2px solid #10b981'
+                ? '2px solid rgba(16, 185, 129, 0.5)'
                 : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                ? '2px solid #a855f7'
-                : '1px dashed #cbd5e1',
+                ? '2px solid rgba(168, 85, 247, 0.5)'
+                : '1px dashed rgba(255, 255, 255, 0.15)',
               backgroundColor: action.masterApproved
-                ? '#f0fdf4'
+                ? 'rgba(16, 185, 129, 0.1)'
                 : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                ? '#faf5ff'
-                : '#ffffff',
+                ? 'rgba(168, 85, 247, 0.1)'
+                : '#0f172a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1673,13 +1709,14 @@ export default function AdminProjectDetailPage() {
                     ? '#10b981'
                     : action.status === 'aguardando_aprovacao' || action.submittedForApproval
                     ? '#9333ea'
-                    : '#f1f5f9',
+                    : '#1e293b',
                   color: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 900,
                   fontSize: '1.35rem',
+                  boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none',
                 }}
               >
                 {action.masterApproved ? '✓' : action.status === 'aguardando_aprovacao' || action.submittedForApproval ? '⏳' : '🏢'}
@@ -1689,13 +1726,14 @@ export default function AdminProjectDetailPage() {
                 <h4
                   style={{
                     fontSize: '1.1rem',
-                    fontWeight: 800,
+                    fontWeight: 900,
                     color: action.masterApproved
-                      ? '#065f46'
+                      ? '#34d399'
                       : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                      ? '#6b21a8'
-                      : '#0f172a',
+                      ? '#c084fc'
+                      : '#ffffff',
                     margin: 0,
+                    fontFamily: 'var(--font-heading)',
                   }}
                 >
                   {action.masterApproved
@@ -1707,7 +1745,7 @@ export default function AdminProjectDetailPage() {
                     : 'Homologação Pendente pela Gestão Master'}
                 </h4>
 
-                <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0.25rem 0 0' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
                   {action.masterApproved
                     ? `Validado por ${action.masterApprovedBy || 'Rafitec'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos.`
                     : action.status === 'aguardando_aprovacao' || action.submittedForApproval
@@ -1729,8 +1767,9 @@ export default function AdminProjectDetailPage() {
                     gap: '0.35rem',
                     padding: '0.5rem 1rem',
                     borderRadius: '10px',
-                    backgroundColor: '#dcfce7',
-                    color: '#15803d',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    color: '#34d399',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
                     fontWeight: 800,
                     fontSize: '0.8125rem',
                   }}
@@ -1746,8 +1785,8 @@ export default function AdminProjectDetailPage() {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    backgroundColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : '#2563eb',
-                    borderColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : '#2563eb',
+                    backgroundColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : undefined,
+                    borderColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : undefined,
                   }}
                 >
                   <Send size={15} />
@@ -1761,14 +1800,11 @@ export default function AdminProjectDetailPage() {
                 <button
                   type="button"
                   onClick={handleMasterApprove}
-                  className="btn btn-primary"
+                  className="btn btn-success"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    backgroundColor: '#059669',
-                    borderColor: '#059669',
-                    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
                   }}
                 >
                   <CheckCircle2 size={16} />
@@ -1783,7 +1819,7 @@ export default function AdminProjectDetailPage() {
       {/* Printable / Report Footer */}
       <div
         style={{
-          borderTop: '1px solid #e2e8f0',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           paddingTop: '1.25rem',
           display: 'flex',
           alignItems: 'center',
@@ -1791,11 +1827,11 @@ export default function AdminProjectDetailPage() {
           flexWrap: 'wrap',
           gap: '0.75rem',
           fontSize: '0.78125rem',
-          color: '#64748b',
+          color: '#94a3b8',
         }}
       >
         <div>
-          Plataforma <strong>LeanFlow 4.0</strong> • Metodologia PDCA & Engenharia de Custos Evitados
+          Plataforma <strong style={{ color: '#ffffff' }}>LeanFlow 4.0</strong> • Metodologia PDCA & Engenharia de Custos Evitados
         </div>
         <div>
           Emissão em {formatDate(new Date().toISOString())}

@@ -36,15 +36,6 @@ export const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  const maxWidthMap = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-3xl',
-    '2xl': 'max-w-4xl',
-    '4xl': 'max-w-5xl',
-  };
-
   return (
     <div
       style={{
@@ -53,13 +44,13 @@ export const Modal: React.FC<ModalProps> = ({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 50,
+        zIndex: 100,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
+        backgroundColor: 'rgba(2, 6, 23, 0.82)',
+        backdropFilter: 'blur(8px)',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -67,33 +58,37 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#ffffff',
+          backgroundColor: '#0d1527',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
           borderRadius: '16px',
           width: '100%',
           maxWidth: maxWidth === '4xl' ? '1000px' : maxWidth === '2xl' ? '850px' : maxWidth === 'lg' ? '680px' : '520px',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(6, 182, 212, 0.15)',
           animation: 'fadeIn 0.2s ease-out',
           overflow: 'hidden',
+          color: '#f8fafc',
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: '1.25rem 1.75rem',
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#f8fafc',
+            backgroundColor: '#0f172a',
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#0f172a' }}>{title}</h3>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+              {title}
+            </h3>
             {subtitle && (
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.125rem' }}>
+              <p style={{ fontSize: '0.78125rem', color: '#94a3b8', marginTop: '0.2rem', margin: 0 }}>
                 {subtitle}
               </p>
             )}
@@ -101,21 +96,27 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             style={{
-              background: 'transparent',
-              border: 'none',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               cursor: 'pointer',
-              color: '#64748b',
+              color: '#94a3b8',
               padding: '0.375rem',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'background-color 0.15s',
+              transition: 'all 0.15s ease',
             }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#e2e8f0')}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.color = '#ffffff';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.color = '#94a3b8';
+            }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -125,6 +126,7 @@ export const Modal: React.FC<ModalProps> = ({
             padding: '1.75rem',
             overflowY: 'auto',
             flex: 1,
+            backgroundColor: '#0d1527',
           }}
         >
           {children}

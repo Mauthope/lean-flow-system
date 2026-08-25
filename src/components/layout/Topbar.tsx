@@ -1,31 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  User as UserIcon,
-  ChevronDown,
-  Bell,
   RefreshCw,
   Plus,
-  Search,
   ExternalLink,
-  Shield,
-  UserCheck,
-  Building,
-  Sparkles,
-  Award,
-  Code,
-  CheckCircle2,
   Menu,
   LogOut,
-  PanelLeftOpen,
-  PanelLeftClose,
-  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 
 export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?: () => void }> = ({
@@ -34,7 +19,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, refreshData, toggleMobileMenu, logout, isSidebarCollapsed, toggleSidebar } = useAuth();
+  const { currentUser, refreshData, toggleMobileMenu, logout } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -57,10 +42,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        minHeight: '64px',
+        minHeight: '60px',
       }}
     >
-      {/* Title / Current Route Context & Sidebar Toggle */}
+      {/* Route Title Context & Mobile Trigger */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
         {/* Mobile Hamburger Button */}
         <button
@@ -82,83 +67,11 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           <Menu size={18} />
         </button>
 
-        {/* Desktop Sidebar Toggle Button */}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className="desktop-sidebar-toggle-btn"
-          title={isSidebarCollapsed ? 'Expandir Menu Lateral' : 'Ocultar Menu Lateral'}
-          style={{
-            background: isSidebarCollapsed ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-            border: isSidebarCollapsed ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)',
-            color: isSidebarCollapsed ? '#22d3ee' : '#94a3b8',
-            borderRadius: '8px',
-            padding: '0.35rem 0.65rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            cursor: 'pointer',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            transition: 'all 0.15s ease',
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = isSidebarCollapsed ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.color = '#ffffff';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = isSidebarCollapsed ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)';
-            e.currentTarget.style.color = isSidebarCollapsed ? '#22d3ee' : '#94a3b8';
-          }}
-        >
-          {isSidebarCollapsed ? (
-            <>
-              <PanelLeftOpen size={15} color="#22d3ee" />
-              <span>Mostrar Menu</span>
-            </>
-          ) : (
-            <>
-              <PanelLeftClose size={15} />
-              <span>Ocultar Menu</span>
-            </>
-          )}
-        </button>
-
         <div>
-          <h1 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+          <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {title || (isAdmin ? 'Painel de Gestão Master' : 'Meu Fluxo de Trabalho Lean')}
           </h1>
           {subtitle && <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{subtitle}</p>}
-        </div>
-
-        {/* BagTime-style Author badge in topbar */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.2rem 0.6rem',
-            borderRadius: '9999px',
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            fontSize: '0.7rem',
-            color: '#94a3b8',
-            marginLeft: '0.5rem',
-          }}
-          className="desktop-only-badge"
-        >
-          <span
-            style={{
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: '#34d399',
-              boxShadow: '0 0 8px #34d399',
-              display: 'inline-block',
-            }}
-          />
-          <span>Criado por</span>
-          <strong style={{ color: '#22d3ee', fontWeight: 700 }}>Mauricio Grigol</strong>
         </div>
       </div>
 

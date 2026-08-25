@@ -23,10 +23,10 @@ export default function AgenteRelatorioPessoalPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+        <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
           Minhas Entregas & Impacto Lean
         </h2>
-        <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+        <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
           Consolidado do seu histórico de melhorias, economia gerada para a empresa e horas otimizadas
         </p>
       </div>
@@ -34,8 +34,8 @@ export default function AgenteRelatorioPessoalPage() {
       {/* Hero Stats */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.75rem',
           display: 'grid',
@@ -44,28 +44,28 @@ export default function AgenteRelatorioPessoalPage() {
         }}
       >
         <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
             Seu Custo Evitado Homologado
           </span>
-          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#047857', marginTop: '0.25rem' }}>
+          <p style={{ fontSize: '2rem', fontWeight: 900, color: '#34d399', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
             {formatCurrency(myTotalCostAvoided)}
           </p>
         </div>
 
         <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
             Horas Economizadas
           </span>
-          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>
+          <p style={{ fontSize: '2rem', fontWeight: 900, color: '#ffffff', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
             {myTotalHours}h
           </p>
         </div>
 
         <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
             Taxa de Eficiência de Entregas
           </span>
-          <p style={{ fontSize: '2rem', fontWeight: 800, color: '#1d4ed8', marginTop: '0.25rem' }}>
+          <p style={{ fontSize: '2rem', fontWeight: 900, color: '#22d3ee', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
             {efficiency}%
           </p>
         </div>
@@ -74,8 +74,8 @@ export default function AgenteRelatorioPessoalPage() {
       {/* Lean Explanation Box */}
       <div
         style={{
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
+          backgroundColor: '#090e1a',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
           borderRadius: '12px',
           padding: '1.25rem 1.5rem',
           display: 'flex',
@@ -86,87 +86,113 @@ export default function AgenteRelatorioPessoalPage() {
         }}
       >
         <div>
-          <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-heading)' }}>
             💡 O que significam suas métricas de Horas & Custo Evitado?
           </h3>
-          <p style={{ fontSize: '0.8125rem', color: '#334155', marginTop: '0.35rem', lineHeight: 1.45, maxWidth: '750px' }}>
-            As <strong>Horas Economizadas ({myTotalHours}h)</strong> representam a capacidade produtiva e tempo de ciclo liberados
-            com suas padronizações (SOP) e melhorias. O <strong>Custo Evitado ({formatCurrency(myTotalCostAvoided)})</strong> é
+          <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginTop: '0.35rem', lineHeight: 1.45, maxWidth: '750px' }}>
+            As <strong style={{ color: '#ffffff' }}>Horas Economizadas ({myTotalHours}h)</strong> representam a capacidade produtiva e tempo de ciclo liberados
+            com suas padronizações (SOP) e melhorias. O <strong style={{ color: '#34d399' }}>Custo Evitado ({formatCurrency(myTotalCostAvoided)})</strong> é
             o retorno financeiro real gerado pela eliminação de retrabalhos, setups longos e refugos.
           </p>
         </div>
 
-        <a
+        <Link
           href="/agente/ferramentas"
-          className="btn btn-primary btn-sm"
-          style={{ textDecoration: 'none' }}
+          className="btn btn-secondary btn-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#22d3ee', borderColor: 'rgba(6, 182, 212, 0.4)' }}
         >
-          Acessar Ferramentas Lean & Calculadora →
-        </a>
+          <span>Abrir Ferramentas Lean</span>
+          <ChevronRight size={14} />
+        </Link>
       </div>
 
-      {/* Completed Actions Table */}
-      <div className="card">
-        <div className="card-header">
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
-            Histórico das Suas Ações Concluídas
-          </h3>
-        </div>
+      {/* List of My Actions */}
+      <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', marginBottom: '1rem', fontFamily: 'var(--font-heading)' }}>
+          Histórico de Projetos & Ações Realizadas
+        </h3>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '0.875rem 1.25rem' }}>Protocolo / Título</th>
-                <th style={{ padding: '0.875rem 1rem' }}>Desperdício</th>
-                <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Custo Evitado Real</th>
-                <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Horas Salvas</th>
-                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Data de Conclusão</th>
-              </tr>
-            </thead>
-            <tbody>
-              {completed.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                    Nenhuma ação concluída ainda.
-                  </td>
-                </tr>
-              ) : (
-                completed.map((action) => (
-                  <tr
-                    key={action.id}
-                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <td style={{ padding: '0.875rem 1.25rem' }}>
-                      <Link href={`/agente/projetos/${action.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', color: '#64748b' }}>
-                          {action.protocol}
-                        </span>
-                        <p style={{ fontWeight: 700, color: '#2563eb', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          {action.title} <ChevronRight size={14} />
-                        </p>
-                      </Link>
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
-                      {WASTE_CATEGORIES[action.wasteCategory]?.label || action.wasteCategory}
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#059669' }}>
-                      {formatCurrency(action.actualCostAvoided)}
-                    </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 600 }}>
-                      {action.hoursSaved ? `${action.hoursSaved}h` : '—'}
-                    </td>
-                    <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center', color: '#64748b', fontSize: '0.8125rem' }}>
-                      {formatDateTime(action.completedAt)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {myActions.length === 0 ? (
+          <p style={{ fontSize: '0.875rem', color: '#94a3b8' }}>
+            Você ainda não possui ações atribuídas ao seu usuário.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {myActions.map((action) => {
+              const waste = WASTE_CATEGORIES[action.wasteCategory];
+              const isConcluded = action.status === 'concluida';
+
+              return (
+                <div
+                  key={action.id}
+                  style={{
+                    padding: '1rem',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backgroundColor: '#090e1a',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.725rem',
+                          fontWeight: 800,
+                          color: '#22d3ee',
+                        }}
+                      >
+                        {action.protocol}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.725rem',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '6px',
+                          fontWeight: 800,
+                          backgroundColor: isConcluded ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                          color: isConcluded ? '#34d399' : '#22d3ee',
+                          border: `1px solid ${isConcluded ? 'rgba(16, 185, 129, 0.35)' : 'rgba(6, 182, 212, 0.35)'}`,
+                        }}
+                      >
+                        {isConcluded ? 'Concluída' : 'Em Andamento'}
+                      </span>
+                    </div>
+
+                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      {action.title}
+                    </h4>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                      ⚡ Desperdício: {waste?.label || action.wasteCategory} • Setor: {action.originSectorName}
+                    </p>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      {isConcluded ? 'Custo Evitado Real' : 'Estimativa Inicial'}
+                    </span>
+                    <p
+                      style={{
+                        fontSize: '1rem',
+                        fontWeight: 900,
+                        color: isConcluded ? '#34d399' : '#ffffff',
+                        margin: '0.1rem 0 0',
+                        fontFamily: 'var(--font-heading)',
+                      }}
+                    >
+                      {formatCurrency(isConcluded ? action.actualCostAvoided : action.estimatedCostAvoided)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
