@@ -249,7 +249,49 @@ export const dataService = {
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');
 
-    actions[index] = { ...actions[index], ...updates, updatedAt: new Date().toISOString() };
+    const current = actions[index];
+    const merged = { ...current, ...updates };
+
+    // Auto-calculate Project Costs (Investimento Capex + Opex)
+    if (merged.projectCosts) {
+      const parts = Number(merged.projectCosts.partsAndEquipment) || 0;
+      const third = Number(merged.projectCosts.thirdPartyServices) || 0;
+      const hours = Number(merged.projectCosts.internalLaborHours) || 0;
+      const rate = Number(merged.projectCosts.laborHourlyRate) || 45;
+      const other = Number(merged.projectCosts.otherCosts) || 0;
+      merged.projectCosts.totalCost = parts + third + hours * rate + other;
+    }
+
+    // Auto-calculate Cost Breakdown (Ganhos Brutos)
+    if (merged.costBreakdown) {
+      const grossGains =
+        (Number(merged.costBreakdown.laborSavings) || 0) +
+        (Number(merged.costBreakdown.productionIncrease) || 0) +
+        (Number(merged.costBreakdown.scrapReduction) || 0) +
+        (Number(merged.costBreakdown.machineDowntime) || 0) +
+        (Number(merged.costBreakdown.toolingAndEnergy) || 0) +
+        (Number(merged.costBreakdown.logisticsAndFreight) || 0) +
+        (Number(merged.costBreakdown.otherSavings) || 0);
+
+      if (grossGains > 0) {
+        merged.actualCostAvoided = grossGains;
+      }
+    }
+
+    // Auto-calculate Net Savings, ROI % and Payback
+    const totalCost = Number(merged.projectCosts?.totalCost) || 0;
+    const grossAvoided = Number(merged.actualCostAvoided) || Number(merged.estimatedCostAvoided) || 0;
+
+    if (grossAvoided > 0 || totalCost > 0) {
+      merged.netSavings = grossAvoided - totalCost;
+      merged.roiPercentage = totalCost > 0 ? Math.round(((grossAvoided - totalCost) / totalCost) * 100) : 0;
+      
+      const monthlySavings = grossAvoided / 12;
+      merged.paybackMonths = monthlySavings > 0 && totalCost > 0 ? Number((totalCost / monthlySavings).toFixed(1)) : 0;
+    }
+
+    merged.updatedAt = new Date().toISOString();
+    actions[index] = merged;
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return actions[index];
   },

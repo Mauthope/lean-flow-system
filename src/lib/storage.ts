@@ -18,14 +18,6 @@ export const INITIAL_TENANTS: Tenant[] = [
     plan: 'enterprise',
     createdAt: '2026-01-10T08:00:00.000Z',
   },
-  {
-    id: 'tenant_grigol_02',
-    name: 'Metalúrgica Grigol & Automação Industrial',
-    slug: 'metalurgica-grigol',
-    cnpjOrCode: '45.892.123/0001-44',
-    plan: 'enterprise',
-    createdAt: '2026-02-01T08:00:00.000Z',
-  },
 ];
 
 export const INITIAL_TENANT: Tenant = INITIAL_TENANTS[0];
@@ -94,44 +86,6 @@ export const INITIAL_SECTORS: Sector[] = [
     description: 'Almoxarifado de resinas, kanban de rolos de tecido e carregamento de fardos',
     color: '#ea580c',
     createdAt: '2026-01-10T08:00:00.000Z',
-  },
-
-  // Setores Metalúrgica Grigol
-  {
-    id: 'sec_grigol_01',
-    tenantId: 'tenant_grigol_02',
-    name: 'Usinagem CNC & Ferramentaria',
-    code: 'USIN',
-    description: 'Centros de usinagem 5 eixos, tornos CNC e redução de tempo de setup (SMED)',
-    color: '#0284c7',
-    createdAt: '2026-02-01T08:00:00.000Z',
-  },
-  {
-    id: 'sec_grigol_02',
-    tenantId: 'tenant_grigol_02',
-    name: 'Estamparia & Conformação',
-    code: 'ESTAMP',
-    description: 'Prensas excêntricas, matrizes progressivas e manutenção autônoma TPM',
-    color: '#ea580c',
-    createdAt: '2026-02-01T08:00:00.000Z',
-  },
-  {
-    id: 'sec_grigol_03',
-    tenantId: 'tenant_grigol_02',
-    name: 'Montagem & Soldagem Robotizada',
-    code: 'MONT',
-    description: 'Células robotizadas de solda MIG/MAG, poka-yoke e fluxo de montagem',
-    color: '#16a34a',
-    createdAt: '2026-02-01T08:00:00.000Z',
-  },
-  {
-    id: 'sec_grigol_04',
-    tenantId: 'tenant_grigol_02',
-    name: 'Controle de Qualidade & Metrologia',
-    code: 'METRO',
-    description: 'Braço tridimensional, inspeção dimensional e auditorias de processo',
-    color: '#9333ea',
-    createdAt: '2026-02-01T08:00:00.000Z',
   },
 ];
 
@@ -214,32 +168,6 @@ export const INITIAL_USERS: User[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-20T11:00:00.000Z',
   },
-
-  // Metalúrgica Grigol Users
-  {
-    id: 'usr_grigol_master',
-    tenantId: 'tenant_grigol_02',
-    name: 'Metalúrgica Grigol (Entidade Master)',
-    email: 'master@metalurgicagrigol.com',
-    role: 'admin',
-    jobTitle: 'Gestão Master da Fábrica',
-    active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-02-01T08:00:00.000Z',
-  },
-  {
-    id: 'usr_grigol_agent_01',
-    tenantId: 'tenant_grigol_02',
-    name: 'Lucas Antunes',
-    email: 'lucas.antunes@metalurgicagrigol.com',
-    role: 'agent',
-    sectorId: 'sec_grigol_01',
-    sectorName: 'Usinagem CNC & Ferramentaria',
-    jobTitle: 'Técnico de Setup & Processos',
-    active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    createdAt: '2026-02-01T09:00:00.000Z',
-  },
 ];
 
 export const INITIAL_ACTIONS: LeanAction[] = [
@@ -260,38 +188,36 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     status: 'concluida',
     priority: 'alta',
-    estimatedCostAvoided: 65000,
-    actualCostAvoided: 74200,
-    hoursSaved: 194,
-    createdAt: '2026-02-01T08:30:00.000Z',
-    updatedAt: '2026-02-18T17:00:00.000Z',
-    startedAt: '2026-02-02T09:00:00.000Z',
-    completedAt: '2026-02-18T16:45:00.000Z',
-    dueDate: '2026-02-20',
-    costBreakdown: {
-      machineDowntime: 38000,
-      laborSavings: 18200,
-      scrapReduction: 12000,
-      toolingAndEnergy: 6000,
-    },
-    notes: [
-      {
-        id: 'note_1',
-        authorId: 'usr_rafitec_agent_04',
-        authorName: 'Fernanda Lima',
-        authorRole: 'agent',
-        text: 'Mapeamento em vídeo da troca de matriz concluído. Identificadas 7 operações externas executadas como internas.',
-        createdAt: '2026-02-05T14:20:00.000Z',
-      },
-      {
-        id: 'note_2',
-        authorId: 'usr_rafitec_master',
-        authorName: 'Rafitec (Entidade Master)',
-        authorRole: 'admin',
-        text: 'Excelente ganho de OEE verificado na produção contínua. Custo evitado homologado pela gestão.',
-        createdAt: '2026-02-18T17:00:00.000Z',
-      },
+    
+    // Metodologia PDCA
+    pdcaStage: 'act',
+    
+    // P - PLAN
+    problemStatement: 'O tempo de troca de matriz e lote na Extrusora 03 atingia média de 52 minutos, provocando degradação térmica do polipropileno no cabeçote e perda de 194 horas de produção por mês.',
+    targetMetricName: 'Tempo de Troca de Matriz (SMED)',
+    targetMetricUnit: 'minutos',
+    baselineValue: 52,
+    targetGoalValue: 15,
+    currentProblemCostMonthly: 18500,
+    fiveWhys: [
+      '1. Por que a troca demorava 52 min? Porque a máquina ficava desligada enquanto se limpava e pré-aquecia o cabeçote.',
+      '2. Por que o cabeçote era aquecido com a máquina parada? Porque não existia bancada externa de pré-aquecimento com controle PID.',
+      '3. Por que não existia bancada externa? Porque o procedimento antigo considerava todo o processo como setup interno.',
+      '4. Por que as ferramentas não estavam organizadas? Porque os operadores buscavam chaves e torquímetros no almoxarifado durante a parada.',
+      '5. Causa Raiz: Ausência de metodologia SMED padronizada, falta de carrinho dedicado de ferramentas 5S e ausência de pré-aquecimento externo.'
     ],
+    ishikawa: {
+      method: 'Ausência de procedimento SMED separando setup interno de externo',
+      machine: 'Extrusora sem engates rápidos pneumáticos e cabeçote sem aquecedor externo',
+      material: 'Polímero PP degradando por parada térmica prolongada',
+      manpower: 'Falta de treinamento dos operadores no padrão de troca rápida',
+      measurement: 'Sem cronometragem analítica de cada microetapa da troca',
+      environment: 'Área ao redor da extrusora com ferramentas dispersas',
+    },
+
+    // D - DO
+    pilotArea: 'Extrusora de Fitas 03 - Linha A',
+    pilotTestObservations: 'Realizados 3 testes piloto com cronoanálise de 2 câmeras. Tempo caiu de 52 para 16 minutos na primeira semana.',
     checklist: [
       {
         id: 'ck_1',
@@ -330,8 +256,62 @@ export const INITIAL_ACTIONS: LeanAction[] = [
         completedAt: '2026-02-14T15:00:00.000Z',
       },
     ],
-    rootCauseAnalysis: 'O tempo de troca era elevado porque os operadores aguardavam o cabeçote atingir a temperatura de fusão após a parada da máquina, em vez de pré-aquecer em bancada externa.',
+
+    // C - CHECK & ENGENHARIA FINANCEIRA
+    achievedValue: 16,
+    projectCosts: {
+      partsAndEquipment: 4800,
+      thirdPartyServices: 1500,
+      internalLaborHours: 52,
+      laborHourlyRate: 45,
+      otherCosts: 600,
+      totalCost: 9240,
+    },
+    costBreakdown: {
+      machineDowntime: 38000,
+      laborSavings: 18200,
+      scrapReduction: 12000,
+      toolingAndEnergy: 6000,
+    },
+    estimatedCostAvoided: 65000,
+    actualCostAvoided: 74200,
+    netSavings: 64960,
+    roiPercentage: 703,
+    paybackMonths: 1.5,
+    hoursSaved: 194,
+
+    // A - ACT
     standardWorkUpdated: true,
+    standardWorkDocRef: 'POP-EXT-042 rev 03 (Troca Rápida de Matriz)',
+    yokotenReplication: 'Replicar kit SMED e procedimento nas Extrusoras 01, 02 e 04 no ciclo seguinte',
+    lessonsLearned: 'A preparação externa das ferramentas e pré-aquecimento do cabeçote garantiram 80% do ganho sem grandes investimentos de capital.',
+    masterApproved: true,
+    masterApprovedAt: '2026-02-18T17:00:00.000Z',
+    masterApprovedBy: 'Rafitec',
+
+    createdAt: '2026-02-01T08:30:00.000Z',
+    updatedAt: '2026-02-18T17:00:00.000Z',
+    startedAt: '2026-02-02T09:00:00.000Z',
+    completedAt: '2026-02-18T16:45:00.000Z',
+    dueDate: '2026-02-20',
+    notes: [
+      {
+        id: 'note_1',
+        authorId: 'usr_rafitec_agent_04',
+        authorName: 'Fernanda Lima',
+        authorRole: 'agent',
+        text: 'Mapeamento em vídeo da troca de matriz concluído. Identificadas 7 operações externas executadas como internas.',
+        createdAt: '2026-02-05T14:20:00.000Z',
+      },
+      {
+        id: 'note_2',
+        authorId: 'usr_rafitec_master',
+        authorName: 'Rafitec',
+        authorRole: 'admin',
+        text: 'Excelente ganho de OEE verificado na produção contínua. Custo evitado homologado pela gestão.',
+        createdAt: '2026-02-18T17:00:00.000Z',
+      },
+    ],
   },
   {
     id: 'act_002',
@@ -353,19 +333,39 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     status: 'concluida',
     priority: 'alta',
+    
+    // Metodologia PDCA
+    pdcaStage: 'check',
+    problemStatement: 'Elevada frequência de microparadas por quebra de fita de urdume/trama, gerando defeitos no tecido tubular e perda de rendimento.',
+    targetMetricName: 'Paradas por Quebra de Fita / Turno',
+    targetMetricUnit: 'ocorrências',
+    baselineValue: 42,
+    targetGoalValue: 8,
+    achievedValue: 6,
+    projectCosts: {
+      partsAndEquipment: 3200,
+      thirdPartyServices: 800,
+      internalLaborHours: 35,
+      laborHourlyRate: 45,
+      otherCosts: 0,
+      totalCost: 5575,
+    },
+    costBreakdown: {
+      scrapReduction: 24500,
+      machineDowntime: 18000,
+      laborSavings: 6000,
+    },
     estimatedCostAvoided: 42000,
     actualCostAvoided: 48500,
+    netSavings: 42925,
+    roiPercentage: 770,
+    paybackMonths: 1.4,
     hoursSaved: 140,
     createdAt: '2026-02-05T10:15:00.000Z',
     updatedAt: '2026-02-22T14:30:00.000Z',
     startedAt: '2026-02-06T08:00:00.000Z',
     completedAt: '2026-02-22T14:00:00.000Z',
     dueDate: '2026-02-25',
-    costBreakdown: {
-      scrapReduction: 24500,
-      machineDowntime: 18000,
-      laborSavings: 6000,
-    },
     notes: [],
     checklist: [
       {
@@ -398,6 +398,22 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     status: 'em_andamento',
     priority: 'alta',
+    
+    // Metodologia PDCA
+    pdcaStage: 'do',
+    problemStatement: 'Desalinhamento manual na costura de alças gerando retrabalho e risco de reprovação no teste de tração 6:1.',
+    targetMetricName: 'Índice de Retrabalho em Alças',
+    targetMetricUnit: '%',
+    baselineValue: 4.8,
+    targetGoalValue: 0.5,
+    pilotArea: 'Bancada de Costura 04 - Acabamento',
+    projectCosts: {
+      partsAndEquipment: 1200,
+      thirdPartyServices: 600,
+      internalLaborHours: 20,
+      laborHourlyRate: 45,
+      totalCost: 2700,
+    },
     estimatedCostAvoided: 28000,
     actualCostAvoided: 0,
     hoursSaved: 0,
@@ -446,6 +462,14 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     status: 'aberta',
     priority: 'media',
+    
+    // Metodologia PDCA
+    pdcaStage: 'plan',
+    problemStatement: 'Extrusoras param por falta pontual de masterbatch aditivo devido a reabastecimento empurrado não sincronizado.',
+    targetMetricName: 'Paradas por Falta de Insumo',
+    targetMetricUnit: 'paradas/mês',
+    baselineValue: 8,
+    targetGoalValue: 0,
     estimatedCostAvoided: 15000,
     actualCostAvoided: 0,
     hoursSaved: 0,
@@ -484,8 +508,9 @@ export function initializeLocalStorage(): void {
   const currentTenantStr = localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT);
   const currentUserStr = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   const tenantsStr = localStorage.getItem(STORAGE_KEYS.TENANTS);
+  const actionsStr = localStorage.getItem(STORAGE_KEYS.ACTIONS);
 
-  // If local storage has obsolete data (e.g. references to 'nexus' or old admin), auto-migrate to Rafitec
+  // If local storage has obsolete data, auto-migrate to Rafitec with full PDCA data
   const isStale =
     !currentTenantStr ||
     currentTenantStr.includes('nexus') ||
@@ -493,7 +518,9 @@ export function initializeLocalStorage(): void {
     currentUserStr.includes('usr_admin_01') ||
     currentUserStr.includes('nexus') ||
     !tenantsStr ||
-    tenantsStr.includes('nexus');
+    tenantsStr.includes('nexus') ||
+    !actionsStr ||
+    !actionsStr.includes('pdcaStage');
 
   if (isStale) {
     localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));
