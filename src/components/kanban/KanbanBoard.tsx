@@ -75,10 +75,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   }, [actions, searchQuery, selectedSector, selectedWaste, selectedPriority, selectedAgent]);
 
   const handleCardClick = (action: LeanAction) => {
-    if (!isAgentView) {
-      router.push(`/admin/projetos/${action.id}`);
+    if (isAgentView) {
+      router.push(`/agente/projetos/${action.id}`);
     } else {
-      setSelectedAction(action);
+      router.push(`/admin/projetos/${action.id}`);
     }
   };
 

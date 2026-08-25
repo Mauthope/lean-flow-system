@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { formatCurrency, formatDateTime, WASTE_CATEGORIES } from '@/lib/utils';
@@ -132,12 +133,21 @@ export default function AgenteRelatorioPessoalPage() {
                 </tr>
               ) : (
                 completed.map((action) => (
-                  <tr key={action.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <tr
+                    key={action.id}
+                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                  >
                     <td style={{ padding: '0.875rem 1.25rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', color: '#64748b' }}>
-                        {action.protocol}
-                      </span>
-                      <p style={{ fontWeight: 700, color: '#0f172a' }}>{action.title}</p>
+                      <Link href={`/agente/projetos/${action.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', color: '#64748b' }}>
+                          {action.protocol}
+                        </span>
+                        <p style={{ fontWeight: 700, color: '#2563eb', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          {action.title} <ChevronRight size={14} />
+                        </p>
+                      </Link>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', color: '#475569' }}>
                       {WASTE_CATEGORIES[action.wasteCategory]?.label || action.wasteCategory}

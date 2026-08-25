@@ -333,7 +333,7 @@ export default function AdminProjectDetailPage() {
         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
           Projeto Não Encontrado
         </h3>
-        <Link href="/admin/kanban" className="btn btn-primary btn-sm">
+        <Link href={currentUser?.role === 'agent' ? '/agente/kanban' : '/admin/kanban'} className="btn btn-primary btn-sm">
           <ArrowLeft size={16} /> Voltar para o Kanban
         </Link>
       </div>
@@ -345,7 +345,11 @@ export default function AdminProjectDetailPage() {
       {/* TOP HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Link href="/admin/kanban" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <Link
+            href={currentUser?.role === 'agent' ? '/agente/kanban' : '/admin/kanban'}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+          >
             <ArrowLeft size={15} /> Voltar ao Kanban
           </Link>
 
