@@ -289,9 +289,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             gridTemplateColumns:
               mobileSelectedCol !== 'all'
                 ? '1fr'
-                : undefined,
+                : 'repeat(5, minmax(280px, 1fr))',
             width: '100%',
-            minWidth: '100%',
+            minWidth: mobileSelectedCol !== 'all' ? '100%' : '1450px',
           }}
         >
           {visibleColumns.map((status) => {

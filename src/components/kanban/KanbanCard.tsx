@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { LeanAction } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@/lib/utils';
 import { PriorityBadge } from '@/components/ui/Badge';
 import {
   Calendar,
@@ -38,6 +38,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
     !isRejected &&
     new Date(action.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
 
+  const formattedSavings = action.status === 'concluida'
+    ? action.actualCostAvoided
+    : (action.estimatedCostAvoided || 0);
+
   return (
     <div
       onClick={onClick}
@@ -45,43 +49,53 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       style={{
         backgroundColor: '#ffffff',
         borderRadius: '12px',
-        padding: '1rem',
-        border: isAwaitingApproval ? '1.5px solid #d8b4fe' : '1px solid #e2e8f0',
+        padding: '0.95rem 1rem',
+        border: isAwaitingApproval ? '1.5px solid #c084fc' : '1px solid #e2e8f0',
         borderLeft: isCompleted
           ? '4px solid #10b981'
           : isAwaitingApproval
-          ? '4px solid #7c3aed'
+          ? '4px solid #9333ea'
           : isInProgress
           ? '4px solid #f59e0b'
           : isRejected
           ? '4px solid #ef4444'
           : '4px solid #3b82f6',
-        boxShadow: isAwaitingApproval ? '0 4px 12px rgba(124, 58, 237, 0.08)' : '0 1px 3px rgba(0, 0, 0, 0.05)',
+        boxShadow: isAwaitingApproval
+          ? '0 4px 14px rgba(147, 51, 234, 0.12)'
+          : '0 1px 3px rgba(0, 0, 0, 0.04)',
         cursor: 'pointer',
-        transition: 'all 0.15s ease',
+        transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.65rem',
+        gap: '0.6rem',
       }}
       onMouseOver={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.08)';
-        e.currentTarget.style.borderColor = '#93c5fd';
+        e.currentTarget.style.transform = 'translateY(-3px)';
+        e.currentTarget.style.boxShadow = isAwaitingApproval
+          ? '0 8px 22px rgba(147, 51, 234, 0.2)'
+          : '0 8px 20px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.borderColor = isAwaitingApproval ? '#a855f7' : '#93c5fd';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-        e.currentTarget.style.borderColor = '#e2e8f0';
+        e.currentTarget.style.boxShadow = isAwaitingApproval
+          ? '0 4px 14px rgba(147, 51, 234, 0.12)'
+          : '0 1px 3px rgba(0, 0, 0, 0.04)';
+        e.currentTarget.style.borderColor = isAwaitingApproval ? '#c084fc' : '#e2e8f0';
       }}
     >
       {/* Top Row: Protocol & Priority / Sector Tag */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
         <span
           style={{
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: '0.725rem',
-            fontWeight: 700,
-            color: '#64748b',
+            fontWeight: 800,
+            color: '#475569',
+            backgroundColor: '#f1f5f9',
+            padding: '0.1rem 0.4rem',
+            borderRadius: '4px',
+            border: '1px solid #e2e8f0',
             letterSpacing: '0.02em',
           }}
         >
@@ -93,11 +107,12 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               style={{
                 fontSize: '0.675rem',
                 color: '#475569',
-                backgroundColor: '#f1f5f9',
-                padding: '0.15rem 0.45rem',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                padding: '0.1rem 0.4rem',
                 borderRadius: '4px',
                 fontWeight: 600,
-                maxWidth: '110px',
+                maxWidth: '105px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -114,7 +129,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       {/* Main Title */}
       <h4
         style={{
-          fontSize: '0.925rem',
+          fontSize: '0.9rem',
           fontWeight: 700,
           color: '#0f172a',
           lineHeight: 1.35,
@@ -128,20 +143,44 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         {action.title}
       </h4>
 
+      {/* Financial Return Pill (if any) */}
+      {formattedSavings > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              color: isCompleted ? '#047857' : '#2563eb',
+              backgroundColor: isCompleted ? '#ecfdf5' : '#eff6ff',
+              border: `1px solid ${isCompleted ? '#a7f3d0' : '#bfdbfe'}`,
+              padding: '0.1rem 0.45rem',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+            }}
+          >
+            <span>💰</span>
+            <span>{isCompleted ? 'Ganho:' : 'Est:'} {formatCurrency(formattedSavings)}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Waiting Approval Master Badge */}
       {isAwaitingApproval && (
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.4rem',
+            gap: '0.35rem',
             backgroundColor: '#faf5ff',
-            border: '1px solid #c084fc',
+            border: '1px solid #d8b4fe',
             color: '#7e22ce',
             padding: '0.25rem 0.5rem',
             borderRadius: '6px',
-            fontSize: '0.7rem',
-            fontWeight: 800,
-            letterSpacing: '0.01em',
+            fontSize: '0.675rem',
+            fontWeight: 900,
+            letterSpacing: '0.02em',
           }}
         >
           <span>🟡</span>
@@ -155,10 +194,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: '0.5rem',
+          paddingTop: '0.45rem',
           borderTop: '1px solid #f1f5f9',
-          marginTop: '0.15rem',
-          fontSize: '0.75rem',
+          marginTop: '0.1rem',
+          fontSize: '0.725rem',
         }}
       >
         {/* Prazo */}
@@ -167,7 +206,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
-            color: isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#475569',
+            color: isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#64748b',
             fontWeight: isOverdue ? 700 : 500,
           }}
           title={isOverdue ? 'Prazo expirado' : `Data limite: ${formatDate(action.dueDate)}`}
@@ -179,13 +218,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           {isOverdue && (
             <span
               style={{
-                fontSize: '0.625rem',
+                fontSize: '0.6rem',
                 backgroundColor: '#fef2f2',
                 color: '#dc2626',
                 border: '1px solid #fecaca',
-                padding: '0.05rem 0.3rem',
+                padding: '0.05rem 0.25rem',
                 borderRadius: '4px',
-                fontWeight: 700,
+                fontWeight: 800,
               }}
             >
               Atrasado
@@ -194,13 +233,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         </div>
 
         {/* Responsável */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
           {action.assignedAgentName ? (
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem',
+                gap: '0.3rem',
               }}
               title={`Responsável: ${action.assignedAgentName}`}
             >
@@ -211,8 +250,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 }
                 alt={action.assignedAgentName}
                 style={{
-                  width: '22px',
-                  height: '22px',
+                  width: '20px',
+                  height: '20px',
                   borderRadius: '50%',
                   objectFit: 'cover',
                   border: '1.5px solid #cbd5e1',
@@ -221,7 +260,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               <span
                 style={{
                   fontWeight: 600,
-                  color: '#1e293b',
+                  color: '#334155',
                   maxWidth: '85px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -232,8 +271,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               </span>
             </div>
           ) : (
-            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.725rem' }}>
-              Sem responsável
+            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.7rem' }}>
+              Sem agente
             </span>
           )}
         </div>

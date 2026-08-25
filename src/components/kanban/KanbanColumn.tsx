@@ -71,46 +71,60 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const headerInfo = columnHeaders[status];
 
   return (
-    <div className="kanban-col">
+    <div
+      className="kanban-col"
+      style={{
+        borderTop: `3px solid ${headerInfo.dotColor}`,
+      }}
+    >
       {/* Column Header */}
       <div className="kanban-col-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <span
               style={{
-                width: '10px',
-                height: '10px',
+                width: '8px',
+                height: '8px',
                 borderRadius: '50%',
                 backgroundColor: headerInfo.dotColor,
                 display: 'inline-block',
+                boxShadow: `0 0 8px ${headerInfo.dotColor}`,
               }}
             />
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#0f172a' }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
               {headerInfo.title}
             </h3>
             <span
               style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
+                fontSize: '0.7rem',
+                fontWeight: 800,
                 backgroundColor: headerInfo.bgBadge,
                 color: headerInfo.textBadge,
-                padding: '0.15rem 0.5rem',
+                padding: '0.1rem 0.45rem',
                 borderRadius: '9999px',
-                border: `1px solid ${headerInfo.dotColor}33`,
+                border: `1px solid ${headerInfo.dotColor}40`,
               }}
             >
               {actions.length}
             </span>
           </div>
-          <p style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.15rem' }}>
+          <p style={{ fontSize: '0.675rem', color: '#64748b', marginTop: '0.15rem', marginBottom: 0 }}>
             {headerInfo.subtitle}
           </p>
         </div>
 
         {totalCost > 0 && (
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.65rem', color: '#64748b', display: 'block' }}>Total Coluna</span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: status === 'concluida' ? '#059669' : '#0f172a' }}>
+            <span style={{ fontSize: '0.6rem', color: '#64748b', display: 'block', fontWeight: 600, textTransform: 'uppercase' }}>
+              Economia
+            </span>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: status === 'concluida' ? '#059669' : '#1e293b',
+              }}
+            >
               {formatCurrency(totalCost)}
             </span>
           </div>
