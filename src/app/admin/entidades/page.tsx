@@ -389,16 +389,16 @@ export default function AdminEntitiesPage() {
           {/* Supervisor Information */}
           <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', display: 'block', marginBottom: '0.75rem' }}>
-              👤 Supervisor & Administrador Inicial da Entidade:
+              🏢 Identificação da Conta Master da Entidade:
             </span>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Nome do Supervisor: *</label>
+                <label className="form-label">Nome de Exibição Master: *</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Ex: Mauricio Grigol"
+                  placeholder="Ex: Rafitec (Gestão Master)"
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
                   required
@@ -406,11 +406,11 @@ export default function AdminEntitiesPage() {
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">E-mail de Acesso: *</label>
+                <label className="form-label">E-mail de Acesso Master: *</label>
                 <input
                   type="email"
                   className="form-control"
-                  placeholder="Ex: supervisor@empresa.com"
+                  placeholder="Ex: master@rafitec.com.br"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   required

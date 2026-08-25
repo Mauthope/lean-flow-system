@@ -321,10 +321,10 @@ export default function LoginPage() {
                   </div>
                   <div>
                     <strong style={{ fontSize: '1rem', color: '#ffffff', display: 'block' }}>
-                      {activeTenant.name} (Gestão Master)
+                      {activeTenant.name}
                     </strong>
                     <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
-                      Controle Geral • Triagem • ROI • Gestão de Agentes
+                      Entidade Master • Gestão Industrial & ROI
                     </span>
                   </div>
                 </div>

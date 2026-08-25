@@ -140,12 +140,12 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'usr_rafitec_master',
     tenantId: 'tenant_rafitec_01',
-    name: 'Rafitec (Entidade Master)',
+    name: 'Rafitec',
     email: 'master@rafitec.com.br',
     role: 'admin',
-    jobTitle: 'Gestão Master da Fábrica & ROI',
+    jobTitle: 'Entidade Master • Gestão Industrial & ROI',
     active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-10T08:00:00.000Z',
   },
   // Agentes Operacionais da Rafitec
@@ -480,6 +480,31 @@ export function setStoredData<T>(key: string, value: T): void {
 
 export function initializeLocalStorage(): void {
   if (typeof window === 'undefined') return;
+
+  const currentTenantStr = localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT);
+  const currentUserStr = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+  const tenantsStr = localStorage.getItem(STORAGE_KEYS.TENANTS);
+
+  // If local storage has obsolete data (e.g. references to 'nexus' or old admin), auto-migrate to Rafitec
+  const isStale =
+    !currentTenantStr ||
+    currentTenantStr.includes('nexus') ||
+    !currentUserStr ||
+    currentUserStr.includes('usr_admin_01') ||
+    currentUserStr.includes('nexus') ||
+    !tenantsStr ||
+    tenantsStr.includes('nexus');
+
+  if (isStale) {
+    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));
+    localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(INITIAL_TENANT));
+    localStorage.setItem(STORAGE_KEYS.SECTORS, JSON.stringify(INITIAL_SECTORS));
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
+    localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
+    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
+    return;
+  }
+
   if (!localStorage.getItem(STORAGE_KEYS.TENANTS)) {
     localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));
   }
