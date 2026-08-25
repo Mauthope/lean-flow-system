@@ -111,7 +111,7 @@ FONTES DE ECONOMIA:
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
-          color: '#2563eb',
+          color: '#22d3ee',
           fontSize: '0.875rem',
           fontWeight: 700,
           textDecoration: 'none',
@@ -124,8 +124,8 @@ FONTES DE ECONOMIA:
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
           display: 'flex',
@@ -133,7 +133,7 @@ FONTES DE ECONOMIA:
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -142,20 +142,21 @@ FONTES DE ECONOMIA:
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              backgroundColor: '#eff6ff',
+              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Calculator size={26} color="#2563eb" />
+            <Calculator size={26} color="#22d3ee" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Calculadora Multi-Fontes de Custo Evitado Lean
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
               Simule ganhos por Aumento de Produção, Refugo, Mão de Obra, Paradas e Fretes
             </p>
           </div>
@@ -182,18 +183,18 @@ FONTES DE ECONOMIA:
         {/* ================= INPUT BLOCKS ================= */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Driver 1: Production Increase */}
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #16a34a' }}>
+          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#15803d' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-heading)' }}>
                 🚀 1. Aumento de Produção & Capacidade Extra
               </span>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#16a34a' }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(productionIncreaseMonthly)}/mês
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Peças extras/mês:</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Peças extras/mês:</label>
                 <input
                   type="number"
                   className="form-control"
@@ -202,7 +203,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Margem/peça (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Margem/peça (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -214,18 +215,18 @@ FONTES DE ECONOMIA:
           </div>
 
           {/* Driver 2: Scrap & Material */}
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #0891b2' }}>
+          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #06b6d4', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0e7490' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-heading)' }}>
                 ♻️ 2. Redução de Sucata & Refugo de Matéria-Prima
               </span>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0891b2' }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(scrapSavingsMonthly)}/mês
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Peças salvas/mês:</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Peças salvas/mês:</label>
                 <input
                   type="number"
                   className="form-control"
@@ -234,7 +235,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Custo unitário (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Custo unitário (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -246,18 +247,18 @@ FONTES DE ECONOMIA:
           </div>
 
           {/* Driver 3: Labor & Cycle Time */}
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #2563eb' }}>
+          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #38bdf8', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#1d4ed8' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-heading)' }}>
                 👷‍♂️ 3. Mão de Obra & Tempo de Ciclo
               </span>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#2563eb' }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(laborSavingsMonthly)}/mês
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Tempo antes (min):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Tempo antes (min):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -266,7 +267,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Tempo depois (min):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Tempo depois (min):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -277,7 +278,7 @@ FONTES DE ECONOMIA:
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Frequência/mês:</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Frequência/mês:</label>
                 <input
                   type="number"
                   className="form-control"
@@ -286,7 +287,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Custo/hora (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Custo/hora (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -298,18 +299,18 @@ FONTES DE ECONOMIA:
           </div>
 
           {/* Driver 4: Machine Downtime & Tooling */}
-          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #d97706' }}>
+          <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #fbbf24', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#b45309' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-heading)' }}>
                 ⚙️ 4. Paradas de Máquina, Insumos & Fretes
               </span>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#d97706' }}>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(machineDowntimeMonthly + toolingSavings + freightSavings)}/mês
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.5rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Horas parada evitadas:</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Horas parada evitadas:</label>
                 <input
                   type="number"
                   className="form-control"
@@ -318,7 +319,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Custo hora/máquina (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Custo hora/máquina (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -329,7 +330,7 @@ FONTES DE ECONOMIA:
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Ferramental/Energia (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Ferramental/Energia (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -338,7 +339,7 @@ FONTES DE ECONOMIA:
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Fretes evitados (R$):</label>
+                <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Fretes evitados (R$):</label>
                 <input
                   type="number"
                   className="form-control"
@@ -355,25 +356,27 @@ FONTES DE ECONOMIA:
           className="card"
           style={{
             padding: '1.5rem',
-            backgroundColor: '#f8fafc',
-            border: '2px solid #059669',
+            backgroundColor: '#0f172a',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '1.25rem',
+            boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.15)',
           }}
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#065f46' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                 Impacto Financeiro Consolidado
               </h2>
               <span
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 800,
-                  backgroundColor: '#dcfce7',
-                  color: '#166534',
+                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                  color: '#34d399',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
                   padding: '0.25rem 0.75rem',
                   borderRadius: '9999px',
                 }}
@@ -384,60 +387,60 @@ FONTES DE ECONOMIA:
 
             {/* Big Numbers */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
-              <div style={{ backgroundColor: '#ecfdf5', padding: '1.25rem', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
                   💰 Custo Evitado Real Total (Mensal)
                 </span>
-                <p style={{ fontSize: '2.1rem', fontWeight: 900, color: '#047857', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '2.1rem', fontWeight: 900, color: '#34d399', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
                   {formatCurrency(totalCostAvoidedMonthly)}
                 </p>
-                <p style={{ fontSize: '0.8125rem', color: '#065f46', marginTop: '0.25rem' }}>
-                  Projeção anual: <strong>{formatCurrency(totalCostAvoidedAnnual)}</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+                  Projeção anual: <strong style={{ color: '#ffffff' }}>{formatCurrency(totalCostAvoidedAnnual)}</strong>
                 </p>
               </div>
 
-              <div style={{ backgroundColor: '#eff6ff', padding: '1.25rem', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1d4ed8', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.12)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
                   ⏱️ Capacidade Liberada (Horas Salvas)
                 </span>
-                <p style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e3a8a', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '1.75rem', fontWeight: 900, color: '#22d3ee', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
                   {totalHoursSavedMonthly.toFixed(1)} h / mês
                 </p>
-                <p style={{ fontSize: '0.8125rem', color: '#1d4ed8', marginTop: '0.25rem' }}>
-                  Projeção anual: <strong>{totalHoursSavedAnnual.toFixed(0)} horas salvas no ano</strong>
+                <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
+                  Projeção anual: <strong style={{ color: '#ffffff' }}>{totalHoursSavedAnnual.toFixed(0)} horas salvas no ano</strong>
                 </p>
               </div>
             </div>
 
             {/* Breakdown List */}
-            <div style={{ backgroundColor: '#ffffff', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+            <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
                 Detalhamento das Fontes de Retorno:
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8125rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>🚀 Aumento de Produção:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(productionIncreaseMonthly)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>🚀 Aumento de Produção:</span>
+                  <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(productionIncreaseMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>♻️ Redução de Refugo:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(scrapSavingsMonthly)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>♻️ Redução de Refugo:</span>
+                  <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{formatCurrency(scrapSavingsMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>👷‍♂️ Mão de Obra / Ciclo:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(laborSavingsMonthly)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>👷‍♂️ Mão de Obra / Ciclo:</span>
+                  <strong style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{formatCurrency(laborSavingsMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>⚙️ Paradas de Máquina:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(machineDowntimeMonthly)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>⚙️ Paradas de Máquina:</span>
+                  <strong style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>{formatCurrency(machineDowntimeMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>⚡ Ferramental & Energia:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(toolingSavings)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>⚡ Ferramental & Energia:</span>
+                  <strong style={{ color: '#c084fc', fontFamily: 'var(--font-mono)' }}>{formatCurrency(toolingSavings)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#475569' }}>📦 Fretes & Logística:</span>
-                  <strong style={{ color: '#0f172a' }}>{formatCurrency(freightSavings)}</strong>
+                  <span style={{ color: '#cbd5e1' }}>📦 Fretes & Logística:</span>
+                  <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{formatCurrency(freightSavings)}</strong>
                 </div>
               </div>
             </div>

@@ -61,7 +61,7 @@ ${countermeasure}`;
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
-          color: '#2563eb',
+          color: '#22d3ee',
           fontSize: '0.875rem',
           fontWeight: 700,
           textDecoration: 'none',
@@ -74,8 +74,8 @@ ${countermeasure}`;
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
           display: 'flex',
@@ -83,7 +83,7 @@ ${countermeasure}`;
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -92,20 +92,21 @@ ${countermeasure}`;
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              backgroundColor: '#f5f3ff',
+              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <HelpCircle size={26} color="#7c3aed" />
+            <HelpCircle size={26} color="#c084fc" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Investigação dos 5 Porquês
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
               Identifique a causa raiz de anomalias no chão de fábrica e elimine a reincidência
             </p>
           </div>
@@ -122,10 +123,10 @@ ${countermeasure}`;
       </div>
 
       {/* Main Form */}
-      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
         {/* Problem Statement */}
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>
+          <label className="form-label" style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
             Descreva o Problema / Efeito Observado:
           </label>
           <input
@@ -150,8 +151,8 @@ ${countermeasure}`;
             <div
               key={item.num}
               style={{
-                backgroundColor: item.num === 5 ? '#ecfdf5' : '#f8fafc',
-                border: item.num === 5 ? '2px solid #10b981' : '1px solid #e2e8f0',
+                backgroundColor: item.num === 5 ? 'rgba(16, 185, 129, 0.12)' : '#090e1a',
+                border: item.num === 5 ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '10px',
                 padding: '0.875rem 1rem',
               }}
@@ -160,7 +161,7 @@ ${countermeasure}`;
                 style={{
                   fontSize: '0.75rem',
                   fontWeight: 800,
-                  color: item.num === 5 ? '#065f46' : '#475569',
+                  color: item.num === 5 ? '#34d399' : '#94a3b8',
                   textTransform: 'uppercase',
                   display: 'block',
                   marginBottom: '0.35rem',
@@ -183,13 +184,13 @@ ${countermeasure}`;
         {/* Countermeasure */}
         <div
           style={{
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
+            backgroundColor: '#090e1a',
+            border: '1px solid rgba(6, 182, 212, 0.3)',
             borderRadius: '12px',
             padding: '1.25rem',
           }}
         >
-          <label className="form-label" style={{ color: '#1e3a8a', fontWeight: 800, fontSize: '0.9375rem' }}>
+          <label className="form-label" style={{ color: '#22d3ee', fontWeight: 800, fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}>
             🛡️ Contramedida Definitiva & Padronização (SOP / LPP):
           </label>
           <textarea

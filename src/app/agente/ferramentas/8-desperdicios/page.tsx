@@ -15,7 +15,7 @@ export default function OitoDesperdiciosPage() {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
-          color: '#2563eb',
+          color: '#22d3ee',
           fontSize: '0.875rem',
           fontWeight: 700,
           textDecoration: 'none',
@@ -28,8 +28,8 @@ export default function OitoDesperdiciosPage() {
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
           display: 'flex',
@@ -37,7 +37,7 @@ export default function OitoDesperdiciosPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -46,20 +46,21 @@ export default function OitoDesperdiciosPage() {
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              backgroundColor: '#fefce8',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Lightbulb size={26} color="#ca8a04" />
+            <Lightbulb size={26} color="#fbbf24" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Guia dos 8 Desperdícios Lean (Muda)
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
               Referência operacional para identificar oportunidades de melhoria no posto de trabalho
             </p>
           </div>
@@ -80,7 +81,9 @@ export default function OitoDesperdiciosPage() {
             className="card"
             style={{
               padding: '1.5rem',
-              borderLeft: `6px solid ${item.color}`,
+              borderLeft: `5px solid ${item.color || '#22d3ee'}`,
+              backgroundColor: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -94,7 +97,7 @@ export default function OitoDesperdiciosPage() {
                   style={{
                     fontSize: '0.725rem',
                     fontWeight: 800,
-                    color: item.color,
+                    color: item.color || '#22d3ee',
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                   }}
@@ -104,25 +107,25 @@ export default function OitoDesperdiciosPage() {
                 <span style={{ fontSize: '1.25rem' }}>⚡</span>
               </div>
 
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.4rem' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
                 {item.label}
               </h2>
-              <p style={{ fontSize: '0.84375rem', color: '#475569', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', lineHeight: 1.5 }}>
                 {item.description}
               </p>
             </div>
 
             <div
               style={{
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#090e1a',
                 padding: '0.75rem',
                 borderRadius: '8px',
-                border: '1px solid #e2e8f0',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 fontSize: '0.78125rem',
-                color: '#334155',
+                color: '#94a3b8',
               }}
             >
-              <strong>💡 Ação Típica:</strong> Redução de lote, 5S, balanceamento e padronização (SOP).
+              <strong style={{ color: '#ffffff' }}>💡 Ação Típica:</strong> Redução de lote, 5S, balanceamento e padronização (SOP).
             </div>
           </div>
         ))}

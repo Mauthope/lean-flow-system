@@ -7,11 +7,12 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
+  Printer,
   Copy,
   Check,
-  Printer,
-  ShieldCheck,
+  AlertOctagon,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 interface SopStep {
@@ -19,78 +20,77 @@ interface SopStep {
   stepNumber: number;
   description: string;
   keyPoint: string;
-  safetyNote: string;
+  safetyReason: string;
 }
 
 export default function GeradorSopPage() {
-  const [sopTitle, setSopTitle] = useState('Troca Rápida de Matriz Prensa 04 (SMED)');
-  const [sopCode, setSopCode] = useState('SOP-ENG-004');
-  const [authorName, setAuthorName] = useState('Fernanda Lima');
+  const [sopCode, setSopCode] = useState('SOP-LIN-042');
+  const [sopTitle, setSopTitle] = useState('Troca Rápida de Molde (Setup SMED - Prensa 04)');
+  const [authorName, setAuthorName] = useState('Especialista Lean / Manutenção');
+  const [revision, setRevision] = useState('01 (Março/2026)');
+
   const [steps, setSteps] = useState<SopStep[]>([
     {
-      id: 'step_1',
+      id: '1',
       stepNumber: 1,
-      description: 'Buscar e posicionar a nova ferramenta ao lado da máquina enquanto a anterior finaliza.',
-      keyPoint: 'Operação Externa (com máquina ligada)',
-      safetyNote: 'Usar carrinho hidráulico de transporte',
+      description: 'Pré-aquecer o novo ferramental e posicionar carrinhos de apoio na lateral da prensa.',
+      keyPoint: 'Atividade externa enquanto a máquina ainda está rodando o lote anterior.',
+      safetyReason: 'Evita acidentes com ferramentas soltas e reduz o tempo de parada (Setup Externo).',
     },
     {
-      id: 'step_2',
+      id: '2',
       stepNumber: 2,
-      description: 'Acionar clamp hidráulico para desprendimento rápido.',
-      keyPoint: 'Eliminados parafusos manuais',
-      safetyNote: 'Confirmar pressão no manômetro (180 bar)',
+      description: 'Desacoplar grampos de fixação pneumáticos e deslizar o molde antigo.',
+      keyPoint: 'Usar a chave dinamométrica graduada.',
+      safetyReason: 'Garantir despressurização prévia da linha de ar antes do manuseio.',
     },
     {
-      id: 'step_3',
+      id: '3',
       stepNumber: 3,
-      description: 'Deslizar matriz sobre esteira de esferas e travar batentes de segurança.',
-      keyPoint: 'Tempo meta: 90 segundos',
-      safetyNote: 'Manter mãos fora do ponto de prensagem',
+      description: 'Posicionar o novo molde com auxílio dos pinos guias e engate rápido.',
+      keyPoint: 'Alinhamento em 1 único toque através do dispositivo Poka-Yoke.',
+      safetyReason: 'Impede travamento do êmbolo da prensa e desalinhamento de matriz.',
     },
   ]);
+
   const [copied, setCopied] = useState(false);
 
   const handleAddStep = () => {
-    setSteps([
-      ...steps,
-      {
-        id: `step_${Date.now()}`,
-        stepNumber: steps.length + 1,
-        description: '',
-        keyPoint: '',
-        safetyNote: '',
-      },
-    ]);
+    const newStep: SopStep = {
+      id: Date.now().toString(),
+      stepNumber: steps.length + 1,
+      description: '',
+      keyPoint: '',
+      safetyReason: '',
+    };
+    setSteps([...steps, newStep]);
   };
 
   const handleRemoveStep = (id: string) => {
     const filtered = steps.filter((s) => s.id !== id);
-    const renumbered = filtered.map((s, index) => ({ ...s, stepNumber: index + 1 }));
+    const renumbered = filtered.map((s, idx) => ({ ...s, stepNumber: idx + 1 }));
     setSteps(renumbered);
   };
 
-  const handleStepChange = (id: string, field: keyof SopStep, value: string) => {
-    setSteps(
-      steps.map((s) => {
-        if (s.id === id) {
-          return { ...s, [field]: value };
-        }
-        return s;
-      })
+  const handleUpdateStep = (id: string, field: keyof SopStep, val: string) => {
+    setSteps((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, [field]: val } : s))
     );
   };
 
   const handleCopySop = () => {
-    let text = `📋 PROCEDIMENTO OPERACIONAL PADRÃO (SOP):
-Código: ${sopCode} | Título: ${sopTitle}
-Elaborador: ${authorName}
+    const text = `📋 PROCEDIMENTO OPERACIONAL PADRÃO (SOP):
+Código: ${sopCode} • Revisão: ${revision}
+Título: ${sopTitle}
+Responsável: ${authorName}
 
-ETAPAS DO PROCESSO:
-`;
-    steps.forEach((s) => {
-      text += `\nPasso ${s.stepNumber}: ${s.description}\n  • Ponto Chave: ${s.keyPoint || '—'}\n  • Segurança: ${s.safetyNote || '—'}\n`;
-    });
+PASSO A PASSO DA OPERAÇÃO:
+${steps
+  .map(
+    (s) =>
+      `Passo ${s.stepNumber}: ${s.description}\n  • Ponto Chave (Como fazer): ${s.keyPoint}\n  • Motivo / Segurança: ${s.safetyReason}`
+  )
+  .join('\n\n')}`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -106,7 +106,7 @@ ETAPAS DO PROCESSO:
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
-          color: '#2563eb',
+          color: '#22d3ee',
           fontSize: '0.875rem',
           fontWeight: 700,
           textDecoration: 'none',
@@ -119,8 +119,8 @@ ETAPAS DO PROCESSO:
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
           display: 'flex',
@@ -128,7 +128,7 @@ ETAPAS DO PROCESSO:
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -137,20 +137,21 @@ ETAPAS DO PROCESSO:
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              backgroundColor: '#ecfeff',
+              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <FileCheck size={26} color="#0891b2" />
+            <FileCheck size={26} color="#22d3ee" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Gerador de Procedimento Padrão (SOP)
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
               Padronize as melhores práticas e instruções de trabalho para o operador
             </p>
           </div>
@@ -178,11 +179,11 @@ ETAPAS DO PROCESSO:
       </div>
 
       {/* Main SOP Card */}
-      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
         {/* SOP Header Fields */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           <div>
-            <label className="form-label">Código do Documento:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Código do Documento:</label>
             <input
               type="text"
               className="form-control"
@@ -192,7 +193,7 @@ ETAPAS DO PROCESSO:
           </div>
 
           <div>
-            <label className="form-label">Título do Procedimento:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Título do Procedimento:</label>
             <input
               type="text"
               className="form-control"
@@ -202,7 +203,7 @@ ETAPAS DO PROCESSO:
           </div>
 
           <div>
-            <label className="form-label">Responsável / Elaborador:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Responsável / Elaborador:</label>
             <input
               type="text"
               className="form-control"
@@ -215,7 +216,7 @@ ETAPAS DO PROCESSO:
         {/* Steps List */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Passo a Passo da Operação Padrão
             </h2>
             <button
@@ -233,8 +234,8 @@ ETAPAS DO PROCESSO:
               <div
                 key={step.id}
                 style={{
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: '#090e1a',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '12px',
                   padding: '1.125rem',
                   display: 'flex',
@@ -247,64 +248,63 @@ ETAPAS DO PROCESSO:
                     style={{
                       fontSize: '0.8125rem',
                       fontWeight: 800,
-                      backgroundColor: '#0891b2',
-                      color: '#ffffff',
+                      backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                      color: '#22d3ee',
                       padding: '0.2rem 0.6rem',
-                      borderRadius: '9999px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
                     }}
                   >
-                    Passo {step.stepNumber}
+                    Passo #{step.stepNumber}
                   </span>
 
                   {steps.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveStep(step.id)}
-                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                      title="Excluir este passo"
+                      className="btn btn-outline-danger btn-sm"
+                      style={{ padding: '0.2rem 0.5rem' }}
                     >
-                      <Trash2 size={15} />
+                      <Trash2 size={12} /> Excluir Passo
                     </button>
                   )}
                 </div>
 
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.78125rem' }}>
-                    O que fazer (Ação Principal):
-                  </label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>1. O que fazer (Ação Principal):</label>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Descreva a instrução clara para o operador..."
+                    placeholder="Descreva a atividade a ser executada pelo operador..."
                     value={step.description}
-                    onChange={(e) => handleStepChange(step.id, 'description', e.target.value)}
+                    onChange={(e) => handleUpdateStep(step.id, 'description', e.target.value)}
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#0891b2' }}>
-                      🔑 Ponto Chave (Como fazer):
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#38bdf8' }}>
+                      💡 2. Ponto Chave (Como fazer com excelência):
                     </label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Ex: Sentido horário..."
+                      placeholder="Dica técnica, macete, posição..."
                       value={step.keyPoint}
-                      onChange={(e) => handleStepChange(step.id, 'keyPoint', e.target.value)}
+                      onChange={(e) => handleUpdateStep(step.id, 'keyPoint', e.target.value)}
                     />
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#dc2626' }}>
-                      🛡️ Ponto de Segurança (EPI / Atenção):
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#f87171' }}>
+                      ⚠️ 3. Motivo & Segurança (Por que fazer assim):
                     </label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Ex: Usar luva nitrílica..."
-                      value={step.safetyNote}
-                      onChange={(e) => handleStepChange(step.id, 'safetyNote', e.target.value)}
+                      placeholder="Evitar prensamento, defeito de solda..."
+                      value={step.safetyReason}
+                      onChange={(e) => handleUpdateStep(step.id, 'safetyReason', e.target.value)}
                     />
                   </div>
                 </div>

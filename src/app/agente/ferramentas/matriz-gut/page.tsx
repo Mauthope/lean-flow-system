@@ -21,9 +21,9 @@ export default function MatrizGutPage() {
   const gutScore = gravidade * urgencia * tendencia;
 
   const getPriorityLevel = (score: number) => {
-    if (score >= 60) return { label: 'Prioridade Crítica (Ação Imediata)', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' };
-    if (score >= 30) return { label: 'Prioridade Alta / Média (Planejar)', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return { label: 'Prioridade Baixa (Monitorar)', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' };
+    if (score >= 60) return { label: 'Prioridade Crítica (Ação Imediata)', color: '#f87171', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)' };
+    if (score >= 30) return { label: 'Prioridade Alta / Média (Planejar)', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)' };
+    return { label: 'Prioridade Baixa (Monitorar)', color: '#34d399', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.4)' };
   };
 
   const priority = getPriorityLevel(gutScore);
@@ -37,7 +37,7 @@ export default function MatrizGutPage() {
           display: 'inline-flex',
           alignItems: 'center',
           gap: '0.4rem',
-          color: '#2563eb',
+          color: '#22d3ee',
           fontSize: '0.875rem',
           fontWeight: 700,
           textDecoration: 'none',
@@ -50,8 +50,8 @@ export default function MatrizGutPage() {
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
           display: 'flex',
@@ -59,7 +59,7 @@ export default function MatrizGutPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -68,20 +68,21 @@ export default function MatrizGutPage() {
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              backgroundColor: '#fff7ed',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            <Target size={26} color="#ea580c" />
+            <Target size={26} color="#fbbf24" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Matriz GUT de Priorização
             </h1>
-            <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
               Classificação objetiva de Gravidade × Urgência × Tendência (1 a 125)
             </p>
           </div>
@@ -89,9 +90,9 @@ export default function MatrizGutPage() {
       </div>
 
       {/* Main Card */}
-      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0f172a' }}>
+          <label className="form-label" style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
             Título do Problema / Oportunidade Lean:
           </label>
           <input
@@ -106,11 +107,11 @@ export default function MatrizGutPage() {
         {/* 3 Selectors (G, U, T) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
           {/* Gravidade */}
-          <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <label className="form-label" style={{ color: '#0f172a', fontWeight: 700 }}>
+          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <label className="form-label" style={{ color: '#f87171', fontWeight: 800 }}>
               🔴 Gravidade (G): {gravidade}
             </label>
-            <p style={{ fontSize: '0.725rem', color: '#64748b', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               Qual o impacto financeiro, de segurança ou qualidade se nada for feito?
             </p>
             <select
@@ -127,11 +128,11 @@ export default function MatrizGutPage() {
           </div>
 
           {/* Urgência */}
-          <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <label className="form-label" style={{ color: '#0f172a', fontWeight: 700 }}>
+          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <label className="form-label" style={{ color: '#fbbf24', fontWeight: 800 }}>
               🟡 Urgência (U): {urgencia}
             </label>
-            <p style={{ fontSize: '0.725rem', color: '#64748b', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               O tempo que temos para resolver antes que cause transtorno.
             </p>
             <select
@@ -148,11 +149,11 @@ export default function MatrizGutPage() {
           </div>
 
           {/* Tendência */}
-          <div style={{ backgroundColor: '#f8fafc', padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <label className="form-label" style={{ color: '#0f172a', fontWeight: 700 }}>
+          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <label className="form-label" style={{ color: '#38bdf8', fontWeight: 800 }}>
               🔵 Tendência (T): {tendencia}
             </label>
-            <p style={{ fontSize: '0.725rem', color: '#64748b', marginBottom: '0.5rem' }}>
+            <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               Se nada for feito, o problema vai crescer ou permanecer igual?
             </p>
             <select
@@ -173,7 +174,7 @@ export default function MatrizGutPage() {
         <div
           style={{
             backgroundColor: priority.bg,
-            border: `2px solid ${priority.border}`,
+            border: `1px solid ${priority.border}`,
             borderRadius: '14px',
             padding: '1.5rem',
             display: 'flex',
@@ -187,8 +188,8 @@ export default function MatrizGutPage() {
             <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: priority.color }}>
               Score Final GUT (G × U × T):
             </span>
-            <p style={{ fontSize: '2.5rem', fontWeight: 900, color: priority.color, lineHeight: 1.1, marginTop: '0.2rem' }}>
-              {gutScore} <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#64748b' }}>/ 125</span>
+            <p style={{ fontSize: '2.5rem', fontWeight: 900, color: priority.color, lineHeight: 1.1, marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+              {gutScore} <span style={{ fontSize: '1.1rem', fontWeight: 600, color: '#94a3b8' }}>/ 125</span>
             </p>
           </div>
 
@@ -199,8 +200,9 @@ export default function MatrizGutPage() {
                 fontWeight: 800,
                 padding: '0.45rem 1rem',
                 borderRadius: '9999px',
-                backgroundColor: priority.color,
-                color: '#ffffff',
+                backgroundColor: priority.bg,
+                color: priority.color,
+                border: `1px solid ${priority.border}`,
                 display: 'inline-block',
               }}
             >

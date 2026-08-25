@@ -552,8 +552,8 @@ export default function CronoanalisePage() {
       <div
         className="card"
         style={{
-          border: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#0f172a',
           borderRadius: '14px',
           overflow: 'hidden',
         }}
@@ -562,8 +562,8 @@ export default function CronoanalisePage() {
           onClick={() => setShowDefinitions(!showDefinitions)}
           style={{
             padding: '0.875rem 1.25rem',
-            backgroundColor: '#f8fafc',
-            borderBottom: showDefinitions ? '1px solid #e2e8f0' : 'none',
+            backgroundColor: '#0d1527',
+            borderBottom: showDefinitions ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -571,12 +571,12 @@ export default function CronoanalisePage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Info size={18} color="#2563eb" />
-            <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>
+            <Info size={18} color="#22d3ee" />
+            <strong style={{ fontSize: '0.9rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               Fundamentos Lean: O que é Valor Agregado (VA) e Desperdício (NVA)?
             </strong>
           </div>
-          {showDefinitions ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+          {showDefinitions ? <ChevronUp size={16} color="#94a3b8" /> : <ChevronDown size={16} color="#94a3b8" />}
         </div>
 
         {showDefinitions && (
@@ -586,23 +586,24 @@ export default function CronoanalisePage() {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: '1rem',
+              backgroundColor: '#0f172a',
             }}
           >
             {/* VA */}
             <div
               style={{
-                backgroundColor: '#f0fdf4',
-                border: '1px solid #bbf7d0',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
                 borderRadius: '10px',
                 padding: '1rem',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>🟢</span>
-                <strong style={{ color: '#166534', fontSize: '0.9rem' }}>Valor Agregado (VA - Value Added)</strong>
+                <strong style={{ color: '#34d399', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>Valor Agregado (VA - Value Added)</strong>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#14532d', lineHeight: 1.4, margin: 0 }}>
-                Atividades que <strong>transformam o produto ou serviço</strong> de forma física ou lógica, pelas quais o <strong>cliente está disposto a pagar</strong> e feitas com qualidade na 1ª vez.
+              <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4, margin: 0 }}>
+                Atividades que <strong style={{ color: '#ffffff' }}>transformam o produto ou serviço</strong> de forma física ou lógica, pelas quais o <strong style={{ color: '#34d399' }}>cliente está disposto a pagar</strong> e feitas com qualidade na 1ª vez.
                 <br />
                 <em>Exemplos: Usinar uma peça, soldar uma junta, montar componentes, pintar o chassi.</em>
               </p>
@@ -611,18 +612,18 @@ export default function CronoanalisePage() {
             {/* NVA */}
             <div
               style={{
-                backgroundColor: '#fef2f2',
-                border: '1px solid #fecaca',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
                 borderRadius: '10px',
                 padding: '1rem',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>🔴</span>
-                <strong style={{ color: '#991b1b', fontSize: '0.9rem' }}>Desperdício Puro (NVA - Non-Value Added / Muda)</strong>
+                <strong style={{ color: '#f87171', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>Desperdício Puro (NVA - Non-Value Added / Muda)</strong>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#7f1d1d', lineHeight: 1.4, margin: 0 }}>
-                Atividades que consomem tempo, energia e custo <strong>sem agregar valor</strong> nenhum para o cliente. Devem ser <strong>eliminadas imediatamente</strong>.
+              <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4, margin: 0 }}>
+                Atividades que consomem tempo, energia e custo <strong style={{ color: '#f87171' }}>sem agregar valor</strong> nenhum para o cliente. Devem ser <strong style={{ color: '#f87171' }}>eliminadas imediatamente</strong>.
                 <br />
                 <em>Exemplos: Espera por material, retrabalho, setup excessivo, movimentações e deslocamentos.</em>
               </p>
@@ -631,18 +632,18 @@ export default function CronoanalisePage() {
             {/* NNVA */}
             <div
               style={{
-                backgroundColor: '#ecfeff',
-                border: '1px solid #a5f3fc',
+                backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
                 borderRadius: '10px',
                 padding: '1rem',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                 <span style={{ fontSize: '1.1rem' }}>🟡</span>
-                <strong style={{ color: '#155e75', fontSize: '0.9rem' }}>Não Agrega Valor mas Necessário (NNVA)</strong>
+                <strong style={{ color: '#22d3ee', fontSize: '0.9rem', fontFamily: 'var(--font-heading)' }}>Não Agrega Valor mas Necessário (NNVA)</strong>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#164e63', lineHeight: 1.4, margin: 0 }}>
-                Atividades que não agregam valor sob a ótica do cliente, mas são <strong>indispensáveis</strong> no processo atual (normas de segurança, inspeção técnica ou legislação). Devem ser <strong>otimizadas e reduzidas</strong>.
+              <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4, margin: 0 }}>
+                Atividades que não agregam valor sob a ótica do cliente, mas são <strong style={{ color: '#ffffff' }}>indispensáveis</strong> no processo atual (normas de segurança, inspeção técnica ou legislação). Devem ser <strong style={{ color: '#22d3ee' }}>otimizadas e reduzidas</strong>.
                 <br />
                 <em>Exemplos: Inspeção obrigatória, troca de EPI, preenchimento de lote rastreável.</em>
               </p>
@@ -788,40 +789,40 @@ export default function CronoanalisePage() {
             marginBottom: '1rem',
           }}
         >
-          <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>AMOSTRAS COLETADAS ($n$)</span>
-            <strong style={{ fontSize: '1.25rem', color: '#0f172a' }}>{statsCalc.sampleSizeCurrent}</strong>
+          <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, display: 'block' }}>AMOSTRAS COLETADAS ($n$)</span>
+            <strong style={{ fontSize: '1.25rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{statsCalc.sampleSizeCurrent}</strong>
           </div>
 
-          <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>TEMPO MÉDIO (x̄)</span>
-            <strong style={{ fontSize: '1.25rem', color: '#0f172a' }}>{statsCalc.mean}s</strong>
+          <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, display: 'block' }}>TEMPO MÉDIO (x̄)</span>
+            <strong style={{ fontSize: '1.25rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{statsCalc.mean}s</strong>
           </div>
 
-          <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>DESVIO PADRÃO (s)</span>
-            <strong style={{ fontSize: '1.25rem', color: '#0f172a' }}>{statsCalc.stdDev}s</strong>
+          <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, display: 'block' }}>DESVIO PADRÃO (s)</span>
+            <strong style={{ fontSize: '1.25rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>{statsCalc.stdDev}s</strong>
           </div>
 
-          <div style={{ backgroundColor: '#ffffff', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'block' }}>COEF. VARIAÇÃO (CV)</span>
-            <strong style={{ fontSize: '1.25rem', color: statsCalc.cv > 30 ? '#dc2626' : '#059669' }}>
+          <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, display: 'block' }}>COEF. VARIAÇÃO (CV)</span>
+            <strong style={{ fontSize: '1.25rem', color: statsCalc.cv > 30 ? '#f87171' : '#34d399', fontFamily: 'var(--font-mono)' }}>
               {statsCalc.cv}%
             </strong>
           </div>
 
           <div
             style={{
-              backgroundColor: statsCalc.isReliable ? '#dcfce7' : '#fef3c7',
+              backgroundColor: statsCalc.isReliable ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
               padding: '0.75rem',
               borderRadius: '10px',
-              border: `1px solid ${statsCalc.isReliable ? '#86efac' : '#fde68a'}`,
+              border: `1px solid ${statsCalc.isReliable ? 'rgba(16, 185, 129, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
             }}
           >
-            <span style={{ fontSize: '0.7rem', color: statsCalc.isReliable ? '#166534' : '#92400e', fontWeight: 700, display: 'block' }}>
+            <span style={{ fontSize: '0.7rem', color: statsCalc.isReliable ? '#34d399' : '#fbbf24', fontWeight: 800, display: 'block' }}>
               AMOSTRAS MÍNIMAS (N&apos;)
             </span>
-            <strong style={{ fontSize: '1.25rem', color: statsCalc.isReliable ? '#166534' : '#92400e' }}>
+            <strong style={{ fontSize: '1.25rem', color: statsCalc.isReliable ? '#34d399' : '#fbbf24', fontFamily: 'var(--font-mono)' }}>
               {statsCalc.requiredN} {statsCalc.isReliable ? '✅' : `(faltam ${statsCalc.pendingSamples})`}
             </strong>
           </div>
@@ -832,10 +833,10 @@ export default function CronoanalisePage() {
           style={{
             padding: '0.875rem 1rem',
             borderRadius: '10px',
-            backgroundColor: statsCalc.isReliable ? '#ecfdf5' : '#fffbeb',
-            border: `1px solid ${statsCalc.isReliable ? '#a7f3d0' : '#fde68a'}`,
+            backgroundColor: statsCalc.isReliable ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+            border: `1px solid ${statsCalc.isReliable ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
             fontSize: '0.84375rem',
-            color: statsCalc.isReliable ? '#065f46' : '#92400e',
+            color: statsCalc.isReliable ? '#34d399' : '#fbbf24',
             display: 'flex',
             alignItems: 'center',
             gap: '0.6rem',
@@ -843,16 +844,16 @@ export default function CronoanalisePage() {
         >
           {statsCalc.isReliable ? (
             <>
-              <CheckCircle2 size={20} color="#059669" />
+              <CheckCircle2 size={20} color="#34d399" />
               <div>
-                <strong>Amostragem com Confiabilidade Atingida!</strong> O estudo atual com {statsCalc.sampleSizeCurrent} tomadas atende a exigência mínima de {statsCalc.requiredN} medições com <strong>{(confidenceLevel * 100).toFixed(0)}% de confiança</strong> e margem de erro ≤ {(toleratedError * 100).toFixed(0)}%.
+                <strong style={{ color: '#ffffff' }}>Amostragem com Confiabilidade Atingida!</strong> O estudo atual com {statsCalc.sampleSizeCurrent} tomadas atende a exigência mínima de {statsCalc.requiredN} medições com <strong>{(confidenceLevel * 100).toFixed(0)}% de confiança</strong> e margem de erro ≤ {(toleratedError * 100).toFixed(0)}%.
               </div>
             </>
           ) : (
             <>
-              <AlertTriangle size={20} color="#d97706" />
+              <AlertTriangle size={20} color="#fbbf24" />
               <div>
-                <strong>Amostragem Preliminar em Progresso:</strong> Para garantir {(confidenceLevel * 100).toFixed(0)}% de confiança estatística sem distorções, realize mais <strong>{statsCalc.pendingSamples} tomadas de tempo</strong> (Total necessário: {statsCalc.requiredN} amostras).
+                <strong style={{ color: '#ffffff' }}>Amostragem Preliminar em Progresso:</strong> Para garantir {(confidenceLevel * 100).toFixed(0)}% de confiança estatística sem distorções, realize mais <strong>{statsCalc.pendingSamples} tomadas de tempo</strong> (Total necessário: {statsCalc.requiredN} amostras).
               </div>
             </>
           )}
@@ -864,15 +865,15 @@ export default function CronoanalisePage() {
             style={{
               marginTop: '1rem',
               padding: '1rem',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#090e1a',
               borderRadius: '10px',
-              border: '1px solid #e2e8f0',
-              fontFamily: 'monospace',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              fontFamily: 'var(--font-mono)',
               fontSize: '0.8125rem',
-              color: '#1e293b',
+              color: '#cbd5e1',
             }}
           >
-            <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem', fontFamily: 'sans-serif' }}>
+            <div style={{ fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>
               📐 Memória de Cálculo Estatístico Passo a Passo:
             </div>
             <div style={{ lineHeight: 1.6 }}>
@@ -1381,9 +1382,9 @@ export default function CronoanalisePage() {
               <div
                 key={cycle.cycleNumber}
                 style={{
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
                   borderRadius: '12px',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: '#0f172a',
                   overflow: 'hidden',
                 }}
               >
@@ -1391,8 +1392,8 @@ export default function CronoanalisePage() {
                 <div
                   style={{
                     padding: '0.75rem 1.25rem',
-                    backgroundColor: '#f8fafc',
-                    borderBottom: '1px solid #e2e8f0',
+                    backgroundColor: '#0d1527',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -1403,25 +1404,27 @@ export default function CronoanalisePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span
                       style={{
-                        backgroundColor: '#2563eb',
-                        color: '#ffffff',
+                        backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                        color: '#22d3ee',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
                         fontWeight: 800,
                         fontSize: '0.75rem',
                         padding: '0.2rem 0.5rem',
                         borderRadius: '6px',
+                        fontFamily: 'var(--font-mono)',
                       }}
                     >
                       Ciclo #{cycle.cycleNumber}
                     </span>
-                    <strong style={{ fontSize: '0.875rem', color: '#0f172a' }}>{cycle.cycleName}</strong>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>({cycle.items.length} etapas)</span>
+                    <strong style={{ fontSize: '0.875rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>{cycle.cycleName}</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>({cycle.items.length} etapas)</span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.8125rem' }}>
-                    <span>
-                      Tempo Total: <strong>{cycle.totalTime}s</strong> ({Math.floor(cycle.totalTime / 60)}m {cycle.totalTime % 60}s)
+                    <span style={{ color: '#cbd5e1' }}>
+                      Tempo Total: <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{cycle.totalTime}s</strong> ({Math.floor(cycle.totalTime / 60)}m {cycle.totalTime % 60}s)
                     </span>
-                    <span style={{ color: '#059669', fontWeight: 700 }}>
+                    <span style={{ color: '#34d399', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                       Eficiência VA: {cycle.efficiency}%
                     </span>
                   </div>
@@ -1432,12 +1435,12 @@ export default function CronoanalisePage() {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>HORA</th>
-                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>ATIVIDADE / MOTIVO</th>
-                        <th style={{ textAlign: 'center', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>TIPO LEAN</th>
-                        <th style={{ textAlign: 'right', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>DURAÇÃO</th>
-                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>OBSERVAÇÃO DO POSTO</th>
-                        <th style={{ textAlign: 'center', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#64748b' }}>AÇÃO</th>
+                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>HORA</th>
+                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>ATIVIDADE / MOTIVO</th>
+                        <th style={{ textAlign: 'center', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>TIPO LEAN</th>
+                        <th style={{ textAlign: 'right', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>DURAÇÃO</th>
+                        <th style={{ textAlign: 'left', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>OBSERVAÇÃO DO POSTO</th>
+                        <th style={{ textAlign: 'center', padding: '0.6rem 1rem', fontSize: '0.725rem', color: '#94a3b8' }}>AÇÃO</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1449,27 +1452,28 @@ export default function CronoanalisePage() {
                         const isNNVA = item.type === 'NNVA';
 
                         return (
-                          <tr key={item.id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.78125rem', color: '#64748b' }}>{item.date.split(' ')[1] || item.date}</td>
-                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.84375rem', fontWeight: 600, color: '#0f172a' }}>{item.motivo}</td>
+                          <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.78125rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>{item.date.split(' ')[1] || item.date}</td>
+                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.84375rem', fontWeight: 700, color: '#ffffff' }}>{item.motivo}</td>
                             <td style={{ padding: '0.6rem 1rem', textAlign: 'center' }}>
                               <span
                                 style={{
                                   fontSize: '0.65rem',
-                                  fontWeight: 700,
-                                  padding: '0.1rem 0.4rem',
+                                  fontWeight: 800,
+                                  padding: '0.15rem 0.45rem',
                                   borderRadius: '4px',
-                                  backgroundColor: isVA ? '#ecfdf5' : isNNVA ? '#ecfeff' : '#fef2f2',
-                                  color: isVA ? '#059669' : isNNVA ? '#0891b2' : '#dc2626',
+                                  backgroundColor: isVA ? 'rgba(16, 185, 129, 0.15)' : isNNVA ? 'rgba(6, 182, 212, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                  color: isVA ? '#34d399' : isNNVA ? '#22d3ee' : '#f87171',
+                                  border: `1px solid ${isVA ? 'rgba(16, 185, 129, 0.35)' : isNNVA ? 'rgba(6, 182, 212, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
                                 }}
                               >
                                 {isVA ? '🟢 VA' : isNNVA ? '🟡 NNVA' : '🔴 NVA'}
                               </span>
                             </td>
-                            <td style={{ padding: '0.6rem 1rem', textAlign: 'right', fontSize: '0.84375rem', fontWeight: 700, fontFamily: 'monospace' }}>
+                            <td style={{ padding: '0.6rem 1rem', textAlign: 'right', fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
                               {item.timeSeconds}s ({formatted})
                             </td>
-                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.8125rem', color: '#334155' }}>
+                            <td style={{ padding: '0.6rem 1rem', fontSize: '0.8125rem', color: '#cbd5e1' }}>
                               <input
                                 type="text"
                                 defaultValue={item.observation || ''}
@@ -1479,9 +1483,10 @@ export default function CronoanalisePage() {
                                   width: '100%',
                                   padding: '0.25rem 0.5rem',
                                   fontSize: '0.78125rem',
-                                  border: '1px solid #e2e8f0',
+                                  border: '1px solid rgba(255, 255, 255, 0.1)',
                                   borderRadius: '6px',
-                                  backgroundColor: item.observation ? '#ffffff' : '#f8fafc',
+                                  backgroundColor: '#090e1a',
+                                  color: '#ffffff',
                                 }}
                               />
                             </td>
@@ -1491,7 +1496,7 @@ export default function CronoanalisePage() {
                                 style={{
                                   background: 'transparent',
                                   border: 'none',
-                                  color: '#ef4444',
+                                  color: '#f87171',
                                   cursor: 'pointer',
                                   padding: '0.25rem',
                                 }}
@@ -1515,13 +1520,13 @@ export default function CronoanalisePage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>CICLO</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>DATA / HORA</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>MOTIVO</th>
-                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>TIPO LEAN</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>TEMPO (SEG)</th>
-                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>OBSERVAÇÃO</th>
-                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#64748b' }}>AÇÃO</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>CICLO</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>DATA / HORA</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>MOTIVO</th>
+                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>TIPO LEAN</th>
+                  <th style={{ textAlign: 'right', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>TEMPO (SEG)</th>
+                  <th style={{ textAlign: 'left', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>OBSERVAÇÃO</th>
+                  <th style={{ textAlign: 'center', padding: '0.75rem', fontSize: '0.75rem', color: '#94a3b8' }}>AÇÃO</th>
                 </tr>
               </thead>
               <tbody>
@@ -1533,27 +1538,28 @@ export default function CronoanalisePage() {
                   const isNNVA = rec.type === 'NNVA';
 
                   return (
-                    <tr key={rec.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '0.75rem', fontSize: '0.78125rem', fontWeight: 700, color: '#2563eb' }}>
+                    <tr key={rec.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <td style={{ padding: '0.75rem', fontSize: '0.78125rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
                         Ciclo #{rec.cycleNumber}
                       </td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#475569' }}>{rec.date}</td>
-                      <td style={{ padding: '0.75rem', fontSize: '0.84375rem', fontWeight: 600, color: '#0f172a' }}>{rec.motivo}</td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.8125rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>{rec.date}</td>
+                      <td style={{ padding: '0.75rem', fontSize: '0.84375rem', fontWeight: 700, color: '#ffffff' }}>{rec.motivo}</td>
                       <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                         <span
                           style={{
                             fontSize: '0.7rem',
-                            fontWeight: 700,
+                            fontWeight: 800,
                             padding: '0.15rem 0.45rem',
                             borderRadius: '4px',
-                            backgroundColor: isVA ? '#ecfdf5' : isNNVA ? '#ecfeff' : '#fef2f2',
-                            color: isVA ? '#059669' : isNNVA ? '#0891b2' : '#dc2626',
+                            backgroundColor: isVA ? 'rgba(16, 185, 129, 0.15)' : isNNVA ? 'rgba(6, 182, 212, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                            color: isVA ? '#34d399' : isNNVA ? '#22d3ee' : '#f87171',
+                            border: `1px solid ${isVA ? 'rgba(16, 185, 129, 0.35)' : isNNVA ? 'rgba(6, 182, 212, 0.35)' : 'rgba(239, 68, 68, 0.35)'}`,
                           }}
                         >
                           {isVA ? '🟢 VA' : isNNVA ? '🟡 NNVA' : '🔴 NVA'}
                         </span>
                       </td>
-                      <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.84375rem', fontWeight: 700, fontFamily: 'monospace' }}>
+                      <td style={{ padding: '0.75rem', textAlign: 'right', fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
                         {rec.timeSeconds}s ({formatted})
                       </td>
                       <td style={{ padding: '0.75rem', fontSize: '0.8125rem' }}>
@@ -1566,9 +1572,10 @@ export default function CronoanalisePage() {
                             width: '100%',
                             padding: '0.25rem 0.5rem',
                             fontSize: '0.78125rem',
-                            border: '1px solid #e2e8f0',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '6px',
-                            backgroundColor: rec.observation ? '#ffffff' : '#f8fafc',
+                            backgroundColor: '#090e1a',
+                            color: '#ffffff',
                           }}
                         />
                       </td>
@@ -1578,7 +1585,7 @@ export default function CronoanalisePage() {
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#ef4444',
+                            color: '#f87171',
                             cursor: 'pointer',
                             padding: '0.3rem',
                           }}
