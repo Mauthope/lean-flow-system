@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
 import { LeanAction } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
-import { formatDateTime, formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
+import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
 import {
   ArrowLeft,
   Printer,
@@ -503,8 +503,8 @@ export default function AdminProjectDetailPage() {
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: 'auto' }}>
                         {item.durationHours && <span>⏱️ Duração: {item.durationHours}h</span>}
-                        {item.startDate && <span>📅 Início: {item.startDate}</span>}
-                        {item.endDate && <span>🏁 Fim: {item.endDate}</span>}
+                        {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
+                        {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
                       </div>
                     </div>
                   )}

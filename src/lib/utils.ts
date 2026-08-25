@@ -11,12 +11,26 @@ export function formatCurrency(value: number): string {
 export function formatDate(dateString?: string): string {
   if (!dateString) return '—';
   try {
+    const trimmed = String(dateString).trim();
+    // YYYY-MM-DD format (direct split avoids UTC offset bug)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const [year, month, day] = trimmed.split('-');
+      return `${day}/${month}/${year}`;
+    }
+    // ISO string with YYYY-MM-DD
+    if (trimmed.includes('T')) {
+      const [datePart] = trimmed.split('T');
+      if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+        const [year, month, day] = datePart.split('-');
+        return `${day}/${month}/${year}`;
+      }
+    }
     const d = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }).format(d);
+    if (isNaN(d.getTime())) return dateString;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   } catch {
     return dateString;
   }
@@ -26,13 +40,13 @@ export function formatDateTime(dateString?: string): string {
   if (!dateString) return '—';
   try {
     const d = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(d);
+    if (isNaN(d.getTime())) return dateString;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} às ${hours}:${minutes}`;
   } catch {
     return dateString;
   }
