@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { StatsCard } from '@/components/ui/StatsCard';
-import { WASTE_CATEGORIES, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import {
   TrendingUp,
   DollarSign,
@@ -251,105 +251,59 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Distribution Grids: Waste Categories & Sectors */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.5rem' }}>
-        {/* Waste Categories Breakdown */}
-        <div className="card">
-          <div className="card-header">
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-              Distribuição por Categoria de Desperdício Lean
-            </h3>
-          </div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {Object.entries(WASTE_CATEGORIES).map(([key, cat]) => {
-              const count = metrics.byWasteCategory[key as keyof typeof metrics.byWasteCategory] || 0;
-              const pct = metrics.totalActions > 0 ? Math.round((count / metrics.totalActions) * 100) : 0;
-              return (
-                <div key={key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: '0.25rem' }}>
-                    <span style={{ fontWeight: 600, color: '#cbd5e1' }}>{cat.label}</span>
-                    <span style={{ fontWeight: 700, color: '#f8fafc' }}>
-                      {count} ({pct}%)
-                    </span>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        width: `${pct}%`,
-                        height: '100%',
-                        backgroundColor:
-                          key === 'defeitos'
-                            ? '#ef4444'
-                            : key === 'espera'
-                            ? '#f59e0b'
-                            : key === 'superproducao'
-                            ? '#8b5cf6'
-                            : '#06b6d4',
-                        borderRadius: '999px',
-                        transition: 'width 0.3s ease',
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Sectors ROI Breakdown */}
+      <div className="card">
+        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+            Impacto & Custo Evitado por Setor
+          </h3>
+          <Link href="/admin/setores" className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem' }}>
+            Ver Setores
+          </Link>
         </div>
-
-        {/* Sectors ROI Breakdown */}
-        <div className="card">
-          <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-              Impacto & Custo Evitado por Setor
-            </h3>
-            <Link href="/admin/setores" className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem' }}>
-              Ver Setores
-            </Link>
-          </div>
-          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {metrics.bySector.map((sec) => (
-              <div
-                key={sec.sectorId}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0.75rem 0.85rem',
-                  backgroundColor: '#090e1a',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                      border: '1px solid rgba(6, 182, 212, 0.3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Building2 size={18} color="#22d3ee" />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>{sec.sectorName}</p>
-                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{sec.count} ações registradas</p>
-                  </div>
+        <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
+          {metrics.bySector.map((sec) => (
+            <div
+              key={sec.sectorId}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 0.85rem',
+                backgroundColor: '#090e1a',
+                borderRadius: '10px',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Building2 size={18} color="#22d3ee" />
                 </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Custo Evitado</span>
-                  <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#34d399', margin: 0 }}>
-                    {formatCurrency(sec.costAvoided)}
-                  </p>
+                <div>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>{sec.sectorName}</p>
+                  <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{sec.count} ações registradas</p>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Custo Evitado</span>
+                <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(sec.costAvoided)}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
