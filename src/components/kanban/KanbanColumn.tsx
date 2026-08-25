@@ -78,7 +78,14 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       }}
     >
       {/* Column Header */}
-      <div className="kanban-col-header">
+      <div
+        className="kanban-col-header"
+        style={{
+          backgroundColor: '#101a33',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          padding: '0.875rem 1rem',
+        }}
+      >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <span
@@ -88,10 +95,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 borderRadius: '50%',
                 backgroundColor: headerInfo.dotColor,
                 display: 'inline-block',
-                boxShadow: `0 0 8px ${headerInfo.dotColor}`,
+                boxShadow: `0 0 10px ${headerInfo.dotColor}`,
               }}
             />
-            <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <h3 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#f8fafc', margin: 0, fontFamily: 'var(--font-heading)' }}>
               {headerInfo.title}
             </h3>
             <span
@@ -102,13 +109,13 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 color: headerInfo.textBadge,
                 padding: '0.1rem 0.45rem',
                 borderRadius: '9999px',
-                border: `1px solid ${headerInfo.dotColor}40`,
+                border: `1px solid ${headerInfo.dotColor}50`,
               }}
             >
               {actions.length}
             </span>
           </div>
-          <p style={{ fontSize: '0.675rem', color: '#64748b', marginTop: '0.15rem', marginBottom: 0 }}>
+          <p style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.15rem', marginBottom: 0 }}>
             {headerInfo.subtitle}
           </p>
         </div>
@@ -120,9 +127,9 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             </span>
             <span
               style={{
-                fontSize: '0.75rem',
+                fontSize: '0.78125rem',
                 fontWeight: 800,
-                color: status === 'concluida' ? '#059669' : '#1e293b',
+                color: status === 'concluida' ? '#34d399' : '#f8fafc',
               }}
             >
               {formatCurrency(totalCost)}
@@ -138,11 +145,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             style={{
               padding: '2.5rem 1rem',
               textAlign: 'center',
-              color: '#94a3b8',
-              fontSize: '0.8125rem',
-              border: '2px dashed #e2e8f0',
+              color: '#64748b',
+              fontSize: '0.78125rem',
+              border: '2px dashed rgba(255, 255, 255, 0.08)',
               borderRadius: '10px',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#090e1a',
             }}
           >
             Nenhuma ação nesta etapa

@@ -162,30 +162,41 @@ export const Sidebar: React.FC = () => {
                 style={{
                   width: '38px',
                   height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: '#2563eb',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '1.1rem',
-                  color: '#ffffff',
-                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
+                  borderRadius: '11px',
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #14b8a6 50%, #10b981 100%)',
+                  padding: '1.5px',
+                  boxShadow: '0 4px 14px rgba(6, 182, 212, 0.35)',
                 }}
               >
-                LN
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#060a13',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: '1rem',
+                    color: '#22d3ee',
+                  }}
+                >
+                  LF
+                </div>
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', color: '#ffffff' }}>
-                    LeanFlow
+                  <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                    Lean<span style={{ background: 'linear-gradient(90deg, #22d3ee, #5eead4, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Flow</span>
                   </span>
                   <span
                     style={{
                       fontSize: '0.65rem',
-                      fontWeight: 700,
-                      backgroundColor: 'rgba(37, 99, 235, 0.25)',
-                      color: '#60a5fa',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(6, 182, 212, 0.18)',
+                      color: '#22d3ee',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
                       padding: '0.1rem 0.35rem',
                       borderRadius: '4px',
                     }}
@@ -193,7 +204,7 @@ export const Sidebar: React.FC = () => {
                     PRO
                   </span>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Fluxo Contínuo & ROI</p>
+                <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Engenharia Lean & ROI</p>
               </div>
             </div>
 
@@ -204,9 +215,9 @@ export const Sidebar: React.FC = () => {
                 onClick={toggleSidebar}
                 title="Ocultar Menu Lateral"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#cbd5e1',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#94a3b8',
                   borderRadius: '8px',
                   width: '32px',
                   height: '32px',
@@ -217,12 +228,12 @@ export const Sidebar: React.FC = () => {
                   transition: 'all 0.15s ease',
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.16)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
                   e.currentTarget.style.color = '#ffffff';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                  e.currentTarget.style.color = '#cbd5e1';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = '#94a3b8';
                 }}
               >
                 <PanelLeftClose size={16} />
@@ -332,15 +343,16 @@ export const Sidebar: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '0.625rem 0.75rem',
-                      borderRadius: '8px',
-                      fontSize: '0.84375rem',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '9px',
+                      fontSize: '0.8125rem',
                       fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#ffffff' : '#94a3b8',
-                      backgroundColor: isActive ? 'rgba(37, 99, 235, 0.25)' : 'transparent',
+                      color: isActive ? '#22d3ee' : '#94a3b8',
+                      backgroundColor: isActive ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
+                      border: isActive ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
                       textDecoration: 'none',
                       transition: 'all 0.15s ease',
-                      borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
+                      boxShadow: isActive ? '0 2px 10px rgba(6, 182, 212, 0.15)' : 'none',
                     }}
                     onMouseOver={(e) => {
                       if (!isActive) {
@@ -355,19 +367,20 @@ export const Sidebar: React.FC = () => {
                       }
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                      <Icon size={18} color={isActive ? '#60a5fa' : '#94a3b8'} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <Icon size={17} color={isActive ? '#22d3ee' : '#64748b'} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
                       <span
                         style={{
-                          fontSize: '0.65rem',
+                          fontSize: '0.625rem',
                           fontWeight: 700,
-                          backgroundColor: '#f59e0b',
-                          color: '#000000',
+                          backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                          color: '#22d3ee',
                           padding: '0.1rem 0.4rem',
                           borderRadius: '9999px',
+                          border: '1px solid rgba(6, 182, 212, 0.35)',
                         }}
                       >
                         {item.badge}
@@ -381,70 +394,70 @@ export const Sidebar: React.FC = () => {
         ))}
       </div>
 
-      {/* Developer Authorship Box - Mauricio Grigol */}
+      {/* Footer Area with BagTime Creator Pill */}
       <div
         style={{
-          padding: '1rem',
+          padding: '0.875rem 1rem',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          backgroundColor: 'rgba(15, 23, 42, 0.6)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.75rem',
+          gap: '0.6rem',
+          backgroundColor: '#090e1a',
         }}
       >
         <div
           onClick={() => setShowAuthorModal(true)}
           style={{
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '0.6rem 0.75rem',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
-            padding: '0.65rem 0.75rem',
-            backgroundColor: 'rgba(37, 99, 235, 0.15)',
-            border: '1px solid rgba(59, 130, 246, 0.35)',
-            borderRadius: '10px',
+            gap: '0.6rem',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
-          title="Clique para ver detalhes do desenvolvedor e arquiteto da solução"
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
-            e.currentTarget.style.borderColor = '#60a5fa';
+            e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 1)';
+            e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.15)';
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.35)';
+            e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
           }}
+          title="Ver créditos e informações técnicas do desenvolvedor"
         >
           <div
             style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '50%',
-              backgroundColor: '#2563eb',
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              color: '#ffffff',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)',
+              fontWeight: 900,
+              fontSize: '0.75rem',
+              color: '#020617',
               flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(6, 182, 212, 0.3)',
             }}
           >
             MG
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <span style={{ fontSize: '0.65rem', color: '#93c5fd', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', display: 'block' }}>
-              Desenvolvido por:
-            </span>
-            <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 6px #34d399' }} />
+              <span style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+                Desenvolvido por:
+              </span>
+            </div>
+            <strong style={{ fontSize: '0.8125rem', color: '#ffffff', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Mauricio Grigol
             </strong>
-            <span style={{ fontSize: '0.675rem', color: '#cbd5e1' }}>
-              Consultor Lean & Dev Full Stack
-            </span>
           </div>
-          <Sparkles size={14} color="#93c5fd" />
+          <Sparkles size={13} color="#22d3ee" />
         </div>
 
         <Link

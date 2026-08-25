@@ -47,10 +47,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       onClick={onClick}
       className="kanban-card"
       style={{
-        backgroundColor: '#ffffff',
+        backgroundColor: '#131e38',
         borderRadius: '12px',
         padding: '0.95rem 1rem',
-        border: isAwaitingApproval ? '1.5px solid #c084fc' : '1px solid #e2e8f0',
+        border: isAwaitingApproval ? '1.5px solid rgba(192, 132, 252, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
         borderLeft: isCompleted
           ? '4px solid #10b981'
           : isAwaitingApproval
@@ -59,10 +59,10 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           ? '4px solid #f59e0b'
           : isRejected
           ? '4px solid #ef4444'
-          : '4px solid #3b82f6',
+          : '4px solid #06b6d4',
         boxShadow: isAwaitingApproval
-          ? '0 4px 14px rgba(147, 51, 234, 0.12)'
-          : '0 1px 3px rgba(0, 0, 0, 0.04)',
+          ? '0 4px 14px rgba(147, 51, 234, 0.2)'
+          : '0 2px 8px rgba(0, 0, 0, 0.3)',
         cursor: 'pointer',
         transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
         display: 'flex',
@@ -72,16 +72,18 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       onMouseOver={(e) => {
         e.currentTarget.style.transform = 'translateY(-3px)';
         e.currentTarget.style.boxShadow = isAwaitingApproval
-          ? '0 8px 22px rgba(147, 51, 234, 0.2)'
-          : '0 8px 20px rgba(0, 0, 0, 0.08)';
-        e.currentTarget.style.borderColor = isAwaitingApproval ? '#a855f7' : '#93c5fd';
+          ? '0 8px 25px rgba(147, 51, 234, 0.3), 0 0 15px rgba(147, 51, 234, 0.2)'
+          : '0 8px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.15)';
+        e.currentTarget.style.borderColor = isAwaitingApproval ? '#c084fc' : 'rgba(34, 211, 238, 0.4)';
+        e.currentTarget.style.backgroundColor = '#162340';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
         e.currentTarget.style.boxShadow = isAwaitingApproval
-          ? '0 4px 14px rgba(147, 51, 234, 0.12)'
-          : '0 1px 3px rgba(0, 0, 0, 0.04)';
-        e.currentTarget.style.borderColor = isAwaitingApproval ? '#c084fc' : '#e2e8f0';
+          ? '0 4px 14px rgba(147, 51, 234, 0.2)'
+          : '0 2px 8px rgba(0, 0, 0, 0.3)';
+        e.currentTarget.style.borderColor = isAwaitingApproval ? 'rgba(192, 132, 252, 0.4)' : 'rgba(255, 255, 255, 0.08)';
+        e.currentTarget.style.backgroundColor = '#131e38';
       }}
     >
       {/* Top Row: Protocol & Priority / Sector Tag */}
@@ -91,11 +93,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: '0.725rem',
             fontWeight: 800,
-            color: '#475569',
-            backgroundColor: '#f1f5f9',
+            color: '#22d3ee',
+            backgroundColor: 'rgba(6, 10, 19, 0.8)',
             padding: '0.1rem 0.4rem',
             borderRadius: '4px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             letterSpacing: '0.02em',
           }}
         >
@@ -106,9 +108,9 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             <span
               style={{
                 fontSize: '0.675rem',
-                color: '#475569',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
+                color: '#cbd5e1',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
                 padding: '0.1rem 0.4rem',
                 borderRadius: '4px',
                 fontWeight: 600,
@@ -131,7 +133,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         style={{
           fontSize: '0.9rem',
           fontWeight: 700,
-          color: '#0f172a',
+          color: '#ffffff',
+          fontFamily: 'var(--font-heading)',
           lineHeight: 1.35,
           margin: 0,
           display: '-webkit-box',
@@ -150,9 +153,9 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             style={{
               fontSize: '0.7rem',
               fontWeight: 800,
-              color: isCompleted ? '#047857' : '#2563eb',
-              backgroundColor: isCompleted ? '#ecfdf5' : '#eff6ff',
-              border: `1px solid ${isCompleted ? '#a7f3d0' : '#bfdbfe'}`,
+              color: isCompleted ? '#34d399' : '#22d3ee',
+              backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+              border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.35)' : 'rgba(6, 182, 212, 0.35)'}`,
               padding: '0.1rem 0.45rem',
               borderRadius: '6px',
               display: 'inline-flex',
@@ -173,9 +176,9 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.35rem',
-            backgroundColor: '#faf5ff',
-            border: '1px solid #d8b4fe',
-            color: '#7e22ce',
+            backgroundColor: 'rgba(147, 51, 234, 0.2)',
+            border: '1px solid rgba(192, 132, 252, 0.4)',
+            color: '#c084fc',
             padding: '0.25rem 0.5rem',
             borderRadius: '6px',
             fontSize: '0.675rem',
@@ -195,7 +198,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: '0.45rem',
-          borderTop: '1px solid #f1f5f9',
+          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
           marginTop: '0.1rem',
           fontSize: '0.725rem',
         }}
@@ -206,12 +209,12 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
-            color: isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#64748b',
+            color: isOverdue ? '#f87171' : isCompleted ? '#34d399' : '#94a3b8',
             fontWeight: isOverdue ? 700 : 500,
           }}
           title={isOverdue ? 'Prazo expirado' : `Data limite: ${formatDate(action.dueDate)}`}
         >
-          <Calendar size={13} color={isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#64748b'} />
+          <Calendar size={13} color={isOverdue ? '#f87171' : isCompleted ? '#34d399' : '#64748b'} />
           <span>
             {action.dueDate ? formatDate(action.dueDate) : 'Sem prazo'}
           </span>
@@ -219,9 +222,9 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             <span
               style={{
                 fontSize: '0.6rem',
-                backgroundColor: '#fef2f2',
-                color: '#dc2626',
-                border: '1px solid #fecaca',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                color: '#f87171',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
                 padding: '0.05rem 0.25rem',
                 borderRadius: '4px',
                 fontWeight: 800,
@@ -254,13 +257,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                   height: '20px',
                   borderRadius: '50%',
                   objectFit: 'cover',
-                  border: '1.5px solid #cbd5e1',
+                  border: '1.5px solid #475569',
                 }}
               />
               <span
                 style={{
                   fontWeight: 600,
-                  color: '#334155',
+                  color: '#e2e8f0',
                   maxWidth: '85px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -271,7 +274,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               </span>
             </div>
           ) : (
-            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.7rem' }}>
+            <span style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.7rem' }}>
               Sem agente
             </span>
           )}

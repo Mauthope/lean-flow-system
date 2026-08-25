@@ -103,23 +103,23 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Filter Bar */}
       <div
         style={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '0.875rem 1rem',
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '14px',
+          padding: '0.875rem 1.15rem',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.75rem',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
         }}
       >
         {/* Search */}
-        <div style={{ position: 'relative', minWidth: '220px', flex: 1 }}>
+        <div style={{ position: 'relative', minWidth: '240px', flex: 1 }}>
           <Search
             size={16}
-            color="#94a3b8"
+            color="#64748b"
             style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
@@ -128,7 +128,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             placeholder="Buscar por protocolo, título, agente..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '2.25rem', fontSize: '0.84375rem' }}
+            style={{
+              paddingLeft: '2.25rem',
+              fontSize: '0.84375rem',
+              backgroundColor: '#0d1527',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#f8fafc',
+            }}
           />
         </div>
 
@@ -139,7 +145,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
+            style={{
+              width: 'auto',
+              fontSize: '0.8125rem',
+              padding: '0.45rem 0.65rem',
+              backgroundColor: '#0d1527',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#cbd5e1',
+            }}
           >
             <option value="all">🏢 Todos os Setores</option>
             {sectors.map((s) => (
@@ -154,7 +167,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             value={selectedWaste}
             onChange={(e) => setSelectedWaste(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
+            style={{
+              width: 'auto',
+              fontSize: '0.8125rem',
+              padding: '0.45rem 0.65rem',
+              backgroundColor: '#0d1527',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#cbd5e1',
+            }}
           >
             <option value="all">⚡ Todos os Desperdícios</option>
             {Object.entries(WASTE_CATEGORIES).map(([key, cat]) => (
@@ -169,7 +189,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             value={selectedPriority}
             onChange={(e) => setSelectedPriority(e.target.value)}
             className="form-select"
-            style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
+            style={{
+              width: 'auto',
+              fontSize: '0.8125rem',
+              padding: '0.45rem 0.65rem',
+              backgroundColor: '#0d1527',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#cbd5e1',
+            }}
           >
             <option value="all">🎯 Todas Prioridades</option>
             <option value="critica">Crítica</option>
@@ -184,7 +211,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               value={selectedAgent}
               onChange={(e) => setSelectedAgent(e.target.value)}
               className="form-select"
-              style={{ width: 'auto', fontSize: '0.8125rem', padding: '0.45rem 0.65rem' }}
+              style={{
+                width: 'auto',
+                fontSize: '0.8125rem',
+                padding: '0.45rem 0.65rem',
+                backgroundColor: '#0d1527',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#cbd5e1',
+              }}
             >
               <option value="all">👤 Todos os Agentes</option>
               {allAgents.map((ag) => (
@@ -200,7 +234,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             onClick={onRefresh}
             className="btn btn-secondary btn-sm"
             title="Recarregar dados"
-            style={{ padding: '0.45rem 0.65rem' }}
+            style={{
+              padding: '0.45rem 0.65rem',
+              backgroundColor: '#0d1527',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              color: '#94a3b8',
+            }}
           >
             <RefreshCw size={14} />
           </button>
@@ -209,7 +248,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             <button
               onClick={onNewAction}
               className="btn btn-primary btn-sm"
-              style={{ padding: '0.45rem 0.75rem' }}
+              style={{ padding: '0.45rem 0.85rem' }}
             >
               <Plus size={15} /> Nova Ação
             </button>
@@ -232,13 +271,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           type="button"
           onClick={() => setMobileSelectedCol('all')}
           style={{
-            padding: '0.45rem 0.85rem',
+            padding: '0.4rem 0.85rem',
             borderRadius: '9999px',
-            fontSize: '0.78125rem',
+            fontSize: '0.75rem',
             fontWeight: 700,
-            border: mobileSelectedCol === 'all' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-            backgroundColor: mobileSelectedCol === 'all' ? '#eff6ff' : '#ffffff',
-            color: mobileSelectedCol === 'all' ? '#1d4ed8' : '#64748b',
+            border: mobileSelectedCol === 'all' ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: mobileSelectedCol === 'all' ? 'rgba(6, 182, 212, 0.2)' : '#0d1527',
+            color: mobileSelectedCol === 'all' ? '#22d3ee' : '#94a3b8',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             flexShrink: 0,
@@ -263,13 +302,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               type="button"
               onClick={() => setMobileSelectedCol(status)}
               style={{
-                padding: '0.45rem 0.85rem',
+                padding: '0.4rem 0.85rem',
                 borderRadius: '9999px',
-                fontSize: '0.78125rem',
+                fontSize: '0.75rem',
                 fontWeight: 700,
-                border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
-                color: isSelected ? '#1d4ed8' : '#64748b',
+                border: isSelected ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.2)' : '#0d1527',
+                color: isSelected ? '#22d3ee' : '#94a3b8',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
