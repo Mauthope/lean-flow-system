@@ -62,9 +62,8 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Cadastros & Equipe',
       items: [
-        { href: '/admin/entidades', label: 'Gestão de Entidades', icon: Building2, badge: 'Multi-Tenant' },
         { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
-        { href: '/admin/setores', label: 'Gestão de Setores', icon: Layers },
+        { href: '/admin/setores', label: 'Gestão de Setores', icon: Building2 },
       ],
     },
     {
