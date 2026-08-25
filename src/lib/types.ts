@@ -108,6 +108,20 @@ export interface IshikawaAnalysis {
   environment?: string;  // Meio ambiente / Condições do setor
 }
 
+// Anexos de Projeto (PDFs de Memorial de Cálculo, Relatórios, Fotos de Evidência)
+export interface ProjectAttachment {
+  id: string;
+  name: string;
+  sizeBytes?: number;
+  sizeFormatted?: string; // ex: "1.8 MB"
+  fileType: string;       // ex: "application/pdf", "image/png"
+  url?: string;           // Base64 Data URL ou Link para download
+  uploadedAt: string;
+  uploadedBy?: string;
+  category?: 'memorial_calculo' | 'evidencia_foto' | 'relatorio_tecnico' | 'outro';
+  description?: string;
+}
+
 export interface LeanAction {
   id: string;
   protocol: string; // e.g. "RAF-2026-8801"
@@ -163,6 +177,7 @@ export interface LeanAction {
   roiPercentage?: number;                // ROI = (Lucro Líquido / Custos) * 100 (%)
   paybackMonths?: number;                // Payback = Custos / Economia Mensal (meses)
   hoursSaved: number;                    // Horas de trabalho / máquina recuperadas
+  attachments?: ProjectAttachment[];     // Anexos em PDF com memorial de cálculo e evidências
 
   // [A - ACT: Padronização, Yokoten & Homologação]
   standardWorkUpdated?: boolean;         // SOP / Instrução de Trabalho atualizada?

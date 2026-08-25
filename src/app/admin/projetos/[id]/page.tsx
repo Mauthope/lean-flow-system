@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +38,14 @@ import {
   ArrowRight,
   TrendingDown,
   Percent,
+  FileText,
+  Paperclip,
+  Download,
+  Trash2,
+  UploadCloud,
+  FileSpreadsheet,
+  Eye,
+  File,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -95,6 +103,11 @@ export default function AdminProjectDetailPage() {
   const [pilotArea, setPilotArea] = useState('');
   const [pilotTestObservations, setPilotTestObservations] = useState('');
 
+  // Anexos de Memorial de Cálculo & Documentos (PDF / Planilhas)
+  const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
+  const [newAttachmentCategory, setNewAttachmentCategory] = useState<'memorial_calculo' | 'evidencia_foto' | 'relatorio_tecnico' | 'outro'>('memorial_calculo');
+  const [newAttachmentDesc, setNewAttachmentDesc] = useState('');
+
   // 5W2H Checklist
   const [checklistItems, setChecklistItems] = useState<ActionChecklistItem[]>([]);
   const [newActionLabel, setNewActionLabel] = useState('');
@@ -139,6 +152,7 @@ export default function AdminProjectDetailPage() {
         setPilotTestObservations(found.pilotTestObservations || '');
 
         // C - CHECK
+        setAttachments(found.attachments || []);
         setPartsAndEquipment(found.projectCosts?.partsAndEquipment || 0);
         setThirdPartyServices(found.projectCosts?.thirdPartyServices || 0);
         setInternalLaborHours(found.projectCosts?.internalLaborHours || 0);
@@ -232,6 +246,7 @@ export default function AdminProjectDetailPage() {
       netSavings,
       roiPercentage,
       paybackMonths,
+      attachments,
       standardWorkUpdated,
       standardWorkDocRef,
       yokotenReplication,
@@ -242,6 +257,69 @@ export default function AdminProjectDetailPage() {
     setIsSaved(true);
     refreshData();
     setTimeout(() => setIsSaved(false), 3000);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !action) return;
+
+    const file = files[0];
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const sizeFormatted = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${Math.round(file.size / 1024)} KB`;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const newAtt: ProjectAttachment = {
+        id: 'att_' + Date.now(),
+        name: file.name,
+        sizeBytes: file.size,
+        sizeFormatted,
+        fileType: file.type || 'application/pdf',
+        url: dataUrl,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: currentUser?.name || 'Agente Lean',
+        category: newAttachmentCategory,
+        description: newAttachmentDesc.trim() || undefined,
+      };
+
+      const nextList = [...attachments, newAtt];
+      setAttachments(nextList);
+      dataService.updateAction(action.id, { attachments: nextList });
+      setNewAttachmentDesc('');
+      refreshData();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAttachment = (attId: string) => {
+    if (!action) return;
+    const nextList = attachments.filter((a) => a.id !== attId);
+    setAttachments(nextList);
+    dataService.updateAction(action.id, { attachments: nextList });
+    refreshData();
+  };
+
+  const handleDownloadAttachment = (att: ProjectAttachment) => {
+    if (att.url) {
+      const a = document.createElement('a');
+      a.href = att.url;
+      a.download = att.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      const sampleText = `LEANFLOW 4.0 - MEMORIAL DE CÁLCULO\n\nProjeto: ${action?.protocol} - ${action?.title}\nDocumento: ${att.name}\nResponsável: ${att.uploadedBy || 'Agente'}\nData de Emissão: ${formatDateTime(att.uploadedAt)}\n\n--- CUSTOS DO PROJETO (INVESTIMENTO) ---\n- Peças e Equipamentos: R$ ${partsAndEquipment}\n- Serviços de Terceiros: R$ ${thirdPartyServices}\n- Horas Equipe Interna: ${internalLaborHours}h (Taxa: R$ ${laborHourlyRate}/h = R$ ${internalLaborHours * laborHourlyRate})\n- Outras Despesas: R$ ${otherCosts}\nInvestimento Total: R$ ${totalInvestmentCost}\n\n--- GANHOS BRUTOS MAPEADOS (7 FONTES) ---\n- Redução de Paradas (OEE): R$ ${machineDowntime}\n- Mão de Obra Otimizada: R$ ${laborSavings}\n- Redução de Refugo: R$ ${scrapReduction}\n- Ferramental e Energia: R$ ${toolingAndEnergy}\n- Aumento de Produção: R$ ${productionIncrease}\nGanhos Brutos Totais: R$ ${totalGrossSavings}\n\n--- RETORNO FINANCEIRO E INDICADORES ---\n- Lucro Líquido Real: R$ ${netSavings}\n- Retorno sobre Investimento (ROI): ${roiPercentage}%\n- Tempo de Payback: ${paybackMonths} meses\n\nHomologação Técnica Registrada.`;
+      const blob = new Blob([sampleText], { type: 'text/plain;charset=utf-8' });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = att.name.replace('.pdf', '.txt');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }
   };
 
   const handleToggleChecklistItem = (itemId: string) => {
@@ -1098,6 +1176,232 @@ export default function AdminProjectDetailPage() {
               <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
                 Tempo para recuperar 100% do investimento com base na economia mensal.
               </span>
+            </div>
+          </div>
+
+          {/* 3.3 ANEXOS DE MEMORIAL DE CÁLCULO & DOCUMENTOS TÉCNICOS (PDF) */}
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Paperclip size={20} color="#7c3aed" />
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    3.3 Memorial de Cálculo & Anexos Comprobatórios (PDF)
+                  </h3>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: '0.15rem 0 0' }}>
+                    Anexe o memorial de cálculo detalhado, relatórios de cronoanálise, planilhas ou fotos para auditoria e homologação.
+                  </p>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: '#6d28d9',
+                  backgroundColor: '#f5f3ff',
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '8px',
+                  border: '1px solid #ddd6fe',
+                }}
+              >
+                {attachments.length} documento(s) anexado(s)
+              </span>
+            </div>
+
+            {/* List of Attached Documents */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {attachments.length === 0 ? (
+                <div
+                  style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    border: '1.5px dashed #cbd5e1',
+                    borderRadius: '12px',
+                    backgroundColor: '#f8fafc',
+                    color: '#64748b',
+                  }}
+                >
+                  <FileText size={32} color="#94a3b8" style={{ margin: '0 auto 0.5rem' }} />
+                  <strong style={{ display: 'block', fontSize: '0.875rem', color: '#334155' }}>
+                    Nenhum memorial de cálculo anexado ainda
+                  </strong>
+                  <span style={{ fontSize: '0.75rem' }}>
+                    Selecione ou arraste seu arquivo PDF/planilha abaixo para anexar a este projeto PDCA.
+                  </span>
+                </div>
+              ) : (
+                attachments.map((att) => {
+                  const isPdf = att.name.toLowerCase().endsWith('.pdf') || att.fileType.includes('pdf');
+                  const isSpreadsheet = att.name.toLowerCase().endsWith('.xlsx') || att.name.toLowerCase().endsWith('.csv');
+
+                  return (
+                    <div
+                      key={att.id}
+                      style={{
+                        padding: '1rem 1.25rem',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                        backgroundColor: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '1rem',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: '280px' }}>
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '10px',
+                            backgroundColor: isPdf ? '#fef2f2' : isSpreadsheet ? '#ecfdf5' : '#f5f3ff',
+                            color: isPdf ? '#dc2626' : isSpreadsheet ? '#059669' : '#7c3aed',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            border: `1px solid ${isPdf ? '#fecaca' : isSpreadsheet ? '#a7f3d0' : '#ddd6fe'}`,
+                          }}
+                        >
+                          {isPdf ? <FileText size={22} /> : isSpreadsheet ? <FileSpreadsheet size={22} /> : <File size={22} />}
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: '0.9rem', color: '#0f172a' }}>{att.name}</strong>
+                            <span
+                              style={{
+                                fontSize: '0.675rem',
+                                fontWeight: 800,
+                                padding: '0.1rem 0.45rem',
+                                borderRadius: '6px',
+                                textTransform: 'uppercase',
+                                backgroundColor: att.category === 'memorial_calculo' ? '#eff6ff' : '#f1f5f9',
+                                color: att.category === 'memorial_calculo' ? '#1d4ed8' : '#475569',
+                              }}
+                            >
+                              {att.category === 'memorial_calculo'
+                                ? 'Memorial de Cálculo'
+                                : att.category === 'relatorio_tecnico'
+                                ? 'Relatório Técnico'
+                                : att.category === 'evidencia_foto'
+                                ? 'Evidência / Foto'
+                                : 'Anexo Geral'}
+                            </span>
+                            {att.sizeFormatted && (
+                              <span style={{ fontSize: '0.725rem', color: '#64748b' }}>({att.sizeFormatted})</span>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#64748b' }}>
+                            <span>👤 Enviado por: <strong>{att.uploadedBy || 'Agente'}</strong></span>
+                            <span>📅 {formatDateTime(att.uploadedAt)}</span>
+                          </div>
+
+                          {att.description && (
+                            <p style={{ fontSize: '0.78125rem', color: '#475569', margin: '0.35rem 0 0', fontStyle: 'italic' }}>
+                              “{att.description}”
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Download & Remove Buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadAttachment(att)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                          title="Visualizar ou baixar arquivo"
+                        >
+                          <Download size={14} /> <span>Baixar / Visualizar</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAttachment(att.id)}
+                          className="btn btn-sm"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            backgroundColor: '#fff1f2',
+                            color: '#e11d48',
+                            border: '1px solid #fecdd3',
+                          }}
+                          title="Remover este anexo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Upload Area */}
+            <div
+              style={{
+                backgroundColor: '#f8fafc',
+                padding: '1.25rem',
+                borderRadius: '14px',
+                border: '1.5px dashed #cbd5e1',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                <UploadCloud size={18} color="#7c3aed" />
+                <strong style={{ fontSize: '0.85rem', color: '#1e293b' }}>
+                  Anexar Novo Documento / Memorial de Cálculo (PDF, Planilha ou Imagem):
+                </strong>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 1fr', gap: '0.75rem', alignItems: 'end' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                    Categoria do Documento:
+                  </label>
+                  <select
+                    className="form-control form-control-sm"
+                    value={newAttachmentCategory}
+                    onChange={(e: any) => setNewAttachmentCategory(e.target.value)}
+                  >
+                    <option value="memorial_calculo">📑 Memorial de Cálculo Financeiro</option>
+                    <option value="relatorio_tecnico">📊 Relatório Técnico / Cronoanálise</option>
+                    <option value="evidencia_foto">📸 Fotos / Evidências do Posto</option>
+                    <option value="outro">📄 Outro Documento Comprobatório</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                    Descrição / Nota (opcional):
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Ex: Planilha de cálculo de OEE e perdas térmicas"
+                    value={newAttachmentDesc}
+                    onChange={(e) => setNewAttachmentDesc(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                    Selecione o Arquivo (.pdf, .xlsx, .csv, .png):
+                  </label>
+                  <input
+                    type="file"
+                    className="form-control form-control-sm"
+                    accept=".pdf,.xlsx,.csv,.xls,.docx,.doc,.png,.jpg,.jpeg"
+                    onChange={handleFileUpload}
+                    style={{ padding: '0.35rem 0.5rem', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -279,6 +279,30 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     roiPercentage: 703,
     paybackMonths: 1.5,
     hoursSaved: 194,
+    attachments: [
+      {
+        id: 'att_001_1',
+        name: 'Memorial_Calculo_ROI_SMED_Extrusora03.pdf',
+        sizeBytes: 1845000,
+        sizeFormatted: '1.8 MB',
+        fileType: 'application/pdf',
+        uploadedAt: '2026-02-18T16:30:00.000Z',
+        uploadedBy: 'Fernanda Lima',
+        category: 'memorial_calculo',
+        description: 'Memorial de cálculo detalhando 194h economizadas e redução de perda térmica da resina.',
+      },
+      {
+        id: 'att_001_2',
+        name: 'Evidencia_Antes_Depois_Setup_Matriz.pdf',
+        sizeBytes: 2420000,
+        sizeFormatted: '2.4 MB',
+        fileType: 'application/pdf',
+        uploadedAt: '2026-02-18T16:35:00.000Z',
+        uploadedBy: 'Fernanda Lima',
+        category: 'relatorio_tecnico',
+        description: 'Fotos comparativas do carrinho 5S dedicado e estação externa de pré-aquecimento.',
+      },
+    ],
 
     // A - ACT
     standardWorkUpdated: true,
