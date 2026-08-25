@@ -86,7 +86,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Título da Ação / Projeto Lean:</label>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>Título da Ação / Projeto Lean:</label>
           <input
             type="text"
             className="form-control"
@@ -98,7 +98,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
         </div>
 
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Descrição do Problema / Oportunidade:</label>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição do Problema / Oportunidade:</label>
           <textarea
             className="form-textarea"
             rows={3}
@@ -111,7 +111,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Setor de Origem / Aplicação:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Setor de Origem / Aplicação:</label>
             <select
               className="form-select"
               value={originSectorId}
@@ -128,7 +128,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label">Agente Responsável:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Agente Responsável:</label>
             <select
               className="form-select"
               value={assignedAgentId}
@@ -146,7 +146,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Tipo de Desperdício Lean:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Tipo de Desperdício Lean:</label>
             <select
               className="form-select"
               value={wasteCategory}
@@ -161,7 +161,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label">Prioridade:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Prioridade:</label>
             <select
               className="form-select"
               value={priority}
@@ -177,7 +177,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Custo Evitado Estimado (R$):</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Custo Evitado Estimado (R$):</label>
             <input
               type="number"
               className="form-control"
@@ -188,7 +188,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label">Data Limite (Prazo):</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Data Limite (Prazo):</label>
             <input
               type="date"
               className="form-control"
@@ -204,7 +204,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>

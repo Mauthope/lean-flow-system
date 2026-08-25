@@ -102,7 +102,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Nome Completo:</label>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>Nome Completo:</label>
           <input
             type="text"
             className="form-control"
@@ -113,21 +113,21 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           />
         </div>
 
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>E-mail Institucional:</label>
+          <input
+            type="email"
+            className="form-control"
+            placeholder="Ex: carlos.silva@empresa.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Email Corporativo:</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="carlos@empresa.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="form-label">Setor de Atuação:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Setor / Departamento:</label>
             <select
               className="form-select"
               value={sectorId}
@@ -142,22 +142,22 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               ))}
             </select>
           </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Cargo / Especialidade Lean:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Cargo / Função:</label>
             <input
               type="text"
               className="form-control"
-              placeholder="Ex: Analista Kaizen / TPM"
+              placeholder="Ex: Líder Kaizen"
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
             />
           </div>
+        </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Telefone / Ramal:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Telefone / Ramal:</label>
             <input
               type="text"
               className="form-control"
@@ -166,17 +166,16 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-        </div>
 
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">URL da Foto / Avatar:</label>
-          <input
-            type="url"
-            className="form-control"
-            placeholder="https://..."
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-          />
+          <div>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>URL do Avatar (Foto):</label>
+            <input
+              type="text"
+              className="form-control"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+            />
+          </div>
         </div>
 
         {agent && (
@@ -186,17 +185,17 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0.75rem',
-              backgroundColor: '#f8fafc',
+              backgroundColor: '#090e1a',
               borderRadius: '8px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#ffffff' }}>
               <input
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
-                style={{ width: '16px', height: '16px', accentColor: '#2563eb' }}
+                style={{ width: '16px', height: '16px', accentColor: '#06b6d4' }}
               />
               <span>Agente Ativo (habilitado para receber demandas)</span>
             </label>
@@ -218,7 +217,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>

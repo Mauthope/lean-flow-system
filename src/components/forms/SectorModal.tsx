@@ -25,19 +25,19 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState('#2563eb');
+  const [color, setColor] = useState('#06b6d4');
 
   useEffect(() => {
     if (sector) {
       setName(sector.name);
       setCode(sector.code);
       setDescription(sector.description || '');
-      setColor(sector.color || '#2563eb');
+      setColor(sector.color || '#06b6d4');
     } else {
       setName('');
       setCode('');
       setDescription('');
-      setColor('#2563eb');
+      setColor('#06b6d4');
     }
   }, [sector, isOpen]);
 
@@ -86,7 +86,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label">Nome do Setor:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Nome do Setor:</label>
             <input
               type="text"
               className="form-control"
@@ -98,7 +98,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label">Sigla / Código:</label>
+            <label className="form-label" style={{ color: '#cbd5e1' }}>Sigla / Código:</label>
             <input
               type="text"
               className="form-control"
@@ -112,7 +112,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
         </div>
 
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Descrição das Atividades Lean no Setor:</label>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição das Atividades Lean no Setor:</label>
           <textarea
             className="form-textarea"
             rows={2}
@@ -123,13 +123,13 @@ export const SectorModal: React.FC<SectorModalProps> = ({
         </div>
 
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label">Cor de Identificação Visual:</label>
+          <label className="form-label" style={{ color: '#cbd5e1' }}>Cor de Identificação Visual:</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <input
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', backgroundColor: 'transparent' }}
             />
             <input
               type="text"
@@ -160,7 +160,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '1rem',
-            borderTop: '1px solid #e2e8f0',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>
