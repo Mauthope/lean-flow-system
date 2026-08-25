@@ -484,3 +484,66 @@ table {
 th, td {
   box-sizing: border-box;
 }
+
+/* ================= COLLAPSIBLE SIDEBAR ================= */
+.app-sidebar {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, transform 0.25s ease;
+}
+
+@media (min-width: 1025px) {
+  .app-sidebar.sidebar-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-right: none !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+}
+
+/* ================= RELATÓRIO A3 PRINT STYLES ================= */
+@media print {
+  @page {
+    size: landscape;
+    margin: 6mm;
+  }
+
+  html, body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .app-sidebar,
+  .app-topbar,
+  .topbar,
+  .mobile-bottom-nav,
+  .no-print,
+  button:not(.print-include) {
+    display: none !important;
+  }
+
+  .app-container,
+  .main-content,
+  .content-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  .a3-print-container {
+    display: block !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+}

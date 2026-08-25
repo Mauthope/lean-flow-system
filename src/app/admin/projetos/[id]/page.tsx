@@ -443,9 +443,11 @@ export default function AdminProjectDetailPage() {
   };
 
   const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
+    if (!action) return;
+    const a3Url = currentUser?.role === 'agent'
+      ? `/agente/projetos/${action.id}/relatorio-a3`
+      : `/admin/projetos/${action.id}/relatorio-a3`;
+    router.push(a3Url);
   };
 
   if (loading) {
@@ -514,8 +516,13 @@ export default function AdminProjectDetailPage() {
             <Share2 size={14} /> {copied ? 'Copiado!' : 'Compartilhar'}
           </button>
 
-          <button onClick={handlePrint} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Printer size={14} /> Relatório A3 / PDF
+          <button
+            onClick={handlePrint}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+            title="Visualizar e Imprimir Relatório A3 Paisagem (4 Quadrantes PDCA)"
+          >
+            <Printer size={14} /> Relatório A3 (Paisagem)
           </button>
         </div>
       </div>
@@ -959,47 +966,13 @@ export default function AdminProjectDetailPage() {
       {/* ========================================================================= */}
       {activeTab === 'do' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Pilot Area */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <Zap size={20} color="#d97706" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                2.1 Área Piloto & Execução Prática
-              </h3>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Posto / Máquina Piloto:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: Extrusora de Fitas 03"
-                  value={pilotArea}
-                  onChange={(e) => setPilotArea(e.target.value)}
-                />
-              </div>
-
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700 }}>Observações do Teste Prático / Piloto:</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Ex: Realizados 3 setups piloto com gravação em vídeo. Tempo reduzido para 16 min."
-                  value={pilotTestObservations}
-                  onChange={(e) => setPilotTestObservations(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
           {/* 5W2H Action Plan Table */}
           <div className="card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <CheckSquare size={20} color="#d97706" />
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  2.2 Plano de Ação 5W2H ({checklistItems.filter((c) => c.completed).length}/{checklistItems.length} concluídas)
+                  2.1 Plano de Ação 5W2H & Execução ({checklistItems.filter((c) => c.completed).length}/{checklistItems.length} concluídas)
                 </h3>
               </div>
             </div>

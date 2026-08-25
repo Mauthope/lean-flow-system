@@ -29,6 +29,8 @@ import {
   Radio,
   Sparkles,
   Layers,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 
 interface NavItem {
@@ -45,7 +47,7 @@ interface NavSection {
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { currentUser, currentTenant, isMobileMenuOpen, setIsMobileMenuOpen } = useAuth();
+  const { currentUser, currentTenant, isMobileMenuOpen, setIsMobileMenuOpen, isSidebarCollapsed, toggleSidebar } = useAuth();
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
@@ -128,7 +130,7 @@ export const Sidebar: React.FC = () => {
       )}
 
       <aside
-        className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
+        className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
         style={{
           width: '270px',
           backgroundColor: '#0b1329',
@@ -141,7 +143,7 @@ export const Sidebar: React.FC = () => {
           position: 'sticky',
           top: 0,
           zIndex: 95,
-          transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {/* Brand & Organization */}
@@ -195,25 +197,57 @@ export const Sidebar: React.FC = () => {
               </div>
             </div>
 
-            {/* Close Button for Mobile Drawer */}
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mobile-only-btn"
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: 'none',
-                color: '#ffffff',
-                borderRadius: '8px',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <X size={18} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              {/* Hide / Collapse Sidebar Button (Desktop & Mobile) */}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Ocultar Menu Lateral"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#cbd5e1',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.16)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = '#cbd5e1';
+                }}
+              >
+                <PanelLeftClose size={16} />
+              </button>
+
+              {/* Close Button for Mobile Drawer */}
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="mobile-only-btn"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: 'none',
+                  color: '#ffffff',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
         {/* Tenant Pill */}

@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   Menu,
   LogOut,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
@@ -31,7 +33,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, refreshData, toggleMobileMenu, logout } = useAuth();
+  const { currentUser, refreshData, toggleMobileMenu, logout, isSidebarCollapsed, toggleSidebar } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -56,7 +58,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         minHeight: '64px',
       }}
     >
-      {/* Title / Current Route Context */}
+      {/* Title / Current Route Context & Sidebar Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
         {/* Mobile Hamburger Button */}
         <button
@@ -76,6 +78,48 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           }}
         >
           <Menu size={20} />
+        </button>
+
+        {/* Desktop Sidebar Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="desktop-sidebar-toggle-btn"
+          title={isSidebarCollapsed ? 'Expandir Menu Lateral' : 'Ocultar Menu Lateral'}
+          style={{
+            background: isSidebarCollapsed ? '#eff6ff' : '#f8fafc',
+            border: isSidebarCollapsed ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
+            color: isSidebarCollapsed ? '#2563eb' : '#64748b',
+            borderRadius: '8px',
+            padding: '0.4rem 0.6rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            cursor: 'pointer',
+            fontSize: '0.75rem',
+            fontWeight: 700,
+            transition: 'all 0.15s ease',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = isSidebarCollapsed ? '#dbeafe' : '#f1f5f9';
+            e.currentTarget.style.color = isSidebarCollapsed ? '#1d4ed8' : '#0f172a';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = isSidebarCollapsed ? '#eff6ff' : '#f8fafc';
+            e.currentTarget.style.color = isSidebarCollapsed ? '#2563eb' : '#64748b';
+          }}
+        >
+          {isSidebarCollapsed ? (
+            <>
+              <PanelLeftOpen size={16} color="#2563eb" />
+              <span>Mostrar Menu</span>
+            </>
+          ) : (
+            <>
+              <PanelLeftClose size={16} />
+              <span>Ocultar Menu</span>
+            </>
+          )}
         </button>
 
         <div>

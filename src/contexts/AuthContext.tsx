@@ -19,6 +19,9 @@ interface AuthContextType {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
   toggleMobileMenu: () => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean | ((prev: boolean) => boolean)) => void;
+  toggleSidebar: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [dataVersion, setDataVersion] = useState(1);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const loadSession = useCallback(() => {
     initializeLocalStorage();
@@ -43,6 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(user);
     setAllUsers(users);
     setAllAgents(agents);
+
+    if (typeof window !== 'undefined') {
+      const savedCollapsed = localStorage.getItem('leanflow_sidebar_collapsed');
+      if (savedCollapsed === 'true') {
+        setIsSidebarCollapsed(true);
+      }
+    }
+
     setIsLoading(false);
   }, []);
 
@@ -81,6 +93,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsMobileMenuOpen((prev) => !prev);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('leanflow_sidebar_collapsed', String(next));
+      }
+      return next;
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -97,6 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isMobileMenuOpen,
         setIsMobileMenuOpen,
         toggleMobileMenu,
+        isSidebarCollapsed,
+        setIsSidebarCollapsed,
+        toggleSidebar,
       }}
     >
       {children}
