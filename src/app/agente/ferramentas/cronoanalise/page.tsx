@@ -245,7 +245,7 @@ export default function CronoanalisePage() {
       return;
     }
 
-    const palette = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#0891b2', '#059669', '#4b5563'];
+    const palette = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#38bdf8', '#10b981', '#64748b'];
     const randomColor = palette[motivos.length % palette.length];
 
     const newConfig: MotivoConfig = {
@@ -475,7 +475,7 @@ export default function CronoanalisePage() {
   }, [records, totalSeconds]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
       {/* Top Header & Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -491,11 +491,13 @@ export default function CronoanalisePage() {
               <span
                 style={{
                   fontSize: '0.7rem',
-                  fontWeight: 700,
-                  backgroundColor: '#eff6ff',
-                  color: '#2563eb',
+                  fontWeight: 800,
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  color: '#22d3ee',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
                   padding: '0.15rem 0.5rem',
                   borderRadius: '9999px',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 YAMAZUMI & CRONOANÁLISE
@@ -503,17 +505,19 @@ export default function CronoanalisePage() {
               <span
                 style={{
                   fontSize: '0.7rem',
-                  fontWeight: 700,
-                  backgroundColor: '#fef3c7',
-                  color: '#92400e',
+                  fontWeight: 800,
+                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                  color: '#fbbf24',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
                   padding: '0.15rem 0.5rem',
                   borderRadius: '9999px',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 Ciclo Atual: #{currentCycle}
               </span>
             </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: '0.2rem 0 0 0' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: '0.2rem 0 0 0' }}>
               Cronoanálise & Estudo de Tempos Lean
             </h2>
           </div>
@@ -533,7 +537,7 @@ export default function CronoanalisePage() {
             onClick={handleDownloadCSV}
             disabled={records.length === 0}
             className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.6 : 1 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.5 : 1 }}
           >
             <Download size={14} /> Exportar CSV (Excel)
           </button>
@@ -541,7 +545,7 @@ export default function CronoanalisePage() {
             onClick={handleClearAll}
             disabled={records.length === 0}
             className="btn btn-danger btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.6 : 1 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: records.length === 0 ? 0.5 : 1 }}
           >
             <Trash2 size={14} /> Limpar
           </button>
@@ -660,58 +664,58 @@ export default function CronoanalisePage() {
           gap: '1rem',
         }}
       >
-        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #2563eb' }}>
-          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #06b6d4', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
             Tempo Total Amostrado
           </span>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
             {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s
           </h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
             {records.length} tomadas de tempo em {groupedCycles.length} ciclo(s)
           </span>
         </div>
 
-        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #10b981' }}>
-          <span style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase' }}>
             Valor Agregado (VA)
           </span>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#34d399', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
             {vaPercentage}%
           </h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
             {Math.floor(vaSeconds / 60)}m {vaSeconds % 60}s produtivo
           </span>
         </div>
 
-        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #ef4444' }}>
-          <span style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 700, textTransform: 'uppercase' }}>
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #ef4444', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 800, textTransform: 'uppercase' }}>
             Desperdício (NVA)
           </span>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#dc2626', marginTop: '0.25rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f87171', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
             {nvaPercentage}%
           </h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
             {Math.floor(nvaSeconds / 60)}m {nvaSeconds % 60}s perdas/paradas
           </span>
         </div>
 
-        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b' }}>
-          <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 700, textTransform: 'uppercase' }}>
+        <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <span style={{ fontSize: '0.75rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase' }}>
             Custo Oportunidade / Perda
           </span>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#d97706', marginTop: '0.25rem' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fbbf24', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
             {formatCurrency(estimatedWastedCost)}
           </h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Custo H/H:</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Custo H/H:</span>
             <input
               type="number"
               value={hourlyRate}
               onChange={(e) => setHourlyRate(Number(e.target.value) || 0)}
-              style={{ width: '45px', padding: '0.1rem 0.25rem', fontSize: '0.7rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+              style={{ width: '55px', padding: '0.1rem 0.35rem', fontSize: '0.7rem', backgroundColor: '#090e1a', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '4px', fontFamily: 'var(--font-mono)' }}
             />
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>R$/h</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>R$/h</span>
           </div>
         </div>
       </div>
@@ -720,21 +724,21 @@ export default function CronoanalisePage() {
       <div
         className="card"
         style={{
-          border: '1px solid #e2e8f0',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '1.5rem',
-          backgroundColor: statsCalc.isReliable ? '#f0fdf4' : '#fffbeb',
+          backgroundColor: '#0f172a',
           borderLeft: statsCalc.isReliable ? '6px solid #10b981' : '6px solid #f59e0b',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Sigma size={24} color={statsCalc.isReliable ? '#059669' : '#d97706'} />
+            <Sigma size={24} color={statsCalc.isReliable ? '#34d399' : '#fbbf24'} />
             <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
                 Cálculo de Confiabilidade Estatística & Tamanho de Amostra ($N'$)
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
+              <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: 0 }}>
                 Norma técnica de Cronoanálise Industrial para garantir que a amostragem representa a realidade do processo
               </p>
             </div>
@@ -743,12 +747,12 @@ export default function CronoanalisePage() {
           {/* Configuration Controls */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>Confiança ($1-\\alpha$):</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>Confiança ($1-\alpha$):</span>
               <select
                 value={confidenceLevel}
                 onChange={(e) => setConfidenceLevel(Number(e.target.value))}
                 className="form-select"
-                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: 'auto' }}
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: 'auto', backgroundColor: '#090e1a', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)' }}
               >
                 <option value={0.9}>90% (z = 1.645)</option>
                 <option value={0.95}>95% (z = 1.960 - Padrão)</option>
@@ -757,25 +761,25 @@ export default function CronoanalisePage() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>Erro Máx ($e$):</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>Erro Máx ($e$):</span>
               <select
                 value={toleratedError}
                 onChange={(e) => setToleratedError(Number(e.target.value))}
                 className="form-select"
-                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: 'auto' }}
+                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', width: 'auto', backgroundColor: '#090e1a', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)' }}
               >
-                <option value={0.03}>± 3% (Alta Precisão)</option>
-                <option value={0.05}>± 5% (Padrão Industrial)</option>
-                <option value={0.1}>± 10% (Estimativa Rápida)</option>
+                <option value={0.03}>±3% (Alta Precisão)</option>
+                <option value={0.05}>±5% (Recomendado)</option>
+                <option value={0.1}>±10% (Exploratório)</option>
               </select>
             </div>
 
             <button
               onClick={() => setShowMathDetails(!showMathDetails)}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+              style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
             >
-              {showMathDetails ? 'Ocultar Memória' : 'Ver Memória de Cálculo'}
+              <Calculator size={14} /> {showMathDetails ? 'Ocultar Memória' : 'Ver Memória de Cálculo'}
             </button>
           </div>
         </div>
@@ -882,7 +886,7 @@ export default function CronoanalisePage() {
               <div><strong>3. Média dos Tempos (x̄):</strong> x̄ = (∑ xᵢ) / n = {statsCalc.mean} segundos</div>
               <div><strong>4. Desvio Padrão Amostral (s):</strong> s = √[ ∑ (xᵢ - x̄)² / (n - 1) ] = {statsCalc.stdDev} segundos</div>
               <div><strong>5. Coeficiente de Variação (CV):</strong> CV = s / x̄ = ({statsCalc.stdDev} / {statsCalc.mean}) = {statsCalc.cv}%</div>
-              <div style={{ marginTop: '0.35rem', color: '#2563eb', fontWeight: 700 }}>
+              <div style={{ marginTop: '0.35rem', color: '#22d3ee', fontWeight: 800 }}>
                 <strong>6. Resolução:</strong> N&apos; = [ ({statsCalc.z} × {statsCalc.stdDev}) / ({statsCalc.error} × {statsCalc.mean}) ]² = [ {((statsCalc.z * statsCalc.stdDev)).toFixed(3)} / {((statsCalc.error * statsCalc.mean)).toFixed(3)} ]² = {statsCalc.requiredN} amostras mínimas recomendadas.
               </div>
             </div>
@@ -907,32 +911,45 @@ export default function CronoanalisePage() {
             style={{
               padding: '1.5rem',
               backgroundColor: '#0f172a',
+              border: '1px solid rgba(6, 182, 212, 0.3)',
               color: '#ffffff',
               borderRadius: '16px',
-              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.4)',
+              boxShadow: '0 10px 30px -5px rgba(6, 182, 212, 0.15)',
               textAlign: 'center',
               position: 'relative',
               overflow: 'hidden',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {focusedMotivo ? `Cronômetro: ${focusedMotivo}` : `Ciclo Atual: #${currentCycle} (Aguardando Disparo)`}
               </span>
               {focusedMotivo && (
                 <span
                   style={{
                     fontSize: '0.7rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '9999px',
                     backgroundColor:
                       motivos.find((m) => m.name === focusedMotivo)?.type === 'VA'
-                        ? '#065f46'
+                        ? 'rgba(16, 185, 129, 0.2)'
                         : motivos.find((m) => m.name === focusedMotivo)?.type === 'NNVA'
-                        ? '#155e75'
-                        : '#991b1b',
-                    color: '#ffffff',
+                        ? 'rgba(6, 182, 212, 0.2)'
+                        : 'rgba(239, 68, 68, 0.2)',
+                    color:
+                      motivos.find((m) => m.name === focusedMotivo)?.type === 'VA'
+                        ? '#34d399'
+                        : motivos.find((m) => m.name === focusedMotivo)?.type === 'NNVA'
+                        ? '#22d3ee'
+                        : '#f87171',
+                    border: `1px solid ${
+                      motivos.find((m) => m.name === focusedMotivo)?.type === 'VA'
+                        ? 'rgba(16, 185, 129, 0.4)'
+                        : motivos.find((m) => m.name === focusedMotivo)?.type === 'NNVA'
+                        ? 'rgba(6, 182, 212, 0.4)'
+                        : 'rgba(239, 68, 68, 0.4)'
+                    }`,
                   }}
                 >
                   {motivos.find((m) => m.name === focusedMotivo)?.type === 'VA'
@@ -947,13 +964,13 @@ export default function CronoanalisePage() {
             {/* Display Big Digital Time */}
             <div
               style={{
-                fontFamily: 'monospace',
+                fontFamily: 'var(--font-mono)',
                 fontSize: '3.25rem',
                 fontWeight: 900,
                 letterSpacing: '0.04em',
-                color: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '#38bdf8' : '#f8fafc',
+                color: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '#22d3ee' : '#ffffff',
                 margin: '0.5rem 0',
-                textShadow: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '0 0 20px rgba(56, 189, 248, 0.5)' : 'none',
+                textShadow: focusedMotivo && activeTimers[focusedMotivo]?.isRunning ? '0 0 20px rgba(6, 182, 212, 0.6)' : 'none',
               }}
             >
               {focusedMotivo && activeTimers[focusedMotivo]
@@ -973,8 +990,8 @@ export default function CronoanalisePage() {
                     width: '100%',
                     padding: '0.5rem 0.75rem',
                     borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    backgroundColor: '#090e1a',
                     color: '#ffffff',
                     fontSize: '0.8125rem',
                     outline: 'none',
@@ -991,9 +1008,10 @@ export default function CronoanalisePage() {
                     onClick={() => handlePauseTimer(focusedMotivo)}
                     className="btn"
                     style={{
-                      backgroundColor: '#f59e0b',
-                      color: '#000000',
-                      fontWeight: 700,
+                      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                      border: '1px solid rgba(245, 158, 11, 0.5)',
+                      color: '#fbbf24',
+                      fontWeight: 800,
                       padding: '0.6rem 1.25rem',
                       borderRadius: '10px',
                       display: 'flex',
@@ -1008,9 +1026,10 @@ export default function CronoanalisePage() {
                     onClick={() => handleStartTimer(focusedMotivo)}
                     className="btn"
                     style={{
-                      backgroundColor: '#10b981',
-                      color: '#ffffff',
-                      fontWeight: 700,
+                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.5)',
+                      color: '#34d399',
+                      fontWeight: 800,
                       padding: '0.6rem 1.25rem',
                       borderRadius: '10px',
                       display: 'flex',
@@ -1026,9 +1045,10 @@ export default function CronoanalisePage() {
                   onClick={() => handleStopAndSaveTimer(focusedMotivo)}
                   className="btn"
                   style={{
-                    backgroundColor: '#ef4444',
-                    color: '#ffffff',
-                    fontWeight: 700,
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    color: '#f87171',
+                    fontWeight: 800,
                     padding: '0.6rem 1.25rem',
                     borderRadius: '10px',
                     display: 'flex',
@@ -1043,8 +1063,9 @@ export default function CronoanalisePage() {
                   onClick={() => handleResetTimer(focusedMotivo)}
                   className="btn"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: '#cbd5e1',
+                    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    color: '#94a3b8',
                     padding: '0.6rem 0.85rem',
                     borderRadius: '10px',
                   }}
@@ -1057,15 +1078,15 @@ export default function CronoanalisePage() {
           </div>
 
           {/* Reason / Motivo Buttons Grid */}
-          <div className="card" style={{ padding: '1.25rem' }}>
+          <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Tag size={16} color="#2563eb" />
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                <Tag size={16} color="#22d3ee" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
                   Categorias de Medição & Atividades
                 </h4>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{motivos.length} categorias</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{motivos.length} categorias</span>
             </div>
 
             {/* Quick Add Form */}
@@ -1109,12 +1130,12 @@ export default function CronoanalisePage() {
                       justifyContent: 'space-between',
                       padding: '0.75rem 1rem',
                       borderRadius: '10px',
-                      backgroundColor: isRunning ? '#f0fdf4' : isFocused ? '#eff6ff' : '#f8fafc',
+                      backgroundColor: isRunning ? 'rgba(16, 185, 129, 0.12)' : isFocused ? 'rgba(6, 182, 212, 0.12)' : '#090e1a',
                       border: isRunning
-                        ? '2px solid #10b981'
+                        ? '1px solid rgba(16, 185, 129, 0.5)'
                         : isFocused
-                        ? '2px solid #2563eb'
-                        : '1px solid #e2e8f0',
+                        ? '1px solid rgba(6, 182, 212, 0.5)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
                       transition: 'all 0.15s ease',
                     }}
                   >
@@ -1130,25 +1151,28 @@ export default function CronoanalisePage() {
                       />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <strong style={{ fontSize: '0.84375rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <strong style={{ fontSize: '0.84375rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {m.name}
                           </strong>
                           <span
                             style={{
                               fontSize: '0.65rem',
-                              fontWeight: 700,
+                              fontWeight: 800,
                               padding: '0.1rem 0.35rem',
                               borderRadius: '4px',
                               backgroundColor:
-                                m.type === 'VA' ? '#ecfdf5' : m.type === 'NNVA' ? '#ecfeff' : '#fef2f2',
-                              color: m.type === 'VA' ? '#059669' : m.type === 'NNVA' ? '#0891b2' : '#dc2626',
+                                m.type === 'VA' ? 'rgba(16, 185, 129, 0.15)' : m.type === 'NNVA' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: m.type === 'VA' ? '#34d399' : m.type === 'NNVA' ? '#22d3ee' : '#f87171',
+                              border: `1px solid ${
+                                m.type === 'VA' ? 'rgba(16, 185, 129, 0.35)' : m.type === 'NNVA' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(239, 68, 68, 0.35)'
+                              }`,
                             }}
                           >
                             {m.type}
                           </span>
                         </div>
                         {active && (
-                          <div style={{ fontSize: '0.75rem', color: '#2563eb', fontFamily: 'monospace', fontWeight: 700 }}>
+                          <div style={{ fontSize: '0.75rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                             ⏱️ {formatTime(active.elapsedMs)} {isRunning ? '(Em andamento...)' : '(Pausado)'}
                           </div>
                         )}
@@ -1228,22 +1252,22 @@ export default function CronoanalisePage() {
         {/* RIGHT COLUMN: Gráficos & Estatísticas Yamazumi / Pareto */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Pareto & Bar Analysis */}
-          <div className="card" style={{ padding: '1.25rem' }}>
+          <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <BarChart3 size={16} color="#2563eb" />
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                <BarChart3 size={16} color="#22d3ee" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
                   Gráfico de Pareto & Gargalos de Tempo
                 </h4>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Tempo acumulado</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Tempo acumulado</span>
             </div>
 
             {motivoStats.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
                 <Clock size={32} style={{ margin: '0 auto 0.5rem', opacity: 0.4 }} />
                 <p style={{ fontSize: '0.84375rem', margin: 0 }}>Nenhuma medição realizada ainda.</p>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
                   Inicie o cronômetro ao lado para gerar o estudo gráfico de tempos.
                 </p>
               </div>
@@ -1258,22 +1282,22 @@ export default function CronoanalisePage() {
                   return (
                     <div key={item.name}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem', fontSize: '0.8125rem' }}>
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>
-                          {item.name} <span style={{ color: '#64748b', fontSize: '0.75rem' }}>({item.count}x)</span>
+                        <span style={{ fontWeight: 700, color: '#ffffff' }}>
+                          {item.name} <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>({item.count}x)</span>
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Média: {item.avgTime}s</span>
-                          <strong style={{ color: isVA ? '#059669' : isNNVA ? '#0891b2' : '#dc2626' }}>
+                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Média: {item.avgTime}s</span>
+                          <strong style={{ color: isVA ? '#34d399' : isNNVA ? '#22d3ee' : '#f87171', fontFamily: 'var(--font-mono)' }}>
                             {item.totalTime}s ({item.percentage}%)
                           </strong>
                         </div>
                       </div>
-                      <div style={{ width: '100%', height: '10px', backgroundColor: '#f1f5f9', borderRadius: '9999px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '10px', backgroundColor: '#090e1a', borderRadius: '9999px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                         <div
                           style={{
                             width: `${barWidth}%`,
                             height: '100%',
-                            backgroundColor: isVA ? '#10b981' : isNNVA ? '#0891b2' : '#ef4444',
+                            backgroundColor: isVA ? '#10b981' : isNNVA ? '#06b6d4' : '#ef4444',
                             borderRadius: '9999px',
                             transition: 'width 0.3s ease',
                           }}
@@ -1292,31 +1316,26 @@ export default function CronoanalisePage() {
               className="card"
               style={{
                 padding: '1.25rem',
-                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                backgroundColor: '#0f172a',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
                 color: '#ffffff',
                 borderRadius: '14px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <Sparkles size={16} color="#fbbf24" />
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0, color: '#ffffff' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 900, margin: 0, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                   Oportunidade de Kaizen Detectada!
                 </h4>
               </div>
-              <p style={{ fontSize: '0.8125rem', color: '#c7d2fe', lineHeight: 1.4, margin: '0 0 1rem 0' }}>
-                Você identificou <strong>{Math.floor(nvaSeconds / 60)} minutos</strong> de paradas e desperdícios.
+              <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4, margin: '0 0 1rem 0' }}>
+                Você identificou <strong style={{ color: '#fbbf24' }}>{Math.floor(nvaSeconds / 60)} minutos</strong> de paradas e desperdícios.
                 Transforme esta perda em um projeto de melhoria com ROI comprovado!
               </p>
               <Link
                 href="/agente/ferramentas/calculadora-roi"
-                className="btn"
+                className="btn btn-warning btn-sm"
                 style={{
-                  backgroundColor: '#fbbf24',
-                  color: '#000000',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  padding: '0.6rem 1rem',
-                  borderRadius: '8px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.4rem',
@@ -1331,13 +1350,13 @@ export default function CronoanalisePage() {
       </div>
 
       {/* HISTÓRICO DE MEDIÇÕES (VISÃO POR CICLOS OU VISÃO TABULAR) */}
-      <div className="card" style={{ padding: '1.25rem' }}>
+      <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
               Histórico & Amostragens de Cronoanálise ({records.length} medições)
             </h4>
-            <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0 }}>
+            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: 0 }}>
               Estruturado por tomadas de ciclo ou lista contínua com anotações e observações de posto
             </p>
           </div>
@@ -1347,9 +1366,10 @@ export default function CronoanalisePage() {
               onClick={() => setHistoryViewMode('cycles')}
               className="btn btn-sm"
               style={{
-                backgroundColor: historyViewMode === 'cycles' ? '#2563eb' : '#f1f5f9',
-                color: historyViewMode === 'cycles' ? '#ffffff' : '#475569',
-                fontWeight: 700,
+                backgroundColor: historyViewMode === 'cycles' ? '#06b6d4' : '#090e1a',
+                color: historyViewMode === 'cycles' ? '#020617' : '#94a3b8',
+                border: historyViewMode === 'cycles' ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
+                fontWeight: 800,
                 fontSize: '0.75rem',
               }}
             >
@@ -1359,9 +1379,10 @@ export default function CronoanalisePage() {
               onClick={() => setHistoryViewMode('flat')}
               className="btn btn-sm"
               style={{
-                backgroundColor: historyViewMode === 'flat' ? '#2563eb' : '#f1f5f9',
-                color: historyViewMode === 'flat' ? '#ffffff' : '#475569',
-                fontWeight: 700,
+                backgroundColor: historyViewMode === 'flat' ? '#06b6d4' : '#090e1a',
+                color: historyViewMode === 'flat' ? '#020617' : '#94a3b8',
+                border: historyViewMode === 'flat' ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
+                fontWeight: 800,
                 fontSize: '0.75rem',
               }}
             >
@@ -1591,7 +1612,7 @@ export default function CronoanalisePage() {
                           }}
                           title="Excluir este registro"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                         </button>
                       </td>
                     </tr>
