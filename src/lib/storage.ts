@@ -9,14 +9,26 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'lean_flow_current_user',
 };
 
-export const INITIAL_TENANT: Tenant = {
-  id: 'tenant_nexus_01',
-  name: 'Nexus Lean Manufacturing & Services',
-  slug: 'nexus-lean',
-  cnpjOrCode: '18.234.567/0001-89',
-  plan: 'enterprise',
-  createdAt: '2026-01-10T08:00:00.000Z',
-};
+export const INITIAL_TENANTS: Tenant[] = [
+  {
+    id: 'tenant_nexus_01',
+    name: 'Nexus Lean Manufacturing & Services',
+    slug: 'nexus-lean',
+    cnpjOrCode: '18.234.567/0001-89',
+    plan: 'enterprise',
+    createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  {
+    id: 'tenant_grigol_02',
+    name: 'Metalúrgica Grigol & Automação Industrial',
+    slug: 'metalurgica-grigol',
+    cnpjOrCode: '45.892.123/0001-44',
+    plan: 'enterprise',
+    createdAt: '2026-02-01T08:00:00.000Z',
+  },
+];
+
+export const INITIAL_TENANT: Tenant = INITIAL_TENANTS[0];
 
 export const INITIAL_SECTORS: Sector[] = [
   {
@@ -63,6 +75,43 @@ export const INITIAL_SECTORS: Sector[] = [
     description: 'Células de manufatura, ritmo Takt Time e operação puxada',
     color: '#0891b2',
     createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  // Setores da segunda entidade (Metalúrgica Grigol)
+  {
+    id: 'sec_grigol_01',
+    tenantId: 'tenant_grigol_02',
+    name: 'Usinagem CNC & Ferramentaria',
+    code: 'USIN',
+    description: 'Centros de usinagem 5 eixos, tornos CNC e redução de tempo de setup (SMED)',
+    color: '#0284c7',
+    createdAt: '2026-02-01T08:00:00.000Z',
+  },
+  {
+    id: 'sec_grigol_02',
+    tenantId: 'tenant_grigol_02',
+    name: 'Estamparia & Conformação',
+    code: 'ESTAMP',
+    description: 'Prensas excêntricas, matrizes progressivas e manutenção autônoma TPM',
+    color: '#ea580c',
+    createdAt: '2026-02-01T08:00:00.000Z',
+  },
+  {
+    id: 'sec_grigol_03',
+    tenantId: 'tenant_grigol_02',
+    name: 'Montagem & Soldagem Robotizada',
+    code: 'MONT',
+    description: 'Células robotizadas de solda MIG/MAG, poka-yoke e fluxo de montagem',
+    color: '#16a34a',
+    createdAt: '2026-02-01T08:00:00.000Z',
+  },
+  {
+    id: 'sec_grigol_04',
+    tenantId: 'tenant_grigol_02',
+    name: 'Controle de Qualidade & Metrologia',
+    code: 'METRO',
+    description: 'Braço tridimensional, inspeção dimensional e auditorias de processo',
+    color: '#9333ea',
+    createdAt: '2026-02-01T08:00:00.000Z',
   },
 ];
 
@@ -129,6 +178,44 @@ export const INITIAL_USERS: User[] = [
     active: true,
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-18T11:00:00.000Z',
+  },
+  // Usuários da segunda entidade (Metalúrgica Grigol)
+  {
+    id: 'usr_grigol_admin',
+    tenantId: 'tenant_grigol_02',
+    name: 'Mauricio Grigol',
+    email: 'mauricio.grigol@metalurgicagrigol.com',
+    role: 'admin',
+    jobTitle: 'Diretor Industrial & Lean Master',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-02-01T08:00:00.000Z',
+  },
+  {
+    id: 'usr_grigol_agent_01',
+    tenantId: 'tenant_grigol_02',
+    name: 'Lucas Antunes',
+    email: 'lucas.antunes@metalurgicagrigol.com',
+    role: 'agent',
+    sectorId: 'sec_grigol_01',
+    sectorName: 'Usinagem CNC & Ferramentaria',
+    jobTitle: 'Técnico de Setup & Processos',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-02-01T09:00:00.000Z',
+  },
+  {
+    id: 'usr_grigol_agent_02',
+    tenantId: 'tenant_grigol_02',
+    name: 'Patrícia Soares',
+    email: 'patricia.soares@metalurgicagrigol.com',
+    role: 'agent',
+    sectorId: 'sec_grigol_04',
+    sectorName: 'Controle de Qualidade & Metrologia',
+    jobTitle: 'Inspetora de Qualidade Assegurada',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-02-01T09:30:00.000Z',
   },
 ];
 

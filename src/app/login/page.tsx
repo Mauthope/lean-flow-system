@@ -1,26 +1,45 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Shield, UserCheck, Lock, ArrowRight, ArrowLeft, Sparkles, Building2, User } from 'lucide-react';
+import { dataService } from '@/services/dataService';
+import { Tenant } from '@/lib/types';
+import { Shield, UserCheck, Lock, ArrowRight, ArrowLeft, Building2, Plus, Check } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { allUsers, loginAs } = useAuth();
+  const { currentTenant, loginAs, refreshData } = useAuth();
 
+  const [tenants, setTenants] = useState<Tenant[]>(() => dataService.getTenants());
+  const [selectedTenantId, setSelectedTenantId] = useState<string>(
+    () => currentTenant?.id || dataService.getTenants()[0]?.id || 'tenant_nexus_01'
+  );
   const [activeTab, setActiveTab] = useState<'admin' | 'agent'>('admin');
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
 
-  const adminUsers = allUsers.filter((u) => u.role === 'admin');
-  const agentUsers = allUsers.filter((u) => u.role === 'agent');
+  const activeTenant = tenants.find((t) => t.id === selectedTenantId) || tenants[0];
+  const tenantUsers = dataService.getUsers(activeTenant?.id);
+  const adminUsers = tenantUsers.filter((u) => u.role === 'admin');
+  const agentUsers = tenantUsers.filter((u) => u.role === 'agent');
 
   const currentUsers = activeTab === 'admin' ? adminUsers : agentUsers;
 
+  const handleSelectTenant = (tenantId: string) => {
+    setSelectedTenantId(tenantId);
+    const targetTenant = tenants.find((t) => t.id === tenantId);
+    if (targetTenant) {
+      dataService.setCurrentTenant(targetTenant);
+      refreshData();
+    }
+  };
+
   const handleQuickLoginDirect = (userId: string) => {
+    if (activeTenant) {
+      dataService.setCurrentTenant(activeTenant);
+    }
     loginAs(userId);
-    const target = allUsers.find((u) => u.id === userId);
+    const target = tenantUsers.find((u) => u.id === userId);
     if (target?.role === 'admin') {
       router.push('/admin/dashboard');
     } else {
@@ -88,7 +107,7 @@ export default function LoginPage() {
       />
 
       {/* Top Back Link */}
-      <div style={{ width: '100%', maxWidth: '520px', marginBottom: '1.25rem', position: 'relative', zIndex: 10 }}>
+      <div style={{ width: '100%', maxWidth: '560px', marginBottom: '1.25rem', position: 'relative', zIndex: 10 }}>
         <Link
           href="/"
           style={{
@@ -110,20 +129,20 @@ export default function LoginPage() {
       <div
         style={{
           width: '100%',
-          maxWidth: '520px',
-          backgroundColor: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
+          maxWidth: '560px',
+          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
           borderRadius: '24px',
           padding: '2.5rem 2rem',
           boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6)',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           position: 'relative',
           zIndex: 10,
         }}
       >
         {/* Header with Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
               width: '54px',
@@ -146,8 +165,41 @@ export default function LoginPage() {
             Acesso ao LeanFlow 4.0
           </h1>
           <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.35rem' }}>
-            Selecione o perfil desejado para autenticar na plataforma
+            Selecione a entidade e o usuário para autenticar
           </p>
+        </div>
+
+        {/* TENANT / ENTITY SELECTOR */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
+            <Building2 size={14} /> Selecionar Entidade / Unidade Fabril:
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.6rem' }}>
+            {tenants.map((t) => {
+              const isSelected = activeTenant?.id === t.id;
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => handleSelectTenant(t.id)}
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: '12px',
+                    border: isSelected ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <strong style={{ fontSize: '0.8125rem', color: isSelected ? '#ffffff' : '#cbd5e1', display: 'block' }}>
+                    🏢 {t.name}
+                  </strong>
+                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
+                    Slug: /d/{t.slug}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Role Selector Tabs (Supervisor vs Agente) */}
@@ -160,21 +212,18 @@ export default function LoginPage() {
             padding: '0.35rem',
             borderRadius: '14px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            marginBottom: '1.75rem',
+            marginBottom: '1.5rem',
           }}
         >
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('admin');
-              if (adminUsers[0]) setSelectedUserId(adminUsers[0].id);
-            }}
+            onClick={() => setActiveTab('admin')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.45rem',
-              padding: '0.75rem',
+              padding: '0.65rem',
               borderRadius: '10px',
               border: activeTab === 'admin' ? '1px solid rgba(96, 165, 250, 0.5)' : '1px solid transparent',
               backgroundColor: activeTab === 'admin' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
@@ -187,21 +236,18 @@ export default function LoginPage() {
             }}
           >
             <Shield size={16} />
-            <span>Supervisor / Admin</span>
+            <span>Supervisores ({adminUsers.length})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              setActiveTab('agent');
-              if (agentUsers[0]) setSelectedUserId(agentUsers[0].id);
-            }}
+            onClick={() => setActiveTab('agent')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.45rem',
-              padding: '0.75rem',
+              padding: '0.65rem',
               borderRadius: '10px',
               border: activeTab === 'agent' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid transparent',
               backgroundColor: activeTab === 'agent' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
@@ -214,111 +260,110 @@ export default function LoginPage() {
             }}
           >
             <UserCheck size={16} />
-            <span>Agente Operacional</span>
+            <span>Agentes ({agentUsers.length})</span>
           </button>
         </div>
 
         {/* User Card List for Quick 1-Click Access */}
-        <div style={{ marginBottom: '1.75rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem', letterSpacing: '0.04em' }}>
-            {activeTab === 'admin' ? 'Perfis de Supervisão (1-Clique):' : 'Agentes Operacionais da Fábrica (1-Clique):'}
+            {activeTab === 'admin' ? `Supervisores da ${activeTenant.name}:` : `Agentes Operacionais da ${activeTenant.name}:`}
           </label>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {currentUsers.map((user) => {
-              const isAdmin = user.role === 'admin';
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            {currentUsers.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8125rem' }}>
+                Nenhum usuário deste perfil cadastrado nesta entidade.
+              </div>
+            ) : (
+              currentUsers.map((user) => {
+                const isAdmin = user.role === 'admin';
 
-              return (
-                <div
-                  key={user.id}
-                  onClick={() => handleQuickLoginDirect(user.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.85rem 1.15rem',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = isAdmin ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.18)';
-                    e.currentTarget.style.borderColor = isAdmin ? '#60a5fa' : '#34d399';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                    <img
-                      src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                      alt={user.name}
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: `2px solid ${isAdmin ? '#3b82f6' : '#10b981'}`,
-                      }}
-                    />
-                    <div>
-                      <strong style={{ fontSize: '0.9rem', color: '#ffffff', display: 'block' }}>
-                        {user.name}
-                      </strong>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        {isAdmin ? 'Supervisor Master • Gestão & ROI' : `${user.sectorName || 'Agente'} • Operação Kaizen`}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
+                return (
+                  <div
+                    key={user.id}
+                    onClick={() => handleQuickLoginDirect(user.id)}
                     style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 800,
-                      backgroundColor: isAdmin ? 'rgba(37, 99, 235, 0.3)' : 'rgba(16, 185, 129, 0.25)',
-                      color: isAdmin ? '#93c5fd' : '#6ee7b7',
-                      padding: '0.3rem 0.75rem',
-                      borderRadius: '8px',
-                      border: `1px solid ${isAdmin ? 'rgba(59, 130, 246, 0.4)' : 'rgba(52, 211, 153, 0.4)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = isAdmin ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.18)';
+                      e.currentTarget.style.borderColor = isAdmin ? '#60a5fa' : '#34d399';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    Acessar →
-                  </span>
-                </div>
-              );
-            })}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                        alt={user.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: `2px solid ${isAdmin ? '#3b82f6' : '#10b981'}`,
+                        }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                          {user.name}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                          {isAdmin ? 'Supervisor Master • Gestão & ROI' : `${user.sectorName || 'Agente'} • Operação Kaizen`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: '0.725rem',
+                        fontWeight: 800,
+                        backgroundColor: isAdmin ? 'rgba(37, 99, 235, 0.3)' : 'rgba(16, 185, 129, 0.25)',
+                        color: isAdmin ? '#93c5fd' : '#6ee7b7',
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '6px',
+                        border: `1px solid ${isAdmin ? 'rgba(59, 130, 246, 0.4)' : 'rgba(52, 211, 153, 0.4)'}`,
+                      }}
+                    >
+                      Acessar →
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Informative Note */}
+        {/* Unique Link Info for this selected factory */}
         <div
           style={{
-            padding: '0.875rem 1rem',
+            padding: '0.75rem 1rem',
             backgroundColor: 'rgba(255, 255, 255, 0.02)',
             border: '1px dashed rgba(255, 255, 255, 0.15)',
             borderRadius: '12px',
-            fontSize: '0.78125rem',
+            fontSize: '0.75rem',
             color: '#94a3b8',
             lineHeight: 1.5,
             textAlign: 'center',
           }}
         >
-          💡 <em>Selecione qualquer perfil acima para testar a experiência personalizada de cada perfil operacional.</em>
-        </div>
-
-        {/* Public Demand Link */}
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: 0 }}>
-            Quer cadastrar uma sugestão sem autenticar?{' '}
-            <Link href="/nova-demanda" style={{ color: '#38bdf8', fontWeight: 700, textDecoration: 'none' }}>
-              Formulário Kaizen
-            </Link>
-          </p>
+          🔗 Link de Coleta da {activeTenant.name}:{' '}
+          <Link href={`/d/${activeTenant.slug}`} target="_blank" style={{ color: '#38bdf8', fontWeight: 700, textDecoration: 'none' }}>
+            /d/{activeTenant.slug} ↗
+          </Link>
         </div>
       </div>
 

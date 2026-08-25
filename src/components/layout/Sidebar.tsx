@@ -28,6 +28,7 @@ import {
   Settings,
   Radio,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 interface NavItem {
@@ -61,8 +62,9 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Cadastros & Equipe',
       items: [
+        { href: '/admin/entidades', label: 'Gestão de Entidades', icon: Building2, badge: 'Multi-Tenant' },
         { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
-        { href: '/admin/setores', label: 'Gestão de Setores', icon: Building2 },
+        { href: '/admin/setores', label: 'Gestão de Setores', icon: Layers },
       ],
     },
     {
@@ -413,7 +415,7 @@ export const Sidebar: React.FC = () => {
         </div>
 
         <Link
-          href="/nova-demanda"
+          href={`/d/${currentTenant?.slug || 'nexus-lean'}`}
           target="_blank"
           style={{
             display: 'flex',
@@ -432,9 +434,10 @@ export const Sidebar: React.FC = () => {
           }}
           onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)')}
           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)')}
+          title={`Link Exclusivo desta Entidade: /d/${currentTenant?.slug || 'nexus-lean'}`}
         >
           <ExternalLink size={13} />
-          <span>Link Público de Demandas</span>
+          <span>Link da Fábrica (/d/{currentTenant?.slug || 'nexus-lean'})</span>
         </Link>
       </div>
     </aside>

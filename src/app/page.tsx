@@ -28,6 +28,7 @@ import {
   Workflow,
   Target,
   Award,
+  Building2,
   ExternalLink,
   Play,
   Flame,
@@ -37,14 +38,6 @@ import {
 export default function LandingPage() {
   const router = useRouter();
   const [activeFeatureTab, setActiveFeatureTab] = useState<'crono' | 'roi' | 'kanban' | 'hub'>('crono');
-  const [searchProtocol, setSearchProtocol] = useState('');
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchProtocol.trim()) {
-      router.push(`/protocolo/${searchProtocol.trim()}`);
-    }
-  };
 
   return (
     <div
@@ -190,7 +183,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', letterSpacing: '0.02em' }}>
-                Operational Excellence & Lean Platform
+                Operational Excellence & Multi-Entity Lean Platform
               </span>
             </div>
           </Link>
@@ -213,29 +206,6 @@ export default function LandingPage() {
 
           {/* Action CTAs */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link
-              href="/nova-demanda"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                color: '#ffffff',
-                fontSize: '0.8125rem',
-                fontWeight: 700,
-                textDecoration: 'none',
-                padding: '0.55rem 0.95rem',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.18)',
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <span>Demanda Kaizen</span>
-              <ExternalLink size={13} color="#38bdf8" />
-            </Link>
-
             <Link
               href="/login"
               style={{
@@ -352,7 +322,7 @@ export default function LandingPage() {
               fontWeight: 500,
             }}
           >
-            Plataforma 4.0 desenvolvida para padronizar postos de trabalho, executar cronoanálises com validação estatística \(N&apos;\), priorizar planos de ação Kaizen e mensurar múltiplos custos evitados em tempo real.
+            Plataforma 4.0 desenvolvida para padronizar postos de trabalho, executar cronoanálises com validação estatística \(N&apos;\), priorizar planos de ação Kaizen e mensurar múltiplos custos evitados em tempo real com links exclusivos para cada entidade fabril.
           </p>
 
           {/* Hero Action Buttons (Liquid Glow) */}
@@ -388,8 +358,8 @@ export default function LandingPage() {
               <ArrowRight size={19} />
             </Link>
 
-            <Link
-              href="/nova-demanda"
+            <a
+              href="#solucoes"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -409,61 +379,50 @@ export default function LandingPage() {
               }}
             >
               <Zap size={18} color="#38bdf8" />
-              <span>Cadastrar Demanda Kaizen</span>
-            </Link>
+              <span>Conhecer Soluções & Módulos</span>
+            </a>
           </div>
 
-          {/* Quick Protocol Search Bar */}
+          {/* Multi-Tenant Information Pill */}
           <div
             style={{
-              maxWidth: '580px',
+              maxWidth: '720px',
               margin: '0 auto 4rem',
-              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backgroundColor: 'rgba(15, 23, 42, 0.7)',
               backdropFilter: 'blur(25px)',
               WebkitBackdropFilter: 'blur(25px)',
-              padding: '0.5rem',
-              borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              padding: '1rem 1.5rem',
+              borderRadius: '18px',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
               boxShadow: '0 20px 45px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              textAlign: 'left',
             }}
           >
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                type="text"
-                placeholder="Rastrear protocolo público (ex: LEAN-2026-8805)..."
-                value={searchProtocol}
-                onChange={(e) => setSearchProtocol(e.target.value)}
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '0.75rem 1.15rem',
-                  color: '#ffffff',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '0.75rem 1.5rem',
-                  fontWeight: 800,
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  flexShrink: 0,
-                  boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
-                }}
-              >
-                <Search size={16} /> Rastrear
-              </button>
-            </form>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Building2 size={20} color="#38bdf8" />
+            </div>
+            <div>
+              <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                Links Únicos & Isolamento por Entidade Fabril
+              </strong>
+              <span style={{ fontSize: '0.78125rem', color: '#cbd5e1', lineHeight: 1.4, display: 'block' }}>
+                Cada fábrica cadastrada pelo Master possui seu link exclusivo (ex: <code style={{ color: '#38bdf8' }}>/d/[slug]</code>) e QR Code para operadores enviarem demandas direto para sua triagem interna.
+              </span>
+            </div>
           </div>
 
           {/* ==================== LIQUID GLASS INTERACTIVE DASHBOARD MOCKUP ==================== */}
@@ -865,15 +824,15 @@ export default function LandingPage() {
                     <Layers size={16} /> Triagem & Execução
                   </div>
                   <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.85rem', lineHeight: 1.2 }}>
-                    Kanban 4.0 & Triagem de Demandas
+                    Kanban 4.0 & Triagem por Fábrica
                   </h3>
                   <p style={{ fontSize: '0.95rem', color: '#cbd5e1', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-                    Controle de fluxo de trabalho de ponta a ponta: colaboradores registram sugestões sem senha, supervisores realizam triagem com classificação de desperdício e agentes executam checklists com datas e status.
+                    Controle de fluxo de trabalho de ponta a ponta: colaboradores registram sugestões no link exclusivo da sua entidade, supervisores realizam triagem com classificação de desperdício e agentes executam checklists com datas e status.
                   </p>
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#e2e8f0' }}>
                       <CheckCircle2 size={18} color="#60a5fa" />
-                      <span>Formulário público sem login para engajar toda a fábrica</span>
+                      <span>Link exclusivo por fábrica para engajar os postos de trabalho</span>
                     </li>
                     <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#60a5fa' }}>
                       <CheckCircle2 size={18} color="#60a5fa" />
@@ -1043,22 +1002,6 @@ export default function LandingPage() {
               style={{
                 padding: '0.65rem 1.35rem',
                 borderRadius: '12px',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.18)',
-                color: '#ffffff',
-                fontSize: '0.875rem',
-                fontWeight: 800,
-                textDecoration: 'none',
-                backdropFilter: 'blur(10px)',
-              }}
-            >
-              Entrar na Plataforma
-            </Link>
-            <Link
-              href="/nova-demanda"
-              style={{
-                padding: '0.65rem 1.35rem',
-                borderRadius: '12px',
                 background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
                 color: '#ffffff',
@@ -1068,7 +1011,7 @@ export default function LandingPage() {
                 boxShadow: '0 4px 15px rgba(37, 99, 235, 0.35)',
               }}
             >
-              Formulário Público
+              Acessar Plataforma
             </Link>
           </div>
         </section>
@@ -1090,8 +1033,7 @@ export default function LandingPage() {
             © {new Date().getFullYear()} <strong>LeanFlow System 4.0</strong> • Concebido e arquitetado por <strong>Mauricio Grigol</strong>.
           </div>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}>Login</Link>
-            <Link href="/nova-demanda" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}>Demanda Pública</Link>
+            <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}>Login & Entidades</Link>
           </div>
         </div>
       </footer>

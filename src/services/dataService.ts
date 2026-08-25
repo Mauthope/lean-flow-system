@@ -14,6 +14,7 @@ import {
   getStoredData,
   setStoredData,
   INITIAL_TENANT,
+  INITIAL_TENANTS,
   INITIAL_SECTORS,
   INITIAL_USERS,
   INITIAL_ACTIONS,
@@ -21,9 +22,18 @@ import {
 import { generateProtocol, generateId } from '../lib/utils';
 
 export const dataService = {
-  // ================= TENANTS =================
+  // ================= TENANTS / ENTIDADES =================
   getTenants(): Tenant[] {
-    return getStoredData<Tenant[]>(STORAGE_KEYS.TENANTS, [INITIAL_TENANT]);
+    return getStoredData<Tenant[]>(STORAGE_KEYS.TENANTS, INITIAL_TENANTS);
+  },
+
+  getTenantById(id: string): Tenant | undefined {
+    return this.getTenants().find((t) => t.id === id);
+  },
+
+  getTenantBySlug(slug: string): Tenant | undefined {
+    const clean = slug.toLowerCase().trim();
+    return this.getTenants().find((t) => t.slug.toLowerCase() === clean || t.id.toLowerCase() === clean);
   },
 
   getCurrentTenant(): Tenant {
@@ -32,6 +42,81 @@ export const dataService = {
 
   setCurrentTenant(tenant: Tenant): void {
     setStoredData(STORAGE_KEYS.CURRENT_TENANT, tenant);
+  },
+
+  createTenant(tenant: Omit<Tenant, 'id' | 'createdAt'>): Tenant {
+    const tenants = this.getTenants();
+    const newTenant: Tenant = {
+      ...tenant,
+      id: generateId('tenant'),
+      createdAt: new Date().toISOString(),
+    };
+    tenants.push(newTenant);
+    setStoredData(STORAGE_KEYS.TENANTS, tenants);
+    return newTenant;
+  },
+
+  createTenantWithDefaults(params: {
+    name: string;
+    slug: string;
+    cnpjOrCode?: string;
+    adminName: string;
+    adminEmail: string;
+    plan?: 'standard' | 'enterprise';
+  }): { tenant: Tenant; adminUser: User } {
+    const cleanSlug = params.slug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '-');
+    const tenant = this.createTenant({
+      name: params.name.trim(),
+      slug: cleanSlug || generateId('empresa'),
+      cnpjOrCode: params.cnpjOrCode?.trim() || 'Não informado',
+      plan: params.plan || 'enterprise',
+    });
+
+    // Create standard default Lean sectors for this tenant
+    const defaultSectors = [
+      { name: 'Qualidade & Garantia', code: 'QUAL', color: '#2563eb', description: 'Inspeções e auditorias de processo' },
+      { name: 'Manutenção Preditiva & TPM', code: 'MANUT', color: '#d97706', description: 'Manutenção autônoma e disponibilidade de máquinas' },
+      { name: 'Engenharia de Processos', code: 'ENG', color: '#7c3aed', description: 'Balanceamento e padronização Kaizen' },
+      { name: 'Operações & Montagem', code: 'OPS', color: '#0891b2', description: 'Células e fluxo contínuo' },
+      { name: 'Logística & Suprimentos', code: 'LOG', color: '#059669', description: 'Milk-run e fluxo puxado' },
+    ];
+
+    defaultSectors.forEach((sec) => {
+      this.createSector({
+        tenantId: tenant.id,
+        name: sec.name,
+        code: sec.code,
+        description: sec.description,
+        color: sec.color,
+      });
+    });
+
+    // Create initial admin user
+    const adminUser = this.createUser({
+      tenantId: tenant.id,
+      name: params.adminName.trim(),
+      email: params.adminEmail.trim(),
+      role: 'admin',
+      jobTitle: 'Supervisor & Lean Master',
+      active: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    });
+
+    return { tenant, adminUser };
+  },
+
+  updateTenant(id: string, updates: Partial<Tenant>): Tenant {
+    const tenants = this.getTenants();
+    const index = tenants.findIndex((t) => t.id === id);
+    if (index === -1) throw new Error('Entidade não encontrada');
+    tenants[index] = { ...tenants[index], ...updates };
+    setStoredData(STORAGE_KEYS.TENANTS, tenants);
+    return tenants[index];
+  },
+
+  deleteTenant(id: string): void {
+    const tenants = this.getTenants().filter((t) => t.id !== id);
+    setStoredData(STORAGE_KEYS.TENANTS, tenants);
   },
 
   // ================= SECTORS =================
@@ -176,7 +261,7 @@ export const dataService = {
     wasteCategory: LeanWasteCategory;
     originSectorId: string;
     requesterName: string;
-    requesterEmail: string;
+    requesterEmail?: string;
     requesterDepartment?: string;
     priority?: 'baixa' | 'media' | 'alta' | 'critica';
   }): LeanAction {
