@@ -2,17 +2,14 @@
 
 import React from 'react';
 import { LeanAction } from '@/lib/types';
-import { formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
-import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
+import { formatDate } from '@/lib/utils';
+import { PriorityBadge } from '@/components/ui/Badge';
 import {
-  Clock,
-  DollarSign,
-  CheckSquare,
-  User as UserIcon,
+  Calendar,
+  Building2,
+  ExternalLink,
   ArrowRight,
-  MessageSquare,
-  AlertCircle,
-  Building,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface KanbanCardProps {
@@ -28,21 +25,27 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   onQuickMove,
   isAgentView,
 }) => {
-  const completedChecklist = action.checklist?.filter((c) => c.completed || c.status === 'concluida').length || 0;
-  const totalChecklist = action.checklist?.length || 0;
-
   const isCompleted = action.status === 'concluida';
   const isRejected = action.status === 'nao_aprovada';
   const isInProgress = action.status === 'em_andamento';
   const isOpen = action.status === 'aberta';
 
-  const costValue = isCompleted ? action.actualCostAvoided : action.estimatedCostAvoided;
+  // Check if overdue
+  const isOverdue =
+    action.dueDate &&
+    !isCompleted &&
+    !isRejected &&
+    new Date(action.dueDate).getTime() < new Date().setHours(0, 0, 0, 0);
 
   return (
     <div
       onClick={onClick}
       className="kanban-card"
       style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '12px',
+        padding: '1rem',
+        border: '1px solid #e2e8f0',
         borderLeft: isCompleted
           ? '4px solid #10b981'
           : isInProgress
@@ -50,223 +53,201 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           : isRejected
           ? '4px solid #ef4444'
           : '4px solid #3b82f6',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.65rem',
+      }}
+      onMouseOver={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.borderColor = '#93c5fd';
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.borderColor = '#e2e8f0';
       }}
     >
-      {/* Card Header: Protocol & Priority */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+      {/* Top Row: Protocol & Priority / Sector Tag */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span
           style={{
-            fontFamily: 'var(--font-mono)',
+            fontFamily: 'var(--font-mono, monospace)',
             fontSize: '0.725rem',
             fontWeight: 700,
             color: '#64748b',
+            letterSpacing: '0.02em',
           }}
         >
           {action.protocol}
         </span>
-        <PriorityBadge priority={action.priority} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {action.originSectorName && (
+            <span
+              style={{
+                fontSize: '0.675rem',
+                color: '#475569',
+                backgroundColor: '#f1f5f9',
+                padding: '0.15rem 0.45rem',
+                borderRadius: '4px',
+                fontWeight: 600,
+                maxWidth: '110px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              title={`Setor: ${action.originSectorName}`}
+            >
+              {action.originSectorName.split(' ')[0]}
+            </span>
+          )}
+          <PriorityBadge priority={action.priority} />
+        </div>
       </div>
 
-      {/* Title */}
+      {/* Main Title */}
       <h4
         style={{
-          fontSize: '0.9375rem',
+          fontSize: '0.925rem',
           fontWeight: 700,
           color: '#0f172a',
           lineHeight: 1.35,
-          marginBottom: '0.4rem',
-        }}
-      >
-        {action.title}
-      </h4>
-
-      {/* Description Snippet */}
-      <p
-        style={{
-          fontSize: '0.8125rem',
-          color: '#64748b',
-          lineHeight: 1.4,
-          marginBottom: '0.75rem',
+          margin: 0,
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
         }}
       >
-        {action.description}
-      </p>
+        {action.title}
+      </h4>
 
-      {/* Waste Category Pill */}
-      <div style={{ marginBottom: '0.75rem' }}>
-        <WasteCategoryBadge category={action.wasteCategory} />
-      </div>
-
-      {/* Lean ROI & Avoided Cost Badge */}
-      {costValue > 0 && (
-        <div
-          style={{
-            backgroundColor: isCompleted ? '#ecfdf5' : '#f8fafc',
-            border: isCompleted ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
-            borderRadius: '6px',
-            padding: '0.35rem 0.6rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <DollarSign size={14} color={isCompleted ? '#059669' : '#0284c7'} />
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-              {isCompleted ? 'Custo Evitado Real:' : 'Custo Estimado:'}
-            </span>
-          </div>
-          <span
-            style={{
-              fontSize: '0.8125rem',
-              fontWeight: 800,
-              color: isCompleted ? '#047857' : '#0f172a',
-            }}
-          >
-            {formatCurrency(costValue)}
-          </span>
-        </div>
-      )}
-
-      {/* Rejection Note if Rejected */}
-      {isRejected && action.rejectionReason && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '6px',
-            padding: '0.4rem 0.6rem',
-            marginBottom: '0.75rem',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.35rem',
-          }}
-        >
-          <AlertCircle size={14} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
-          <p style={{ fontSize: '0.75rem', color: '#991b1b', lineHeight: 1.3 }}>
-            <strong>Recusa:</strong> {action.rejectionReason}
-          </p>
-        </div>
-      )}
-
-      {/* Card Footer: Metadata & Assigned Agent */}
+      {/* Bottom Info: Prazo & Responsável */}
       <div
         style={{
-          borderTop: '1px solid #f1f5f9',
-          paddingTop: '0.625rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          paddingTop: '0.5rem',
+          borderTop: '1px solid #f1f5f9',
+          marginTop: '0.15rem',
+          fontSize: '0.75rem',
         }}
       >
-        {/* Left indicators */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          {totalChecklist > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#64748b', fontSize: '0.75rem' }}>
-              <CheckSquare size={13} color={completedChecklist === totalChecklist ? '#10b981' : '#64748b'} />
-              <span>
-                {completedChecklist}/{totalChecklist}
-              </span>
-            </div>
-          )}
-          {action.notes?.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#64748b', fontSize: '0.75rem' }}>
-              <MessageSquare size={13} />
-              <span>{action.notes.length}</span>
-            </div>
-          )}
-          {action.originSectorName && (
+        {/* Prazo */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            color: isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#475569',
+            fontWeight: isOverdue ? 700 : 500,
+          }}
+          title={isOverdue ? 'Prazo expirado' : `Data limite: ${formatDate(action.dueDate)}`}
+        >
+          <Calendar size={13} color={isOverdue ? '#dc2626' : isCompleted ? '#059669' : '#64748b'} />
+          <span>
+            {action.dueDate ? formatDate(action.dueDate) : 'Sem prazo'}
+          </span>
+          {isOverdue && (
             <span
               style={{
-                fontSize: '0.7rem',
-                color: '#64748b',
-                maxWidth: '90px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                fontSize: '0.625rem',
+                backgroundColor: '#fef2f2',
+                color: '#dc2626',
+                border: '1px solid #fecaca',
+                padding: '0.05rem 0.3rem',
+                borderRadius: '4px',
+                fontWeight: 700,
               }}
-              title={action.originSectorName}
             >
-              🏢 {action.originSectorName}
+              Atrasado
             </span>
           )}
         </div>
 
-        {/* Assigned Agent */}
-        {action.assignedAgentName ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }} title={`Responsável: ${action.assignedAgentName}`}>
-            <img
-              src={
-                action.assignedAgentAvatar ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-              }
-              alt={action.assignedAgentName}
+        {/* Responsável */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          {action.assignedAgentName ? (
+            <div
               style={{
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '1px solid #cbd5e1',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
-            />
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#334155',
-                maxWidth: '80px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
+              title={`Responsável: ${action.assignedAgentName}`}
             >
-              {action.assignedAgentName.split(' ')[0]}
+              <img
+                src={
+                  action.assignedAgentAvatar ||
+                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                }
+                alt={action.assignedAgentName}
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '1.5px solid #cbd5e1',
+                }}
+              />
+              <span
+                style={{
+                  fontWeight: 600,
+                  color: '#1e293b',
+                  maxWidth: '85px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {action.assignedAgentName.split(' ')[0]}
+              </span>
+            </div>
+          ) : (
+            <span style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.725rem' }}>
+              Sem responsável
             </span>
-          </div>
-        ) : (
-          <span
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              color: '#94a3b8',
-              fontStyle: 'italic',
-            }}
-          >
-            Não atribuído
-          </span>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Quick Move Button for Agents or Admin */}
+      {/* Quick Move Button if provided for agent */}
       {onQuickMove && (
-        <div style={{ marginTop: '0.625rem', paddingTop: '0.5rem', borderTop: '1px dashed #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingTop: '0.35rem',
+            borderTop: '1px dashed #e2e8f0',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+            Clique p/ abrir detalhes ↗
+          </span>
+
           {isOpen && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onQuickMove(action, 'em_andamento');
-              }}
+              onClick={() => onQuickMove(action, 'em_andamento')}
               className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.725rem', padding: '0.2rem 0.5rem', color: '#b45309' }}
+              style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', color: '#b45309' }}
             >
-              Iniciar Execução <ArrowRight size={12} />
+              Iniciar <ArrowRight size={12} />
             </button>
           )}
+
           {isInProgress && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onQuickMove(action, 'concluida');
-              }}
+              onClick={() => onQuickMove(action, 'concluida')}
               className="btn btn-success btn-sm"
-              style={{ fontSize: '0.725rem', padding: '0.2rem 0.5rem' }}
+              style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem' }}
             >
-              Concluir Entrega ✓
+              Concluir ✓
             </button>
           )}
         </div>

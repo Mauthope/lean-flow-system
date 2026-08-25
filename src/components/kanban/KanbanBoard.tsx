@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { LeanAction, ActionStatus, LeanWasteCategory, ActionPriority } from '@/lib/types';
 import { KanbanColumn } from './KanbanColumn';
 import { ActionDetailModal } from './ActionDetailModal';
@@ -22,6 +23,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   isAgentView,
   onNewAction,
 }) => {
+  const router = useRouter();
   const { allAgents } = useAuth();
   const sectors = dataService.getSectors();
 
@@ -73,7 +75,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   }, [actions, searchQuery, selectedSector, selectedWaste, selectedPriority, selectedAgent]);
 
   const handleCardClick = (action: LeanAction) => {
-    setSelectedAction(action);
+    if (!isAgentView) {
+      router.push(`/admin/projetos/${action.id}`);
+    } else {
+      setSelectedAction(action);
+    }
   };
 
   const handleQuickMove = (action: LeanAction, newStatus: ActionStatus) => {
