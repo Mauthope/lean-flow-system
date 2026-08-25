@@ -19,6 +19,7 @@ import {
   Code,
   CheckCircle2,
   Menu,
+  LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Modal } from '@/components/ui/Modal';
@@ -30,53 +31,43 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, allUsers, switchUser, refreshData, toggleMobileMenu } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const { currentUser, refreshData, toggleMobileMenu, logout } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
 
-  const handleSelectUser = (userId: string) => {
-    switchUser(userId);
-    setShowUserMenu(false);
-    const selected = allUsers.find((u) => u.id === userId);
-    if (selected?.role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/agente/kanban');
-    }
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
   };
 
   return (
     <header
-      className="app-topbar"
+      className="topbar"
       style={{
-        minHeight: '64px',
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0.65rem 1.25rem',
+        padding: '0 1.5rem',
+        borderBottom: '1px solid #e2e8f0',
+        backgroundColor: '#ffffff',
         position: 'sticky',
         top: 0,
         zIndex: 30,
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
-        flexWrap: 'wrap',
-        gap: '0.75rem',
+        minHeight: '64px',
       }}
     >
-      {/* Left: Mobile Toggle & Page Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      {/* Title / Current Route Context */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+        {/* Mobile Hamburger Button */}
         <button
           onClick={toggleMobileMenu}
           className="mobile-hamburger-btn"
-          aria-label="Abrir menu de navegação"
+          aria-label="Abrir menu lateral"
           style={{
-            backgroundColor: '#f1f5f9',
-            border: '1px solid #e2e8f0',
+            background: 'none',
+            border: 'none',
+            padding: '0.4rem',
             borderRadius: '8px',
-            width: '38px',
-            height: '38px',
             display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
@@ -95,59 +86,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         </div>
       </div>
 
-      {/* Actions & Persona Switcher */}
+      {/* Actions */}
       <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
-        {/* Quick Demo Persona Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: '#f1f5f9',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '10px',
-            border: '1px solid #e2e8f0',
-          }}
-        >
-          <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-            Alternar Perfil:
-          </span>
-          <select
-            value={currentUser?.id || ''}
-            onChange={(e) => handleSelectUser(e.target.value)}
-            style={{
-              background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '6px',
-              padding: '0.3rem 0.6rem',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: '#0f172a',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            <optgroup label="Supervisão">
-              {allUsers
-                .filter((u) => u.role === 'admin')
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    🛡️ {u.name} (Admin / Supervisor)
-                  </option>
-                ))}
-            </optgroup>
-            <optgroup label="Agentes Operacionais">
-              {allUsers
-                .filter((u) => u.role === 'agent')
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    👤 {u.name} ({u.sectorName || 'Agente'})
-                  </option>
-                ))}
-            </optgroup>
-          </select>
-        </div>
-
         {/* Refresh & Reset Seed Data Button */}
         <button
           onClick={() => {
@@ -230,6 +170,27 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
               {isAdmin ? 'Supervisor Master' : currentUser?.sectorName || 'Agente'}
             </span>
           </div>
+
+          {/* Logout / Switch User Button */}
+          <button
+            onClick={handleLogout}
+            className="btn btn-secondary btn-sm"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.4rem 0.65rem',
+              marginLeft: '0.25rem',
+              fontSize: '0.75rem',
+              color: '#dc2626',
+              borderColor: '#fca5a5',
+              backgroundColor: '#fff5f5',
+            }}
+            title="Sair e escolher outro perfil de acesso"
+          >
+            <LogOut size={13} />
+            <span>Sair</span>
+          </button>
         </div>
       </div>
     </header>
