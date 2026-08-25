@@ -116,13 +116,17 @@ body {
   background: #334155;
 }
 
-/* Typography Helpers */
+/* Typography Helpers - BagTime High Contrast */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
-  color: var(--text-primary);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--font-heading) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
   line-height: 1.25;
+}
+
+strong {
+  color: #f8fafc;
 }
 
 p {
@@ -545,21 +549,14 @@ code, pre {
 
 /* ================= COLLAPSIBLE SIDEBAR ================= */
 .app-sidebar {
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, transform 0.25s ease;
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), min-width 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease, transform 0.25s ease;
 }
 
 @media (min-width: 1025px) {
   .app-sidebar.sidebar-collapsed {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-right: none !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    visibility: hidden !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
   }
 }
 

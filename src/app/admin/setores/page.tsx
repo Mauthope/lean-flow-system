@@ -43,10 +43,10 @@ export default function AdminSetoresPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Gestão & Cadastro de Setores
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
             Estruture os departamentos da organização para canalização de fluxo Lean e alocação de agentes
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function AdminSetoresPage() {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 padding: '1.5rem',
-                borderLeft: `5px solid ${sec.color || '#2563eb'}`,
+                borderLeft: `5px solid ${sec.color || '#06b6d4'}`,
               }}
             >
               <div>
@@ -84,25 +84,25 @@ export default function AdminSetoresPage() {
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.75rem',
                       fontWeight: 800,
-                      backgroundColor: `${sec.color || '#2563eb'}18`,
-                      color: sec.color || '#2563eb',
+                      backgroundColor: `${sec.color || '#06b6d4'}22`,
+                      color: sec.color || '#22d3ee',
                       padding: '0.2rem 0.55rem',
                       borderRadius: '6px',
-                      border: `1px solid ${sec.color || '#2563eb'}33`,
+                      border: `1px solid ${sec.color || '#06b6d4'}44`,
                     }}
                   >
                     {sec.code}
                   </span>
 
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                     {stats?.count || 0} ações vinculadas
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.35rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '0.35rem' }}>
                   {sec.name}
                 </h3>
-                <p style={{ fontSize: '0.8125rem', color: '#64748b', lineHeight: 1.4, marginBottom: '1.25rem' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.4, marginBottom: '1.25rem' }}>
                   {sec.description || 'Departamento operacional da planta.'}
                 </p>
 
@@ -110,8 +110,8 @@ export default function AdminSetoresPage() {
                 {stats && stats.costAvoided > 0 && (
                   <div
                     style={{
-                      backgroundColor: '#ecfdf5',
-                      border: '1px solid #a7f3d0',
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
                       borderRadius: '8px',
                       padding: '0.625rem 0.75rem',
                       marginBottom: '1rem',
@@ -120,10 +120,10 @@ export default function AdminSetoresPage() {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <span style={{ fontSize: '0.75rem', color: '#065f46', fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.75rem', color: '#a7f3d0', fontWeight: 600 }}>
                       Custo Evitado pelo Setor:
                     </span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#047857' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399' }}>
                       {formatCurrency(stats.costAvoided)}
                     </span>
                   </div>
@@ -136,7 +136,7 @@ export default function AdminSetoresPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderTop: '1px solid #f1f5f9',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   paddingTop: '0.875rem',
                 }}
               >

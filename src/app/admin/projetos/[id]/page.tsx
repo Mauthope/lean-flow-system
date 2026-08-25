@@ -487,15 +487,15 @@ export default function AdminProjectDetailPage() {
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', backgroundColor: '#f1f5f9', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+              <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 10, 19, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
                 {action.protocol}
               </span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#1e40af', backgroundColor: '#eff6ff', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
                 METODOLOGIA PDCA
               </span>
               <PriorityBadge priority={action.priority} />
             </div>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', margin: '0.25rem 0 0' }}>
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
               {action.title}
             </h1>
           </div>
@@ -533,11 +533,11 @@ export default function AdminProjectDetailPage() {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '0.75rem',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#0f172a',
           padding: '0.75rem',
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
         }}
       >
         {/* P - PLAN */}
@@ -547,23 +547,23 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'plan' ? '2px solid #2563eb' : '1px solid #e2e8f0',
-            backgroundColor: activeTab === 'plan' ? '#eff6ff' : '#f8fafc',
+            border: activeTab === 'plan' ? '2px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: activeTab === 'plan' ? 'rgba(6, 182, 212, 0.16)' : '#0d1527',
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'plan' ? '#1d4ed8' : '#64748b' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'plan' ? '#22d3ee' : '#94a3b8' }}>
               1. PLAN (Planejar)
             </span>
             <span style={{ fontSize: '1rem' }}>🔵</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#0f172a', display: 'block', marginTop: '0.2rem' }}>
+          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Diagnóstico & Causas
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>5W2H • 5 Porquês • Ishikawa 6M</span>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>5W2H • 5 Porquês • Ishikawa 6M</span>
         </button>
 
         {/* D - DO */}
@@ -573,23 +573,23 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'do' ? '2px solid #d97706' : '1px solid #e2e8f0',
-            backgroundColor: activeTab === 'do' ? '#fffbeb' : '#f8fafc',
+            border: activeTab === 'do' ? '2px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: activeTab === 'do' ? 'rgba(245, 158, 11, 0.16)' : '#0d1527',
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'do' ? '#b45309' : '#64748b' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'do' ? '#fbbf24' : '#94a3b8' }}>
               2. DO (Executar)
             </span>
             <span style={{ fontSize: '1rem' }}>🟡</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#0f172a', display: 'block', marginTop: '0.2rem' }}>
+          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Plano de Ação 5W2H
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Checklist • Testes Piloto • Posto</span>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Checklist • Testes Piloto • Posto</span>
         </button>
 
         {/* C - CHECK */}
@@ -599,23 +599,23 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'check' ? '2px solid #7c3aed' : '1px solid #e2e8f0',
-            backgroundColor: activeTab === 'check' ? '#faf5ff' : '#f8fafc',
+            border: activeTab === 'check' ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: activeTab === 'check' ? 'rgba(168, 85, 247, 0.16)' : '#0d1527',
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'check' ? '#6d28d9' : '#64748b' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'check' ? '#c084fc' : '#94a3b8' }}>
               3. CHECK (Verificar & ROI)
             </span>
             <span style={{ fontSize: '1rem' }}>🟣</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#0f172a', display: 'block', marginTop: '0.2rem' }}>
+          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Custos vs. Ganhos
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Lucro Líquido • ROI % • Payback</span>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Lucro Líquido • ROI % • Payback</span>
         </button>
 
         {/* A - ACT */}
@@ -625,23 +625,23 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'act' ? '2px solid #059669' : '1px solid #e2e8f0',
-            backgroundColor: activeTab === 'act' ? '#ecfdf5' : '#f8fafc',
+            border: activeTab === 'act' ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: activeTab === 'act' ? 'rgba(16, 185, 129, 0.16)' : '#0d1527',
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'act' ? '#047857' : '#64748b' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'act' ? '#34d399' : '#94a3b8' }}>
               4. ACT (Padronizar)
             </span>
             <span style={{ fontSize: '1rem' }}>🟢</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#0f172a', display: 'block', marginTop: '0.2rem' }}>
+          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             POP, Yokoten & Master
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Padronização • Replicação • DRE</span>
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Padronização • Replicação • DRE</span>
         </button>
       </div>
 

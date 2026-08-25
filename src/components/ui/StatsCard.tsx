@@ -25,25 +25,27 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   return (
     <div
       style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e2e8f0',
+        backgroundColor: '#0f172a',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '14px',
-        padding: '1.35rem',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        padding: '1.25rem',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         position: 'relative',
         overflow: 'hidden',
-        transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+        transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
       }}
       onMouseOver={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.07)';
+        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.5)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.35)';
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
       }}
     >
       <div
@@ -54,27 +56,29 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           width: '4px',
           height: '100%',
           backgroundColor: accentColor,
+          boxShadow: `0 0 10px ${accentColor}`,
         }}
       />
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
         <div>
-          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {title}
           </p>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginTop: '0.25rem' }}>
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             {value}
           </h2>
         </div>
         <div
           style={{
-            padding: '0.625rem',
+            padding: '0.55rem',
             borderRadius: '10px',
-            backgroundColor: `${accentColor}12`,
+            backgroundColor: `${accentColor}20`,
             color: accentColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            border: `1px solid ${accentColor}40`,
           }}
         >
           {icon}
@@ -83,7 +87,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.25rem' }}>
         {subtitle && (
-          <span style={{ fontSize: '0.78125rem', color: '#64748b' }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
             {subtitle}
           </span>
         )}

@@ -1,23 +1,24 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { formatCurrency, formatDateTime, WASTE_CATEGORIES } from '@/lib/utils';
 import {
   TrendingUp,
   DollarSign,
-  Printer,
   Download,
-  Calendar,
+  Printer,
+  Award,
   CheckCircle2,
   Clock,
   Building2,
-  Award,
+  Layers,
+  ArrowRight,
   ExternalLink,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AdminRelatoriosPage() {
   const router = useRouter();
@@ -40,10 +41,10 @@ export default function AdminRelatoriosPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Relatório Consolidado de Custo Evitado & ROI Lean
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
             Demonstrativo financeiro dos ganhos operacionais homologados através de ações de melhoria contínua
           </p>
         </div>
@@ -58,35 +59,36 @@ export default function AdminRelatoriosPage() {
       {/* Summary Highlight Card */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
+          background: 'linear-gradient(135deg, #091326 0%, #0d2d3a 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
           borderRadius: '16px',
           padding: '2rem',
           color: '#ffffff',
-          boxShadow: '0 10px 25px -5px rgba(6, 95, 70, 0.3)',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#a7f3d0' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#34d399' }}>
               Economia Total Homologada (Custo Evitado Real)
             </span>
-            <h1 style={{ fontSize: '2.75rem', fontWeight: 800, marginTop: '0.25rem', color: '#ffffff' }}>
+            <h1 style={{ fontSize: '2.75rem', fontWeight: 900, marginTop: '0.25rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.totalActualCostAvoided)}
             </h1>
-            <p style={{ fontSize: '0.875rem', color: '#d1fae5', marginTop: '0.5rem' }}>
+            <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.5rem' }}>
               Gerado a partir de {completedActions.length} ações concluídas com sucesso.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.12)', padding: '1rem 1.25rem', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>
-              <span style={{ fontSize: '0.725rem', color: '#a7f3d0' }}>Mão de Obra Salva</span>
-              <p style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>{metrics.totalHoursSaved} Horas</p>
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '1rem 1.25rem', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>
+              <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700 }}>Mão de Obra Salva</span>
+              <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>{metrics.totalHoursSaved} Horas</p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.12)', padding: '1rem 1.25rem', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>
-              <span style={{ fontSize: '0.725rem', color: '#a7f3d0' }}>Tempo Médio de Ciclo</span>
-              <p style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>{metrics.averageCycleDays} Dias</p>
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '1rem 1.25rem', borderRadius: '12px', backdropFilter: 'blur(4px)' }}>
+              <span style={{ fontSize: '0.725rem', color: '#22d3ee', fontWeight: 700 }}>Tempo Médio de Ciclo</span>
+              <p style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>{metrics.averageCycleDays} Dias</p>
             </div>
           </div>
         </div>
@@ -95,10 +97,10 @@ export default function AdminRelatoriosPage() {
       {/* Breakdown by Cost Avoidance Drivers */}
       <div className="card" style={{ padding: '1.5rem' }}>
         <div style={{ marginBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
             Composição das Fontes de Custo Evitado & Retorno Financeiro
           </h3>
-          <p style={{ fontSize: '0.8125rem', color: '#64748b' }}>
+          <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
             Distribuição do valor financeiro economizado por tipo de benefício operacional
           </p>
         </div>
@@ -110,86 +112,87 @@ export default function AdminRelatoriosPage() {
             gap: '1rem',
           }}
         >
-          <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
               🚀 Aumento de Produção
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.productionIncrease || 0)}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#166534' }}>Peças e capacidade adicionais</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Peças e capacidade adicionais</span>
           </div>
 
-          <div style={{ backgroundColor: '#ecfeff', border: '1px solid #a5f3fc', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#0e7490', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
               ♻️ Redução de Refugo/Sucata
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0891b2', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.scrapReduction || 0)}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#0e7490' }}>Matéria-prima poupada</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Matéria-prima poupada</span>
           </div>
 
-          <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#60a5fa', textTransform: 'uppercase' }}>
               👷‍♂️ Mão de Obra & Ciclo
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#2563eb', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.laborSavings || 0)}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#1d4ed8' }}>{metrics.totalHoursSaved}h de trabalho poupadas</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{metrics.totalHoursSaved}h de trabalho poupadas</span>
           </div>
 
-          <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#b45309', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>
               ⚙️ Paradas de Máquina (OEE)
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#d97706', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.machineDowntime || 0)}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#b45309' }}>Disponibilidade de linha</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Disponibilidade de linha</span>
           </div>
 
-          <div style={{ backgroundColor: '#fdf4ff', border: '1px solid #f5d0fe', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#a21caf', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
               ⚡ Energia & Ferramental
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#c026d3', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.toolingAndEnergy || 0)}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#a21caf' }}>Vida útil de moldes e KWh</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Vida útil de moldes e KWh</span>
           </div>
 
-          <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.125rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '1.125rem' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase' }}>
               📦 Fretes & Outros
             </span>
-            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#334155', marginTop: '0.2rem' }}>
+            <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency((metrics.costBreakdownTotals?.logisticsAndFreight || 0) + (metrics.costBreakdownTotals?.otherSavings || 0))}
             </p>
-            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Logística e estoques</span>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Logística e estoques</span>
           </div>
         </div>
       </div>
 
       {/* Breakdown Table */}
       <div className="card" style={{ borderRadius: '16px' }}>
-        <div className="card-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 Detalhamento de Todas as Ações Concluídas com Custo Evitado
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: '0.2rem 0 0 0' }}>
+              <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
                 Clique em qualquer projeto da lista para abrir a página completa com a memória de cálculo e todas as ações realizadas.
               </p>
             </div>
             <span
               style={{
                 fontSize: '0.75rem',
-                fontWeight: 700,
-                backgroundColor: '#ecfdf5',
-                color: '#047857',
+                fontWeight: 800,
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                color: '#34d399',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
                 padding: '0.25rem 0.65rem',
                 borderRadius: '9999px',
               }}
@@ -202,7 +205,7 @@ export default function AdminRelatoriosPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <th style={{ padding: '0.875rem 1.25rem' }}>Protocolo / Ação</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Desperdício</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
@@ -221,23 +224,23 @@ export default function AdminRelatoriosPage() {
                     key={action.id}
                     onClick={() => router.push(`/admin/projetos/${action.id}`)}
                     style={{
-                      borderBottom: '1px solid #f1f5f9',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                       cursor: 'pointer',
                       transition: 'background-color 0.15s ease',
                     }}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
                     onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <td style={{ padding: '0.875rem 1.25rem' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 700, color: '#2563eb' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee' }}>
                         {action.protocol}
                       </span>
-                      <p style={{ fontWeight: 700, color: '#0f172a', marginTop: '0.15rem' }}>{action.title}</p>
+                      <p style={{ fontWeight: 700, color: '#f8fafc', margin: '0.15rem 0 0', fontFamily: 'var(--font-heading)' }}>{action.title}</p>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#334155' }}>
+                    <td style={{ padding: '0.875rem 1rem', color: '#cbd5e1' }}>
                       ⚡ {waste?.label || action.wasteCategory}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', color: '#475569', fontWeight: 600 }}>
+                    <td style={{ padding: '0.875rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
                       {action.originSectorName}
                     </td>
                     <td style={{ padding: '0.875rem 1rem' }}>
@@ -248,20 +251,20 @@ export default function AdminRelatoriosPage() {
                             'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
                           }
                           alt={action.assignedAgentName || ''}
-                          style={{ width: '22px', height: '22px', borderRadius: '50%' }}
+                          style={{ width: '22px', height: '22px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.2)' }}
                         />
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>
+                        <span style={{ fontWeight: 600, color: '#f8fafc' }}>
                           {action.assignedAgentName}
                         </span>
                       </div>
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: '#64748b' }}>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: '#94a3b8' }}>
                       {formatCurrency(action.estimatedCostAvoided)}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#047857', fontSize: '0.9375rem' }}>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#34d399', fontSize: '0.9375rem' }}>
                       {formatCurrency(action.actualCostAvoided)}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#64748b', fontSize: '0.8125rem' }}>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8125rem' }}>
                       {formatDateTime(action.completedAt)}
                     </td>
                     <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
@@ -276,7 +279,7 @@ export default function AdminRelatoriosPage() {
                           fontSize: '0.75rem',
                           padding: '0.35rem 0.65rem',
                           textDecoration: 'none',
-                          color: '#2563eb',
+                          color: '#22d3ee',
                           fontWeight: 700,
                         }}
                       >

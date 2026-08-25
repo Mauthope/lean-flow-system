@@ -11,22 +11,23 @@ import {
   UserPlus,
   Edit2,
   Trash2,
-  Phone,
-  Mail,
   Building2,
+  Mail,
+  Phone,
   CheckCircle2,
+  Clock,
   TrendingUp,
-  DollarSign,
+  Award,
 } from 'lucide-react';
 
 export default function AdminAgentesPage() {
-  const { dataVersion, refreshData, allUsers } = useAuth();
-  const [selectedAgent, setSelectedAgent] = useState<User | null>(null);
+  const { dataVersion, refreshData } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<User | null>(null);
 
   const agents = useMemo(() => {
-    return allUsers.filter((u) => u.role === 'agent');
-  }, [allUsers]);
+    return dataService.getUsers().filter((u) => u.role === 'agent');
+  }, [dataVersion]);
 
   const metrics = useMemo(() => {
     return dataService.getMetrics();
@@ -54,10 +55,10 @@ export default function AdminAgentesPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Gestão & Cadastro de Agentes Lean
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
             Cadastre novos operadores, configure setores de atuação, edite ou exclua acessos
           </p>
         </div>
@@ -85,7 +86,7 @@ export default function AdminAgentesPage() {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 padding: '1.5rem',
-                borderTop: agent.active ? '4px solid #10b981' : '4px solid #cbd5e1',
+                borderTop: agent.active ? '4px solid #10b981' : '4px solid #475569',
               }}
             >
               <div>
@@ -102,21 +103,22 @@ export default function AdminAgentesPage() {
                         height: '46px',
                         borderRadius: '50%',
                         objectFit: 'cover',
-                        border: '2px solid #e2e8f0',
+                        border: '2px solid rgba(255, 255, 255, 0.15)',
                       }}
                     />
                     <div>
-                      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{agent.name}</h3>
-                      <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{agent.jobTitle || 'Especialista Lean'}</p>
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>{agent.name}</h3>
+                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>{agent.jobTitle || 'Especialista Lean'}</p>
                     </div>
                   </div>
 
                   <span
                     style={{
                       fontSize: '0.7rem',
-                      fontWeight: 700,
-                      backgroundColor: agent.active ? '#ecfdf5' : '#f1f5f9',
-                      color: agent.active ? '#047857' : '#64748b',
+                      fontWeight: 800,
+                      backgroundColor: agent.active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                      color: agent.active ? '#34d399' : '#94a3b8',
+                      border: `1px solid ${agent.active ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
                       padding: '0.15rem 0.5rem',
                       borderRadius: '9999px',
                     }}
@@ -126,18 +128,18 @@ export default function AdminAgentesPage() {
                 </div>
 
                 {/* Info List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.8125rem', color: '#475569', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Building2 size={14} color="#2563eb" />
-                    <span>Setor: <strong>{agent.sectorName || 'Não Definido'}</strong></span>
+                    <Building2 size={14} color="#22d3ee" />
+                    <span>Setor: <strong style={{ color: '#ffffff' }}>{agent.sectorName || 'Não Definido'}</strong></span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Mail size={14} color="#64748b" />
+                    <Mail size={14} color="#94a3b8" />
                     <span>{agent.email}</span>
                   </div>
                   {agent.phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Phone size={14} color="#64748b" />
+                      <Phone size={14} color="#94a3b8" />
                       <span>{agent.phone}</span>
                     </div>
                   )}
@@ -147,9 +149,9 @@ export default function AdminAgentesPage() {
                 {stats && (
                   <div
                     style={{
-                      backgroundColor: '#f8fafc',
+                      backgroundColor: '#090e1a',
                       borderRadius: '10px',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
                       padding: '0.75rem',
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
@@ -158,15 +160,15 @@ export default function AdminAgentesPage() {
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>Custo Evitado</span>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#059669' }}>
+                      <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Custo Evitado</span>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399', margin: '0.1rem 0 0' }}>
                         {formatCurrency(stats.actualCostAvoided)}
                       </p>
                     </div>
 
                     <div>
-                      <span style={{ fontSize: '0.6875rem', color: '#64748b', textTransform: 'uppercase' }}>Ações Concluídas</span>
-                      <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a' }}>
+                      <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Ações Concluídas</span>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: '0.1rem 0 0' }}>
                         {stats.completedCount} de {stats.assignedCount}
                       </p>
                     </div>
@@ -180,7 +182,7 @@ export default function AdminAgentesPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderTop: '1px solid #f1f5f9',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   paddingTop: '0.875rem',
                 }}
               >
