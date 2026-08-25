@@ -80,7 +80,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
         <div>
           <h1 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
-            {title || (isAdmin ? 'Painel do Supervisor Lean' : 'Meu Fluxo de Trabalho Lean')}
+            {title || (isAdmin ? 'Painel de Gestão Master' : 'Meu Fluxo de Trabalho Lean')}
           </h1>
           {subtitle && <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>{subtitle}</p>}
         </div>
@@ -91,7 +91,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         {/* Refresh & Reset Seed Data Button */}
         <button
           onClick={() => {
-            if (confirm('Deseja recarregar e atualizar todos os dados para o padrão de demonstração Lean?')) {
+            if (confirm('Deseja recarregar e atualizar todos os dados para o padrão Rafitec Master?')) {
               dataService.resetToDefaults();
               refreshData();
             }
@@ -105,7 +105,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
         {/* Public Form Shortcut Button */}
         <Link
-          href="/nova-demanda"
+          href={`/d/${currentUser?.tenantId === 'tenant_grigol_02' ? 'metalurgica-grigol' : 'rafitec'}`}
           target="_blank"
           style={{
             display: 'inline-flex',
@@ -120,10 +120,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
             fontWeight: 600,
             textDecoration: 'none',
           }}
-          title="Abrir formulário público da internet em nova aba"
+          title="Abrir link de coleta da fábrica em nova aba"
         >
           <ExternalLink size={14} color="#2563eb" />
-          <span>Formulário Público</span>
+          <span>Link de Coleta</span>
         </Link>
 
         {/* New Action Button for Admin */}
@@ -167,7 +167,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
               {currentUser?.name || 'Usuário'}
             </span>
             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-              {isAdmin ? 'Supervisor Master' : currentUser?.sectorName || 'Agente'}
+              {isAdmin ? 'Entidade Master' : currentUser?.sectorName || 'Agente Operacional'}
             </span>
           </div>
 

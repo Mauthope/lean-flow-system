@@ -165,7 +165,7 @@ export default function AdminEntitiesPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button
-            onClick={() => handleCopyLink(currentTenant?.slug || 'nexus-lean')}
+            onClick={() => handleCopyLink(currentTenant?.slug || 'rafitec')}
             className="btn btn-secondary btn-sm"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
           >

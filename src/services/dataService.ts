@@ -692,7 +692,7 @@ export const dataService = {
   // Reset to default seed
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify([INITIAL_TENANT]));
+    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));
     localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(INITIAL_TENANT));
     localStorage.setItem(STORAGE_KEYS.SECTORS, JSON.stringify(INITIAL_SECTORS));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));

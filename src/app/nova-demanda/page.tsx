@@ -9,7 +9,7 @@ export default function NovaDemandaRedirect() {
 
   useEffect(() => {
     const tenant = dataService.getCurrentTenant();
-    const slug = tenant?.slug || 'nexus-lean';
+    const slug = tenant?.slug || 'rafitec';
     router.replace(`/d/${slug}`);
   }, [router]);
 

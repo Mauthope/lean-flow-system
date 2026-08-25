@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { Tenant } from '@/lib/types';
-import { Shield, UserCheck, Lock, ArrowRight, ArrowLeft, Building2, Plus, Check } from 'lucide-react';
+import { Shield, UserCheck, Lock, ArrowLeft, Building2, Sparkles, Check, Users } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -14,16 +14,22 @@ export default function LoginPage() {
 
   const [tenants, setTenants] = useState<Tenant[]>(() => dataService.getTenants());
   const [selectedTenantId, setSelectedTenantId] = useState<string>(
-    () => currentTenant?.id || dataService.getTenants()[0]?.id || 'tenant_nexus_01'
+    () => currentTenant?.id || dataService.getTenants()[0]?.id || 'tenant_rafitec_01'
   );
-  const [activeTab, setActiveTab] = useState<'admin' | 'agent'>('admin');
+  const [activeTab, setActiveTab] = useState<'master' | 'agents'>('master');
 
-  const activeTenant = tenants.find((t) => t.id === selectedTenantId) || tenants[0];
-  const tenantUsers = dataService.getUsers(activeTenant?.id);
-  const adminUsers = tenantUsers.filter((u) => u.role === 'admin');
+  const activeTenant = tenants.find((t) => t.id === selectedTenantId) || tenants[0] || {
+    id: 'tenant_rafitec_01',
+    name: 'Rafitec S.A.',
+    slug: 'rafitec',
+    cnpjOrCode: '04.892.341/0001-55',
+    plan: 'enterprise' as const,
+    createdAt: new Date().toISOString(),
+  };
+
+  const tenantUsers = dataService.getUsers(activeTenant.id);
+  const masterUser = tenantUsers.find((u) => u.role === 'admin') || tenantUsers[0];
   const agentUsers = tenantUsers.filter((u) => u.role === 'agent');
-
-  const currentUsers = activeTab === 'admin' ? adminUsers : agentUsers;
 
   const handleSelectTenant = (tenantId: string) => {
     setSelectedTenantId(tenantId);
@@ -34,17 +40,22 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLoginDirect = (userId: string) => {
+  const handleLoginMaster = () => {
+    if (activeTenant) {
+      dataService.setCurrentTenant(activeTenant);
+    }
+    if (masterUser) {
+      loginAs(masterUser.id);
+    }
+    router.push('/admin/dashboard');
+  };
+
+  const handleLoginAgent = (userId: string) => {
     if (activeTenant) {
       dataService.setCurrentTenant(activeTenant);
     }
     loginAs(userId);
-    const target = tenantUsers.find((u) => u.id === userId);
-    if (target?.role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/agente/kanban');
-    }
+    router.push('/agente/kanban');
   };
 
   return (
@@ -107,7 +118,7 @@ export default function LoginPage() {
       />
 
       {/* Top Back Link */}
-      <div style={{ width: '100%', maxWidth: '560px', marginBottom: '1.25rem', position: 'relative', zIndex: 10 }}>
+      <div style={{ width: '100%', maxWidth: '580px', marginBottom: '1.25rem', position: 'relative', zIndex: 10 }}>
         <Link
           href="/"
           style={{
@@ -129,8 +140,8 @@ export default function LoginPage() {
       <div
         style={{
           width: '100%',
-          maxWidth: '560px',
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          maxWidth: '580px',
+          backgroundColor: 'rgba(15, 23, 42, 0.72)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
           borderRadius: '24px',
@@ -165,24 +176,24 @@ export default function LoginPage() {
             Acesso ao LeanFlow 4.0
           </h1>
           <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.35rem' }}>
-            Selecione a entidade e o usuário para autenticar
+            Acesse como a <strong>Entidade Master</strong> ou escolha um dos <strong>Agentes da Fábrica</strong>
           </p>
         </div>
 
-        {/* TENANT / ENTITY SELECTOR */}
+        {/* TENANT / ENTITY SELECTOR (Default Rafitec) */}
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
-            <Building2 size={14} /> Selecionar Entidade / Unidade Fabril:
+            <Building2 size={14} /> Entidade Ativa:
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.6rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.6rem' }}>
             {tenants.map((t) => {
-              const isSelected = activeTenant?.id === t.id;
+              const isSelected = activeTenant.id === t.id;
               return (
                 <div
                   key={t.id}
                   onClick={() => handleSelectTenant(t.id)}
                   style={{
-                    padding: '0.65rem 0.85rem',
+                    padding: '0.75rem 1rem',
                     borderRadius: '12px',
                     border: isSelected ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
                     backgroundColor: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255, 255, 255, 0.03)',
@@ -190,11 +201,14 @@ export default function LoginPage() {
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <strong style={{ fontSize: '0.8125rem', color: isSelected ? '#ffffff' : '#cbd5e1', display: 'block' }}>
-                    🏢 {t.name}
-                  </strong>
-                  <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
-                    Slug: /d/{t.slug}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <strong style={{ fontSize: '0.875rem', color: isSelected ? '#ffffff' : '#cbd5e1' }}>
+                      🏢 {t.name}
+                    </strong>
+                    {isSelected && <Check size={14} color="#38bdf8" />}
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                    Link Público: /d/{t.slug}
                   </span>
                 </div>
               );
@@ -202,7 +216,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Role Selector Tabs (Supervisor vs Agente) */}
+        {/* Access Selector Tabs (Entidade Master vs Agentes Operacionais) */}
         <div
           style={{
             display: 'grid',
@@ -217,72 +231,142 @@ export default function LoginPage() {
         >
           <button
             type="button"
-            onClick={() => setActiveTab('admin')}
+            onClick={() => setActiveTab('master')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.45rem',
-              padding: '0.65rem',
+              padding: '0.75rem',
               borderRadius: '10px',
-              border: activeTab === 'admin' ? '1px solid rgba(96, 165, 250, 0.5)' : '1px solid transparent',
-              backgroundColor: activeTab === 'admin' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
-              color: activeTab === 'admin' ? '#93c5fd' : '#94a3b8',
+              border: activeTab === 'master' ? '1px solid rgba(96, 165, 250, 0.5)' : '1px solid transparent',
+              backgroundColor: activeTab === 'master' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+              color: activeTab === 'master' ? '#93c5fd' : '#94a3b8',
               fontWeight: 800,
               fontSize: '0.84375rem',
               cursor: 'pointer',
-              boxShadow: activeTab === 'admin' ? '0 0 15px rgba(37, 99, 235, 0.3)' : 'none',
+              boxShadow: activeTab === 'master' ? '0 0 15px rgba(37, 99, 235, 0.3)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
             <Shield size={16} />
-            <span>Supervisores ({adminUsers.length})</span>
+            <span>Entidade Master</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('agent')}
+            onClick={() => setActiveTab('agents')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.45rem',
-              padding: '0.65rem',
+              padding: '0.75rem',
               borderRadius: '10px',
-              border: activeTab === 'agent' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid transparent',
-              backgroundColor: activeTab === 'agent' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
-              color: activeTab === 'agent' ? '#6ee7b7' : '#94a3b8',
+              border: activeTab === 'agents' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid transparent',
+              backgroundColor: activeTab === 'agents' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
+              color: activeTab === 'agents' ? '#6ee7b7' : '#94a3b8',
               fontWeight: 800,
               fontSize: '0.84375rem',
               cursor: 'pointer',
-              boxShadow: activeTab === 'agent' ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
+              boxShadow: activeTab === 'agents' ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
-            <UserCheck size={16} />
+            <Users size={16} />
             <span>Agentes ({agentUsers.length})</span>
           </button>
         </div>
 
-        {/* User Card List for Quick 1-Click Access */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem', letterSpacing: '0.04em' }}>
-            {activeTab === 'admin' ? `Supervisores da ${activeTenant.name}:` : `Agentes Operacionais da ${activeTenant.name}:`}
-          </label>
+        {/* TAB 1: ENTIDADE MASTER */}
+        {activeTab === 'master' && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div
+              onClick={handleLoginMaster}
+              style={{
+                padding: '1.25rem',
+                borderRadius: '16px',
+                border: '1.5px solid rgba(59, 130, 246, 0.5)',
+                backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 0 25px rgba(37, 99, 235, 0.2)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div
+                    style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '12px',
+                      backgroundColor: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontWeight: 900,
+                      fontSize: '1.2rem',
+                    }}
+                  >
+                    {activeTenant.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: '1rem', color: '#ffffff', display: 'block' }}>
+                      {activeTenant.name} (Gestão Master)
+                    </strong>
+                    <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
+                      Controle Geral • Triagem • ROI • Gestão de Agentes
+                    </span>
+                  </div>
+                </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {currentUsers.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8125rem' }}>
-                Nenhum usuário deste perfil cadastrado nesta entidade.
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    padding: '0.35rem 0.85rem',
+                    borderRadius: '8px',
+                    boxShadow: '0 0 15px rgba(37, 99, 235, 0.5)',
+                  }}
+                >
+                  Entrar como Master →
+                </span>
               </div>
-            ) : (
-              currentUsers.map((user) => {
-                const isAdmin = user.role === 'admin';
+              <p style={{ fontSize: '0.78125rem', color: '#cbd5e1', margin: '0.5rem 0 0', lineHeight: 1.4 }}>
+                Ao acessar como entidade master, você tem autonomia completa sobre o painel executivo, acompanhamento financeiro de 7 fontes e distribuição de tarefas para os agentes.
+              </p>
+            </div>
+          </div>
+        )}
 
-                return (
+        {/* TAB 2: AGENTES DA ENTIDADE */}
+        {activeTab === 'agents' && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem', letterSpacing: '0.04em' }}>
+              Agentes Operacionais da {activeTenant.name}:
+            </label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {agentUsers.length === 0 ? (
+                <div style={{ padding: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8125rem' }}>
+                  Nenhum agente cadastrado nesta entidade.
+                </div>
+              ) : (
+                agentUsers.map((user) => (
                   <div
                     key={user.id}
-                    onClick={() => handleQuickLoginDirect(user.id)}
+                    onClick={() => handleLoginAgent(user.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -295,8 +379,8 @@ export default function LoginPage() {
                       transition: 'all 0.2s ease',
                     }}
                     onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = isAdmin ? 'rgba(37, 99, 235, 0.2)' : 'rgba(16, 185, 129, 0.18)';
-                      e.currentTarget.style.borderColor = isAdmin ? '#60a5fa' : '#34d399';
+                      e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
+                      e.currentTarget.style.borderColor = '#34d399';
                       e.currentTarget.style.transform = 'translateY(-2px)';
                     }}
                     onMouseOut={(e) => {
@@ -307,14 +391,14 @@ export default function LoginPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <img
-                        src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                        src={user.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
                         alt={user.name}
                         style={{
                           width: '38px',
                           height: '38px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: `2px solid ${isAdmin ? '#3b82f6' : '#10b981'}`,
+                          border: '2px solid #10b981',
                         }}
                       />
                       <div>
@@ -322,7 +406,7 @@ export default function LoginPage() {
                           {user.name}
                         </strong>
                         <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                          {isAdmin ? 'Supervisor Master • Gestão & ROI' : `${user.sectorName || 'Agente'} • Operação Kaizen`}
+                          {user.sectorName || 'Agente'} • Operação Kaizen
                         </span>
                       </div>
                     </div>
@@ -331,23 +415,23 @@ export default function LoginPage() {
                       style={{
                         fontSize: '0.725rem',
                         fontWeight: 800,
-                        backgroundColor: isAdmin ? 'rgba(37, 99, 235, 0.3)' : 'rgba(16, 185, 129, 0.25)',
-                        color: isAdmin ? '#93c5fd' : '#6ee7b7',
+                        backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                        color: '#6ee7b7',
                         padding: '0.25rem 0.65rem',
                         borderRadius: '6px',
-                        border: `1px solid ${isAdmin ? 'rgba(59, 130, 246, 0.4)' : 'rgba(52, 211, 153, 0.4)'}`,
+                        border: '1px solid rgba(52, 211, 153, 0.4)',
                       }}
                     >
                       Acessar →
                     </span>
                   </div>
-                );
-              })
-            )}
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Unique Link Info for this selected factory */}
+        {/* Unique Link Info */}
         <div
           style={{
             padding: '0.75rem 1rem',
