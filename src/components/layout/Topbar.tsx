@@ -32,7 +32,6 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const router = useRouter();
   const { currentUser, allUsers, switchUser, refreshData, toggleMobileMenu } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showAuthorModal, setShowAuthorModal] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -149,31 +148,6 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           </select>
         </div>
 
-        {/* Author Badge - Mauricio Grigol */}
-        <button
-          onClick={() => setShowAuthorModal(true)}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem 0.75rem',
-            borderRadius: '9999px',
-            backgroundColor: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            color: '#1d4ed8',
-            fontSize: '0.78125rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-          title="Ver informações sobre o desenvolvedor do sistema"
-          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#dbeafe')}
-          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#eff6ff')}
-        >
-          <Sparkles size={13} color="#2563eb" />
-          <span>Dev: Mauricio Grigol</span>
-        </button>
-
         {/* Refresh & Reset Seed Data Button */}
         <button
           onClick={() => {
@@ -258,101 +232,6 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           </div>
         </div>
       </div>
-
-      {/* Developer Authorship Modal */}
-      <Modal
-        isOpen={showAuthorModal}
-        onClose={() => setShowAuthorModal(false)}
-        title="Créditos de Desenvolvimento & Autoria"
-        subtitle="Informações técnicas e arquiteturais do sistema LeanFlow"
-        maxWidth="md"
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'center', alignItems: 'center' }}>
-          <div
-            style={{
-              width: '70px',
-              height: '70px',
-              borderRadius: '50%',
-              backgroundColor: '#2563eb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: '1.6rem',
-              color: '#ffffff',
-              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.35)',
-              margin: '0 auto',
-            }}
-          >
-            MG
-          </div>
-
-          <div>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                backgroundColor: '#eff6ff',
-                color: '#1d4ed8',
-                padding: '0.2rem 0.65rem',
-                borderRadius: '9999px',
-                border: '1px solid #bfdbfe',
-                textTransform: 'uppercase',
-              }}
-            >
-              Criador & Arquiteto da Solução
-            </span>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginTop: '0.4rem' }}>
-              Mauricio Grigol
-            </h2>
-            <p style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: 700 }}>
-              Consultor Lean & Desenvolvedor Full Stack
-            </p>
-          </div>
-
-          <div
-            style={{
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '1.125rem',
-              textAlign: 'left',
-              width: '100%',
-              fontSize: '0.84375rem',
-              color: '#334155',
-              lineHeight: 1.5,
-            }}
-          >
-            <p style={{ marginBottom: '0.625rem' }}>
-              Este sistema foi integralmente concebido e desenvolvido por <strong>Mauricio Grigol</strong>, estruturado para
-              digitalizar o controle de fluxo de trabalho Lean, triagem de demandas da fábrica e apuração de múltiplos custos evitados.
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem' }}>
-              <span style={{ fontSize: '0.725rem', backgroundColor: '#e2e8f0', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                ✓ Next.js 14 App Router
-              </span>
-              <span style={{ fontSize: '0.725rem', backgroundColor: '#e2e8f0', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                ✓ Multi-tenant Architecture
-              </span>
-              <span style={{ fontSize: '0.725rem', backgroundColor: '#e2e8f0', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                ✓ 7 Fontes de Custo Evitado
-              </span>
-              <span style={{ fontSize: '0.725rem', backgroundColor: '#e2e8f0', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-                ✓ Mobile-first Lean Tools
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowAuthorModal(false)}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.65rem' }}
-          >
-            Fechar Informações
-          </button>
-        </div>
-      </Modal>
     </header>
   );
 };
