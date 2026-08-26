@@ -32,6 +32,7 @@ import {
   Droplet,
   Flame,
   RotateCcw,
+  Award,
 } from 'lucide-react';
 import {
   TpmMachine,
@@ -46,6 +47,7 @@ import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDateTime, formatDate } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
+import { TpmPhaseSeal } from '@/components/tpm/TpmPhaseSeal';
 
 const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'status'>[] = [
   {
@@ -104,6 +106,12 @@ export default function AdminTPMPage() {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [resolveTagModal, setResolveTagModal] = useState<TpmTag | null>(null);
+  const [celebrationModal, setCelebrationModal] = useState<{
+    machineCode: string;
+    machineName: string;
+    previousPhase: number;
+    newPhase: number;
+  } | null>(null);
 
   // Form states: Nova Máquina
   const [newMachineSectorId, setNewMachineSectorId] = useState('');
@@ -112,6 +120,7 @@ export default function AdminTPMPage() {
   const [newMachineBrandModel, setNewMachineBrandModel] = useState('');
   const [newMachineCriticality, setNewMachineCriticality] = useState<'A' | 'B' | 'C'>('B');
   const [newMachineStatus, setNewMachineStatus] = useState<'operacional' | 'em_manutencao' | 'parada'>('operacional');
+  const [newMachinePhase, setNewMachinePhase] = useState<number>(1);
   const [newMachineDescription, setNewMachineDescription] = useState('');
 
   // Form states: Nova Auditoria
@@ -208,6 +217,7 @@ export default function AdminTPMPage() {
       brandModel: newMachineBrandModel.trim() || undefined,
       criticality: newMachineCriticality,
       status: newMachineStatus,
+      tpmPhase: newMachinePhase,
       description: newMachineDescription.trim() || undefined,
     });
 
@@ -226,7 +236,7 @@ export default function AdminTPMPage() {
     if (currentAuditScore < 70) auditStatus = 'critico';
     else if (currentAuditScore < 85) auditStatus = 'atencao';
 
-    dataService.createTpmAudit({
+    const auditResult = dataService.createTpmAudit({
       machineId: machine.id,
       machineName: machine.name,
       machineCode: machine.code,
@@ -242,7 +252,24 @@ export default function AdminTPMPage() {
 
     setIsAuditModalOpen(false);
     loadData();
-    confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+
+    // Se atingiu 100% e avançou de fase, exibe celebração especial com o Selo TPM!
+    if (auditResult.phaseAdvanced) {
+      setCelebrationModal({
+        machineCode: machine.code,
+        machineName: machine.name,
+        previousPhase: auditResult.previousPhase || 1,
+        newPhase: auditResult.newPhase || 2,
+      });
+
+      confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
+      setTimeout(() => {
+        confetti({ particleCount: 70, spread: 70, origin: { y: 0.6, x: 0.3 } });
+        confetti({ particleCount: 70, spread: 70, origin: { y: 0.6, x: 0.7 } });
+      }, 300);
+    } else {
+      confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+    }
   };
 
   // Submissão: Nova Etiqueta
@@ -570,6 +597,26 @@ export default function AdminTPMPage() {
               <span style={{ fontSize: '0.725rem', color: '#60a5fa', fontWeight: 700 }}>🔵 {metrics.blueTagsCount} Autôn.</span>
             </div>
           </div>
+
+          {/* Card 6: Selo de Fases TPM (4 Fases) */}
+          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Selo de Fases TPM</span>
+              <Award size={18} color="#fbbf24" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.3rem' }}>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                {filteredMachines.filter((m) => (m.tpmPhase || 1) >= 4).length}
+              </div>
+              <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>/ {filteredMachines.length} com Selo Ouro</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem', fontSize: '0.675rem', color: '#cbd5e1' }}>
+              <span>F1: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 1).length}</span> •
+              <span>F2: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 2).length}</span> •
+              <span>F3: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 3).length}</span> •
+              <span style={{ color: '#fbbf24', fontWeight: 700 }}>F4: {filteredMachines.filter((m) => (m.tpmPhase || 1) >= 4).length}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -744,6 +791,40 @@ export default function AdminTPMPage() {
                         Setor: <strong style={{ color: '#cbd5e1' }}>{m.sectorName}</strong>
                         {m.brandModel && <span> • {m.brandModel}</span>}
                       </p>
+
+                      {/* Selo de Fase TPM (Círculo dividido em 4 quadrantes) */}
+                      <div
+                        style={{
+                          backgroundColor: '#090e1a',
+                          padding: '0.75rem 1rem',
+                          borderRadius: '10px',
+                          border: (m.tpmPhase || 1) >= 4 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                          marginBottom: '0.85rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '0.75rem',
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.2rem' }}>
+                            <Award size={13} color={(m.tpmPhase || 1) >= 4 ? '#fbbf24' : '#22d3ee'} />
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                              Selo de Fase TPM
+                            </span>
+                          </div>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.15rem' }}>
+                            {(m.tpmPhase || 1) >= 4 ? '🏆 Selo Ouro (4/4)' : `Fase ${m.tpmPhase || 1} de 4`}
+                          </h4>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: 1.3 }}>
+                            {(m.tpmPhase || 1) >= 4
+                              ? 'Excelência e autonomia plena atingidas'
+                              : `Nota 100% na auditoria avança para a Fase ${(m.tpmPhase || 1) + 1}`}
+                          </span>
+                        </div>
+
+                        <TpmPhaseSeal phase={m.tpmPhase || 1} size="md" showLabel={false} />
+                      </div>
 
                       {/* Box de Avaliação / Nota de Auditoria */}
                       <div style={{ backgroundColor: '#090e1a', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '0.85rem' }}>
@@ -1369,17 +1450,33 @@ export default function AdminTPMPage() {
             </div>
           </div>
 
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Status Operacional Inicial:</label>
-            <select
-              className="form-select"
-              value={newMachineStatus}
-              onChange={(e) => setNewMachineStatus(e.target.value as any)}
-            >
-              <option value="operacional">Operacional (Em Produção)</option>
-              <option value="em_manutencao">Em Manutenção Preventiva/Corretiva</option>
-              <option value="parada">Parada / Em Espera</option>
-            </select>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ color: '#cbd5e1' }}>Status Operacional Inicial:</label>
+              <select
+                className="form-select"
+                value={newMachineStatus}
+                onChange={(e) => setNewMachineStatus(e.target.value as any)}
+              >
+                <option value="operacional">Operacional (Em Produção)</option>
+                <option value="em_manutencao">Em Manutenção Preventiva/Corretiva</option>
+                <option value="parada">Parada / Em Espera</option>
+              </select>
+            </div>
+
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ color: '#cbd5e1' }}>Fase Inicial do Selo TPM:</label>
+              <select
+                className="form-select"
+                value={newMachinePhase}
+                onChange={(e) => setNewMachinePhase(Number(e.target.value))}
+              >
+                <option value={1}>Fase 1: Limpeza & 5S (1/4)</option>
+                <option value={2}>Fase 2: Fontes & Acessos (2/4)</option>
+                <option value={3}>Fase 3: Padrões Autônomos (3/4)</option>
+                <option value={4}>Fase 4: Selo Ouro (4/4)</option>
+              </select>
+            </div>
           </div>
 
           <div className="form-group" style={{ margin: 0 }}>
@@ -1479,6 +1576,78 @@ export default function AdminTPMPage() {
               {currentAuditScore}<span style={{ fontSize: '1.15rem', color: '#94a3b8' }}>/100</span>
             </div>
           </div>
+
+          {/* Alerta Dinâmico do Selo de Fase TPM */}
+          {(() => {
+            const targetMachine = machines.find((m) => m.id === auditMachineId);
+            const currentMachPhase = targetMachine?.tpmPhase || 1;
+            const nextMachPhase = Math.min(4, currentMachPhase + 1);
+
+            if (currentAuditScore === 100) {
+              return (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    border: '1.5px solid rgba(245, 158, 11, 0.5)',
+                    padding: '0.85rem 1.25rem',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <TpmPhaseSeal phase={nextMachPhase} size="sm" showLabel={false} />
+                    <div>
+                      <strong style={{ fontSize: '0.85rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Sparkles size={15} /> CONQUISTA DE FASE TPM GARANTIDA!
+                      </strong>
+                      <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                        {currentMachPhase < 4
+                          ? `Nota 100% atingida! Ao registrar esta auditoria, a máquina avançará da Fase ${currentMachPhase} para a Fase ${nextMachPhase} do Selo TPM.`
+                          : 'Nota 100% atingida! A máquina reafirma o status supremo de Selo Ouro de Excelência TPM.'}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      backgroundColor: '#f59e0b',
+                      color: '#000000',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '9999px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {currentMachPhase < 4 ? `Subir para Fase ${nextMachPhase}` : 'Selo Ouro Total'}
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                style={{
+                  backgroundColor: '#090e1a',
+                  padding: '0.65rem 1rem',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '0.75rem',
+                  color: '#94a3b8',
+                }}
+              >
+                <span>
+                  Selo TPM Atual: <strong style={{ color: '#22d3ee' }}>Fase {currentMachPhase} de 4</strong> (ao obter nota 100%, avançará para a Fase {nextMachPhase})
+                </span>
+                <TpmPhaseSeal phase={currentMachPhase} size="sm" showLabel={false} />
+              </div>
+            );
+          })()}
 
           {/* Checklist de 8 Itens Ponderados */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
@@ -1785,6 +1954,39 @@ export default function AdminTPMPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* MODAL 5: CELEBRAÇÃO DE CONQUISTA DE FASE DO SELO TPM */}
+      <Modal
+        isOpen={!!celebrationModal}
+        onClose={() => setCelebrationModal(null)}
+        title="🎉 EVOLUÇÃO DE FASE DO SELO TPM!"
+        subtitle={`Auditoria 100% Conforme para ${celebrationModal?.machineCode} - ${celebrationModal?.machineName}`}
+      >
+        <div style={{ textAlign: 'center', padding: '1rem 0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+            <TpmPhaseSeal phase={celebrationModal?.newPhase || 2} size="xl" showLabel={true} />
+          </div>
+
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
+            {celebrationModal?.newPhase === 4 ? '🏆 SELO OURO TPM CONQUISTADO!' : `A Máquina Avançou para a Fase ${celebrationModal?.newPhase}!`}
+          </h3>
+
+          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+            {celebrationModal?.newPhase === 4
+              ? 'Parabéns a toda a equipe e aos operadores do posto! Esta máquina atingiu os 4 quadrantes do Selo TPM, alcançando a Excelência Máxima e Autonomia Plena na metodologia Lean!'
+              : `Com nota 100% de conformidade nesta auditoria, a máquina conquistou o ${celebrationModal?.newPhase}º quadrante do Selo TPM e avançou da Fase ${celebrationModal?.previousPhase} para a Fase ${celebrationModal?.newPhase} com sucesso!`}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setCelebrationModal(null)}
+            className="btn btn-primary"
+            style={{ padding: '0.65rem 2.25rem', fontWeight: 800 }}
+          >
+            Excelente! Continuar Gestão
+          </button>
+        </div>
       </Modal>
     </div>
   );

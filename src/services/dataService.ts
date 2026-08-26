@@ -1074,6 +1074,7 @@ export const dataService = {
     brandModel?: string;
     criticality: TpmMachine['criticality'];
     status: TpmMachine['status'];
+    tpmPhase?: number;
     description?: string;
   }): TpmMachine {
     const machines = this.getTpmMachines();
@@ -1090,6 +1091,8 @@ export const dataService = {
       criticality: data.criticality,
       status: data.status,
       currentAuditScore: 0,
+      tpmPhase: Math.min(4, Math.max(1, data.tpmPhase || 1)),
+      tpmPhaseHistory: [],
       description: data.description,
       createdAt: new Date().toISOString(),
     };
@@ -1108,6 +1111,34 @@ export const dataService = {
     machines[index] = updated;
     setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
     return updated;
+  },
+
+  advanceTpmMachinePhase(machineId: string): TpmMachine {
+    const machine = this.getTpmMachineById(machineId);
+    if (!machine) throw new Error('Máquina não encontrada');
+
+    const currentPhase = machine.tpmPhase || 1;
+    if (currentPhase >= 4) return machine; // Já está na fase máxima
+
+    const nextPhase = currentPhase + 1;
+    const history = machine.tpmPhaseHistory ? [...machine.tpmPhaseHistory] : [];
+    history.push({
+      phase: nextPhase,
+      achievedAt: new Date().toISOString(),
+      auditScore: 100,
+    });
+
+    return this.updateTpmMachine(machineId, {
+      tpmPhase: nextPhase,
+      tpmPhaseHistory: history,
+    });
+  },
+
+  setTpmMachinePhase(machineId: string, phase: number): TpmMachine {
+    const safePhase = Math.min(4, Math.max(1, phase));
+    return this.updateTpmMachine(machineId, {
+      tpmPhase: safePhase,
+    });
   },
 
   deleteTpmMachine(id: string): void {
@@ -1136,7 +1167,7 @@ export const dataService = {
     status: 'conforme' | 'atencao' | 'critico';
     items: TpmAudit['items'];
     observations?: string;
-  }): TpmAudit {
+  }): TpmAudit & { phaseAdvanced?: boolean; previousPhase?: number; newPhase?: number } {
     const audits = this.getTpmAudits();
     const currentTenant = this.getCurrentTenant();
     const now = new Date().toISOString();
@@ -1161,17 +1192,50 @@ export const dataService = {
     audits.unshift(newAudit);
     setStoredData(STORAGE_KEYS.TPM_AUDITS, audits);
 
-    // Atualiza automaticamente a nota mais recente e data da máquina auditada
+    let phaseAdvanced = false;
+    let previousPhase = 1;
+    let newPhase = 1;
+
+    // Atualiza automaticamente a nota da máquina e, se 100%, avança a máquina de fase no Selo TPM!
     try {
-      this.updateTpmMachine(data.machineId, {
+      const machine = this.getTpmMachineById(data.machineId);
+      const updates: Partial<TpmMachine> = {
         currentAuditScore: newAudit.score,
         lastAuditDate: newAudit.auditDate,
-      });
+      };
+
+      if (machine) {
+        previousPhase = machine.tpmPhase || 1;
+        newPhase = previousPhase;
+
+        // Regra de Ouro: Ao atingir 100% na auditoria, avança para a próxima fase do selo!
+        if (newAudit.score === 100 && previousPhase < 4) {
+          newPhase = previousPhase + 1;
+          phaseAdvanced = true;
+          updates.tpmPhase = newPhase;
+
+          const history = machine.tpmPhaseHistory ? [...machine.tpmPhaseHistory] : [];
+          history.push({
+            phase: newPhase,
+            achievedAt: newAudit.auditDate,
+            auditId: newAudit.id,
+            auditScore: newAudit.score,
+          });
+          updates.tpmPhaseHistory = history;
+        }
+      }
+
+      this.updateTpmMachine(data.machineId, updates);
     } catch (e) {
-      console.warn('Erro ao atualizar score da máquina auditada:', e);
+      console.warn('Erro ao atualizar score e selo de fase da máquina auditada:', e);
     }
 
-    return newAudit;
+    return {
+      ...newAudit,
+      phaseAdvanced,
+      previousPhase,
+      newPhase,
+    };
   },
 
   // --- Gestão de Etiquetas TPM (Manutenção & Autônoma) ---

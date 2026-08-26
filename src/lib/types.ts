@@ -366,6 +366,13 @@ export interface TpmMachine {
   status: TpmMachineStatus;
   currentAuditScore: number;             // Nota da última auditoria (0 a 100)
   lastAuditDate?: string;
+  tpmPhase: number;                      // Selo de Fase TPM (1 a 4). 1 = Fase 1, 2 = Fase 2, 3 = Fase 3, 4 = Fase 4 (Excelência)
+  tpmPhaseHistory?: {
+    phase: number;
+    achievedAt: string;
+    auditId?: string;
+    auditScore: number;
+  }[];
   description?: string;
   createdAt: string;
 }
