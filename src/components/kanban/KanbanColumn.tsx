@@ -9,7 +9,6 @@ interface KanbanColumnProps {
   status: ActionStatus;
   actions: LeanAction[];
   onCardClick: (action: LeanAction) => void;
-  onQuickMove?: (action: LeanAction, newStatus: ActionStatus) => void;
   isAgentView?: boolean;
 }
 
@@ -17,7 +16,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   status,
   actions,
   onCardClick,
-  onQuickMove,
   isAgentView,
 }) => {
   const config = STATUS_CONFIG[status];
@@ -161,7 +159,6 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               key={action.id}
               action={action}
               onClick={() => onCardClick(action)}
-              onQuickMove={onQuickMove}
               isAgentView={isAgentView}
             />
           ))

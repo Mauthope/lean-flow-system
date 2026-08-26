@@ -82,16 +82,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     }
   };
 
-  const handleQuickMove = (action: LeanAction, newStatus: ActionStatus) => {
-    if (newStatus === 'concluida') {
-      // Open modal so user can input actual avoided cost
-      setSelectedAction(action);
-    } else {
-      dataService.updateActionStatus(action.id, newStatus);
-      onRefresh();
-    }
-  };
-
   const columns: ActionStatus[] = ['aberta', 'em_andamento', 'aguardando_aprovacao', 'concluida', 'nao_aprovada'];
 
   const visibleColumns = mobileSelectedCol === 'all'
@@ -341,7 +331,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 status={status}
                 actions={colActions}
                 onCardClick={handleCardClick}
-                onQuickMove={handleQuickMove}
                 isAgentView={isAgentView}
               />
             );
