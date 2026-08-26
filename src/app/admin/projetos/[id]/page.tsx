@@ -3260,8 +3260,8 @@ export default function AdminProjectDetailPage() {
                             </div>
                             <div style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                               <span style={{ fontSize: '0.575rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Payback</span>
-                              <strong style={{ fontSize: '1.05rem', color: '#fbbf24', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
-                                {paybackMonths > 0 ? `${paybackMonths}m` : 'Imediato'}
+                              <strong style={{ fontSize: '0.95rem', color: '#fbbf24', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                                {paybackMonths > 0 ? `${paybackMonths} meses` : 'Imediato'}
                               </strong>
                             </div>
                           </div>

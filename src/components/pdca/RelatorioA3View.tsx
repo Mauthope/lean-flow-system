@@ -244,7 +244,7 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                 Payback
               </span>
               <strong style={{ fontSize: '1rem', color: '#b45309', fontWeight: 900 }}>
-                {payback} m
+                {payback} meses
               </strong>
             </div>
           </div>
