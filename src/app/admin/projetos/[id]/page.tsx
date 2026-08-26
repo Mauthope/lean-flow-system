@@ -55,6 +55,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
+  Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -83,6 +84,10 @@ export default function AdminProjectDetailPage() {
   const [currentProblemCostMonthly, setCurrentProblemCostMonthly] = useState<number | ''>('');
   const [problemStatement, setProblemStatement] = useState('');
   const [fiveWhys, setFiveWhys] = useState<string[]>(['', '', '', '', '']);
+
+  // Liderança e Equipe Envolvida no Kaizen
+  const [leaderName, setLeaderName] = useState<string>('');
+  const [teamMembersInput, setTeamMembersInput] = useState<string>('');
   
   // Pareto 80/20 Analysis & Chart Image
   const [paretoImageUrl, setParetoImageUrl] = useState<string>('');
@@ -159,14 +164,13 @@ export default function AdminProjectDetailPage() {
         setFiveWhys(
           found.fiveWhys && found.fiveWhys.length === 5
             ? found.fiveWhys
-            : ['1. ', '2. ', '3. ', '4. ', '5. ']
+            : ['', '', '', '', '']
         );
+        setLeaderName(found.leaderName || found.assignedAgentName || '');
+        setTeamMembersInput(found.teamMembers && found.teamMembers.length > 0 ? found.teamMembers.join(', ') : '');
         setParetoImageUrl(found.pareto?.chartImageUrl || '');
         setParetoImageName(found.pareto?.chartImageName || '');
-        setParetoVitalCauses(
-          found.pareto?.vitalCausesSummary ||
-            '80% das perdas concentradas nas 2 causas vitais prioritárias identificadas no gráfico de Pareto.'
-        );
+        setParetoVitalCauses(found.pareto?.vitalCausesSummary || '');
         setParetoCumulativePercent(
           found.pareto?.cumulativeImpactPercentage !== undefined ? found.pareto.cumulativeImpactPercentage : 80
         );
@@ -260,7 +264,14 @@ export default function AdminProjectDetailPage() {
   const handleSaveAll = () => {
     if (!action) return;
 
+    const parsedTeamMembers = teamMembersInput
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const updated = dataService.updateAction(action.id, {
+      leaderName: leaderName.trim() || undefined,
+      teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
       pdcaStage: activeTab,
       problemStatement,
       targetMetricName,
@@ -623,6 +634,19 @@ export default function AdminProjectDetailPage() {
             <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
               {action.title}
             </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginTop: '0.35rem', flexWrap: 'wrap', fontSize: '0.78125rem' }}>
+              <span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
+                👑 Líder: <span style={{ color: '#ffffff', fontWeight: 600 }}>{leaderName || action.leaderName || action.assignedAgentName}</span>
+              </span>
+              <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                👤 Agente: <span style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</span>
+              </span>
+              {(teamMembersInput || (action.teamMembers && action.teamMembers.length > 0)) && (
+                <span style={{ color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
+                  👥 Equipe: <span style={{ color: '#cbd5e1', fontWeight: 400 }}>{teamMembersInput || action.teamMembers?.join(', ')}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -803,6 +827,51 @@ export default function AdminProjectDetailPage() {
       {/* ========================================================================= */}
       {activeTab === 'plan' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Liderança e Equipe Envolvida no Kaizen */}
+          <div className="card" style={{ padding: '1.25rem 1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <Users size={20} color="#fbbf24" />
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  1.0 Liderança & Equipe Envolvida no Projeto
+                </h3>
+                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                  Defina o líder do projeto/kaizen e as pessoas envolvidas diretamente nas melhorias.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  👑 Líder do Kaizen / Projeto:
+                </label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Ex: Fernanda Lima (Especialista Lean)"
+                  value={leaderName}
+                  onChange={(e) => setLeaderName(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  👥 Pessoas Envolvidas / Equipe Kaizen (separar por vírgula):
+                </label>
+                <input
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Ex: Carlos Silva (Operação), Marcos Souza (Manutenção), Ana Paula (Qualidade)"
+                  value={teamMembersInput}
+                  onChange={(e) => setTeamMembersInput(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Card: Definição do Problema & Meta */}
           <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
@@ -2660,10 +2729,29 @@ export default function AdminProjectDetailPage() {
               {/* SLIDE 1: P • PLAN (Compilação Dinâmica sem campos vazios)           */}
               {/* =================================================================== */}
               {presentationSlide === 1 && (() => {
-                const activeFiveWhys = fiveWhys.filter((w) => w && w.trim());
+                const isWhyFilled = (w: string) => {
+                  if (!w) return false;
+                  const cleaned = w.replace(/^[0-9]+[\.\)\-]?\s*/, '').trim();
+                  return cleaned.length > 0;
+                };
+                const activeFiveWhys = fiveWhys.filter(isWhyFilled);
                 const hasFiveWhys = activeFiveWhys.length > 0;
-                const hasPareto = Boolean(paretoVitalCauses && paretoVitalCauses.trim());
+
+                const isParetoFilled = (p?: string) => {
+                  if (!p) return false;
+                  const trimmed = p.trim();
+                  if (!trimmed) return false;
+                  if (trimmed.startsWith('80% das perdas concentradas nas 2 causas')) return false;
+                  return true;
+                };
+                const hasPareto = Boolean(paretoImageUrl || isParetoFilled(paretoVitalCauses));
+
                 const hasProblemCost = Boolean(currentProblemCostMonthly && Number(currentProblemCostMonthly) > 0);
+
+                const effectiveLeader = leaderName || action.leaderName || action.assignedAgentName;
+                const effectiveTeam = teamMembersInput
+                  ? teamMembersInput.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+                  : (action.teamMembers || []);
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
@@ -2673,7 +2761,7 @@ export default function AdminProjectDetailPage() {
                         <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
                           1. PLAN (PLANEJAR)
                         </span>
-                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz & Metas</span>
+                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz, Liderança & Metas</span>
                       </div>
                       <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
                         Diagnóstico do Problema Fabril & Definição de Metas
@@ -2682,20 +2770,20 @@ export default function AdminProjectDetailPage() {
 
                     {/* Dynamic 2-Column Content */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
-                      {/* Left: Problema & 5 Porquês (se preenchidos) */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                        <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      {/* Left: Problema, 5 Porquês (se preenchidos) e Pareto (se preenchido) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', justifyContent: 'center' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: (!hasFiveWhys && !hasPareto) ? '1.75rem' : '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                           <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.4rem' }}>
-                            🎯 Declaração da Causa Raiz
+                            🎯 Declaração da Causa Raiz & Problema
                           </h4>
-                          <p style={{ margin: 0, fontSize: '0.875rem', color: '#ffffff', lineHeight: 1.45 }}>
+                          <p style={{ margin: 0, fontSize: (!hasFiveWhys && !hasPareto) ? '1.05rem' : '0.875rem', color: '#ffffff', lineHeight: 1.5 }}>
                             {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
                           </p>
                         </div>
 
-                        {/* Compilação Dinâmica: Exibe os 5 Porquês SOMENTE se houver preenchimento */}
+                        {/* Compilação Dinâmica: Exibe os 5 Porquês SOMENTE se houver preenchimento real */}
                         {hasFiveWhys && (
-                          <div style={{ backgroundColor: '#0f172a', padding: '0.9rem 1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                             <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.45rem' }}>
                               🔍 Investigação Causal (5 Porquês)
                             </h4>
@@ -2713,27 +2801,27 @@ export default function AdminProjectDetailPage() {
                                     lineHeight: 1.35,
                                   }}
                                 >
-                                  <strong style={{ color: '#22d3ee', marginRight: '0.35rem' }}>{idx + 1}º Porquê:</strong> {whyText}
+                                  <strong style={{ color: '#22d3ee', marginRight: '0.35rem' }}>{idx + 1}º:</strong> {whyText.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Compilação Dinâmica: Exibe Pareto SOMENTE se preenchido */}
+                        {/* Compilação Dinâmica: Exibe Pareto SOMENTE se houver preenchimento real */}
                         {hasPareto && (
                           <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
                             <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
                               📊 Pareto 80/20:
                             </span>
                             <p style={{ margin: '0.15rem 0 0', fontSize: '0.78125rem', color: '#ffffff', lineHeight: 1.35 }}>
-                              {paretoVitalCauses}
+                              {paretoVitalCauses || 'Análise de Pareto aplicada.'}
                             </p>
                           </div>
                         )}
                       </div>
 
-                      {/* Right: Metas & Ficha */}
+                      {/* Right: Metas & Ficha da Equipe */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                         {/* Metas Baseline vs Alvo */}
                         <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
@@ -2774,13 +2862,41 @@ export default function AdminProjectDetailPage() {
                           )}
                         </div>
 
-                        {/* Ficha Resumida */}
-                        <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {/* Ficha da Equipe & Liderança */}
+                        <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
-                            <span style={{ color: '#94a3b8' }}>Agente:</span>
-                            <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                            <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
+                            <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
+                            <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
+                          </div>
+                          {effectiveTeam.length > 0 && (
+                            <div style={{ fontSize: '0.78125rem', marginTop: '0.2rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>
+                                👥 Pessoas Envolvidas:
+                              </span>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                                {effectiveTeam.map((member, mIdx) => (
+                                  <span
+                                    key={mIdx}
+                                    style={{
+                                      fontSize: '0.675rem',
+                                      backgroundColor: '#090e1a',
+                                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                                      padding: '0.15rem 0.45rem',
+                                      borderRadius: '4px',
+                                      color: '#e2e8f0',
+                                    }}
+                                  >
+                                    {member}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem', marginTop: '0.1rem' }}>
                             <span style={{ color: '#94a3b8' }}>Setor:</span>
                             <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Fábrica'}</strong>
                           </div>
@@ -3275,7 +3391,7 @@ export default function AdminProjectDetailPage() {
                         Horas Salvas: <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{action.hoursSaved || internalLaborHours || 0}h</strong>
                       </span>
                       <span style={{ color: '#94a3b8' }}>
-                        Responsável: <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                        Líder / Resp: <strong style={{ color: '#ffffff' }}>{leaderName || action.leaderName || action.assignedAgentName}</strong>
                       </span>
                     </div>
 

@@ -176,10 +176,12 @@ export interface LeanAction {
   requesterEmail?: string;
   requesterDepartment?: string;
 
-  // Assignment
+  // Assignment & Liderança do Kaizen
   assignedAgentId?: string;
   assignedAgentName?: string;
   assignedAgentAvatar?: string;
+  leaderName?: string;                   // Líder do Kaizen ou Projeto
+  teamMembers?: string[];                // Pessoas envolvidas / Equipe do Projeto
   
   // Status & Classification
   status: ActionStatus;

@@ -187,6 +187,8 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     assignedAgentId: 'usr_rafitec_agent_04',
     assignedAgentName: 'Fernanda Lima',
     assignedAgentAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    leaderName: 'Fernanda Lima (Especialista Lean)',
+    teamMembers: ['Carlos Silva (Operação)', 'Marcos Souza (Manutenção)', 'Juliana Mendes (Qualidade)'],
     status: 'concluida',
     priority: 'alta',
     
