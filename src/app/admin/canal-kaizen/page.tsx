@@ -711,17 +711,13 @@ export default function AdminCanalKaizenPage() {
                                 </button>
                               </div>
                             ) : idea.status === 'aprovada' ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveTab('aprovadas');
-                                  handleOpenManageGains(idea);
-                                }}
-                                className="btn btn-secondary btn-sm"
-                                style={{ fontSize: '0.75rem' }}
+                              <Link
+                                href={`/admin/canal-kaizen/ideias/${idea.id}`}
+                                className="btn btn-primary btn-sm"
+                                style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                               >
-                                Ver na Execução →
-                              </button>
+                                <span>Abrir Ciclo PDCA</span> <ArrowRight size={13} />
+                              </Link>
                             ) : (
                               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
                                 Analisada por {idea.reviewedBy}
@@ -824,12 +820,33 @@ export default function AdminCanalKaizenPage() {
                         >
                           {/* Protocolo & Ideia */}
                           <td style={{ padding: '0.875rem 1.25rem', maxWidth: '280px' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800, display: 'block' }}>
-                              {idea.protocol}
-                            </span>
-                            <p style={{ margin: '0.2rem 0 0', fontSize: '0.8125rem', color: '#ffffff', fontWeight: 600, lineHeight: 1.4 }}>
+                            <Link
+                              href={`/admin/canal-kaizen/ideias/${idea.id}`}
+                              style={{
+                                fontSize: '0.75rem',
+                                color: '#22d3ee',
+                                fontFamily: 'var(--font-mono)',
+                                fontWeight: 800,
+                                textDecoration: 'none',
+                                display: 'inline-block',
+                              }}
+                            >
+                              {idea.protocol} →
+                            </Link>
+                            <Link
+                              href={`/admin/canal-kaizen/ideias/${idea.id}`}
+                              style={{
+                                margin: '0.2rem 0 0',
+                                fontSize: '0.8125rem',
+                                color: '#ffffff',
+                                fontWeight: 600,
+                                lineHeight: 1.4,
+                                textDecoration: 'none',
+                                display: 'block',
+                              }}
+                            >
                               {idea.summary}
-                            </p>
+                            </Link>
                           </td>
 
                           {/* Autor */}
@@ -866,54 +883,63 @@ export default function AdminCanalKaizenPage() {
                             </span>
                           </td>
 
-                          {/* Etapa / Status */}
+                          {/* Etapa / Status PDCA */}
                           <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                            {idea.executionStatus === 'implantada_sucesso' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
+                              {/* PDCA Stage Pill */}
                               <span
                                 style={{
-                                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                                  color: '#34d399',
-                                  border: '1px solid rgba(16, 185, 129, 0.4)',
-                                  padding: '0.2rem 0.55rem',
+                                  fontSize: '0.675rem',
+                                  fontWeight: 900,
+                                  letterSpacing: '0.04em',
+                                  fontFamily: 'var(--font-mono)',
+                                  padding: '0.15rem 0.5rem',
                                   borderRadius: '9999px',
-                                  fontWeight: 800,
-                                  fontSize: '0.725rem',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.3rem',
+                                  backgroundColor:
+                                    idea.pdcaStage === 'act'
+                                      ? 'rgba(16, 185, 129, 0.2)'
+                                      : idea.pdcaStage === 'check'
+                                      ? 'rgba(245, 158, 11, 0.2)'
+                                      : idea.pdcaStage === 'do'
+                                      ? 'rgba(139, 92, 246, 0.2)'
+                                      : 'rgba(6, 182, 212, 0.2)',
+                                  color:
+                                    idea.pdcaStage === 'act'
+                                      ? '#34d399'
+                                      : idea.pdcaStage === 'check'
+                                      ? '#fbbf24'
+                                      : idea.pdcaStage === 'do'
+                                      ? '#c084fc'
+                                      : '#22d3ee',
+                                  border: `1px solid ${
+                                    idea.pdcaStage === 'act'
+                                      ? 'rgba(16, 185, 129, 0.4)'
+                                      : idea.pdcaStage === 'check'
+                                      ? 'rgba(245, 158, 11, 0.4)'
+                                      : idea.pdcaStage === 'do'
+                                      ? 'rgba(139, 92, 246, 0.4)'
+                                      : 'rgba(6, 182, 212, 0.4)'
+                                  }`,
                                 }}
                               >
-                                <CheckCircle2 size={12} /> Implantada ✓
+                                {idea.pdcaStage ? `PDCA: ${idea.pdcaStage.toUpperCase()}` : 'PDCA: PLAN'}
                               </span>
-                            ) : idea.executionStatus === 'em_implantacao' ? (
-                              <span
-                                style={{
-                                  backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                  color: '#c084fc',
-                                  border: '1px solid rgba(139, 92, 246, 0.35)',
-                                  padding: '0.2rem 0.55rem',
-                                  borderRadius: '9999px',
-                                  fontWeight: 800,
-                                  fontSize: '0.725rem',
-                                }}
-                              >
-                                Em Implantação
-                              </span>
-                            ) : (
-                              <span
-                                style={{
-                                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                                  color: '#22d3ee',
-                                  border: '1px solid rgba(6, 182, 212, 0.35)',
-                                  padding: '0.2rem 0.55rem',
-                                  borderRadius: '9999px',
-                                  fontWeight: 800,
-                                  fontSize: '0.725rem',
-                                }}
-                              >
-                                Planejamento
-                              </span>
-                            )}
+
+                              {/* Execution Status */}
+                              {idea.executionStatus === 'implantada_sucesso' ? (
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399' }}>
+                                  ✓ Concluída
+                                </span>
+                              ) : idea.executionStatus === 'em_implantacao' ? (
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc' }}>
+                                  Em Implantação
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee' }}>
+                                  Planejamento
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* Economia Real (R$) */}
@@ -941,16 +967,26 @@ export default function AdminCanalKaizenPage() {
                             </strong>
                           </td>
 
-                          {/* Gerenciar Ganhos */}
+                          {/* Gerenciar Ganhos / Abrir PDCA */}
                           <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenManageGains(idea)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-                            >
-                              <span>Atualizar Ganhos</span> <ArrowRight size={12} />
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem' }}>
+                              <Link
+                                href={`/admin/canal-kaizen/ideias/${idea.id}`}
+                                className="btn btn-primary btn-sm"
+                                style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.35rem 0.75rem' }}
+                              >
+                                <span>Abrir PDCA</span> <ArrowRight size={13} />
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenManageGains(idea)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ fontSize: '0.7rem', padding: '0.35rem 0.5rem' }}
+                                title="Editar Ganhos Rapidamente"
+                              >
+                                $
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

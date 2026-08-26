@@ -975,6 +975,74 @@ export const dataService = {
     };
   },
 
+  getKaizenIdeaByProtocol(protocol: string): KaizenIdea | undefined {
+    return this.getKaizenIdeas().find((k) => k.protocol.toUpperCase() === protocol.toUpperCase());
+  },
+
+  saveKaizenQuarterlyMonthResult(
+    ideaId: string,
+    monthNumber: 1 | 2 | 3,
+    data: {
+      value: number;
+      hoursSaved?: number;
+      notes?: string;
+      measuredAt?: string;
+      registeredBy?: string;
+    }
+  ): KaizenIdea {
+    const ideas = this.getKaizenIdeas();
+    const index = ideas.findIndex((k) => k.id === ideaId);
+    if (index === -1) throw new Error('Ideia Kaizen não encontrada');
+
+    const idea = ideas[index];
+    if (!idea.quarterlyFollowUp) {
+      idea.quarterlyFollowUp = {
+        enabled: true,
+        startedAt: idea.masterApprovedAt || new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+      };
+    }
+
+    const key = `month${monthNumber}` as 'month1' | 'month2' | 'month3';
+    idea.quarterlyFollowUp[key] = {
+      monthNumber,
+      monthLabel: `${monthNumber}º Mês`,
+      value: Number(data.value) || 0,
+      hoursSaved: data.hoursSaved !== undefined ? Number(data.hoursSaved) : undefined,
+      notes: data.notes?.trim() || undefined,
+      measuredAt: data.measuredAt || new Date().toISOString().split('T')[0],
+      registeredBy: data.registeredBy,
+    };
+
+    const m1 = idea.quarterlyFollowUp.month1?.value;
+    const m2 = idea.quarterlyFollowUp.month2?.value;
+    const m3 = idea.quarterlyFollowUp.month3?.value;
+
+    const countFilled = [m1, m2, m3].filter((v) => v !== undefined).length;
+
+    if (countFilled === 3 && m1 !== undefined && m2 !== undefined && m3 !== undefined) {
+      const avg = Math.round((m1 + m2 + m3) / 3);
+      idea.quarterlyFollowUp.averageCostAvoided = avg;
+      idea.quarterlyFollowUp.isCompleted = true;
+      idea.quarterlyFollowUp.completedAt = new Date().toISOString();
+      idea.quarterlyFollowUp.status = 'consolidado';
+      idea.actualCostAvoided = avg;
+    } else if (m1 !== undefined && m2 !== undefined) {
+      idea.quarterlyFollowUp.status = 'aguardando_mes_3';
+    } else if (m1 !== undefined) {
+      idea.quarterlyFollowUp.status = 'aguardando_mes_2';
+    }
+
+    idea.updatedAt = new Date().toISOString();
+    ideas[index] = idea;
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    return idea;
+  },
+
   // Reset to default seed
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;

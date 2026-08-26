@@ -66,10 +66,14 @@ export type ActivityStatus = 'pendente' | 'em_andamento' | 'concluida';
 export interface ActionChecklistItem {
   id: string;
   label: string;
+  text?: string;
   startDate?: string; // Data no formato dd/mm/aaaa ou YYYY-MM-DD
   endDate?: string;   // Data no formato dd/mm/aaaa ou YYYY-MM-DD
+  plannedStart?: string;
+  plannedEnd?: string;
   status?: ActivityStatus;
   responsibleName?: string;
+  responsible?: string;
   observations?: string; // Notas de padronização / lições aprendidas
   durationHours?: number; // Tempo em horas
   completed: boolean;
@@ -302,10 +306,39 @@ export interface KaizenIdea {
   executionStatus?: KaizenExecutionStatus;
   implementationDate?: string;          // Data prevista ou realizada
 
-  // Ganhos Financeiros Separados do Canal Kaizen
+  // ================= METODOLOGIA PDCA KAIZEN =================
+  pdcaStage?: 'plan' | 'do' | 'check' | 'act';
+
+  // [P - PLAN: Metas, Indicadores e Causa Raiz]
+  targetMetricName?: string;            // Nome do indicador (ex: Tempo de Setup, Parada por refugo)
+  targetMetricUnit?: string;            // Unidade (ex: min, %, peças/h)
+  baselineValue?: number;               // Valor inicial antes da melhoria
+  targetGoalValue?: number;             // Meta estipulada
+  rootCauseAnalysis?: string;           // Diagnóstico da Causa Raiz
+  fiveWhys?: string[];                  // 5 Porquês
+  checklist?: ActionChecklistItem[];    // Plano de Ação 5W2H
+
+  // [D - DO: Execução no Posto & Testes Piloto]
+  pilotArea?: string;                   // Posto de Trabalho / Máquina Piloto
+  pilotTestObservations?: string;       // Observações da execução prática
+  evidenceBeforeUrl?: string;           // Foto do Antes (padrão: photoUrl da ideia)
+  evidenceAfterUrl?: string;            // Foto do Depois (melhoria implantada)
+
+  // [C - CHECK: Verificação de Indicadores & Memorial de Ganhos]
+  achievedValue?: number;               // Valor real aferido após a melhoria
+  costBreakdown?: LeanCostBreakdown;    // Ganhos brutos por fonte
   estimatedCostAvoided?: number;        // Ganho estimado (R$)
   actualCostAvoided?: number;           // Custo evitado real comprovado (R$)
   hoursSaved?: number;                  // Horas de trabalho salvas (h)
   financialGainNotes?: string;          // Memorial dos ganhos
-  quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses
+
+  // [A - ACT: Padronização, Lições e Homologação]
+  standardWorkUpdated?: boolean;        // POP / Instrução atualizada?
+  standardWorkDocRef?: string;          // Código do documento (ex: POP-EXT-014)
+  yokotenReplication?: string;          // Replicação para outras linhas/máquinas
+  lessonsLearned?: string;              // Lições aprendidas
+  masterApproved?: boolean;             // Homologado como Kaizen de Sucesso
+  masterApprovedAt?: string;            // Data de homologação
+  masterApprovedBy?: string;            // Gestor que homologou
+  quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses pós-homologação
 }
