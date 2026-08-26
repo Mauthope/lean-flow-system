@@ -3117,116 +3117,258 @@ export default function AdminProjectDetailPage() {
               })()}
 
               {/* =================================================================== */}
-              {/* SLIDE 3: C • CHECK (Compilação Dinâmica das Fontes de Economia)     */}
+              {/* SLIDE 3: C • CHECK (Compilação Dinâmica, Eficácia Técnica & ROI)     */}
               {/* =================================================================== */}
               {presentationSlide === 3 && (() => {
-                // Compila apenas as fontes com ganho > 0
+                // Fontes ativas de ganhos (> 0)
                 const activeSources = [
-                  { label: 'Mão de Obra / Setup', val: laborSavings },
-                  { label: 'Paradas de Máquina', val: machineDowntime },
-                  { label: 'Redução de Sucata', val: scrapReduction },
-                  { label: 'Aumento de Produção', val: productionIncrease },
-                  { label: 'Energia & Ferramental', val: toolingAndEnergy },
-                  { label: 'Logística & Frete', val: logisticsAndFreight },
-                  { label: 'Outras Fontes', val: otherSavings },
+                  { label: 'Paradas de Máquina / OEE', icon: '⚙️', val: machineDowntime },
+                  { label: 'Mão de Obra / Setup Otimizado', icon: '⏱️', val: laborSavings },
+                  { label: 'Redução de Refugo / Sucata', icon: '♻️', val: scrapReduction },
+                  { label: 'Aumento de Produção / Capacidade', icon: '📈', val: productionIncrease },
+                  { label: 'Energia, Ferramental & Insumos', icon: '⚡', val: toolingAndEnergy },
+                  { label: 'Logística, Frete & Movimentação', icon: '🚚', val: logisticsAndFreight },
+                  { label: 'Outras Economias Operacionais', icon: '💡', val: otherSavings },
                 ].filter((s) => s.val > 0);
 
+                // Composição dos custos / investimento (> 0)
+                const activeCosts = [
+                  { label: 'Peças, Sensores & Dispositivos', val: partsAndEquipment },
+                  { label: 'Serviços de Terceiros / Usinagem', val: thirdPartyServices },
+                  { label: 'Horas Equipe Interna', val: internalLaborHours * laborHourlyRate, detail: `${internalLaborHours}h @ R$ ${laborHourlyRate}/h` },
+                  { label: 'Outras Despesas Operacionais', val: otherCosts },
+                ].filter((c) => c.val > 0);
+
+                // Cálculo da melhoria técnica antes vs depois
+                const bNum = Number(baselineValue) || 0;
+                const tNum = Number(targetGoalValue) || 0;
+                const aNum = achievedValue !== '' ? Number(achievedValue) : tNum;
+
+                let technicalGainText = 'Meta Técnica Plenamente Atingida';
+                if (bNum > 0 && aNum > 0) {
+                  if (bNum > aNum) {
+                    const pct = Math.round(((bNum - aNum) / bNum) * 100);
+                    const diff = (bNum - aNum).toFixed(1).replace(/\.0$/, '');
+                    technicalGainText = `Redução de ${diff} ${targetMetricUnit} (−${pct}%) no posto`;
+                  } else if (aNum > bNum) {
+                    const pct = Math.round(((aNum - bNum) / bNum) * 100);
+                    const diff = (aNum - bNum).toFixed(1).replace(/\.0$/, '');
+                    technicalGainText = `Aumento de ${diff} ${targetMetricUnit} (+${pct}%) de ganho`;
+                  }
+                }
+
+                const grossValue = totalGrossSavings > 0 ? totalGrossSavings : (action.actualCostAvoided || 0);
+                const netValue = netSavings > 0 ? netSavings : grossValue;
+
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: '0.85rem' }}>
                     {/* Header */}
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.12rem 0.5rem', borderRadius: '6px' }}>
                           3. CHECK (VERIFICAR)
                         </span>
-                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Aferição dos Resultados & Engenharia Financeira</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Eficácia Técnica, Balanço Financeiro & Retorno do Investimento</span>
                       </div>
-                      <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                        Resultados Aferidos, Custo Evitado & Retorno do Investimento
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        Resultados Aferidos, DRE do Projeto & Retorno Financeiro (ROI)
                       </h2>
                     </div>
 
-                    {/* Top 3 KPI Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Indicador Aferido vs Meta
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.25rem' }}>
-                          <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                            {achievedValue !== '' ? `${achievedValue} ${targetMetricUnit}` : `${targetGoalValue} ${targetMetricUnit}`}
+                    {/* Top Row: 3 Executive KPI Pillars */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr 0.95fr', gap: '0.85rem', alignItems: 'stretch' }}>
+                      {/* Pillar 1: Eficácia Técnica (Antes -> Meta -> Depois) */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.65rem', color: '#22d3ee', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block' }}>
+                            🎯 1. Eficácia Técnica no Posto
                           </span>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                            (Meta: {targetGoalValue} {targetMetricUnit})
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.1fr', gap: '0.35rem', marginTop: '0.4rem', textAlign: 'center' }}>
+                            <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.35rem 0.25rem', borderRadius: '6px' }}>
+                              <span style={{ fontSize: '0.575rem', color: '#f87171', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Antes</span>
+                              <strong style={{ fontSize: '0.95rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                                {baselineValue || '—'} <span style={{ fontSize: '0.65rem' }}>{targetMetricUnit}</span>
+                              </strong>
+                            </div>
+                            <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.25)', padding: '0.35rem 0.25rem', borderRadius: '6px' }}>
+                              <span style={{ fontSize: '0.575rem', color: '#22d3ee', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Meta</span>
+                              <strong style={{ fontSize: '0.95rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                                {targetGoalValue || '—'} <span style={{ fontSize: '0.65rem' }}>{targetMetricUnit}</span>
+                              </strong>
+                            </div>
+                            <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.35rem 0.25rem', borderRadius: '6px' }}>
+                              <span style={{ fontSize: '0.575rem', color: '#34d399', fontWeight: 800, display: 'block', textTransform: 'uppercase' }}>Atingido ✓</span>
+                              <strong style={{ fontSize: '1.05rem', color: '#34d399', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                                {achievedValue !== '' ? achievedValue : targetGoalValue} <span style={{ fontSize: '0.65rem' }}>{targetMetricUnit}</span>
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '0.3rem 0.5rem', borderRadius: '6px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800 }}>
+                            ✓ {technicalGainText}
                           </span>
                         </div>
-                        <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800, marginTop: '0.2rem', display: 'block' }}>
-                          ✓ Meta Plenamente Atingida
-                        </span>
                       </div>
 
-                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '2px solid rgba(16, 185, 129, 0.45)', boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)' }}>
-                        <span style={{ fontSize: '0.675rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800 }}>
-                          Custo Evitado Real (Ganhos)
-                        </span>
-                        <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
-                          {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
-                        </h3>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                          retorno anual homologado
-                        </span>
-                      </div>
+                      {/* Pillar 2: Balanço Financeiro do Projeto (Ganhos - Custos = Lucro) */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1.5px solid rgba(16, 185, 129, 0.4)', boxShadow: '0 0 16px rgba(16, 185, 129, 0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
+                              💰 2. Balanço Financeiro (DRE Anual)
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                              Homologado
+                            </span>
+                          </div>
 
-                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Horas Salvas & Payback
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.25rem' }}>
-                          <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
-                            {action.hoursSaved || internalLaborHours || 0}h
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                            • Payback: {paybackMonths ? `${paybackMonths}m` : 'Imediato'}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.35rem', padding: '0.25rem 0', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.725rem' }}>
+                            <span style={{ color: '#cbd5e1' }}>Ganhos Brutos Totais:</span>
+                            <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>{formatCurrency(grossValue)}</strong>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.725rem' }}>
+                            <span style={{ color: '#cbd5e1' }}>(-) Investimento / Custos:</span>
+                            <strong style={{ color: totalInvestmentCost > 0 ? '#f87171' : '#94a3b8', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                              {totalInvestmentCost > 0 ? `-${formatCurrency(totalInvestmentCost)}` : 'R$ 0,00 (Sem Custo)'}
+                            </strong>
+                          </div>
                         </div>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                          Lucro líquido: {formatCurrency(netSavings)}
-                        </span>
+
+                        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.4rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#ffffff', fontWeight: 800 }}>(=) Lucro Líquido Real:</span>
+                          <strong style={{ fontSize: '1.2rem', color: '#34d399', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                            {formatCurrency(netValue)}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Pillar 3: Retorno do Capital & Eficiência */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.65rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block' }}>
+                            📈 3. Eficiência & Retorno
+                          </span>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <span style={{ fontSize: '0.575rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>ROI Real</span>
+                              <strong style={{ fontSize: '1.15rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
+                                {totalInvestmentCost > 0 ? `${roiPercentage}%` : '∞ (100%)'}
+                              </strong>
+                            </div>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <span style={{ fontSize: '0.575rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Payback</span>
+                              <strong style={{ fontSize: '1.05rem', color: '#fbbf24', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                                {paybackMonths > 0 ? `${paybackMonths}m` : 'Imediato'}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem' }}>
+                          <span style={{ color: '#cbd5e1' }}>⏱️ Horas Salvas:</span>
+                          <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                            {action.hoursSaved || internalLaborHours || 0}h / ano
+                          </strong>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Bottom: Mostra APENAS as fontes de ganho ativas (> 0) */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.65rem' }}>
-                        Fontes de Economia Lean Comprovadas
-                      </span>
+                    {/* Bottom Row: 2 Detail Panels (Left: Active Gain Sources | Right: Cost Breakdown & Certification) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '0.85rem', alignItems: 'stretch' }}>
+                      {/* Left: 7 Fontes de Ganhos Lean */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                            🟢 Composição dos Ganhos Lean ({activeSources.length} fontes ativas)
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                            Total: {formatCurrency(grossValue)}
+                          </span>
+                        </div>
 
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
                         {activeSources.length === 0 ? (
-                          <div style={{ fontSize: '0.8125rem', color: '#34d399', fontWeight: 700 }}>
-                            Custo evitado total de {formatCurrency(action.actualCostAvoided)} homologado no ciclo.
+                          <div style={{ padding: '0.75rem', backgroundColor: '#090e1a', borderRadius: '8px', textAlign: 'center', color: '#34d399', fontSize: '0.75rem', fontWeight: 700 }}>
+                            ✓ Custo evitado homologado de {formatCurrency(grossValue)}/ano no posto de trabalho.
                           </div>
                         ) : (
-                          activeSources.map((src, i) => (
-                            <div
-                              key={i}
-                              style={{
-                                backgroundColor: '#090e1a',
-                                padding: '0.5rem 0.85rem',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.6rem',
-                              }}
-                            >
-                              <span style={{ fontSize: '0.725rem', color: '#cbd5e1' }}>{src.label}:</span>
-                              <strong style={{ fontSize: '0.875rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                                {formatCurrency(src.val)}
-                              </strong>
-                            </div>
-                          ))
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.4rem', maxHeight: '115px', overflowY: 'auto' }}>
+                            {activeSources.map((src, i) => {
+                              const sharePct = grossValue > 0 ? Math.round((src.val / grossValue) * 100) : 0;
+                              return (
+                                <div
+                                  key={i}
+                                  style={{
+                                    backgroundColor: '#090e1a',
+                                    padding: '0.4rem 0.6rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '0.4rem',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
+                                    <span style={{ fontSize: '0.75rem' }}>{src.icon}</span>
+                                    <span style={{ fontSize: '0.675rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {src.label}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                                    <span style={{ fontSize: '0.6rem', color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.05rem 0.25rem', borderRadius: '3px', fontFamily: 'var(--font-mono)' }}>
+                                      {sharePct}%
+                                    </span>
+                                    <strong style={{ fontSize: '0.75rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                                      {formatCurrency(src.val)}
+                                    </strong>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         )}
+                      </div>
+
+                      {/* Right: Investimentos & Homologação */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.45rem' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: totalInvestmentCost > 0 ? '#f87171' : '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                              🔧 Investimento & Recursos Aplicados
+                            </span>
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                              {totalInvestmentCost > 0 ? formatCurrency(totalInvestmentCost) : 'Custo Zero'}
+                            </span>
+                          </div>
+
+                          {activeCosts.length === 0 ? (
+                            <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', borderRadius: '6px', color: '#22d3ee', fontSize: '0.7rem', lineHeight: 1.35 }}>
+                              ⚡ <strong>Melhoria Kaizen de Baixo Custo:</strong> Executada 100% com recursos internos da equipe de manufatura.
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '75px', overflowY: 'auto' }}>
+                              {activeCosts.map((c, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.675rem', backgroundColor: '#090e1a', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                  <span style={{ color: '#cbd5e1' }}>{c.label} {c.detail ? `(${c.detail})` : ''}</span>
+                                  <strong style={{ color: '#f87171', fontFamily: 'var(--font-mono)' }}>{formatCurrency(c.val)}</strong>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Tag: Laudo / Memorial & Homologação */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.675rem' }}>
+                          <span style={{ color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            📄 {attachments.length > 0 ? `${attachments.length} Memorial(is) PDF Anexado(s)` : 'Memorial Aferido no Posto'}
+                          </span>
+                          <span style={{ color: '#34d399', fontWeight: 800 }}>
+                            ✓ Aprovado & Homologado
+                          </span>
+                        </div>
                       </div>
                     </div>
 
