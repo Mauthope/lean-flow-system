@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { WASTE_CATEGORIES } from '@/lib/utils';
-import { CheckCircle2, XCircle, AlertCircle, DollarSign, Calendar, UserCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Calendar, UserCheck } from 'lucide-react';
 
 interface TriageModalProps {
   action: LeanAction | null;
@@ -27,7 +27,6 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [priority, setPriority] = useState<ActionPriority>('media');
   const [wasteCategory, setWasteCategory] = useState<LeanWasteCategory>('espera');
-  const [estimatedCostAvoided, setEstimatedCostAvoided] = useState<string>('15000');
   const [dueDate, setDueDate] = useState<string>('');
   const [rejectionReason, setRejectionReason] = useState('');
 
@@ -36,7 +35,6 @@ export const TriageModal: React.FC<TriageModalProps> = ({
     if (action) {
       setPriority(action.priority || 'media');
       setWasteCategory(action.wasteCategory || 'espera');
-      setEstimatedCostAvoided(action.estimatedCostAvoided ? String(action.estimatedCostAvoided) : '15000');
       setAssignedAgentId(action.assignedAgentId || (allAgents[0]?.id || ''));
       setDecision('approve');
       setRejectionReason('');
@@ -49,14 +47,11 @@ export const TriageModal: React.FC<TriageModalProps> = ({
     e.preventDefault();
     if (!currentUser) return;
 
-    const estCost = parseFloat(estimatedCostAvoided.replace(/[^0-9.]/g, '')) || 0;
-
     dataService.triageDemand(action.id, {
       action: decision,
       assignedAgentId: decision === 'approve' ? assignedAgentId : undefined,
       priority: decision === 'approve' ? priority : undefined,
       wasteCategory: decision === 'approve' ? wasteCategory : undefined,
-      estimatedCostAvoided: decision === 'approve' ? estCost : 0,
       dueDate: decision === 'approve' ? dueDate : undefined,
       rejectionReason: decision === 'reject' ? rejectionReason : undefined,
       adminName: currentUser.name,
@@ -211,28 +206,18 @@ export const TriageModal: React.FC<TriageModalProps> = ({
               </div>
             </div>
 
-            {/* Cost Avoided and Due Date */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Custo Evitado Estimado (R$):</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="Ex: 15000"
-                  value={estimatedCostAvoided}
-                  onChange={(e) => setEstimatedCostAvoided(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Prazo Limite para Conclusão:</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
-              </div>
+            {/* Due Date */}
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ color: '#cbd5e1' }}>
+                <Calendar size={14} style={{ display: 'inline', marginRight: '4px' }} />
+                Prazo Limite para Conclusão:
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
           </div>
         ) : (
