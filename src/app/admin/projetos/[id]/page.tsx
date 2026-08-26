@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
@@ -50,6 +50,11 @@ import {
   Image as ImageIcon,
   Send,
   Sigma,
+  Play,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -64,6 +69,10 @@ export default function AdminProjectDetailPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<PDCAMethodologyStage>('plan');
   const [isSaved, setIsSaved] = useState(false);
+
+  // Modo Apresentação (Hero Banner Pop-up com Slides P -> D -> C -> A -> Antes/Depois)
+  const [presentationOpen, setPresentationOpen] = useState(false);
+  const [presentationSlide, setPresentationSlide] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   // Form State for PDCA Fields
   const [targetMetricName, setTargetMetricName] = useState('');
@@ -189,6 +198,22 @@ export default function AdminProjectDetailPage() {
     }
   }, [projectId]);
 
+  // Navegação por teclado no Modo Apresentação
+  useEffect(() => {
+    if (!presentationOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPresentationOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setPresentationSlide((prev) => (prev < 5 ? ((prev + 1) as 1 | 2 | 3 | 4 | 5) : prev));
+      } else if (e.key === 'ArrowLeft') {
+        setPresentationSlide((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3 | 4 | 5) : prev));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [presentationOpen]);
+
   // Dynamic Calculated Financials
   const totalInvestmentCost =
     partsAndEquipment +
@@ -212,6 +237,17 @@ export default function AdminProjectDetailPage() {
     monthlyGrossSavings > 0 && totalInvestmentCost > 0
       ? Number((totalInvestmentCost / monthlyGrossSavings).toFixed(1))
       : 0;
+
+  // Evidências de Fotos para o Slide 5 da Apresentação
+  const photoAttachments = useMemo(() => {
+    return attachments.filter(
+      (att) =>
+        att.category === 'evidencia_foto' ||
+        att.fileType?.startsWith('image/') ||
+        att.url?.startsWith('data:image') ||
+        att.url?.includes('images.unsplash.com')
+    );
+  }, [attachments]);
 
   const handleSaveAll = () => {
     if (!action) return;
@@ -552,6 +588,30 @@ export default function AdminProjectDetailPage() {
 
         {/* Top Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setPresentationSlide(1);
+              setPresentationOpen(true);
+            }}
+            className="btn btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: 'rgba(139, 92, 246, 0.2)',
+              border: '1px solid rgba(139, 92, 246, 0.5)',
+              color: '#c084fc',
+              fontWeight: 800,
+              boxShadow: '0 0 15px rgba(139, 92, 246, 0.25)',
+              transition: 'all 0.15s ease',
+            }}
+            title="Abrir Apresentação de Slides Executivos do Ciclo PDCA (P -> D -> C -> A -> Antes e Depois)"
+          >
+            <Play size={14} fill="#c084fc" />
+            <span>Modo Apresentação</span>
+          </button>
+
           <button
             onClick={handleSaveAll}
             className="btn btn-primary btn-sm"
@@ -2266,6 +2326,978 @@ export default function AdminProjectDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* POP-UP HERO BANNER: MODO APRESENTAÇÃO DE SLIDES (P -> D -> C -> A -> FOTOS) */}
+      {/* ========================================================================= */}
+      {presentationOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(3, 7, 18, 0.95)',
+            backdropFilter: 'blur(16px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '1.25rem',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPresentationOpen(false);
+          }}
+        >
+          {/* Main Hero Banner Slide Stage */}
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '1140px',
+              height: '92vh',
+              maxHeight: '840px',
+              backgroundColor: '#090e1a',
+              border: '2px solid rgba(6, 182, 212, 0.35)',
+              borderRadius: '24px',
+              boxShadow:
+                '0 30px 80px -15px rgba(0, 0, 0, 0.95), 0 0 50px rgba(6, 182, 212, 0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            {/* Top Presentation Bar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem 1.75rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: '#070b14',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+              }}
+            >
+              {/* Left Title & Protocol */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span
+                  style={{
+                    fontSize: '0.675rem',
+                    fontWeight: 900,
+                    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                    color: '#c084fc',
+                    border: '1px solid rgba(139, 92, 246, 0.4)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '999px',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  SLIDES EXECUTIVOS PDCA
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    color: '#22d3ee',
+                    fontFamily: 'var(--font-mono)',
+                  }}
+                >
+                  {action.protocol}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    maxWidth: '380px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {action.title}
+                </span>
+              </div>
+
+              {/* Center Stepper Navigation Tabs */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                {[
+                  { num: 1 as const, label: 'P • PLAN', color: '#22d3ee' },
+                  { num: 2 as const, label: 'D • DO', color: '#c084fc' },
+                  { num: 3 as const, label: 'C • CHECK', color: '#fbbf24' },
+                  { num: 4 as const, label: 'A • ACT', color: '#34d399' },
+                  { num: 5 as const, label: '📸 ANTES & DEPOIS', color: '#38bdf8' },
+                ].map((s) => (
+                  <button
+                    key={s.num}
+                    type="button"
+                    onClick={() => setPresentationSlide(s.num)}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '999px',
+                      fontSize: '0.725rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      border:
+                        presentationSlide === s.num
+                          ? `1px solid ${s.color}`
+                          : '1px solid transparent',
+                      backgroundColor:
+                        presentationSlide === s.num
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'transparent',
+                      color: presentationSlide === s.num ? s.color : '#94a3b8',
+                      transition: 'all 0.15s ease',
+                      fontFamily: 'var(--font-heading)',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right Counter & Close Button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#94a3b8',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                  }}
+                >
+                  Slide {presentationSlide} de 5
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPresentationOpen(false)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    color: '#cbd5e1',
+                    cursor: 'pointer',
+                    padding: '0.25rem 0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    fontSize: '0.75rem',
+                  }}
+                  title="Fechar Apresentação (ESC)"
+                >
+                  <X size={14} /> ESC
+                </button>
+              </div>
+            </div>
+
+            {/* Slide Body (Scrollable if necessary) */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '2rem 2.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.5rem',
+              }}
+            >
+              {/* =================================================================== */}
+              {/* SLIDE 1: P • PLAN                                                   */}
+              {/* =================================================================== */}
+              {presentationSlide === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Hero Header */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                        1. QUADRANTE P • PLAN (PLANEJAR)
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz & Definição de Metas</span>
+                    </div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Diagnóstico do Problema Fabril, Análise Causal & Metas
+                    </h2>
+                  </div>
+
+                  {/* 2 Column Layout */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+                    {/* Left Column: Problema & 5 Porquês */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Box Causa Raiz */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
+                          🎯 Declaração da Causa Raiz
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#ffffff', lineHeight: 1.5 }}>
+                          {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
+                        </p>
+                      </div>
+
+                      {/* Box 5 Porquês */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.75rem' }}>
+                          🔍 Cadeia dos 5 Porquês
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                          {fiveWhys.filter((w) => w && w.trim()).length === 0 ? (
+                            <p style={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
+                              Análise causal baseada nos fatores operacionais e ergonômicos do posto.
+                            </p>
+                          ) : (
+                            fiveWhys
+                              .filter((w) => w && w.trim())
+                              .map((whyText, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    fontSize: '0.8125rem',
+                                    color: '#cbd5e1',
+                                    backgroundColor: '#090e1a',
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                  }}
+                                >
+                                  <strong style={{ color: '#22d3ee', marginRight: '0.4rem' }}>{idx + 1}º Porquê:</strong> {whyText}
+                                </div>
+                              ))
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Pareto 80/20 se houver */}
+                      {paretoVitalCauses && (
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.1rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
+                            📊 Regra 80/20 de Pareto
+                          </span>
+                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.84375rem', color: '#ffffff' }}>
+                            {paretoVitalCauses}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Metas & Escopo */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Metas Baseline vs Alvo */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                          Indicador Chave do Projeto
+                        </span>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0 1.25rem', fontFamily: 'var(--font-heading)' }}>
+                          {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
+                        </h3>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                              Baseline (Antes)
+                            </span>
+                            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                              {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
+                            </span>
+                          </div>
+
+                          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                              Meta Planejada (Alvo)
+                            </span>
+                            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                              {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {currentProblemCostMonthly !== '' && Number(currentProblemCostMonthly) > 0 && (
+                          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>Custo mensal da perda antes do projeto:</span>
+                            <strong style={{ fontSize: '1.05rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                              {formatCurrency(Number(currentProblemCostMonthly))}/mês
+                            </strong>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Ficha do Projeto */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                          <span style={{ color: '#94a3b8' }}>Agente Responsável:</span>
+                          <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                          <span style={{ color: '#94a3b8' }}>Setor Fabril:</span>
+                          <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Planta Industrial'}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                          <span style={{ color: '#94a3b8' }}>Desperdício Lean:</span>
+                          <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Excesso de Processamento'}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                          <span style={{ color: '#94a3b8' }}>Prioridade:</span>
+                          <PriorityBadge priority={action.priority} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =================================================================== */}
+              {/* SLIDE 2: D • DO                                                     */}
+              {/* =================================================================== */}
+              {presentationSlide === 2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Hero Header */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#c084fc', backgroundColor: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                        2. QUADRANTE D • DO (EXECUTAR)
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Plano de Ação 5W2H & Testes Piloto no Posto</span>
+                    </div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Execução das Ações 5W2H & Testes na Linha Produtiva
+                    </h2>
+                  </div>
+
+                  {/* 2 Column Layout */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '1.5rem' }}>
+                    {/* Left Column: Posto Piloto & Métricas de Avanço */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      {/* Posto Piloto */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                        <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>
+                          Posto de Trabalho / Máquina Piloto
+                        </span>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                          {pilotArea || action.pilotArea || 'Posto Piloto de Operação'}
+                        </h3>
+
+                        <p style={{ marginTop: '0.85rem', fontSize: '0.84375rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                          {pilotTestObservations || action.pilotTestObservations || 'Ajustes operacionais testados e validados diretamente com os operadores de turno.'}
+                        </p>
+                      </div>
+
+                      {/* Progresso 5W2H */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block' }}>
+                          Taxa de Conclusão do Plano 5W2H
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <span style={{ fontSize: '2rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                            {checklistItems.length > 0
+                              ? Math.round(
+                                  (checklistItems.filter((i) => i.completed).length /
+                                    checklistItems.length) *
+                                    100
+                                )
+                              : 100}
+                            %
+                          </span>
+                          <span style={{ fontSize: '0.84375rem', color: '#94a3b8' }}>
+                            ({checklistItems.filter((i) => i.completed).length} de {checklistItems.length} ações)
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div style={{ height: '8px', backgroundColor: '#090e1a', borderRadius: '999px', overflow: 'hidden', marginTop: '0.75rem' }}>
+                          <div
+                            style={{
+                              height: '100%',
+                              width: `${
+                                checklistItems.length > 0
+                                  ? (checklistItems.filter((i) => i.completed).length /
+                                      checklistItems.length) *
+                                    100
+                                  : 100
+                              }%`,
+                              backgroundColor: '#34d399',
+                              transition: 'width 0.4s ease',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Lista das Ações 5W2H */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column' }}>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 1rem' }}>
+                        📋 Ações Implementadas no Chão de Fábrica
+                      </h4>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '340px', overflowY: 'auto' }}>
+                        {checklistItems.length === 0 ? (
+                          <p style={{ fontSize: '0.84375rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                            Nenhuma ação registrada no checklist.
+                          </p>
+                        ) : (
+                          checklistItems.map((item, idx) => (
+                            <div
+                              key={item.id || idx}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0.75rem 1rem',
+                                backgroundColor: '#090e1a',
+                                borderRadius: '10px',
+                                border: item.completed
+                                  ? '1px solid rgba(16, 185, 129, 0.3)'
+                                  : '1px solid rgba(255, 255, 255, 0.06)',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                <span style={{ color: item.completed ? '#34d399' : '#fbbf24', fontSize: '1rem' }}>
+                                  {item.completed ? '✓' : '⏳'}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '0.84375rem',
+                                    color: item.completed ? '#e2e8f0' : '#ffffff',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {item.label}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.725rem', color: '#94a3b8' }}>
+                                {item.responsibleName && (
+                                  <span style={{ color: '#22d3ee', fontWeight: 700 }}>
+                                    {item.responsibleName}
+                                  </span>
+                                )}
+                                {item.endDate && (
+                                  <span style={{ fontFamily: 'var(--font-mono)' }}>
+                                    {item.endDate}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =================================================================== */}
+              {/* SLIDE 3: C • CHECK                                                  */}
+              {/* =================================================================== */}
+              {presentationSlide === 3 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Hero Header */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                        3. QUADRANTE C • CHECK (VERIFICAR)
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Aferição dos Resultados & Engenharia Financeira</span>
+                    </div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Resultados Aferidos, Custo Evitado & Retorno sobre Investimento
+                    </h2>
+                  </div>
+
+                  {/* Top 3 Metric Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                    {/* Meta Aferida */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
+                      <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Indicador Aferido vs Meta
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
+                        <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                          {achievedValue !== '' ? `${achievedValue} ${targetMetricUnit}` : `${targetGoalValue} ${targetMetricUnit}`}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          (Meta: {targetGoalValue} {targetMetricUnit})
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 800, marginTop: '0.25rem', display: 'block' }}>
+                        ✓ Meta Plenamente Atingida
+                      </span>
+                    </div>
+
+                    {/* Custo Evitado Real */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '2px solid rgba(16, 185, 129, 0.45)', boxShadow: '0 0 25px rgba(16, 185, 129, 0.12)' }}>
+                      <span style={{ fontSize: '0.725rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800 }}>
+                        Custo Evitado Real (Ganhos)
+                      </span>
+                      <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34d399', margin: '0.35rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                        {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
+                      </h3>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        retorno anual homologado
+                      </span>
+                    </div>
+
+                    {/* Horas Salvas & Payback */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                        Horas Salvas & Payback
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
+                        <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                          {action.hoursSaved || internalLaborHours || 0}h
+                        </span>
+                        <span style={{ fontSize: '0.8125rem', color: '#cbd5e1' }}>
+                          • Payback: {paybackMonths ? `${paybackMonths}m` : 'Imediato'}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        Lucro líquido: {formatCurrency(netSavings)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Detalhamento das 7 Fontes */}
+                  <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 1rem' }}>
+                      Composição dos Ganhos por Fonte de Economia Lean
+                    </h4>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                      {[
+                        { label: 'Mão de Obra / Setup', val: laborSavings },
+                        { label: 'Paradas de Máquina', val: machineDowntime },
+                        { label: 'Redução de Sucata', val: scrapReduction },
+                        { label: 'Aumento de Produção', val: productionIncrease },
+                        { label: 'Energia & Ferramental', val: toolingAndEnergy },
+                        { label: 'Logística & Frete', val: logisticsAndFreight },
+                      ].map((src, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            backgroundColor: '#090e1a',
+                            padding: '0.85rem',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(255, 255, 255, 0.05)',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
+                            {src.label}
+                          </span>
+                          <strong style={{ fontSize: '1.05rem', color: src.val > 0 ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                            {formatCurrency(src.val)}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =================================================================== */}
+              {/* SLIDE 4: A • ACT                                                   */}
+              {/* =================================================================== */}
+              {presentationSlide === 4 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Hero Header */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                        4. QUADRANTE A • ACT (PADRONIZAR & AGIR)
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Padronização POP, Lições Aprendidas & Homologação</span>
+                    </div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Padronização de Trabalho, Yokoten & Auditoria de 3 Meses
+                    </h2>
+                  </div>
+
+                  {/* 3 Column Layout */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
+                    {/* Card 1: Padronização */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <BookOpen size={20} color="#22d3ee" />
+                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                          Padronização & SOP
+                        </h4>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Status do Documento
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
+                          <CheckCircle2 size={16} color={standardWorkUpdated ? '#34d399' : '#fbbf24'} />
+                          <strong style={{ color: standardWorkUpdated ? '#34d399' : '#fbbf24', fontSize: '0.875rem' }}>
+                            {standardWorkUpdated ? 'POP Atualizado ✓' : 'Em revisão operacional'}
+                          </strong>
+                        </div>
+                        {standardWorkDocRef && (
+                          <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+                            Ref: {standardWorkDocRef}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Lições Aprendidas
+                        </span>
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                          {lessonsLearned || 'A padronização contínua e o engajamento da liderança no posto asseguram a manutenção dos resultados.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Replicação Yokoten & Homologação */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Award size={20} color="#fbbf24" />
+                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                          Yokoten & Homologação
+                        </h4>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Replicação para Outras Linhas
+                        </span>
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                          {yokotenReplication || 'Disseminação recomendada para todos os postos de mesmo perfil na fábrica.'}
+                        </p>
+                      </div>
+
+                      <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: action.masterApproved ? '1px solid rgba(16, 185, 129, 0.4)' : '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Status Executivo
+                        </span>
+                        <strong style={{ fontSize: '0.875rem', color: action.masterApproved ? '#34d399' : '#fbbf24', display: 'block', marginTop: '0.2rem' }}>
+                          {action.masterApproved ? '✓ HOMOLOGADO MASTER' : 'Em processo de homologação'}
+                        </strong>
+                        {action.masterApprovedBy && (
+                          <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                            Por: {action.masterApprovedBy}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Card 3: Auditoria Trimestral */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Calendar size={20} color="#22d3ee" />
+                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                          Auditoria dos 3 Meses
+                        </h4>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem' }}>
+                        {[
+                          { m: 1, val: action.quarterlyFollowUp?.month1?.value },
+                          { m: 2, val: action.quarterlyFollowUp?.month2?.value },
+                          { m: 3, val: action.quarterlyFollowUp?.month3?.value },
+                        ].map((item) => (
+                          <div
+                            key={item.m}
+                            style={{
+                              backgroundColor: '#090e1a',
+                              padding: '0.65rem 0.4rem',
+                              borderRadius: '8px',
+                              textAlign: 'center',
+                              border: item.val ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.05)',
+                            }}
+                          >
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>
+                              {item.m}º Mês
+                            </span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: item.val ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.15rem' }}>
+                              {item.val ? formatCurrency(item.val) : '--'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ backgroundColor: '#090e1a', padding: '0.85rem 1rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Média Trimestral:</span>
+                        <strong style={{ fontSize: '1.15rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                          {formatCurrency(action.quarterlyFollowUp?.averageCostAvoided || totalGrossSavings / 12 || 0)}/mês
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* =================================================================== */}
+              {/* SLIDE 5: 📸 ANTES & DEPOIS                                         */}
+              {/* =================================================================== */}
+              {presentationSlide === 5 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Hero Header */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
+                        5. ANTES & DEPOIS • TRANSFORMAÇÃO VISUAL
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Evidências Visuais da Melhoria & Conclusão do Ciclo</span>
+                    </div>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Transformação Visual do Posto & Encerramento do Ciclo PDCA
+                    </h2>
+                  </div>
+
+                  {/* Comparativo de Fotos ou Card de Conquista */}
+                  {photoAttachments.length >= 2 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                      {/* Antes */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            📸 ANTES DA MELHORIA
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            {photoAttachments[0].name}
+                          </span>
+                        </div>
+                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <img
+                            src={photoAttachments[0].url}
+                            alt="Antes"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Depois */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '2px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: '0 0 30px rgba(16, 185, 129, 0.1)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            📸 DEPOIS (POSTO PADRONIZADO)
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            {photoAttachments[1].name}
+                          </span>
+                        </div>
+                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <img
+                            src={photoAttachments[1].url}
+                            alt="Depois"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : photoAttachments.length === 1 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          📸 EVIDÊNCIA VISUAL NO POSTO DE TRABALHO
+                        </span>
+                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden' }}>
+                          <img
+                            src={photoAttachments[0].url}
+                            alt="Evidência"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Card de Encerramento */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Award size={28} color="#34d399" />
+                            <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                              Ciclo PDCA Concluído!
+                            </h3>
+                          </div>
+                          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                            Projeto finalizado com comprovação de ganhos matemáticos, trabalho padronizado e validação no chão de fábrica.
+                          </p>
+
+                          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                              <span style={{ color: '#94a3b8' }}>Retorno Financeiro Real:</span>
+                              <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                              <span style={{ color: '#94a3b8' }}>Horas de Trabalho Salvas:</span>
+                              <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{action.hoursSaved || internalLaborHours || 0}h</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                              <span style={{ color: '#94a3b8' }}>Líder do Projeto:</span>
+                              <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } })}
+                          className="btn btn-primary"
+                          style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
+                        >
+                          🎉 Comemorar Resultados com Confetes!
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Fallback: Premium Celebration Hero Card */
+                    <div
+                      style={{
+                        backgroundColor: '#0f172a',
+                        padding: '2.5rem',
+                        borderRadius: '20px',
+                        border: '2px solid rgba(16, 185, 129, 0.4)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: '1.25rem',
+                        boxShadow: '0 0 50px rgba(16, 185, 129, 0.1)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '72px',
+                          height: '72px',
+                          borderRadius: '50%',
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          border: '2px solid rgba(16, 185, 129, 0.4)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Award size={36} color="#34d399" />
+                      </div>
+
+                      <div>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                          Ciclo de Apresentação PDCA Concluído com Sucesso!
+                        </h3>
+                        <p style={{ fontSize: '0.9375rem', color: '#cbd5e1', maxWidth: '600px', margin: '0.5rem auto 0', lineHeight: 1.5 }}>
+                          O projeto percorreu todas as etapas da metodologia Lean (Plan, Do, Check e Act). Todas as evidências técnicas e métricas financeiras foram consolidadas.
+                        </p>
+                      </div>
+
+                      {/* Consolidated Stats */}
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                          gap: '1rem',
+                          width: '100%',
+                          maxWidth: '700px',
+                          marginTop: '0.5rem',
+                        }}
+                      >
+                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Custo Evitado Real
+                          </span>
+                          <h4 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                            {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
+                          </h4>
+                        </div>
+
+                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Horas Salvas
+                          </span>
+                          <h4 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#22d3ee', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                            {action.hoursSaved || internalLaborHours || 0}h
+                          </h4>
+                        </div>
+
+                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Responsável
+                          </span>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0 0' }}>
+                            {action.assignedAgentName}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } })}
+                          className="btn btn-primary"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                        >
+                          <Sparkles size={16} /> Comemorar com Confetes!
+                        </button>
+                      </div>
+
+                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        💡 Dica: Para exibir fotos comparativas no Slide 5, faça upload de imagens na categoria &ldquo;Evidência / Foto&rdquo; na seção de anexos.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Slide Navigation Bar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '1rem 1.75rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: '#070b14',
+              }}
+            >
+              {/* Botão Anterior */}
+              <button
+                type="button"
+                disabled={presentationSlide === 1}
+                onClick={() => setPresentationSlide((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3 | 4 | 5) : prev))}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  opacity: presentationSlide === 1 ? 0.35 : 1,
+                  cursor: presentationSlide === 1 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <ChevronLeft size={16} /> Anterior
+              </button>
+
+              {/* Dica de Teclado */}
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                Use as setas <strong>⬅️ ➡️</strong> do teclado ou <strong>ESC</strong> para sair
+              </span>
+
+              {/* Botão Próximo ou Concluir */}
+              {presentationSlide < 5 ? (
+                <button
+                  type="button"
+                  onClick={() => setPresentationSlide((prev) => (prev < 5 ? ((prev + 1) as 1 | 2 | 3 | 4 | 5) : prev))}
+                  className="btn btn-primary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  Próximo Slide <ChevronRight size={16} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+                    setPresentationOpen(false);
+                  }}
+                  className="btn btn-success btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800 }}
+                >
+                  <CheckCircle2 size={16} /> Concluir Apresentação
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
