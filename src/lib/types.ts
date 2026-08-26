@@ -271,3 +271,41 @@ export interface DashboardMetrics {
     efficiencyRate: number;
   }[];
 }
+
+// ================= CANAL KAIZEN (BANCO DE IDEIAS DO CHÃO DE FÁBRICA) =================
+export type KaizenIdeaStatus = 'pendente' | 'aprovada' | 'rejeitada';
+export type KaizenExecutionStatus = 'planejamento' | 'em_implantacao' | 'implantada_sucesso';
+
+export interface KaizenIdea {
+  id: string;
+  protocol: string;                     // e.g. "KZN-2026-1001"
+  tenantId: string;
+  authorName: string;                   // Nome completo do colaborador
+  sectorId: string;
+  sectorName: string;                   // Setor onde a melhoria se aplica
+  authorRoleTitle: string;              // Cargo (ex: Operador de Máquina, Auxiliar, Líder)
+  summary: string;                      // Resumo da ideia
+  photoUrl?: string;                    // Foto da ideia (Base64 ou URL)
+  photoName?: string;
+  createdAt: string;                    // Salva automaticamente a data do cadastro
+  updatedAt: string;
+
+  // Triagem do Gestor
+  status: KaizenIdeaStatus;
+  reviewedBy?: string;                  // Nome do gestor
+  reviewedAt?: string;                  // Data da análise
+  rejectionReason?: string;             // Motivo da rejeição
+
+  // Execução Kaizen (para ideias aprovadas - separado dos projetos dos agentes)
+  responsibleName?: string;             // Responsável pela implantação
+  assignedAgentId?: string;
+  executionStatus?: KaizenExecutionStatus;
+  implementationDate?: string;          // Data prevista ou realizada
+
+  // Ganhos Financeiros Separados do Canal Kaizen
+  estimatedCostAvoided?: number;        // Ganho estimado (R$)
+  actualCostAvoided?: number;           // Custo evitado real comprovado (R$)
+  hoursSaved?: number;                  // Horas de trabalho salvas (h)
+  financialGainNotes?: string;          // Memorial dos ganhos
+  quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses
+}

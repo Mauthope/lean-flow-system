@@ -27,6 +27,7 @@ import {
   Timer,
   Settings,
   Radio,
+  Lightbulb,
   Sparkles,
   Layers,
   PanelLeftClose,
@@ -80,7 +81,7 @@ export const Sidebar: React.FC = () => {
       label: 'Fábrica & Comunicação',
       items: [
         { href: '/admin/tpm', label: 'TPM', icon: Settings },
-        { href: '/admin/canal-kaizen', label: 'Canal Kaizen', icon: Radio },
+        { href: '/admin/canal-kaizen', label: 'Canal Kaizen', icon: Lightbulb, badge: 'Ideias' },
       ],
     },
   ];
@@ -105,7 +106,7 @@ export const Sidebar: React.FC = () => {
       label: 'Fábrica & Comunicação',
       items: [
         { href: '/agente/tpm', label: 'TPM', icon: Settings },
-        { href: '/agente/canal-kaizen', label: 'Canal Kaizen', icon: Radio },
+        { href: '/agente/canal-kaizen', label: 'Canal Kaizen', icon: Lightbulb, badge: 'Ideias' },
       ],
     },
   ];

@@ -1,12 +1,13 @@
-import { Tenant, Sector, User, LeanAction } from './types';
+import { Tenant, Sector, User, LeanAction, KaizenIdea } from './types';
 
-const STORAGE_KEYS = {
+export const STORAGE_KEYS = {
   TENANTS: 'lean_flow_tenants',
   CURRENT_TENANT: 'lean_flow_current_tenant',
   SECTORS: 'lean_flow_sectors',
   USERS: 'lean_flow_users',
   ACTIONS: 'lean_flow_actions',
   CURRENT_USER: 'lean_flow_current_user',
+  KAIZEN_IDEAS: 'lean_flow_kaizen_ideas',
 };
 
 export const INITIAL_TENANTS: Tenant[] = [
@@ -627,6 +628,75 @@ export function initializeLocalStorage(): void {
   if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
   }
+  if (!localStorage.getItem(STORAGE_KEYS.KAIZEN_IDEAS)) {
+    localStorage.setItem(STORAGE_KEYS.KAIZEN_IDEAS, JSON.stringify(INITIAL_KAIZEN_IDEAS));
+  }
 }
 
-export { STORAGE_KEYS };
+export const INITIAL_KAIZEN_IDEAS: KaizenIdea[] = [
+  {
+    id: 'kzn_001',
+    protocol: 'KZN-2026-1001',
+    tenantId: 'tenant_rafitec_01',
+    authorName: 'Carlos Eduardo Silveira',
+    sectorId: 'sec_rafitec_extrusao',
+    sectorName: 'Extrusão & Fiação PP',
+    authorRoleTitle: 'Operador de Extrusora I',
+    summary: 'Instalação de espelho retrovisor angular no cabeçote da Extrusora 02 para visualizar o acúmulo de borra sem precisar subir na passarela com a máquina em alta velocidade.',
+    photoUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=500&auto=format&fit=crop&q=80',
+    photoName: 'cabecote_extrusora_espelho.jpg',
+    createdAt: '2026-02-12T09:15:00.000Z',
+    updatedAt: '2026-02-14T15:30:00.000Z',
+    status: 'aprovada',
+    reviewedBy: 'Rafitec Supervisor',
+    reviewedAt: '2026-02-14T15:30:00.000Z',
+    responsibleName: 'Juliana Mendes',
+    assignedAgentId: 'usr_rafitec_agent_02',
+    executionStatus: 'implantada_sucesso',
+    implementationDate: '2026-02-20',
+    estimatedCostAvoided: 12000,
+    actualCostAvoided: 14500,
+    hoursSaved: 38,
+    financialGainNotes: 'Evitou paradas de linha para verificação manual e eliminou risco ergonômico na subida de passarela.',
+  },
+  {
+    id: 'kzn_002',
+    protocol: 'KZN-2026-1002',
+    tenantId: 'tenant_rafitec_01',
+    authorName: 'Aline Ferreira da Silva',
+    sectorId: 'sec_rafitec_acabamento',
+    sectorName: 'Corte, Costura & Big Bags',
+    authorRoleTitle: 'Costureira Industrial',
+    summary: 'Dispositivo guia magnético com régua de marcação na bancada de costura de alças, evitando medir cada alça com fita métrica individual.',
+    photoUrl: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=500&auto=format&fit=crop&q=80',
+    photoName: 'guia_magnetico_bancada.jpg',
+    createdAt: '2026-02-22T11:40:00.000Z',
+    updatedAt: '2026-02-23T08:20:00.000Z',
+    status: 'aprovada',
+    reviewedBy: 'Rafitec Supervisor',
+    reviewedAt: '2026-02-23T08:20:00.000Z',
+    responsibleName: 'Lucas Antunes',
+    assignedAgentId: 'usr_rafitec_agent_05',
+    executionStatus: 'em_implantacao',
+    implementationDate: '2026-03-05',
+    estimatedCostAvoided: 18000,
+    actualCostAvoided: 0,
+    hoursSaved: 45,
+    financialGainNotes: 'Redução estimada de 3 segundos por big bag costurado.',
+  },
+  {
+    id: 'kzn_003',
+    protocol: 'KZN-2026-1003',
+    tenantId: 'tenant_rafitec_01',
+    authorName: 'Renato Batista dos Santos',
+    sectorId: 'sec_rafitec_logistica',
+    sectorName: 'Logística & Expedição',
+    authorRoleTitle: 'Auxiliar de Almoxarifado',
+    summary: 'Padronização visual com etiquetas coloridas nas bobinas de fio PP prontas para embarque, diferenciando gramatura por cor de longe.',
+    photoUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=80',
+    photoName: 'etiquetas_coloridas_bobinas.jpg',
+    createdAt: '2026-02-25T14:10:00.000Z',
+    updatedAt: '2026-02-25T14:10:00.000Z',
+    status: 'pendente',
+  },
+];

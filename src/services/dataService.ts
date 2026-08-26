@@ -10,6 +10,7 @@ import {
   ActionChecklistItem,
   MonthlyResultEntry,
   QuarterlyFollowUp,
+  KaizenIdea,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -20,6 +21,7 @@ import {
   INITIAL_SECTORS,
   INITIAL_USERS,
   INITIAL_ACTIONS,
+  INITIAL_KAIZEN_IDEAS,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 
@@ -816,6 +818,163 @@ export const dataService = {
     };
   },
 
+  // ================= CANAL KAIZEN (BANCO DE IDEIAS) =================
+  getKaizenIdeas(tenantId?: string): KaizenIdea[] {
+    const all = getStoredData<KaizenIdea[]>(STORAGE_KEYS.KAIZEN_IDEAS, INITIAL_KAIZEN_IDEAS);
+    if (!tenantId) return all;
+    return all.filter((k) => k.tenantId === tenantId);
+  },
+
+  getKaizenIdeaById(id: string): KaizenIdea | undefined {
+    return this.getKaizenIdeas().find((k) => k.id === id);
+  },
+
+  createKaizenIdea(data: {
+    tenantId?: string;
+    authorName: string;
+    sectorId: string;
+    authorRoleTitle: string;
+    summary: string;
+    photoUrl?: string;
+    photoName?: string;
+  }): KaizenIdea {
+    const ideas = this.getKaizenIdeas();
+    const sector = this.getSectorById(data.sectorId);
+    const now = new Date().toISOString();
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+
+    const newIdea: KaizenIdea = {
+      id: 'kzn_' + Date.now(),
+      protocol: `KZN-2026-${randomNum}`,
+      tenantId: data.tenantId || this.getCurrentTenant().id,
+      authorName: data.authorName.trim(),
+      sectorId: data.sectorId,
+      sectorName: sector?.name || 'Geral',
+      authorRoleTitle: data.authorRoleTitle.trim(),
+      summary: data.summary.trim(),
+      photoUrl: data.photoUrl,
+      photoName: data.photoName,
+      createdAt: now,
+      updatedAt: now,
+      status: 'pendente',
+    };
+
+    ideas.unshift(newIdea);
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    return newIdea;
+  },
+
+  approveKaizenIdea(
+    id: string,
+    reviewerName: string,
+    options?: {
+      responsibleName?: string;
+      assignedAgentId?: string;
+      estimatedCostAvoided?: number;
+      actualCostAvoided?: number;
+      hoursSaved?: number;
+      executionStatus?: 'planejamento' | 'em_implantacao' | 'implantada_sucesso';
+      implementationDate?: string;
+      financialGainNotes?: string;
+    }
+  ): KaizenIdea {
+    const ideas = this.getKaizenIdeas();
+    const index = ideas.findIndex((k) => k.id === id);
+    if (index === -1) throw new Error('Ideia Kaizen não encontrada');
+
+    const current = ideas[index];
+    const now = new Date().toISOString();
+
+    const updated: KaizenIdea = {
+      ...current,
+      status: 'aprovada',
+      reviewedBy: reviewerName,
+      reviewedAt: now,
+      updatedAt: now,
+      executionStatus: options?.executionStatus || 'planejamento',
+      responsibleName: options?.responsibleName?.trim() || current.responsibleName,
+      assignedAgentId: options?.assignedAgentId || current.assignedAgentId,
+      estimatedCostAvoided:
+        options?.estimatedCostAvoided !== undefined
+          ? Number(options.estimatedCostAvoided)
+          : current.estimatedCostAvoided,
+      actualCostAvoided:
+        options?.actualCostAvoided !== undefined
+          ? Number(options.actualCostAvoided)
+          : current.actualCostAvoided,
+      hoursSaved: options?.hoursSaved !== undefined ? Number(options.hoursSaved) : current.hoursSaved,
+      implementationDate: options?.implementationDate || current.implementationDate,
+      financialGainNotes: options?.financialGainNotes?.trim() || current.financialGainNotes,
+    };
+
+    ideas[index] = updated;
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    return updated;
+  },
+
+  rejectKaizenIdea(id: string, reviewerName: string, reason: string): KaizenIdea {
+    const ideas = this.getKaizenIdeas();
+    const index = ideas.findIndex((k) => k.id === id);
+    if (index === -1) throw new Error('Ideia Kaizen não encontrada');
+
+    const current = ideas[index];
+    const now = new Date().toISOString();
+
+    const updated: KaizenIdea = {
+      ...current,
+      status: 'rejeitada',
+      reviewedBy: reviewerName,
+      reviewedAt: now,
+      rejectionReason: reason.trim(),
+      updatedAt: now,
+    };
+
+    ideas[index] = updated;
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    return updated;
+  },
+
+  updateKaizenIdea(id: string, updates: Partial<KaizenIdea>): KaizenIdea {
+    const ideas = this.getKaizenIdeas();
+    const index = ideas.findIndex((k) => k.id === id);
+    if (index === -1) throw new Error('Ideia Kaizen não encontrada');
+
+    const current = ideas[index];
+    const updated: KaizenIdea = {
+      ...current,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    ideas[index] = updated;
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    return updated;
+  },
+
+  getKaizenMetrics(tenantId?: string) {
+    const ideas = this.getKaizenIdeas(tenantId);
+    const approved = ideas.filter((i) => i.status === 'aprovada');
+    const pending = ideas.filter((i) => i.status === 'pendente');
+    const rejected = ideas.filter((i) => i.status === 'rejeitada');
+
+    const totalSavings = approved.reduce(
+      (acc, i) => acc + (Number(i.actualCostAvoided) || Number(i.estimatedCostAvoided) || 0),
+      0
+    );
+    const totalHoursSaved = approved.reduce((acc, i) => acc + (Number(i.hoursSaved) || 0), 0);
+    const approvalRate = ideas.length > 0 ? Math.round((approved.length / ideas.length) * 100) : 0;
+
+    return {
+      totalIdeas: ideas.length,
+      pendingIdeas: pending.length,
+      approvedIdeas: approved.length,
+      rejectedIdeas: rejected.length,
+      totalSavings,
+      totalHoursSaved,
+      approvalRate,
+    };
+  },
+
   // Reset to default seed
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
@@ -825,5 +984,6 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
+    localStorage.setItem(STORAGE_KEYS.KAIZEN_IDEAS, JSON.stringify(INITIAL_KAIZEN_IDEAS));
   },
 };
