@@ -346,3 +346,96 @@ export interface KaizenIdea {
   masterApprovedBy?: string;            // Gestor que homologou
   quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses pós-homologação
 }
+
+// ==========================================
+// MÓDULO TPM (Manutenção Produtiva Total)
+// ==========================================
+
+export type TpmMachineCriticality = 'A' | 'B' | 'C';
+export type TpmMachineStatus = 'operacional' | 'em_manutencao' | 'parada';
+
+export interface TpmMachine {
+  id: string;
+  tenantId: string;
+  sectorId: string;
+  sectorName: string;
+  name: string;
+  code: string;                          // ex: "EXT-01"
+  brandModel?: string;                   // ex: "Barmag EvoTape 1200"
+  criticality: TpmMachineCriticality;     // A (Crítica), B (Média), C (Baixa)
+  status: TpmMachineStatus;
+  currentAuditScore: number;             // Nota da última auditoria (0 a 100)
+  lastAuditDate?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface TpmAuditChecklistItem {
+  id: string;
+  title: string;
+  description: string;
+  score: number;                         // 0 a 100 ponderado
+  status: 'conforme' | 'parcial' | 'nao_conforme';
+  notes?: string;
+}
+
+export interface TpmAudit {
+  id: string;
+  tenantId: string;
+  machineId: string;
+  machineName: string;
+  machineCode: string;
+  sectorId: string;
+  sectorName: string;
+  auditorName: string;
+  auditDate: string;
+  score: number;                         // 0 a 100
+  status: 'conforme' | 'atencao' | 'critico'; // >=85 Conforme, 70-84 Atenção, <70 Crítico
+  items: TpmAuditChecklistItem[];
+  observations?: string;
+  createdAt: string;
+}
+
+export type TpmTagType = 'vermelha' | 'azul';
+export type TpmTagCategory = 'mecanica' | 'eletrica' | 'pneumatica_hidraulica' | 'seguranca' | 'lubrificacao' | 'limpeza_5s';
+export type TpmTagPriority = 'baixa' | 'media' | 'alta' | 'critica';
+export type TpmTagStatus = 'aberta' | 'em_andamento' | 'concluida' | 'cancelada';
+
+export interface TpmTag {
+  id: string;
+  tenantId: string;
+  tagNumber: string;                     // ex: "ETQ-2026-001"
+  machineId: string;
+  machineName: string;
+  machineCode: string;
+  sectorId: string;
+  sectorName: string;
+  type: TpmTagType;                      // vermelha (manutenção) vs azul (autônoma)
+  category: TpmTagCategory;
+  priority: TpmTagPriority;
+  description: string;
+  openedBy: string;
+  openedAt: string;
+  dueDate: string;                       // Prazo SLA
+  status: TpmTagStatus;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  solutionNotes?: string;
+  createdAt: string;
+}
+
+export interface TpmMaintenanceMetrics {
+  totalMachines: number;
+  totalAudits: number;
+  averageAuditScore: number;
+  totalTags: number;
+  openTags: number;
+  inProgressTags: number;
+  completedTags: number;
+  overdueTags: number;                   // Abertas ou em andamento cujo prazo venceu
+  resolvedOnTimeTags: number;            // Concluídas dentro do prazo
+  resolvedLateTags: number;              // Concluídas após o prazo
+  slaOnTimeRate: number;                 // % atendidas no prazo (concluídas no prazo / total concluídas)
+  redTagsCount: number;                  // Especializadas
+  blueTagsCount: number;                 // Autônomas
+}

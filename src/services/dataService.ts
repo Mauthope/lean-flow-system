@@ -11,6 +11,10 @@ import {
   MonthlyResultEntry,
   QuarterlyFollowUp,
   KaizenIdea,
+  TpmMachine,
+  TpmAudit,
+  TpmTag,
+  TpmMaintenanceMetrics,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -22,6 +26,9 @@ import {
   INITIAL_USERS,
   INITIAL_ACTIONS,
   INITIAL_KAIZEN_IDEAS,
+  INITIAL_TPM_MACHINES,
+  INITIAL_TPM_AUDITS,
+  INITIAL_TPM_TAGS,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 
@@ -1043,6 +1050,306 @@ export const dataService = {
     return idea;
   },
 
+  // ================= TPM (MANUTENÇÃO PRODUTIVA TOTAL) =================
+
+  // --- Máquinas por Setor ---
+  getTpmMachines(sectorId?: string): TpmMachine[] {
+    const all = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
+    if (sectorId && sectorId !== 'all') {
+      return all.filter((m) => m.sectorId === sectorId);
+    }
+    return all;
+  },
+
+  getTpmMachineById(id: string): TpmMachine | undefined {
+    const all = this.getTpmMachines();
+    return all.find((m) => m.id === id);
+  },
+
+  createTpmMachine(data: {
+    sectorId: string;
+    sectorName: string;
+    name: string;
+    code: string;
+    brandModel?: string;
+    criticality: TpmMachine['criticality'];
+    status: TpmMachine['status'];
+    description?: string;
+  }): TpmMachine {
+    const machines = this.getTpmMachines();
+    const currentTenant = this.getCurrentTenant();
+
+    const newMachine: TpmMachine = {
+      id: `mach_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      tenantId: currentTenant.id,
+      sectorId: data.sectorId,
+      sectorName: data.sectorName,
+      name: data.name,
+      code: data.code.toUpperCase(),
+      brandModel: data.brandModel,
+      criticality: data.criticality,
+      status: data.status,
+      currentAuditScore: 0,
+      description: data.description,
+      createdAt: new Date().toISOString(),
+    };
+
+    machines.unshift(newMachine);
+    setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+    return newMachine;
+  },
+
+  updateTpmMachine(id: string, updates: Partial<TpmMachine>): TpmMachine {
+    const machines = this.getTpmMachines();
+    const index = machines.findIndex((m) => m.id === id);
+    if (index === -1) throw new Error('Máquina não encontrada');
+
+    const updated = { ...machines[index], ...updates };
+    machines[index] = updated;
+    setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+    return updated;
+  },
+
+  deleteTpmMachine(id: string): void {
+    const machines = this.getTpmMachines().filter((m) => m.id !== id);
+    setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+  },
+
+  // --- Auditorias TPM & Notas de Avaliação ---
+  getTpmAudits(machineId?: string): TpmAudit[] {
+    const all = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
+    if (machineId) {
+      return all.filter((a) => a.machineId === machineId);
+    }
+    return all;
+  },
+
+  createTpmAudit(data: {
+    machineId: string;
+    machineName: string;
+    machineCode: string;
+    sectorId: string;
+    sectorName: string;
+    auditorName: string;
+    auditDate: string;
+    score: number;
+    status: 'conforme' | 'atencao' | 'critico';
+    items: TpmAudit['items'];
+    observations?: string;
+  }): TpmAudit {
+    const audits = this.getTpmAudits();
+    const currentTenant = this.getCurrentTenant();
+    const now = new Date().toISOString();
+
+    const newAudit: TpmAudit = {
+      id: `adt_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      tenantId: currentTenant.id,
+      machineId: data.machineId,
+      machineName: data.machineName,
+      machineCode: data.machineCode,
+      sectorId: data.sectorId,
+      sectorName: data.sectorName,
+      auditorName: data.auditorName,
+      auditDate: data.auditDate || now,
+      score: Math.min(100, Math.max(0, Math.round(data.score))),
+      status: data.status,
+      items: data.items,
+      observations: data.observations,
+      createdAt: now,
+    };
+
+    audits.unshift(newAudit);
+    setStoredData(STORAGE_KEYS.TPM_AUDITS, audits);
+
+    // Atualiza automaticamente a nota mais recente e data da máquina auditada
+    try {
+      this.updateTpmMachine(data.machineId, {
+        currentAuditScore: newAudit.score,
+        lastAuditDate: newAudit.auditDate,
+      });
+    } catch (e) {
+      console.warn('Erro ao atualizar score da máquina auditada:', e);
+    }
+
+    return newAudit;
+  },
+
+  // --- Gestão de Etiquetas TPM (Manutenção & Autônoma) ---
+  getTpmTags(filters?: {
+    sectorId?: string;
+    machineId?: string;
+    type?: 'vermelha' | 'azul';
+    status?: string;
+  }): TpmTag[] {
+    let all = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
+
+    if (filters?.sectorId && filters.sectorId !== 'all') {
+      all = all.filter((t) => t.sectorId === filters.sectorId);
+    }
+    if (filters?.machineId && filters.machineId !== 'all') {
+      all = all.filter((t) => t.machineId === filters.machineId);
+    }
+    if (filters?.type) {
+      all = all.filter((t) => t.type === filters.type);
+    }
+    if (filters?.status && filters.status !== 'all') {
+      if (filters.status === 'em_atraso') {
+        const now = new Date();
+        all = all.filter((t) => t.status !== 'concluida' && t.status !== 'cancelada' && new Date(t.dueDate) < now);
+      } else if (filters.status === 'no_prazo') {
+        const now = new Date();
+        all = all.filter((t) => t.status !== 'concluida' && t.status !== 'cancelada' && new Date(t.dueDate) >= now);
+      } else if (filters.status === 'atendida_no_prazo') {
+        all = all.filter((t) => t.status === 'concluida' && (!t.resolvedAt || new Date(t.resolvedAt) <= new Date(t.dueDate)));
+      } else if (filters.status === 'atendida_em_atraso') {
+        all = all.filter((t) => t.status === 'concluida' && t.resolvedAt && new Date(t.resolvedAt) > new Date(t.dueDate));
+      } else {
+        all = all.filter((t) => t.status === filters.status);
+      }
+    }
+
+    return all;
+  },
+
+  createTpmTag(data: {
+    machineId: string;
+    machineName: string;
+    machineCode: string;
+    sectorId: string;
+    sectorName: string;
+    type: TpmTag['type'];
+    category: TpmTag['category'];
+    priority: TpmTag['priority'];
+    description: string;
+    openedBy: string;
+    dueDate: string;
+  }): TpmTag {
+    const tags = this.getTpmTags();
+    const currentTenant = this.getCurrentTenant();
+    const now = new Date().toISOString();
+
+    const nextSeq = String(tags.length + 1).padStart(3, '0');
+    const tagNumber = `ETQ-${new Date().getFullYear()}-${nextSeq}`;
+
+    const newTag: TpmTag = {
+      id: `tag_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      tenantId: currentTenant.id,
+      tagNumber,
+      machineId: data.machineId,
+      machineName: data.machineName,
+      machineCode: data.machineCode,
+      sectorId: data.sectorId,
+      sectorName: data.sectorName,
+      type: data.type,
+      category: data.category,
+      priority: data.priority,
+      description: data.description,
+      openedBy: data.openedBy,
+      openedAt: now,
+      dueDate: data.dueDate,
+      status: 'aberta',
+      createdAt: now,
+    };
+
+    tags.unshift(newTag);
+    setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+    return newTag;
+  },
+
+  updateTpmTagStatus(
+    id: string,
+    status: TpmTag['status'],
+    resolution?: { resolvedBy?: string; solutionNotes?: string; resolvedAt?: string }
+  ): TpmTag {
+    const tags = this.getTpmTags();
+    const index = tags.findIndex((t) => t.id === id);
+    if (index === -1) throw new Error('Etiqueta não encontrada');
+
+    const tag = { ...tags[index], status };
+    if (status === 'concluida') {
+      tag.resolvedAt = resolution?.resolvedAt || new Date().toISOString();
+      tag.resolvedBy = resolution?.resolvedBy || 'Equipe de Manutenção';
+      tag.solutionNotes = resolution?.solutionNotes || tag.solutionNotes;
+    }
+
+    tags[index] = tag;
+    setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+    return tag;
+  },
+
+  deleteTpmTag(id: string): void {
+    const tags = this.getTpmTags().filter((t) => t.id !== id);
+    setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+  },
+
+  // --- Indicadores & KPIs da Manutenção ---
+  getTpmMaintenanceMetrics(sectorId?: string): TpmMaintenanceMetrics {
+    const machines = this.getTpmMachines(sectorId);
+    const audits = this.getTpmAudits().filter((a) => !sectorId || sectorId === 'all' || a.sectorId === sectorId);
+    const tags = this.getTpmTags({ sectorId: sectorId && sectorId !== 'all' ? sectorId : undefined });
+
+    const totalMachines = machines.length;
+    const totalAudits = audits.length;
+
+    const scoredMachines = machines.filter((m) => m.currentAuditScore > 0);
+    const averageAuditScore =
+      scoredMachines.length > 0
+        ? Math.round(scoredMachines.reduce((acc, m) => acc + m.currentAuditScore, 0) / scoredMachines.length)
+        : 0;
+
+    const now = new Date();
+    let openTags = 0;
+    let inProgressTags = 0;
+    let completedTags = 0;
+    let overdueTags = 0;
+    let resolvedOnTimeTags = 0;
+    let resolvedLateTags = 0;
+    let redTagsCount = 0;
+    let blueTagsCount = 0;
+
+    tags.forEach((tag) => {
+      if (tag.type === 'vermelha') redTagsCount++;
+      if (tag.type === 'azul') blueTagsCount++;
+
+      const due = new Date(tag.dueDate);
+
+      if (tag.status === 'concluida') {
+        completedTags++;
+        const resolved = tag.resolvedAt ? new Date(tag.resolvedAt) : due;
+        if (resolved <= due) {
+          resolvedOnTimeTags++;
+        } else {
+          resolvedLateTags++;
+        }
+      } else if (tag.status === 'em_andamento') {
+        inProgressTags++;
+        if (due < now) overdueTags++;
+      } else if (tag.status === 'aberta') {
+        openTags++;
+        if (due < now) overdueTags++;
+      }
+    });
+
+    const slaOnTimeRate =
+      completedTags > 0 ? Number(((resolvedOnTimeTags / completedTags) * 100).toFixed(1)) : 100;
+
+    return {
+      totalMachines,
+      totalAudits,
+      averageAuditScore,
+      totalTags: tags.length,
+      openTags,
+      inProgressTags,
+      completedTags,
+      overdueTags,
+      resolvedOnTimeTags,
+      resolvedLateTags,
+      slaOnTimeRate,
+      redTagsCount,
+      blueTagsCount,
+    };
+  },
+
   // Reset to default seed
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
@@ -1053,5 +1360,8 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
     localStorage.setItem(STORAGE_KEYS.KAIZEN_IDEAS, JSON.stringify(INITIAL_KAIZEN_IDEAS));
+    localStorage.setItem(STORAGE_KEYS.TPM_MACHINES, JSON.stringify(INITIAL_TPM_MACHINES));
+    localStorage.setItem(STORAGE_KEYS.TPM_AUDITS, JSON.stringify(INITIAL_TPM_AUDITS));
+    localStorage.setItem(STORAGE_KEYS.TPM_TAGS, JSON.stringify(INITIAL_TPM_TAGS));
   },
 };
