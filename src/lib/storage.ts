@@ -318,6 +318,43 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     masterApprovedAt: '2026-02-18T17:00:00.000Z',
     masterApprovedBy: 'Rafitec',
 
+    // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
+    quarterlyFollowUp: {
+      enabled: true,
+      startedAt: '2026-02-18T17:00:00.000Z',
+      month1: {
+        monthNumber: 1,
+        monthLabel: '1º Mês (Mar/26)',
+        value: 82500,
+        hoursSaved: 64,
+        measuredAt: '2026-03-18',
+        notes: 'Estabilidade mantida na troca de matriz. Tempo médio aferido em 16.5 min.',
+        registeredBy: 'Fernanda Lima',
+      },
+      month2: {
+        monthNumber: 2,
+        monthLabel: '2º Mês (Abr/26)',
+        value: 85200,
+        hoursSaved: 66,
+        measuredAt: '2026-04-18',
+        notes: 'Equipe do turno B treinada no POP-EXT-042. Ganho de velocidade sem acidentes.',
+        registeredBy: 'Fernanda Lima',
+      },
+      month3: {
+        monthNumber: 3,
+        monthLabel: '3º Mês (Mai/26)',
+        value: 85200,
+        hoursSaved: 65,
+        measuredAt: '2026-05-18',
+        notes: 'Terceiro mês consecutivo consolidado dentro da meta. Processo 100% estabilizado.',
+        registeredBy: 'Fernanda Lima',
+      },
+      averageCostAvoided: 84300,
+      isCompleted: true,
+      completedAt: '2026-05-18T18:00:00.000Z',
+      status: 'consolidado',
+    },
+
     createdAt: '2026-02-01T08:30:00.000Z',
     updatedAt: '2026-02-18T17:00:00.000Z',
     startedAt: '2026-02-02T09:00:00.000Z',

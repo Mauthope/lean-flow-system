@@ -131,6 +131,29 @@ export interface ProjectAttachment {
   description?: string;
 }
 
+// Acompanhamento e Comprovação de Resultados em 3 Meses (Pós-Homologação)
+export interface MonthlyResultEntry {
+  monthNumber: 1 | 2 | 3;
+  monthLabel?: string;     // Ex: "1º Mês", "2º Mês", "3º Mês"
+  value?: number;          // Custo Evitado Real aferido no mês (R$)
+  hoursSaved?: number;     // Horas salvas no mês (h)
+  measuredAt?: string;     // Data da medição (AAAA-MM-DD)
+  notes?: string;          // Observações do agente / memorial
+  registeredBy?: string;   // Nome do responsável pelo lançamento
+}
+
+export interface QuarterlyFollowUp {
+  enabled: boolean;
+  startedAt?: string;          // Data de início do acompanhamento (após homologação)
+  month1?: MonthlyResultEntry;
+  month2?: MonthlyResultEntry;
+  month3?: MonthlyResultEntry;
+  averageCostAvoided?: number; // Média calculada automaticamente ((M1 + M2 + M3) / 3) ou média parcial
+  isCompleted?: boolean;       // Concluído/fechado automaticamente após preenchimento do 3º resultado
+  completedAt?: string;        // Data de consolidação final
+  status: 'aguardando_mes_1' | 'aguardando_mes_2' | 'aguardando_mes_3' | 'consolidado';
+}
+
 export interface LeanAction {
   id: string;
   protocol: string; // e.g. "RAF-2026-8801"
@@ -200,6 +223,9 @@ export interface LeanAction {
   masterApproved?: boolean;              // Homologado pela Entidade Master?
   masterApprovedAt?: string;             // Data de homologação
   masterApprovedBy?: string;             // Responsável pela homologação Master
+
+  // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
+  quarterlyFollowUp?: QuarterlyFollowUp;
 
   // Dates & Legacy compatibility
   createdAt: string;

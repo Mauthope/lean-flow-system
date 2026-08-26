@@ -49,6 +49,7 @@ import {
   BarChart3,
   Image as ImageIcon,
   Send,
+  Sigma,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -116,6 +117,13 @@ export default function AdminProjectDetailPage() {
   const [newActionStart, setNewActionStart] = useState('');
   const [newActionEnd, setNewActionEnd] = useState('');
   const [newActionHours, setNewActionHours] = useState<number | ''>('');
+
+  // Acompanhamento Trimestral pós-homologação (3 Meses)
+  const [followUpModalMonth, setFollowUpModalMonth] = useState<1 | 2 | 3 | null>(null);
+  const [followUpValue, setFollowUpValue] = useState<number | ''>('');
+  const [followUpHours, setFollowUpHours] = useState<number | ''>('');
+  const [followUpDate, setFollowUpDate] = useState<string>('');
+  const [followUpNotes, setFollowUpNotes] = useState<string>('');
 
   useEffect(() => {
     if (projectId) {
@@ -320,10 +328,51 @@ export default function AdminProjectDetailPage() {
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Rafitec',
       actualCostAvoided: totalGrossSavings > 0 ? totalGrossSavings : action.estimatedCostAvoided,
+      quarterlyFollowUp: action.quarterlyFollowUp || {
+        enabled: true,
+        startedAt: new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+      },
     });
     setAction(updated);
     refreshData();
     confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+  };
+
+  const handleOpenFollowUpModal = (month: 1 | 2 | 3) => {
+    const currentEntry = action?.quarterlyFollowUp?.[`month${month}` as 'month1' | 'month2' | 'month3'];
+    setFollowUpModalMonth(month);
+    setFollowUpValue(currentEntry?.value !== undefined ? currentEntry.value : '');
+    setFollowUpHours(currentEntry?.hoursSaved !== undefined ? currentEntry.hoursSaved : '');
+    setFollowUpDate(currentEntry?.measuredAt || new Date().toISOString().split('T')[0]);
+    setFollowUpNotes(currentEntry?.notes || '');
+  };
+
+  const handleSaveFollowUpMonth = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!action || followUpModalMonth === null || followUpValue === '') return;
+
+    const updated = dataService.saveQuarterlyMonthResult(action.id, followUpModalMonth, {
+      value: Number(followUpValue),
+      hoursSaved: followUpHours !== '' ? Number(followUpHours) : undefined,
+      measuredAt: followUpDate || new Date().toISOString().split('T')[0],
+      notes: followUpNotes,
+      registeredBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
+    });
+
+    setAction(updated);
+    refreshData();
+    setFollowUpModalMonth(null);
+
+    if (updated.quarterlyFollowUp?.isCompleted) {
+      confetti({ particleCount: 100, spread: 90, origin: { y: 0.5 } });
+    } else {
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1812,6 +1861,411 @@ export default function AdminProjectDetailPage() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Card: 4.4 Sustentação & Comprovação de Resultados em 3 Meses */}
+          <div
+            className="card"
+            style={{
+              padding: '1.75rem',
+              borderRadius: '16px',
+              backgroundColor: '#0f172a',
+              border: action.masterApproved
+                ? '2px solid rgba(6, 182, 212, 0.4)'
+                : '1px dashed rgba(255, 255, 255, 0.12)',
+              boxShadow: action.masterApproved ? '0 10px 30px -5px rgba(6, 182, 212, 0.12)' : 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    backgroundColor: action.masterApproved ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${action.masterApproved ? 'rgba(6, 182, 212, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: action.masterApproved ? '0 0 15px rgba(6, 182, 212, 0.2)' : 'none',
+                  }}
+                >
+                  <Calendar size={22} color={action.masterApproved ? '#22d3ee' : '#94a3b8'} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      4.4 Comprovação Trimestral de Ganhos Reais (Auditoria de 3 Meses)
+                    </h3>
+                    {action.masterApproved && action.quarterlyFollowUp?.isCompleted ? (
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          color: '#34d399',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                      >
+                        <CheckCircle2 size={12} /> AUDITORIA CONSOLIDADA (3/3)
+                      </span>
+                    ) : action.masterApproved ? (
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                          color: '#22d3ee',
+                          border: '1px solid rgba(6, 182, 212, 0.35)',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '9999px',
+                        }}
+                      >
+                        EM ACOMPANHAMENTO (
+                        {[
+                          action.quarterlyFollowUp?.month1?.value,
+                          action.quarterlyFollowUp?.month2?.value,
+                          action.quarterlyFollowUp?.month3?.value,
+                        ].filter((v) => v !== undefined).length}
+                        /3 MESES)
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                          color: '#94a3b8',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          padding: '0.15rem 0.55rem',
+                          borderRadius: '9999px',
+                        }}
+                      >
+                        BLOQUEADO ATÉ HOMOLOGAÇÃO
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '750px', lineHeight: 1.5 }}>
+                    Conforme o padrão de sustentação Lean, após a homologação executiva o agente monitora os resultados operacionais nos 3 primeiros meses. Ao registrar o 3º mês, o sistema calcula e consolida a média definitiva de custo evitado automaticamente.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {!action.masterApproved ? (
+              <div
+                style={{
+                  padding: '1.25rem',
+                  borderRadius: '12px',
+                  backgroundColor: '#090e1a',
+                  border: '1px dashed rgba(255, 255, 255, 0.12)',
+                  color: '#94a3b8',
+                  fontSize: '0.84375rem',
+                  textAlign: 'center',
+                }}
+              >
+                🔒 <strong>Acompanhamento Bloqueado:</strong> Esta seção é liberada automaticamente para lançamento dos resultados trimestrais assim que o supervisor homologar o projeto no passo acima (4.3).
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Grid dos 3 Meses */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                  {([1, 2, 3] as const).map((mNum) => {
+                    const mKey = `month${mNum}` as 'month1' | 'month2' | 'month3';
+                    const entry = action.quarterlyFollowUp?.[mKey];
+                    const isFilled = entry?.value !== undefined;
+
+                    return (
+                      <div
+                        key={mNum}
+                        style={{
+                          backgroundColor: '#090e1a',
+                          border: isFilled
+                            ? '1px solid rgba(16, 185, 129, 0.35)'
+                            : '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '14px',
+                          padding: '1.15rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '0.85rem',
+                          position: 'relative',
+                          boxShadow: isFilled ? '0 4px 20px rgba(16, 185, 129, 0.08)' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {mNum}º Mês de Operação
+                          </span>
+                          {isFilled ? (
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                              ✓ Aferido
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                              ⏳ Pendente
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <p style={{ fontSize: '0.675rem', color: '#64748b', textTransform: 'uppercase', margin: '0 0 0.15rem', fontWeight: 700 }}>
+                            Custo Evitado Real
+                          </p>
+                          <h4 style={{ fontSize: '1.45rem', fontWeight: 900, color: isFilled ? '#34d399' : '#64748b', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                            {isFilled ? formatCurrency(entry.value!) : 'R$ --'}
+                          </h4>
+                        </div>
+
+                        {isFilled ? (
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '0.3rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.65rem' }}>
+                            {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#cbd5e1' }}>
+                                <Clock size={12} color="#f59e0b" />
+                                <span>{entry.hoursSaved}h salvas no período</span>
+                              </div>
+                            )}
+                            {entry.measuredAt && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8' }}>
+                                <Calendar size={12} color="#06b6d4" />
+                                <span>Data: {formatDate(entry.measuredAt)}</span>
+                              </div>
+                            )}
+                            {entry.notes && (
+                              <p style={{ margin: '0.2rem 0 0', fontStyle: 'italic', color: '#cbd5e1', fontSize: '0.725rem', lineHeight: 1.4 }}>
+                                &ldquo;{entry.notes}&rdquo;
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFollowUpModal(mNum)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
+                            >
+                              Editar Medição
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFollowUpModal(mNum)}
+                              className="btn btn-primary btn-sm"
+                              style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            >
+                              <Plus size={14} /> Lançar Resultado do {mNum}º Mês
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Banner de Média Trimestral e Consolidação */}
+                <div
+                  style={{
+                    backgroundColor: action.quarterlyFollowUp?.isCompleted
+                      ? 'rgba(16, 185, 129, 0.1)'
+                      : 'rgba(6, 182, 212, 0.08)',
+                    border: action.quarterlyFollowUp?.isCompleted
+                      ? '1.5px solid rgba(16, 185, 129, 0.4)'
+                      : '1px solid rgba(6, 182, 212, 0.25)',
+                    borderRadius: '14px',
+                    padding: '1.25rem 1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div
+                      style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        backgroundColor: action.quarterlyFollowUp?.isCompleted
+                          ? 'rgba(16, 185, 129, 0.2)'
+                          : 'rgba(6, 182, 212, 0.2)',
+                        border: `1px solid ${action.quarterlyFollowUp?.isCompleted ? 'rgba(16, 185, 129, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Sigma size={24} color={action.quarterlyFollowUp?.isCompleted ? '#34d399' : '#22d3ee'} />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                          Média Trimestral de Custo Evitado Consolidada
+                        </h4>
+                        {action.quarterlyFollowUp?.isCompleted && (
+                          <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                            OFICIALIZADO NA DRE ✓
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                        {action.quarterlyFollowUp?.isCompleted
+                          ? 'A média dos 3 meses de operação estabilizada foi calculada automaticamente e atualizada na DRE de ganhos.'
+                          : 'O cálculo da média final fecha automaticamente ao realizar o preenchimento do 3º mês de acompanhamento.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Média dos 3 Meses
+                    </span>
+                    <h3 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                      {action.quarterlyFollowUp?.averageCostAvoided
+                        ? formatCurrency(action.quarterlyFollowUp.averageCostAvoided)
+                        : formatCurrency(action.actualCostAvoided || 0)}
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Lançamento de Resultado Mensal do Acompanhamento */}
+      {followUpModalMonth !== null && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '520px',
+              backgroundColor: '#0f172a',
+              border: '1px solid rgba(6, 182, 212, 0.4)',
+              borderRadius: '16px',
+              padding: '1.75rem',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.15)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={20} color="#22d3ee" />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  Aferição do {followUpModalMonth}º Mês de Operação
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFollowUpModalMonth(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveFollowUpMonth} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  Custo Evitado Real Aferido no Mês (R$) *
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  placeholder="Ex: 85000"
+                  className="form-control"
+                  value={followUpValue}
+                  onChange={(e) => setFollowUpValue(e.target.value === '' ? '' : Number(e.target.value))}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(6, 182, 212, 0.4)', color: '#ffffff', fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 800 }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                    Horas Salvas no Mês (h)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="Ex: 60"
+                    className="form-control"
+                    value={followUpHours}
+                    onChange={(e) => setFollowUpHours(e.target.value === '' ? '' : Number(e.target.value))}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontFamily: 'var(--font-mono)' }}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                    Data da Aferição
+                  </label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  Observações / Evidências da Aferição
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Ex: Processo estabilizado, sem paradas no período. Tempo médio aferido conforme POP."
+                  className="form-control"
+                  value={followUpNotes}
+                  onChange={(e) => setFollowUpNotes(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.84375rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setFollowUpModalMonth(null)}
+                  className="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Check size={16} /> Salvar e Registrar Aferição
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

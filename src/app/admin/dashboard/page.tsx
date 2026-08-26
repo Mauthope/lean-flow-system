@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { StatsCard } from '@/components/ui/StatsCard';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   TrendingUp,
   DollarSign,
@@ -23,6 +23,9 @@ import {
   Layers,
   ArrowRight,
   ShieldCheck,
+  Calendar,
+  Sigma,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -44,6 +47,13 @@ export default function AdminDashboardPage() {
 
   const pendingDemands = useMemo(() => {
     return dataService.getActions().filter((a) => a.isPublicDemand && a.status === 'aberta' && !a.assignedAgentId);
+  }, [dataVersion]);
+
+  // Ações homologadas ou concluídas disponíveis para acompanhamento de 3 meses
+  const followUpActions = useMemo(() => {
+    return dataService
+      .getActions()
+      .filter((a) => a.masterApproved || a.status === 'concluida' || a.quarterlyFollowUp?.enabled);
   }, [dataVersion]);
 
   // Breakdown calculations for the executive financial sources
@@ -87,6 +97,10 @@ export default function AdminDashboardPage() {
   const pctInProgress = Math.round((metrics.inProgressActions / totalPipeline) * 100);
   const pctCompleted = Math.round((metrics.completedActions / totalPipeline) * 100);
   const pctRejected = Math.round((metrics.rejectedActions / totalPipeline) * 100);
+
+  // Estatísticas do Acompanhamento Trimestral
+  const followUpCompletedCount = followUpActions.filter((a) => a.quarterlyFollowUp?.isCompleted).length;
+  const followUpInProgressCount = followUpActions.length - followUpCompletedCount;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -178,7 +192,7 @@ export default function AdminDashboardPage() {
             Painel de Inteligência Operacional Lean
           </h2>
           <p style={{ fontSize: '0.875rem', color: '#94a3b8', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
-            Controle integrado de iniciativas de melhoria contínua, custo evitado homologado por operador e fluxo ágil de chão de fábrica.
+            Controle integrado de iniciativas de melhoria contínua, custo evitado homologado por operador e auditoria trimestral de sustentação.
           </p>
         </div>
 
@@ -503,6 +517,361 @@ export default function AdminDashboardPage() {
               {formatCurrency(metrics.totalActualCostAvoided)}
             </strong>
           </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* NOVO PAINEL MASTER: COMPROVAÇÃO DE GANHOS EM 3 MESES (PÓS-HOMOLOGAÇÃO)    */}
+      {/* ========================================================================= */}
+      <div
+        className="card"
+        style={{
+          backgroundColor: '#0f172a',
+          border: '1px solid rgba(6, 182, 212, 0.35)',
+          borderRadius: '18px',
+          overflow: 'hidden',
+          boxShadow: '0 10px 30px -5px rgba(6, 182, 212, 0.1), 0 4px 20px rgba(0, 0, 0, 0.4)',
+        }}
+      >
+        <div
+          style={{
+            padding: '1.35rem 1.65rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.08) 0%, transparent 100%)',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Calendar size={18} color="#22d3ee" />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                Comprovação de Ganhos Pós-Homologação (Auditoria de 3 Meses)
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+              Acompanhamento mensal da sustentação dos resultados. Após o 3º mês preenchido, a média real definitiva fecha automaticamente.
+            </p>
+          </div>
+
+          {/* Quick Metrics Badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '0.725rem',
+                fontWeight: 800,
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                color: '#34d399',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                padding: '0.2rem 0.65rem',
+                borderRadius: '9999px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              ✓ {followUpCompletedCount} CONSOLIDADOS (3/3)
+            </span>
+
+            <span
+              style={{
+                fontSize: '0.725rem',
+                fontWeight: 800,
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                color: '#22d3ee',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                padding: '0.2rem 0.65rem',
+                borderRadius: '9999px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              ⏳ {followUpInProgressCount} EM ACOMPANHAMENTO
+            </span>
+          </div>
+        </div>
+
+        {/* Table of Follow-up Projects */}
+        <div style={{ overflowX: 'auto' }}>
+          {followUpActions.length === 0 ? (
+            <div style={{ padding: '2.5rem', textAlign: 'center', color: '#94a3b8' }}>
+              <Award size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
+              <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                Nenhum projeto homologado aguardando acompanhamento no momento.
+              </p>
+              <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
+                Assim que você homologar um projeto concluído no Kanban Geral, ele aparecerá aqui para auditoria trimestral dos ganhos reais.
+              </p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '0.875rem 1.25rem' }}>Projeto Lean / Setor</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Responsável</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>1º Mês</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>2º Mês</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>3º Mês</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Média Trimestral</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Status Auditoria</th>
+                  <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {followUpActions.map((act) => {
+                  const fu = act.quarterlyFollowUp;
+                  const m1 = fu?.month1?.value;
+                  const m2 = fu?.month2?.value;
+                  const m3 = fu?.month3?.value;
+                  const isCompleted = !!fu?.isCompleted;
+                  const avg = fu?.averageCostAvoided || act.actualCostAvoided || 0;
+
+                  return (
+                    <tr
+                      key={act.id}
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      {/* Projeto / Setor */}
+                      <td style={{ padding: '0.875rem 1.25rem' }}>
+                        <div>
+                          <Link
+                            href={`/admin/projetos/${act.id}`}
+                            style={{
+                              fontWeight: 800,
+                              color: '#ffffff',
+                              textDecoration: 'none',
+                              fontSize: '0.875rem',
+                              fontFamily: 'var(--font-heading)',
+                              display: 'block',
+                            }}
+                          >
+                            {act.title}
+                          </Link>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                              {act.protocol}
+                            </span>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+                              {act.originSectorName || 'Fábrica'}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Responsável */}
+                      <td style={{ padding: '0.875rem 1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <img
+                            src={
+                              act.assignedAgentAvatar ||
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                            }
+                            alt={act.assignedAgentName || 'Agente'}
+                            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(6, 182, 212, 0.4)' }}
+                          />
+                          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
+                            {act.assignedAgentName || 'Especialista Lean'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* 1º Mês */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {m1 !== undefined ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.8125rem',
+                              fontFamily: 'var(--font-mono)',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {formatCurrency(m1)}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
+                            Pendente
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 2º Mês */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {m2 !== undefined ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.8125rem',
+                              fontFamily: 'var(--font-mono)',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {formatCurrency(m2)}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
+                            Pendente
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 3º Mês */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {m3 !== undefined ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '8px',
+                              fontWeight: 800,
+                              fontSize: '0.8125rem',
+                              fontFamily: 'var(--font-mono)',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {formatCurrency(m3)}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
+                            Pendente
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Média Trimestral */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <span
+                            style={{
+                              fontWeight: 900,
+                              color: '#34d399',
+                              fontSize: '0.9375rem',
+                              fontFamily: 'var(--font-mono)',
+                              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                            }}
+                          >
+                            {formatCurrency(avg)}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem' }}>
+                            {isCompleted ? 'média fechada' : 'estimada / parcial'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Status Auditoria */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {isCompleted ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.4)',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '9999px',
+                              fontWeight: 800,
+                              fontSize: '0.725rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                            }}
+                          >
+                            <CheckCircle2 size={12} /> Consolidado (3/3)
+                          </span>
+                        ) : m1 !== undefined && m2 !== undefined ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                              color: '#c084fc',
+                              border: '1px solid rgba(139, 92, 246, 0.35)',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '9999px',
+                              fontWeight: 800,
+                              fontSize: '0.725rem',
+                            }}
+                          >
+                            Aguardando Mês 3 (2/3)
+                          </span>
+                        ) : m1 !== undefined ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                              color: '#22d3ee',
+                              border: '1px solid rgba(6, 182, 212, 0.35)',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '9999px',
+                              fontWeight: 800,
+                              fontSize: '0.725rem',
+                            }}
+                          >
+                            Aguardando Mês 2 (1/3)
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                              color: '#fbbf24',
+                              border: '1px solid rgba(245, 158, 11, 0.35)',
+                              padding: '0.2rem 0.6rem',
+                              borderRadius: '9999px',
+                              fontWeight: 800,
+                              fontSize: '0.725rem',
+                            }}
+                          >
+                            Aguardando Início (0/3)
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Ação */}
+                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
+                        <Link
+                          href={`/admin/projetos/${act.id}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                          <span>Auditar</span> <ExternalLink size={12} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

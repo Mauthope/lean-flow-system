@@ -8,6 +8,8 @@ import {
   LeanWasteCategory,
   LeanCostBreakdown,
   ActionChecklistItem,
+  MonthlyResultEntry,
+  QuarterlyFollowUp,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -290,8 +292,91 @@ export const dataService = {
       merged.paybackMonths = monthlySavings > 0 && totalCost > 0 ? Number((totalCost / monthlySavings).toFixed(1)) : 0;
     }
 
+    // Auto-inicializar acompanhamento trimestral se homologado
+    if (merged.masterApproved && !merged.quarterlyFollowUp) {
+      merged.quarterlyFollowUp = {
+        enabled: true,
+        startedAt: merged.masterApprovedAt || new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+      };
+    }
+
     merged.updatedAt = new Date().toISOString();
     actions[index] = merged;
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    return actions[index];
+  },
+
+  // Lançar resultado mensal no acompanhamento de 3 meses pós-homologação
+  saveQuarterlyMonthResult(
+    actionId: string,
+    monthNumber: 1 | 2 | 3,
+    data: {
+      value: number;
+      hoursSaved?: number;
+      notes?: string;
+      measuredAt?: string;
+      registeredBy?: string;
+    }
+  ): LeanAction {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.id === actionId);
+    if (index === -1) throw new Error('Ação não encontrada');
+
+    const action = actions[index];
+    if (!action.quarterlyFollowUp) {
+      action.quarterlyFollowUp = {
+        enabled: true,
+        startedAt: action.masterApprovedAt || new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+      };
+    }
+
+    const key = `month${monthNumber}` as 'month1' | 'month2' | 'month3';
+    action.quarterlyFollowUp[key] = {
+      monthNumber,
+      monthLabel: `${monthNumber}º Mês`,
+      value: Number(data.value) || 0,
+      hoursSaved: data.hoursSaved !== undefined ? Number(data.hoursSaved) : undefined,
+      notes: data.notes?.trim() || undefined,
+      measuredAt: data.measuredAt || new Date().toISOString().split('T')[0],
+      registeredBy: data.registeredBy,
+    };
+
+    const m1 = action.quarterlyFollowUp.month1?.value;
+    const m2 = action.quarterlyFollowUp.month2?.value;
+    const m3 = action.quarterlyFollowUp.month3?.value;
+
+    const countFilled = [m1, m2, m3].filter((v) => v !== undefined).length;
+
+    if (countFilled === 3 && m1 !== undefined && m2 !== undefined && m3 !== undefined) {
+      const avg = Math.round((m1 + m2 + m3) / 3);
+      action.quarterlyFollowUp.averageCostAvoided = avg;
+      action.quarterlyFollowUp.isCompleted = true;
+      action.quarterlyFollowUp.completedAt = new Date().toISOString();
+      action.quarterlyFollowUp.status = 'consolidado';
+      // Oficializa a média como ganho consolidado comprovado
+      action.actualCostAvoided = avg;
+    } else if (m1 !== undefined && m2 !== undefined) {
+      action.quarterlyFollowUp.status = 'aguardando_mes_3';
+      action.quarterlyFollowUp.averageCostAvoided = Math.round((m1 + m2) / 2);
+    } else if (m1 !== undefined) {
+      action.quarterlyFollowUp.status = 'aguardando_mes_2';
+      action.quarterlyFollowUp.averageCostAvoided = m1;
+    } else {
+      action.quarterlyFollowUp.status = 'aguardando_mes_1';
+    }
+
+    action.updatedAt = new Date().toISOString();
+    actions[index] = action;
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return actions[index];
   },
