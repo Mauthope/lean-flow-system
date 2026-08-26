@@ -210,6 +210,7 @@ export const INITIAL_ACTIONS: LeanAction[] = [
       '5. Causa Raiz: Ausência de metodologia SMED padronizada, falta de carrinho dedicado de ferramentas 5S e ausência de pré-aquecimento externo.'
     ],
     pareto: {
+      chartImageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
       chartImageName: 'Pareto_Setup_Extrusora03.png',
       vitalCausesSummary: '82% do tempo improdutivo de setup é causado por 2 fatores vitais: 1. Limpeza e aquecimento térmico do cabeçote com máquina parada (48%) e 2. Procura e deslocamento para buscar ferramentas (34%).',
       cumulativeImpactPercentage: 82,

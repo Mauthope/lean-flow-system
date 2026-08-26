@@ -2737,6 +2737,7 @@ export default function AdminProjectDetailPage() {
                 const activeFiveWhys = fiveWhys.filter(isWhyFilled);
                 const hasFiveWhys = activeFiveWhys.length > 0;
 
+                const paretoImg = paretoImageUrl || action.pareto?.chartImageUrl;
                 const isParetoFilled = (p?: string) => {
                   if (!p) return false;
                   const trimmed = p.trim();
@@ -2744,7 +2745,7 @@ export default function AdminProjectDetailPage() {
                   if (trimmed.startsWith('80% das perdas concentradas nas 2 causas')) return false;
                   return true;
                 };
-                const hasPareto = Boolean(paretoImageUrl || isParetoFilled(paretoVitalCauses));
+                const hasPareto = Boolean(paretoImg || isParetoFilled(paretoVitalCauses));
 
                 const hasProblemCost = Boolean(currentProblemCostMonthly && Number(currentProblemCostMonthly) > 0);
 
@@ -2808,15 +2809,58 @@ export default function AdminProjectDetailPage() {
                           </div>
                         )}
 
-                        {/* Compilação Dinâmica: Exibe Pareto SOMENTE se houver preenchimento real */}
+                        {/* Compilação Dinâmica: Exibe Pareto (Foto + Texto) SOMENTE se houver preenchimento real */}
                         {hasPareto && (
-                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                            <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
-                              📊 Pareto 80/20:
-                            </span>
-                            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78125rem', color: '#ffffff', lineHeight: 1.35 }}>
-                              {paretoVitalCauses || 'Análise de Pareto aplicada.'}
-                            </p>
+                          <div
+                            style={{
+                              backgroundColor: '#0f172a',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '12px',
+                              border: '1px solid rgba(6, 182, 212, 0.35)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.85rem',
+                            }}
+                          >
+                            {/* Foto do Gráfico de Pareto se houver */}
+                            {paretoImg && (
+                              <div
+                                style={{
+                                  width: hasFiveWhys ? '110px' : '140px',
+                                  height: hasFiveWhys ? '75px' : '95px',
+                                  flexShrink: 0,
+                                  backgroundColor: '#090e1a',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  border: '1px solid rgba(6, 182, 212, 0.3)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <img
+                                  src={paretoImg}
+                                  alt="Gráfico de Pareto 80/20"
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                />
+                              </div>
+                            )}
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
+                                  📊 Gráfico de Pareto 80/20
+                                </span>
+                                {action.pareto?.cumulativeImpactPercentage && (
+                                  <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                                    {action.pareto.cumulativeImpactPercentage}% impacto
+                                  </span>
+                                )}
+                              </div>
+                              <p style={{ margin: '0.2rem 0 0', fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: hasFiveWhys ? 2 : 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                {paretoVitalCauses || 'Identificação visual das poucas causas vitais responsáveis pela maior parte das perdas.'}
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
