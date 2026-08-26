@@ -2774,387 +2774,237 @@ export default function AdminProjectDetailPage() {
                       </h2>
                     </div>
 
-                    {/* Dynamic 2-Column Content */}
-                    {paretoImg ? (
-                      /* Layout com Gráfico de Pareto em Destaque GRANDE para o Apresentador mostrar valores */
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: '1.25rem', alignItems: 'stretch', height: 'calc(100% - 60px)' }}>
-                        {/* Coluna Esquerda: Gráfico de Pareto GRANDE */}
-                        <div
-                          style={{
-                            backgroundColor: '#0f172a',
-                            padding: '1rem',
-                            borderRadius: '16px',
-                            border: '1.5px solid rgba(6, 182, 212, 0.4)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            height: '100%',
-                          }}
-                        >
-                          {/* Header do Card Pareto */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
-                                📊 Gráfico de Pareto 80/20
-                              </span>
-                              <span style={{ fontSize: '0.675rem', color: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                                {action.pareto?.cumulativeImpactPercentage || paretoCumulativePercent || 80}% das Perdas
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setParetoZoomOpen(true)}
-                              className="btn btn-sm"
-                              style={{
-                                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                                border: '1px solid rgba(6, 182, 212, 0.4)',
-                                color: '#22d3ee',
-                                fontSize: '0.675rem',
-                                padding: '0.2rem 0.5rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                                cursor: 'pointer',
-                              }}
-                              title="Expandir para o telão de reunião"
-                            >
-                              <Maximize2 size={12} /> Telão / Zoom
-                            </button>
-                          </div>
+                    {/* Dynamic 2-Column Balanced Content */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
+                      {/* Left Column: Diagnóstico Causal (Problema, 5 Porquês e Pareto se houver) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', justifyContent: 'center' }}>
+                        {/* Declaração da Causa Raiz & Problema */}
+                        <div style={{ backgroundColor: '#0f172a', padding: (!hasFiveWhys && !hasPareto) ? '1.5rem' : '0.85rem 1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>
+                            🎯 Declaração da Causa Raiz & Problema
+                          </h4>
+                          <p style={{ margin: 0, fontSize: (!hasFiveWhys && !hasPareto) ? '1rem' : '0.8125rem', color: '#ffffff', lineHeight: 1.45 }}>
+                            {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
+                          </p>
+                        </div>
 
-                          {/* Palco da Imagem do Gráfico em Destaque GRANDE */}
+                        {/* Compilação Dinâmica: Exibe os 5 Porquês SOMENTE se houver preenchimento real */}
+                        {hasFiveWhys && (
+                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>
+                              🔍 Investigação Causal (5 Porquês)
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                              {activeFiveWhys.slice(0, 3).map((whyText, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    fontSize: '0.725rem',
+                                    color: '#cbd5e1',
+                                    backgroundColor: '#090e1a',
+                                    padding: '0.3rem 0.6rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  <strong style={{ color: '#22d3ee', marginRight: '0.3rem' }}>{idx + 1}º:</strong> {whyText.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Compilação Dinâmica: Exibe Pareto (Foto com tamanho equilibrado + Zoom) SOMENTE se houver dados reais */}
+                        {hasPareto && (
                           <div
-                            onClick={() => setParetoZoomOpen(true)}
                             style={{
-                              flex: 1,
-                              minHeight: '260px',
-                              maxHeight: '330px',
-                              width: '100%',
-                              backgroundColor: '#040711',
-                              borderRadius: '12px',
-                              overflow: 'hidden',
-                              border: '1px solid rgba(6, 182, 212, 0.25)',
+                              backgroundColor: '#0f172a',
+                              padding: '0.75rem 1rem',
+                              borderRadius: '14px',
+                              border: '1px solid rgba(6, 182, 212, 0.35)',
                               display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'zoom-in',
-                              position: 'relative',
-                              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8)',
+                              flexDirection: 'column',
+                              gap: '0.5rem',
                             }}
                           >
-                            <img
-                              src={paretoImg}
-                              alt="Gráfico de Pareto 80/20"
-                              style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.35rem' }}
-                            />
-                            <div
-                              style={{
-                                position: 'absolute',
-                                bottom: '8px',
-                                right: '8px',
-                                backgroundColor: 'rgba(9, 14, 26, 0.85)',
-                                border: '1px solid rgba(6, 182, 212, 0.4)',
-                                padding: '0.2rem 0.45rem',
-                                borderRadius: '6px',
-                                fontSize: '0.65rem',
-                                color: '#22d3ee',
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                                backdropFilter: 'blur(4px)',
-                              }}
-                            >
-                              <Maximize2 size={11} /> Clique para ampliar
-                            </div>
-                          </div>
-
-                          {/* Resumo Analítico das Causas Vitais */}
-                          {paretoVitalCauses && (
-                            <div style={{ marginTop: '0.5rem', backgroundColor: '#090e1a', padding: '0.45rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                              <p style={{ margin: 0, fontSize: '0.725rem', color: '#cbd5e1', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                <strong style={{ color: '#22d3ee' }}>Causas Vitais:</strong> {paretoVitalCauses}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Coluna Direita: Causa Raiz, 5 Porquês, Metas & Equipe */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', justifyContent: 'space-between', height: '100%' }}>
-                          {/* Card 1: Declaração da Causa Raiz */}
-                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                            <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.25rem' }}>
-                              🎯 Declaração da Causa Raiz & Problema
-                            </h4>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#ffffff', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                              {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
-                            </p>
-                          </div>
-
-                          {/* Card 2: 5 Porquês (se preenchidos) */}
-                          {hasFiveWhys && (
-                            <div style={{ backgroundColor: '#0f172a', padding: '0.65rem 0.85rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                              <h4 style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>
-                                🔍 Investigação Causal (5 Porquês)
-                              </h4>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                {activeFiveWhys.slice(0, 2).map((whyText, idx) => (
-                                  <div
-                                    key={idx}
-                                    style={{
-                                      fontSize: '0.7rem',
-                                      color: '#cbd5e1',
-                                      backgroundColor: '#090e1a',
-                                      padding: '0.25rem 0.5rem',
-                                      borderRadius: '6px',
-                                      border: '1px solid rgba(255, 255, 255, 0.05)',
-                                      lineHeight: 1.3,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                    }}
-                                  >
-                                    <strong style={{ color: '#22d3ee', marginRight: '0.25rem' }}>{idx + 1}º:</strong> {whyText.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Card 3: Metas Baseline vs Alvo */}
-                          <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                              <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                                Indicador: <strong style={{ color: '#ffffff' }}>{targetMetricName || 'Tempo de Ciclo / Perda'}</strong>
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                              <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.65rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                                <span style={{ fontSize: '0.625rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                                  Baseline (Antes)
-                                </span>
-                                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                                  {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
-                                </span>
-                              </div>
-
-                              <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.65rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-                                <span style={{ fontSize: '0.625rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                                  Meta Alvo
-                                </span>
-                                <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                                  {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {hasProblemCost && (
-                              <div style={{ marginTop: '0.45rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.725rem' }}>
-                                <span style={{ color: '#94a3b8' }}>Custo mensal da perda:</span>
-                                <strong style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                                  {formatCurrency(Number(currentProblemCostMonthly))}/mês
-                                </strong>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Card 4: Ficha da Equipe & Liderança */}
-                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                              <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
-                              <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                              <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
-                              <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
-                            </div>
-                            {effectiveTeam.length > 0 && (
-                              <div style={{ fontSize: '0.725rem', marginTop: '0.15rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                                <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.15rem' }}>
-                                  👥 Pessoas Envolvidas:
-                                </span>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                                  {effectiveTeam.map((member, mIdx) => (
-                                    <span
-                                      key={mIdx}
-                                      style={{
-                                        fontSize: '0.65rem',
-                                        backgroundColor: '#090e1a',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        padding: '0.1rem 0.4rem',
-                                        borderRadius: '4px',
-                                        color: '#e2e8f0',
-                                      }}
-                                    >
-                                      {member}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.725rem', marginTop: '0.1rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Setor / Desperdício:</span>
-                              <strong style={{ color: '#22d3ee' }}>{action.originSectorName || 'Fábrica'} • {action.wasteCategory || 'Espera'}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Layout Sem Imagem do Pareto (ou apenas texto) */
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
-                        {/* Left: Problema, 5 Porquês (se preenchidos) e Pareto Texto (se preenchido) */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', justifyContent: 'center' }}>
-                          <div style={{ backgroundColor: '#0f172a', padding: (!hasFiveWhys && !hasPareto) ? '1.75rem' : '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.4rem' }}>
-                              🎯 Declaração da Causa Raiz & Problema
-                            </h4>
-                            <p style={{ margin: 0, fontSize: (!hasFiveWhys && !hasPareto) ? '1.05rem' : '0.875rem', color: '#ffffff', lineHeight: 1.5 }}>
-                              {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
-                            </p>
-                          </div>
-
-                          {/* Compilação Dinâmica: Exibe os 5 Porquês SOMENTE se houver preenchimento real */}
-                          {hasFiveWhys && (
-                            <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                              <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.45rem' }}>
-                                🔍 Investigação Causal (5 Porquês)
-                              </h4>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                                {activeFiveWhys.slice(0, 3).map((whyText, idx) => (
-                                  <div
-                                    key={idx}
-                                    style={{
-                                      fontSize: '0.75rem',
-                                      color: '#cbd5e1',
-                                      backgroundColor: '#090e1a',
-                                      padding: '0.35rem 0.65rem',
-                                      borderRadius: '6px',
-                                      border: '1px solid rgba(255, 255, 255, 0.05)',
-                                      lineHeight: 1.35,
-                                    }}
-                                  >
-                                    <strong style={{ color: '#22d3ee', marginRight: '0.35rem' }}>{idx + 1}º:</strong> {whyText.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Compilação Dinâmica: Exibe Pareto Textual SOMENTE se houver preenchimento real */}
-                          {hasPareto && (
-                            <div
-                              style={{
-                                backgroundColor: '#0f172a',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(6, 182, 212, 0.35)',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
+                            {/* Header do Card Pareto com Botão Telão / Zoom */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
                                   📊 Gráfico de Pareto 80/20
                                 </span>
                                 {action.pareto?.cumulativeImpactPercentage && (
                                   <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                                    {action.pareto.cumulativeImpactPercentage}% impacto
+                                    {action.pareto.cumulativeImpactPercentage}% impacto vital
                                   </span>
                                 )}
                               </div>
-                              <p style={{ margin: '0.2rem 0 0', fontSize: '0.78125rem', color: '#ffffff', lineHeight: 1.35 }}>
-                                {paretoVitalCauses || 'Análise de Pareto aplicada.'}
+                              {paretoImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => setParetoZoomOpen(true)}
+                                  className="btn btn-sm"
+                                  style={{
+                                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                    border: '1px solid rgba(6, 182, 212, 0.4)',
+                                    color: '#22d3ee',
+                                    fontSize: '0.65rem',
+                                    padding: '0.15rem 0.45rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    cursor: 'pointer',
+                                  }}
+                                  title="Abrir no telão para mostrar aos ouvintes"
+                                >
+                                  <Maximize2 size={11} /> Telão / Zoom
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Foto do Pareto em Tamanho Equilibrado (sem cortar as outras informações) */}
+                            {paretoImg ? (
+                              <div
+                                onClick={() => setParetoZoomOpen(true)}
+                                style={{
+                                  height: hasFiveWhys ? '135px' : '175px',
+                                  width: '100%',
+                                  backgroundColor: '#040711',
+                                  borderRadius: '8px',
+                                  overflow: 'hidden',
+                                  border: '1px solid rgba(6, 182, 212, 0.25)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'zoom-in',
+                                  position: 'relative',
+                                }}
+                              >
+                                <img
+                                  src={paretoImg}
+                                  alt="Gráfico de Pareto 80/20"
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.25rem' }}
+                                />
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: '6px',
+                                    right: '6px',
+                                    backgroundColor: 'rgba(9, 14, 26, 0.85)',
+                                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                                    padding: '0.15rem 0.4rem',
+                                    borderRadius: '5px',
+                                    fontSize: '0.625rem',
+                                    color: '#22d3ee',
+                                    fontWeight: 700,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    backdropFilter: 'blur(4px)',
+                                  }}
+                                >
+                                  <Maximize2 size={10} /> Clique para Telão
+                                </div>
+                              </div>
+                            ) : null}
+
+                            {/* Resumo Textual das Causas Vitais */}
+                            {paretoVitalCauses && (
+                              <p style={{ margin: 0, fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                <strong style={{ color: '#22d3ee' }}>Causas Vitais:</strong> {paretoVitalCauses}
                               </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right Column: Metas Baseline vs Alvo & Ficha da Equipe */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        {/* Metas Baseline vs Alvo */}
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            Indicador Chave do Projeto
+                          </span>
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0 0.85rem', fontFamily: 'var(--font-heading)' }}>
+                            {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
+                          </h3>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                              <span style={{ fontSize: '0.65rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                                Baseline (Antes)
+                              </span>
+                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                                {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
+                              </span>
+                            </div>
+
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                              <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                                Meta Alvo
+                              </span>
+                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                                {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {hasProblemCost && (
+                            <div style={{ marginTop: '0.75rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Custo mensal da perda:</span>
+                              <strong style={{ fontSize: '0.95rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                                {formatCurrency(Number(currentProblemCostMonthly))}/mês
+                              </strong>
                             </div>
                           )}
                         </div>
 
-                        {/* Right: Metas & Ficha da Equipe */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                          {/* Metas Baseline vs Alvo */}
-                          <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                              Indicador Chave do Projeto
-                            </span>
-                            <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0 0.85rem', fontFamily: 'var(--font-heading)' }}>
-                              {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
-                            </h3>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                              <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                                <span style={{ fontSize: '0.65rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                                  Baseline (Antes)
-                                </span>
-                                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                                  {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
-                                </span>
-                              </div>
-
-                              <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-                                <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                                  Meta Alvo
-                                </span>
-                                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                                  {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {hasProblemCost && (
-                              <div style={{ marginTop: '0.75rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Custo mensal da perda:</span>
-                                <strong style={{ fontSize: '0.95rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                                  {formatCurrency(Number(currentProblemCostMonthly))}/mês
-                                </strong>
-                              </div>
-                            )}
+                        {/* Ficha da Equipe & Liderança */}
+                        <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
+                            <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
                           </div>
-
-                          {/* Ficha da Equipe & Liderança */}
-                          <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
-                              <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
-                              <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
-                              <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
-                              <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
-                            </div>
-                            {effectiveTeam.length > 0 && (
-                              <div style={{ fontSize: '0.78125rem', marginTop: '0.2rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                                <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>
-                                  👥 Pessoas Envolvidas:
-                                </span>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                                  {effectiveTeam.map((member, mIdx) => (
-                                    <span
-                                      key={mIdx}
-                                      style={{
-                                        fontSize: '0.675rem',
-                                        backgroundColor: '#090e1a',
-                                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                                        padding: '0.15rem 0.45rem',
-                                        borderRadius: '4px',
-                                        color: '#e2e8f0',
-                                      }}
-                                    >
-                                      {member}
-                                    </span>
-                                  ))}
-                                </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
+                            <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
+                          </div>
+                          {effectiveTeam.length > 0 && (
+                            <div style={{ fontSize: '0.78125rem', marginTop: '0.2rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>
+                                👥 Pessoas Envolvidas:
+                              </span>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                                {effectiveTeam.map((member, mIdx) => (
+                                  <span
+                                    key={mIdx}
+                                    style={{
+                                      fontSize: '0.675rem',
+                                      backgroundColor: '#090e1a',
+                                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                                      padding: '0.15rem 0.45rem',
+                                      borderRadius: '4px',
+                                      color: '#e2e8f0',
+                                    }}
+                                  >
+                                    {member}
+                                  </span>
+                                ))}
                               </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem', marginTop: '0.1rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Setor:</span>
-                              <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Fábrica'}</strong>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Desperdício:</span>
-                              <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Espera'}</strong>
-                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem', marginTop: '0.1rem' }}>
+                            <span style={{ color: '#94a3b8' }}>Setor:</span>
+                            <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Fábrica'}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>Desperdício:</span>
+                            <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Espera'}</strong>
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     <div />
                   </div>
