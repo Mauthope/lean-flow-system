@@ -224,6 +224,8 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     // D - DO
     pilotArea: 'Extrusora de Fitas 03 - Linha A',
     pilotTestObservations: 'Realizados 3 testes piloto com cronoanálise de 2 câmeras. Tempo caiu de 52 para 16 minutos na primeira semana.',
+    photoBeforeUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop&q=80',
+    photoAfterUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
     checklist: [
       {
         id: 'ck_1',

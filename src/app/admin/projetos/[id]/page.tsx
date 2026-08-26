@@ -114,6 +114,10 @@ export default function AdminProjectDetailPage() {
   const [pilotArea, setPilotArea] = useState('');
   const [pilotTestObservations, setPilotTestObservations] = useState('');
 
+  // Fotos do Antes e Depois (Salvas no projeto)
+  const [photoBeforeUrl, setPhotoBeforeUrl] = useState<string>('');
+  const [photoAfterUrl, setPhotoAfterUrl] = useState<string>('');
+
   // Anexos de Memorial de Cálculo & Documentos (PDF / Planilhas)
   const [attachments, setAttachments] = useState<ProjectAttachment[]>([]);
   const [newAttachmentCategory, setNewAttachmentCategory] = useState<'memorial_calculo' | 'evidencia_foto' | 'relatorio_tecnico' | 'outro'>('memorial_calculo');
@@ -193,6 +197,10 @@ export default function AdminProjectDetailPage() {
         setStandardWorkDocRef(found.standardWorkDocRef || '');
         setYokotenReplication(found.yokotenReplication || '');
         setLessonsLearned(found.lessonsLearned || '');
+
+        // Evidências Fotográficas do Projeto
+        setPhotoBeforeUrl(found.photoBeforeUrl || '');
+        setPhotoAfterUrl(found.photoAfterUrl || '');
       }
       setLoading(false);
     }
@@ -270,6 +278,8 @@ export default function AdminProjectDetailPage() {
       },
       pilotArea,
       pilotTestObservations,
+      photoBeforeUrl,
+      photoAfterUrl,
       checklist: checklistItems,
       projectCosts: {
         partsAndEquipment,
@@ -340,6 +350,36 @@ export default function AdminProjectDetailPage() {
       },
     });
     refreshData();
+  };
+
+  const handlePhotoBeforeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !action) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setPhotoBeforeUrl(dataUrl);
+      const updated = dataService.updateAction(action.id, { photoBeforeUrl: dataUrl });
+      setAction(updated);
+      refreshData();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoAfterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !action) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setPhotoAfterUrl(dataUrl);
+      const updated = dataService.updateAction(action.id, { photoAfterUrl: dataUrl });
+      setAction(updated);
+      refreshData();
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAgentSubmitForApproval = () => {
@@ -1230,6 +1270,117 @@ export default function AdminProjectDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+
+          {/* 2.2 Evidências Visuais da Transformação (Fotos de Antes e Depois) */}
+          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <ImageIcon size={20} color="#22d3ee" />
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  2.2 Evidências Visuais (Fotos do Antes & Depois Salvas no Projeto)
+                </h3>
+                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                  Anexe uma foto do estado inicial (Antes) e outra do posto melhorado (Depois). Elas serão salvas no projeto e apresentadas no Modo Apresentação.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+              {/* Foto Antes */}
+              <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>
+                    📸 Foto do Antes (Estado Inicial)
+                  </span>
+                  {photoBeforeUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoBeforeUrl('');
+                        if (action) dataService.updateAction(action.id, { photoBeforeUrl: '' });
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', cursor: 'pointer' }}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+
+                {photoBeforeUrl ? (
+                  <div style={{ height: '200px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <img src={photoBeforeUrl} alt="Antes" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ) : (
+                  <label
+                    style={{
+                      height: '200px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px dashed rgba(255, 255, 255, 0.15)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <UploadCloud size={24} color="#f87171" />
+                    <span>Clique para selecionar a foto do <strong>Antes</strong></span>
+                    <input type="file" accept="image/*" onChange={handlePhotoBeforeUpload} style={{ display: 'none' }} />
+                  </label>
+                )}
+              </div>
+
+              {/* Foto Depois */}
+              <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
+                    📸 Foto do Depois (Melhoria Implantada)
+                  </span>
+                  {photoAfterUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoAfterUrl('');
+                        if (action) dataService.updateAction(action.id, { photoAfterUrl: '' });
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '0.75rem', cursor: 'pointer' }}
+                    >
+                      Remover
+                    </button>
+                  )}
+                </div>
+
+                {photoAfterUrl ? (
+                  <div style={{ height: '200px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <img src={photoAfterUrl} alt="Depois" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ) : (
+                  <label
+                    style={{
+                      height: '200px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px dashed rgba(255, 255, 255, 0.15)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <UploadCloud size={24} color="#34d399" />
+                    <span>Clique para selecionar a foto do <strong>Depois</strong></span>
+                    <input type="file" accept="image/*" onChange={handlePhotoAfterUpload} style={{ display: 'none' }} />
+                  </label>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2344,20 +2495,20 @@ export default function AdminProjectDetailPage() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10000,
-            padding: '1.25rem',
+            padding: '1rem',
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setPresentationOpen(false);
           }}
         >
-          {/* Main Hero Banner Slide Stage */}
+          {/* Main Hero Banner Slide Stage - Zero Scrollbar Guaranteed */}
           <div
             className="card"
             style={{
               width: '100%',
-              maxWidth: '1140px',
-              height: '92vh',
-              maxHeight: '840px',
+              maxWidth: '1120px',
+              height: '86vh',
+              maxHeight: '690px',
               backgroundColor: '#090e1a',
               border: '2px solid rgba(6, 182, 212, 0.35)',
               borderRadius: '24px',
@@ -2375,15 +2526,15 @@ export default function AdminProjectDetailPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '1rem 1.75rem',
+                padding: '0.85rem 1.5rem',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 backgroundColor: '#070b14',
-                flexWrap: 'wrap',
+                flexShrink: 0,
                 gap: '0.75rem',
               }}
             >
               {/* Left Title & Protocol */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                 <span
                   style={{
                     fontSize: '0.675rem',
@@ -2391,7 +2542,7 @@ export default function AdminProjectDetailPage() {
                     backgroundColor: 'rgba(139, 92, 246, 0.2)',
                     color: '#c084fc',
                     border: '1px solid rgba(139, 92, 246, 0.4)',
-                    padding: '0.2rem 0.6rem',
+                    padding: '0.15rem 0.55rem',
                     borderRadius: '999px',
                     letterSpacing: '0.05em',
                   }}
@@ -2410,10 +2561,10 @@ export default function AdminProjectDetailPage() {
                 </span>
                 <span
                   style={{
-                    fontSize: '0.875rem',
+                    fontSize: '0.84375rem',
                     color: '#ffffff',
                     fontWeight: 800,
-                    maxWidth: '380px',
+                    maxWidth: '340px',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -2424,7 +2575,7 @@ export default function AdminProjectDetailPage() {
               </div>
 
               {/* Center Stepper Navigation Tabs */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                 {[
                   { num: 1 as const, label: 'P • PLAN', color: '#22d3ee' },
                   { num: 2 as const, label: 'D • DO', color: '#c084fc' },
@@ -2437,9 +2588,9 @@ export default function AdminProjectDetailPage() {
                     type="button"
                     onClick={() => setPresentationSlide(s.num)}
                     style={{
-                      padding: '0.35rem 0.75rem',
+                      padding: '0.3rem 0.65rem',
                       borderRadius: '999px',
-                      fontSize: '0.725rem',
+                      fontSize: '0.7rem',
                       fontWeight: 800,
                       cursor: 'pointer',
                       border:
@@ -2461,16 +2612,16 @@ export default function AdminProjectDetailPage() {
               </div>
 
               {/* Right Counter & Close Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span
                   style={{
-                    fontSize: '0.75rem',
+                    fontSize: '0.725rem',
                     color: '#94a3b8',
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700,
                   }}
                 >
-                  Slide {presentationSlide} de 5
+                  {presentationSlide}/5
                 </span>
                 <button
                   type="button"
@@ -2481,518 +2632,490 @@ export default function AdminProjectDetailPage() {
                     borderRadius: '8px',
                     color: '#cbd5e1',
                     cursor: 'pointer',
-                    padding: '0.25rem 0.5rem',
+                    padding: '0.2rem 0.45rem',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.25rem',
-                    fontSize: '0.75rem',
+                    fontSize: '0.725rem',
                   }}
                   title="Fechar Apresentação (ESC)"
                 >
-                  <X size={14} /> ESC
+                  <X size={13} /> ESC
                 </button>
               </div>
             </div>
 
-            {/* Slide Body (Scrollable if necessary) */}
+            {/* Slide Body - Strictly No Scrollbar */}
             <div
               style={{
                 flex: 1,
-                overflowY: 'auto',
-                padding: '2rem 2.25rem',
+                overflow: 'hidden',
+                padding: '1.25rem 1.75rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1.5rem',
+                justifyContent: 'space-between',
               }}
             >
               {/* =================================================================== */}
-              {/* SLIDE 1: P • PLAN                                                   */}
+              {/* SLIDE 1: P • PLAN (Compilação Dinâmica sem campos vazios)           */}
               {/* =================================================================== */}
-              {presentationSlide === 1 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Hero Header */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                        1. QUADRANTE P • PLAN (PLANEJAR)
-                      </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz & Definição de Metas</span>
-                    </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      Diagnóstico do Problema Fabril, Análise Causal & Metas
-                    </h2>
-                  </div>
+              {presentationSlide === 1 && (() => {
+                const activeFiveWhys = fiveWhys.filter((w) => w && w.trim());
+                const hasFiveWhys = activeFiveWhys.length > 0;
+                const hasPareto = Boolean(paretoVitalCauses && paretoVitalCauses.trim());
+                const hasProblemCost = Boolean(currentProblemCostMonthly && Number(currentProblemCostMonthly) > 0);
 
-                  {/* 2 Column Layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
-                    {/* Left Column: Problema & 5 Porquês */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {/* Box Causa Raiz */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                        <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.5rem' }}>
-                          🎯 Declaração da Causa Raiz
-                        </h4>
-                        <p style={{ margin: 0, fontSize: '0.9375rem', color: '#ffffff', lineHeight: 1.5 }}>
-                          {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
-                        </p>
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                    {/* Header */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                          1. PLAN (PLANEJAR)
+                        </span>
+                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz & Metas</span>
                       </div>
+                      <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        Diagnóstico do Problema Fabril & Definição de Metas
+                      </h2>
+                    </div>
 
-                      {/* Box 5 Porquês */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                        <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.75rem' }}>
-                          🔍 Cadeia dos 5 Porquês
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                          {fiveWhys.filter((w) => w && w.trim()).length === 0 ? (
-                            <p style={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
-                              Análise causal baseada nos fatores operacionais e ergonômicos do posto.
-                            </p>
-                          ) : (
-                            fiveWhys
-                              .filter((w) => w && w.trim())
-                              .map((whyText, idx) => (
+                    {/* Dynamic 2-Column Content */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
+                      {/* Left: Problema & 5 Porquês (se preenchidos) */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.4rem' }}>
+                            🎯 Declaração da Causa Raiz
+                          </h4>
+                          <p style={{ margin: 0, fontSize: '0.875rem', color: '#ffffff', lineHeight: 1.45 }}>
+                            {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
+                          </p>
+                        </div>
+
+                        {/* Compilação Dinâmica: Exibe os 5 Porquês SOMENTE se houver preenchimento */}
+                        {hasFiveWhys && (
+                          <div style={{ backgroundColor: '#0f172a', padding: '0.9rem 1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                            <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', margin: '0 0 0.45rem' }}>
+                              🔍 Investigação Causal (5 Porquês)
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                              {activeFiveWhys.slice(0, 3).map((whyText, idx) => (
                                 <div
                                   key={idx}
                                   style={{
-                                    fontSize: '0.8125rem',
+                                    fontSize: '0.75rem',
                                     color: '#cbd5e1',
                                     backgroundColor: '#090e1a',
-                                    padding: '0.5rem 0.75rem',
-                                    borderRadius: '8px',
+                                    padding: '0.35rem 0.65rem',
+                                    borderRadius: '6px',
                                     border: '1px solid rgba(255, 255, 255, 0.05)',
+                                    lineHeight: 1.35,
                                   }}
                                 >
-                                  <strong style={{ color: '#22d3ee', marginRight: '0.4rem' }}>{idx + 1}º Porquê:</strong> {whyText}
+                                  <strong style={{ color: '#22d3ee', marginRight: '0.35rem' }}>{idx + 1}º Porquê:</strong> {whyText}
                                 </div>
-                              ))
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Pareto 80/20 se houver */}
-                      {paretoVitalCauses && (
-                        <div style={{ backgroundColor: '#0f172a', padding: '1.1rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
-                            📊 Regra 80/20 de Pareto
-                          </span>
-                          <p style={{ margin: '0.25rem 0 0', fontSize: '0.84375rem', color: '#ffffff' }}>
-                            {paretoVitalCauses}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Column: Metas & Escopo */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {/* Metas Baseline vs Alvo */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                          Indicador Chave do Projeto
-                        </span>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0 1.25rem', fontFamily: 'var(--font-heading)' }}>
-                          {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
-                        </h3>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                              Baseline (Antes)
-                            </span>
-                            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                              {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
-                            </span>
+                              ))}
+                            </div>
                           </div>
+                        )}
 
-                          <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
-                              Meta Planejada (Alvo)
+                        {/* Compilação Dinâmica: Exibe Pareto SOMENTE se preenchido */}
+                        {hasPareto && (
+                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                            <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
+                              📊 Pareto 80/20:
                             </span>
-                            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                              {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {currentProblemCostMonthly !== '' && Number(currentProblemCostMonthly) > 0 && (
-                          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>Custo mensal da perda antes do projeto:</span>
-                            <strong style={{ fontSize: '1.05rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                              {formatCurrency(Number(currentProblemCostMonthly))}/mês
-                            </strong>
+                            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78125rem', color: '#ffffff', lineHeight: 1.35 }}>
+                              {paretoVitalCauses}
+                            </p>
                           </div>
                         )}
                       </div>
 
-                      {/* Ficha do Projeto */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                          <span style={{ color: '#94a3b8' }}>Agente Responsável:</span>
-                          <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                      {/* Right: Metas & Ficha */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        {/* Metas Baseline vs Alvo */}
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            Indicador Chave do Projeto
+                          </span>
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0 0.85rem', fontFamily: 'var(--font-heading)' }}>
+                            {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
+                          </h3>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                              <span style={{ fontSize: '0.65rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                                Baseline (Antes)
+                              </span>
+                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                                {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
+                              </span>
+                            </div>
+
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                              <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                                Meta Alvo
+                              </span>
+                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                                {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {hasProblemCost && (
+                            <div style={{ marginTop: '0.75rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Custo mensal da perda:</span>
+                              <strong style={{ fontSize: '0.95rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                                {formatCurrency(Number(currentProblemCostMonthly))}/mês
+                              </strong>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                          <span style={{ color: '#94a3b8' }}>Setor Fabril:</span>
-                          <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Planta Industrial'}</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                          <span style={{ color: '#94a3b8' }}>Desperdício Lean:</span>
-                          <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Excesso de Processamento'}</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                          <span style={{ color: '#94a3b8' }}>Prioridade:</span>
-                          <PriorityBadge priority={action.priority} />
+
+                        {/* Ficha Resumida */}
+                        <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>Agente:</span>
+                            <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>Setor:</span>
+                            <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Fábrica'}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                            <span style={{ color: '#94a3b8' }}>Desperdício:</span>
+                            <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Espera'}</strong>
+                          </div>
                         </div>
                       </div>
                     </div>
+
+                    <div />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* =================================================================== */}
-              {/* SLIDE 2: D • DO                                                     */}
+              {/* SLIDE 2: D • DO (Compilação Dinâmica de 5W2H & Testes)              */}
               {/* =================================================================== */}
-              {presentationSlide === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Hero Header */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#c084fc', backgroundColor: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                        2. QUADRANTE D • DO (EXECUTAR)
-                      </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Plano de Ação 5W2H & Testes Piloto no Posto</span>
-                    </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      Execução das Ações 5W2H & Testes na Linha Produtiva
-                    </h2>
-                  </div>
+              {presentationSlide === 2 && (() => {
+                const totalActions = checklistItems.length;
+                const completedActions = checklistItems.filter((i) => i.completed).length;
+                const completionRate = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 100;
 
-                  {/* 2 Column Layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '1.5rem' }}>
-                    {/* Left Column: Posto Piloto & Métricas de Avanço */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                      {/* Posto Piloto */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
-                        <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', display: 'block', marginBottom: '0.35rem' }}>
-                          Posto de Trabalho / Máquina Piloto
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                    {/* Header */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#c084fc', backgroundColor: 'rgba(139, 92, 246, 0.15)', border: '1px solid rgba(139, 92, 246, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                          2. DO (EXECUTAR)
                         </span>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                          {pilotArea || action.pilotArea || 'Posto Piloto de Operação'}
-                        </h3>
-
-                        <p style={{ marginTop: '0.85rem', fontSize: '0.84375rem', color: '#cbd5e1', lineHeight: 1.5 }}>
-                          {pilotTestObservations || action.pilotTestObservations || 'Ajustes operacionais testados e validados diretamente com os operadores de turno.'}
-                        </p>
+                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Plano de Ação 5W2H & Testes Piloto no Posto</span>
                       </div>
-
-                      {/* Progresso 5W2H */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block' }}>
-                          Taxa de Conclusão do Plano 5W2H
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.5rem' }}>
-                          <span style={{ fontSize: '2rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                            {checklistItems.length > 0
-                              ? Math.round(
-                                  (checklistItems.filter((i) => i.completed).length /
-                                    checklistItems.length) *
-                                    100
-                                )
-                              : 100}
-                            %
-                          </span>
-                          <span style={{ fontSize: '0.84375rem', color: '#94a3b8' }}>
-                            ({checklistItems.filter((i) => i.completed).length} de {checklistItems.length} ações)
-                          </span>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div style={{ height: '8px', backgroundColor: '#090e1a', borderRadius: '999px', overflow: 'hidden', marginTop: '0.75rem' }}>
-                          <div
-                            style={{
-                              height: '100%',
-                              width: `${
-                                checklistItems.length > 0
-                                  ? (checklistItems.filter((i) => i.completed).length /
-                                      checklistItems.length) *
-                                    100
-                                  : 100
-                              }%`,
-                              backgroundColor: '#34d399',
-                              transition: 'width 0.4s ease',
-                            }}
-                          />
-                        </div>
-                      </div>
+                      <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        Execução das Ações 5W2H & Testes na Linha Produtiva
+                      </h2>
                     </div>
 
-                    {/* Right Column: Lista das Ações 5W2H */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column' }}>
-                      <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 1rem' }}>
-                        📋 Ações Implementadas no Chão de Fábrica
-                      </h4>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '340px', overflowY: 'auto' }}>
-                        {checklistItems.length === 0 ? (
-                          <p style={{ fontSize: '0.84375rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                            Nenhuma ação registrada no checklist.
+                    {/* Content */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: '1.25rem', alignItems: 'stretch' }}>
+                      {/* Left: Posto Piloto & Conclusão */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', display: 'block', marginBottom: '0.25rem' }}>
+                            Posto de Trabalho / Máquina Piloto
+                          </span>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                            {pilotArea || action.pilotArea || 'Posto Piloto de Operação'}
+                          </h3>
+                          <p style={{ marginTop: '0.65rem', fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+                            {pilotTestObservations || action.pilotTestObservations || 'Ajustes operacionais testados e validados diretamente com os operadores de turno.'}
                           </p>
+                        </div>
+
+                        <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block' }}>
+                            Conclusão do Plano 5W2H
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.25rem' }}>
+                            <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                              {completionRate}%
+                            </span>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              ({completedActions}/{totalActions} ações entregues)
+                            </span>
+                          </div>
+                          <div style={{ height: '6px', backgroundColor: '#090e1a', borderRadius: '999px', overflow: 'hidden', marginTop: '0.5rem' }}>
+                            <div style={{ height: '100%', width: `${completionRate}%`, backgroundColor: '#34d399' }} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Top 5W2H Actions */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
+                          📋 Ações Executadas no Chão de Fábrica
+                        </h4>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                          {checklistItems.length === 0 ? (
+                            <p style={{ fontSize: '0.8125rem', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
+                              Nenhuma ação pendente no checklist.
+                            </p>
+                          ) : (
+                            checklistItems.slice(0, 4).map((item, idx) => (
+                              <div
+                                key={item.id || idx}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  padding: '0.55rem 0.75rem',
+                                  backgroundColor: '#090e1a',
+                                  borderRadius: '8px',
+                                  border: item.completed ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span style={{ color: item.completed ? '#34d399' : '#fbbf24', fontSize: '0.875rem' }}>
+                                    {item.completed ? '✓' : '⏳'}
+                                  </span>
+                                  <span style={{ fontSize: '0.78125rem', color: item.completed ? '#cbd5e1' : '#ffffff', fontWeight: 600 }}>
+                                    {item.label}
+                                  </span>
+                                </div>
+                                <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>
+                                  {item.responsibleName || 'Agente'}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div />
+                  </div>
+                );
+              })()}
+
+              {/* =================================================================== */}
+              {/* SLIDE 3: C • CHECK (Compilação Dinâmica das Fontes de Economia)     */}
+              {/* =================================================================== */}
+              {presentationSlide === 3 && (() => {
+                // Compila apenas as fontes com ganho > 0
+                const activeSources = [
+                  { label: 'Mão de Obra / Setup', val: laborSavings },
+                  { label: 'Paradas de Máquina', val: machineDowntime },
+                  { label: 'Redução de Sucata', val: scrapReduction },
+                  { label: 'Aumento de Produção', val: productionIncrease },
+                  { label: 'Energia & Ferramental', val: toolingAndEnergy },
+                  { label: 'Logística & Frete', val: logisticsAndFreight },
+                  { label: 'Outras Fontes', val: otherSavings },
+                ].filter((s) => s.val > 0);
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                    {/* Header */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                          3. CHECK (VERIFICAR)
+                        </span>
+                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Aferição dos Resultados & Engenharia Financeira</span>
+                      </div>
+                      <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        Resultados Aferidos, Custo Evitado & Retorno do Investimento
+                      </h2>
+                    </div>
+
+                    {/* Top 3 KPI Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
+                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Indicador Aferido vs Meta
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.25rem' }}>
+                          <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                            {achievedValue !== '' ? `${achievedValue} ${targetMetricUnit}` : `${targetGoalValue} ${targetMetricUnit}`}
+                          </span>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            (Meta: {targetGoalValue} {targetMetricUnit})
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800, marginTop: '0.2rem', display: 'block' }}>
+                          ✓ Meta Plenamente Atingida
+                        </span>
+                      </div>
+
+                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '2px solid rgba(16, 185, 129, 0.45)', boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)' }}>
+                        <span style={{ fontSize: '0.675rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800 }}>
+                          Custo Evitado Real (Ganhos)
+                        </span>
+                        <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                          {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
+                        </h3>
+                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                          retorno anual homologado
+                        </span>
+                      </div>
+
+                      <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Horas Salvas & Payback
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.25rem' }}>
+                          <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                            {action.hoursSaved || internalLaborHours || 0}h
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                            • Payback: {paybackMonths ? `${paybackMonths}m` : 'Imediato'}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                          Lucro líquido: {formatCurrency(netSavings)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom: Mostra APENAS as fontes de ganho ativas (> 0) */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.65rem' }}>
+                        Fontes de Economia Lean Comprovadas
+                      </span>
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        {activeSources.length === 0 ? (
+                          <div style={{ fontSize: '0.8125rem', color: '#34d399', fontWeight: 700 }}>
+                            Custo evitado total de {formatCurrency(action.actualCostAvoided)} homologado no ciclo.
+                          </div>
                         ) : (
-                          checklistItems.map((item, idx) => (
+                          activeSources.map((src, i) => (
                             <div
-                              key={item.id || idx}
+                              key={i}
                               style={{
+                                backgroundColor: '#090e1a',
+                                padding: '0.5rem 0.85rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '0.75rem 1rem',
-                                backgroundColor: '#090e1a',
-                                borderRadius: '10px',
-                                border: item.completed
-                                  ? '1px solid rgba(16, 185, 129, 0.3)'
-                                  : '1px solid rgba(255, 255, 255, 0.06)',
+                                gap: '0.6rem',
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                <span style={{ color: item.completed ? '#34d399' : '#fbbf24', fontSize: '1rem' }}>
-                                  {item.completed ? '✓' : '⏳'}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: '0.84375rem',
-                                    color: item.completed ? '#e2e8f0' : '#ffffff',
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {item.label}
-                                </span>
-                              </div>
-
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.725rem', color: '#94a3b8' }}>
-                                {item.responsibleName && (
-                                  <span style={{ color: '#22d3ee', fontWeight: 700 }}>
-                                    {item.responsibleName}
-                                  </span>
-                                )}
-                                {item.endDate && (
-                                  <span style={{ fontFamily: 'var(--font-mono)' }}>
-                                    {item.endDate}
-                                  </span>
-                                )}
-                              </div>
+                              <span style={{ fontSize: '0.725rem', color: '#cbd5e1' }}>{src.label}:</span>
+                              <strong style={{ fontSize: '0.875rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                                {formatCurrency(src.val)}
+                              </strong>
                             </div>
                           ))
                         )}
                       </div>
                     </div>
+
+                    <div />
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* =================================================================== */}
-              {/* SLIDE 3: C • CHECK                                                  */}
-              {/* =================================================================== */}
-              {presentationSlide === 3 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Hero Header */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                        3. QUADRANTE C • CHECK (VERIFICAR)
-                      </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Aferição dos Resultados & Engenharia Financeira</span>
-                    </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      Resultados Aferidos, Custo Evitado & Retorno sobre Investimento
-                    </h2>
-                  </div>
-
-                  {/* Top 3 Metric Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                    {/* Meta Aferida */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                        Indicador Aferido vs Meta
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
-                        <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                          {achievedValue !== '' ? `${achievedValue} ${targetMetricUnit}` : `${targetGoalValue} ${targetMetricUnit}`}
-                        </span>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                          (Meta: {targetGoalValue} {targetMetricUnit})
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 800, marginTop: '0.25rem', display: 'block' }}>
-                        ✓ Meta Plenamente Atingida
-                      </span>
-                    </div>
-
-                    {/* Custo Evitado Real */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '2px solid rgba(16, 185, 129, 0.45)', boxShadow: '0 0 25px rgba(16, 185, 129, 0.12)' }}>
-                      <span style={{ fontSize: '0.725rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800 }}>
-                        Custo Evitado Real (Ganhos)
-                      </span>
-                      <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34d399', margin: '0.35rem 0 0', fontFamily: 'var(--font-mono)' }}>
-                        {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
-                      </h3>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                        retorno anual homologado
-                      </span>
-                    </div>
-
-                    {/* Horas Salvas & Payback */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                        Horas Salvas & Payback
-                      </span>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.35rem' }}>
-                        <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
-                          {action.hoursSaved || internalLaborHours || 0}h
-                        </span>
-                        <span style={{ fontSize: '0.8125rem', color: '#cbd5e1' }}>
-                          • Payback: {paybackMonths ? `${paybackMonths}m` : 'Imediato'}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                        Lucro líquido: {formatCurrency(netSavings)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Detalhamento das 7 Fontes */}
-                  <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <h4 style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', margin: '0 0 1rem' }}>
-                      Composição dos Ganhos por Fonte de Economia Lean
-                    </h4>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-                      {[
-                        { label: 'Mão de Obra / Setup', val: laborSavings },
-                        { label: 'Paradas de Máquina', val: machineDowntime },
-                        { label: 'Redução de Sucata', val: scrapReduction },
-                        { label: 'Aumento de Produção', val: productionIncrease },
-                        { label: 'Energia & Ferramental', val: toolingAndEnergy },
-                        { label: 'Logística & Frete', val: logisticsAndFreight },
-                      ].map((src, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            backgroundColor: '#090e1a',
-                            padding: '0.85rem',
-                            borderRadius: '10px',
-                            border: '1px solid rgba(255, 255, 255, 0.05)',
-                          }}
-                        >
-                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
-                            {src.label}
-                          </span>
-                          <strong style={{ fontSize: '1.05rem', color: src.val > 0 ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)' }}>
-                            {formatCurrency(src.val)}
-                          </strong>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* =================================================================== */}
-              {/* SLIDE 4: A • ACT                                                   */}
+              {/* SLIDE 4: A • ACT (Compilação Dinâmica de Padronização & 3 Meses)    */}
               {/* =================================================================== */}
               {presentationSlide === 4 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Hero Header */}
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  {/* Header */}
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                        4. QUADRANTE A • ACT (PADRONIZAR & AGIR)
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                        4. ACT (PADRONIZAR & AGIR)
                       </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Padronização POP, Lições Aprendidas & Homologação</span>
+                      <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Padronização POP, Lições Aprendidas & Auditoria</span>
                     </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      Padronização de Trabalho, Yokoten & Auditoria de 3 Meses
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Padronização de Trabalho, Yokoten & Acompanhamento de 3 Meses
                     </h2>
                   </div>
 
-                  {/* 3 Column Layout */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
+                  {/* 3 Compact Columns */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', alignItems: 'stretch' }}>
                     {/* Card 1: Padronização */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <BookOpen size={20} color="#22d3ee" />
-                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <BookOpen size={18} color="#22d3ee" />
+                        <h4 style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                           Padronização & SOP
                         </h4>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Status do Documento
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
-                          <CheckCircle2 size={16} color={standardWorkUpdated ? '#34d399' : '#fbbf24'} />
-                          <strong style={{ color: standardWorkUpdated ? '#34d399' : '#fbbf24', fontSize: '0.875rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <CheckCircle2 size={14} color={standardWorkUpdated ? '#34d399' : '#fbbf24'} />
+                          <strong style={{ color: standardWorkUpdated ? '#34d399' : '#fbbf24', fontSize: '0.8125rem' }}>
                             {standardWorkUpdated ? 'POP Atualizado ✓' : 'Em revisão operacional'}
                           </strong>
                         </div>
                         {standardWorkDocRef && (
-                          <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+                          <span style={{ fontSize: '0.725rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.15rem' }}>
                             Ref: {standardWorkDocRef}
                           </span>
                         )}
                       </div>
 
-                      <div>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Lições Aprendidas
-                        </span>
-                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-                          {lessonsLearned || 'A padronização contínua e o engajamento da liderança no posto asseguram a manutenção dos resultados.'}
-                        </p>
-                      </div>
+                      {lessonsLearned && (
+                        <div>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Lições Aprendidas:
+                          </span>
+                          <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.35 }}>
+                            {lessonsLearned}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Card 2: Replicação Yokoten & Homologação */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Award size={20} color="#fbbf24" />
-                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    {/* Card 2: Yokoten & Homologação */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Award size={18} color="#fbbf24" />
+                        <h4 style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                           Yokoten & Homologação
                         </h4>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Replicação para Outras Linhas
+                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                          Replicação Yokoten:
                         </span>
-                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                        <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.35 }}>
                           {yokotenReplication || 'Disseminação recomendada para todos os postos de mesmo perfil na fábrica.'}
                         </p>
                       </div>
 
-                      <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: action.masterApproved ? '1px solid rgba(16, 185, 129, 0.4)' : '1px dashed rgba(255, 255, 255, 0.1)' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                          Status Executivo
-                        </span>
-                        <strong style={{ fontSize: '0.875rem', color: action.masterApproved ? '#34d399' : '#fbbf24', display: 'block', marginTop: '0.2rem' }}>
+                      <div style={{ backgroundColor: '#090e1a', padding: '0.65rem', borderRadius: '8px', border: action.masterApproved ? '1px solid rgba(16, 185, 129, 0.4)' : '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                        <strong style={{ fontSize: '0.78125rem', color: action.masterApproved ? '#34d399' : '#fbbf24', display: 'block' }}>
                           {action.masterApproved ? '✓ HOMOLOGADO MASTER' : 'Em processo de homologação'}
                         </strong>
                         {action.masterApprovedBy && (
-                          <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block' }}>
                             Por: {action.masterApprovedBy}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Card 3: Auditoria Trimestral */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Calendar size={20} color="#22d3ee" />
-                        <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    {/* Card 3: Auditoria dos 3 Meses */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Calendar size={18} color="#22d3ee" />
+                        <h4 style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                           Auditoria dos 3 Meses
                         </h4>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.45rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
                         {[
                           { m: 1, val: action.quarterlyFollowUp?.month1?.value },
                           { m: 2, val: action.quarterlyFollowUp?.month2?.value },
@@ -3002,241 +3125,169 @@ export default function AdminProjectDetailPage() {
                             key={item.m}
                             style={{
                               backgroundColor: '#090e1a',
-                              padding: '0.65rem 0.4rem',
-                              borderRadius: '8px',
+                              padding: '0.45rem 0.3rem',
+                              borderRadius: '6px',
                               textAlign: 'center',
                               border: item.val ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.05)',
                             }}
                           >
-                            <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.6rem', color: '#94a3b8', display: 'block', fontWeight: 700 }}>
                               {item.m}º Mês
                             </span>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: item.val ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.15rem' }}>
+                            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: item.val ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)' }}>
                               {item.val ? formatCurrency(item.val) : '--'}
                             </span>
                           </div>
                         ))}
                       </div>
 
-                      <div style={{ backgroundColor: '#090e1a', padding: '0.85rem 1rem', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Média Trimestral:</span>
-                        <strong style={{ fontSize: '1.15rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                      <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Média Oficial:</span>
+                        <strong style={{ fontSize: '0.95rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
                           {formatCurrency(action.quarterlyFollowUp?.averageCostAvoided || totalGrossSavings / 12 || 0)}/mês
                         </strong>
                       </div>
                     </div>
                   </div>
+
+                  <div />
                 </div>
               )}
 
               {/* =================================================================== */}
-              {/* SLIDE 5: 📸 ANTES & DEPOIS                                         */}
+              {/* SLIDE 5: 📸 ANTES & DEPOIS (Apenas Foto Antes e Foto Depois)        */}
               {/* =================================================================== */}
               {presentationSlide === 5 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Hero Header */}
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  {/* Header */}
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px' }}>
-                        5. ANTES & DEPOIS • TRANSFORMAÇÃO VISUAL
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                        5. ANTES & DEPOIS
                       </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>• Evidências Visuais da Melhoria & Conclusão do Ciclo</span>
+                      <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Transformação Visual do Posto & Encerramento</span>
                     </div>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      Transformação Visual do Posto & Encerramento do Ciclo PDCA
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Transformação Visual do Posto de Trabalho
                     </h2>
                   </div>
 
-                  {/* Comparativo de Fotos ou Card de Conquista */}
-                  {photoAttachments.length >= 2 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                      {/* Antes */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            📸 ANTES DA MELHORIA
-                          </span>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                            {photoAttachments[0].name}
-                          </span>
-                        </div>
-                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <img
-                            src={photoAttachments[0].url}
-                            alt="Antes"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Depois */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '2px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.75rem', boxShadow: '0 0 30px rgba(16, 185, 129, 0.1)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            📸 DEPOIS (POSTO PADRONIZADO)
-                          </span>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                            {photoAttachments[1].name}
-                          </span>
-                        </div>
-                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <img
-                            src={photoAttachments[1].url}
-                            alt="Depois"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : photoAttachments.length === 1 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                      <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '16px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          📸 EVIDÊNCIA VISUAL NO POSTO DE TRABALHO
+                  {/* 2 Fotos Salvas no Próprio Projeto (Antes e Depois) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    {/* Foto do Antes */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '16px', border: '1.5px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          📸 ANTES DA MELHORIA
                         </span>
-                        <div style={{ width: '100%', height: '300px', backgroundColor: '#090e1a', borderRadius: '12px', overflow: 'hidden' }}>
-                          <img
-                            src={photoAttachments[0].url}
-                            alt="Evidência"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </div>
+                        <label style={{ fontSize: '0.675rem', color: '#22d3ee', cursor: 'pointer', fontWeight: 700 }}>
+                          {photoBeforeUrl ? 'Alterar Foto' : '+ Enviar Foto'}
+                          <input type="file" accept="image/*" onChange={handlePhotoBeforeUpload} style={{ display: 'none' }} />
+                        </label>
                       </div>
 
-                      {/* Card de Encerramento */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <Award size={28} color="#34d399" />
-                            <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                              Ciclo PDCA Concluído!
-                            </h3>
-                          </div>
-                          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.5 }}>
-                            Projeto finalizado com comprovação de ganhos matemáticos, trabalho padronizado e validação no chão de fábrica.
-                          </p>
-
-                          <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Retorno Financeiro Real:</span>
-                              <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Horas de Trabalho Salvas:</span>
-                              <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{action.hoursSaved || internalLaborHours || 0}h</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                              <span style={{ color: '#94a3b8' }}>Líder do Projeto:</span>
-                              <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
-                            </div>
-                          </div>
+                      {photoBeforeUrl ? (
+                        <div style={{ height: '280px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
+                          <img src={photoBeforeUrl} alt="Antes" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
-
-                        <button
-                          type="button"
-                          onClick={() => confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } })}
-                          className="btn btn-primary"
-                          style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
+                      ) : (
+                        <label
+                          style={{
+                            height: '280px',
+                            backgroundColor: '#090e1a',
+                            border: '2px dashed rgba(239, 68, 68, 0.25)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#94a3b8',
+                            cursor: 'pointer',
+                            gap: '0.5rem',
+                            fontSize: '0.8125rem',
+                          }}
                         >
-                          🎉 Comemorar Resultados com Confetes!
-                        </button>
-                      </div>
+                          <UploadCloud size={28} color="#f87171" />
+                          <span>Clique para anexar a foto do <strong>Antes</strong></span>
+                          <input type="file" accept="image/*" onChange={handlePhotoBeforeUpload} style={{ display: 'none' }} />
+                        </label>
+                      )}
                     </div>
-                  ) : (
-                    /* Fallback: Premium Celebration Hero Card */
-                    <div
-                      style={{
-                        backgroundColor: '#0f172a',
-                        padding: '2.5rem',
-                        borderRadius: '20px',
-                        border: '2px solid rgba(16, 185, 129, 0.4)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        textAlign: 'center',
-                        gap: '1.25rem',
-                        boxShadow: '0 0 50px rgba(16, 185, 129, 0.1)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: '72px',
-                          height: '72px',
-                          borderRadius: '50%',
-                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                          border: '2px solid rgba(16, 185, 129, 0.4)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Award size={36} color="#34d399" />
+
+                    {/* Foto do Depois */}
+                    <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '16px', border: '1.5px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 0 25px rgba(16, 185, 129, 0.08)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          📸 DEPOIS (POSTO PADRONIZADO)
+                        </span>
+                        <label style={{ fontSize: '0.675rem', color: '#34d399', cursor: 'pointer', fontWeight: 700 }}>
+                          {photoAfterUrl ? 'Alterar Foto' : '+ Enviar Foto'}
+                          <input type="file" accept="image/*" onChange={handlePhotoAfterUpload} style={{ display: 'none' }} />
+                        </label>
                       </div>
 
-                      <div>
-                        <h3 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                          Ciclo de Apresentação PDCA Concluído com Sucesso!
-                        </h3>
-                        <p style={{ fontSize: '0.9375rem', color: '#cbd5e1', maxWidth: '600px', margin: '0.5rem auto 0', lineHeight: 1.5 }}>
-                          O projeto percorreu todas as etapas da metodologia Lean (Plan, Do, Check e Act). Todas as evidências técnicas e métricas financeiras foram consolidadas.
-                        </p>
-                      </div>
-
-                      {/* Consolidated Stats */}
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                          gap: '1rem',
-                          width: '100%',
-                          maxWidth: '700px',
-                          marginTop: '0.5rem',
-                        }}
-                      >
-                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                            Custo Evitado Real
-                          </span>
-                          <h4 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
-                            {formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}
-                          </h4>
+                      {photoAfterUrl ? (
+                        <div style={{ height: '280px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
+                          <img src={photoAfterUrl} alt="Depois" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
-
-                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                            Horas Salvas
-                          </span>
-                          <h4 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#22d3ee', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
-                            {action.hoursSaved || internalLaborHours || 0}h
-                          </h4>
-                        </div>
-
-                        <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                            Responsável
-                          </span>
-                          <h4 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0 0' }}>
-                            {action.assignedAgentName}
-                          </h4>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                        <button
-                          type="button"
-                          onClick={() => confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } })}
-                          className="btn btn-primary"
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      ) : (
+                        <label
+                          style={{
+                            height: '280px',
+                            backgroundColor: '#090e1a',
+                            border: '2px dashed rgba(16, 185, 129, 0.25)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#94a3b8',
+                            cursor: 'pointer',
+                            gap: '0.5rem',
+                            fontSize: '0.8125rem',
+                          }}
                         >
-                          <Sparkles size={16} /> Comemorar com Confetes!
-                        </button>
-                      </div>
+                          <UploadCloud size={28} color="#34d399" />
+                          <span>Clique para anexar a foto do <strong>Depois</strong></span>
+                          <input type="file" accept="image/*" onChange={handlePhotoAfterUpload} style={{ display: 'none' }} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
 
-                      <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                        💡 Dica: Para exibir fotos comparativas no Slide 5, faça upload de imagens na categoria &ldquo;Evidência / Foto&rdquo; na seção de anexos.
+                  {/* Slim Horizontal Summary Strip */}
+                  <div
+                    style={{
+                      backgroundColor: '#070b14',
+                      padding: '0.65rem 1.25rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.78125rem' }}>
+                      <span style={{ color: '#94a3b8' }}>
+                        Retorno Real: <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(totalGrossSavings > 0 ? totalGrossSavings : action.actualCostAvoided)}</strong>
+                      </span>
+                      <span style={{ color: '#94a3b8' }}>
+                        Horas Salvas: <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{action.hoursSaved || internalLaborHours || 0}h</strong>
+                      </span>
+                      <span style={{ color: '#94a3b8' }}>
+                        Responsável: <strong style={{ color: '#ffffff' }}>{action.assignedAgentName}</strong>
                       </span>
                     </div>
-                  )}
+
+                    <button
+                      type="button"
+                      onClick={() => confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } })}
+                      className="btn btn-sm"
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', fontSize: '0.725rem', padding: '0.25rem 0.65rem' }}
+                    >
+                      <Sparkles size={13} /> Celebrar com Confetes!
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -3247,9 +3298,10 @@ export default function AdminProjectDetailPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '1rem 1.75rem',
+                padding: '0.75rem 1.5rem',
                 borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                 backgroundColor: '#070b14',
+                flexShrink: 0,
               }}
             >
               {/* Botão Anterior */}
@@ -3261,16 +3313,18 @@ export default function AdminProjectDetailPage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
+                  gap: '0.35rem',
                   opacity: presentationSlide === 1 ? 0.35 : 1,
                   cursor: presentationSlide === 1 ? 'not-allowed' : 'pointer',
+                  fontSize: '0.75rem',
+                  padding: '0.35rem 0.75rem',
                 }}
               >
-                <ChevronLeft size={16} /> Anterior
+                <ChevronLeft size={15} /> Anterior
               </button>
 
               {/* Dica de Teclado */}
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
                 Use as setas <strong>⬅️ ➡️</strong> do teclado ou <strong>ESC</strong> para sair
               </span>
 
@@ -3280,9 +3334,9 @@ export default function AdminProjectDetailPage() {
                   type="button"
                   onClick={() => setPresentationSlide((prev) => (prev < 5 ? ((prev + 1) as 1 | 2 | 3 | 4 | 5) : prev))}
                   className="btn btn-primary btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
                 >
-                  Próximo Slide <ChevronRight size={16} />
+                  Próximo Slide <ChevronRight size={15} />
                 </button>
               ) : (
                 <button
@@ -3292,9 +3346,9 @@ export default function AdminProjectDetailPage() {
                     setPresentationOpen(false);
                   }}
                   className="btn btn-success btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.75rem', padding: '0.35rem 0.85rem' }}
                 >
-                  <CheckCircle2 size={16} /> Concluir Apresentação
+                  <CheckCircle2 size={15} /> Concluir Apresentação
                 </button>
               )}
             </div>

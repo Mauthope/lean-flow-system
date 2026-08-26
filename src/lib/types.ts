@@ -203,6 +203,8 @@ export interface LeanAction {
   checklist: ActionChecklistItem[];      // Plano de Ação 5W2H
   pilotArea?: string;                    // Máquina / Posto Piloto (ex: "Extrusora 03")
   pilotTestObservations?: string;        // Resultados e ajustes do teste prático
+  photoBeforeUrl?: string;               // Foto do Antes salva diretamente no projeto
+  photoAfterUrl?: string;                // Foto do Depois salva diretamente no projeto
 
   // [C - CHECK: Resultados Técnicos & Engenharia Financeira]
   achievedValue?: number;                // Valor real medido após a melhoria (ex: 16)
