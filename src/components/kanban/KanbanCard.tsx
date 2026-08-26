@@ -39,44 +39,82 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
     ? action.originSectorName.replace(/,/g, '').trim().split(' ')[0]
     : '';
 
-  const accentColor = isCompleted
-    ? '#10b981'
-    : isAwaitingApproval
-    ? '#a855f7'
-    : isInProgress
-    ? '#f59e0b'
-    : isRejected
-    ? '#ef4444'
-    : '#06b6d4';
+  // Palette de cores luminosas por status da ação
+  const colorMap: Record<
+    LeanAction['status'],
+    { solid: string; border: string; glow: string; glowHover: string; bgBadge: string }
+  > = {
+    aberta: {
+      solid: '#06b6d4',
+      border: 'rgba(6, 182, 212, 0.45)',
+      glow: 'rgba(6, 182, 212, 0.22)',
+      glowHover: 'rgba(6, 182, 212, 0.5)',
+      bgBadge: 'rgba(6, 182, 212, 0.12)',
+    },
+    em_andamento: {
+      solid: '#f59e0b',
+      border: 'rgba(245, 158, 11, 0.45)',
+      glow: 'rgba(245, 158, 11, 0.22)',
+      glowHover: 'rgba(245, 158, 11, 0.5)',
+      bgBadge: 'rgba(245, 158, 11, 0.12)',
+    },
+    aguardando_aprovacao: {
+      solid: '#a855f7',
+      border: 'rgba(168, 85, 247, 0.55)',
+      glow: 'rgba(168, 85, 247, 0.3)',
+      glowHover: 'rgba(168, 85, 247, 0.65)',
+      bgBadge: 'rgba(168, 85, 247, 0.15)',
+    },
+    concluida: {
+      solid: '#10b981',
+      border: 'rgba(16, 185, 129, 0.45)',
+      glow: 'rgba(16, 185, 129, 0.22)',
+      glowHover: 'rgba(16, 185, 129, 0.5)',
+      bgBadge: 'rgba(16, 185, 129, 0.12)',
+    },
+    nao_aprovada: {
+      solid: '#ef4444',
+      border: 'rgba(239, 68, 68, 0.45)',
+      glow: 'rgba(239, 68, 68, 0.22)',
+      glowHover: 'rgba(239, 68, 68, 0.5)',
+      bgBadge: 'rgba(239, 68, 68, 0.12)',
+    },
+  };
+
+  const currentTheme =
+    isAwaitingApproval && action.status !== 'aguardando_aprovacao'
+      ? colorMap.aguardando_aprovacao
+      : colorMap[action.status] || colorMap.aberta;
 
   return (
     <div
       onClick={onClick}
       className="kanban-card"
       style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: '#0c1424',
         borderRadius: '10px',
         padding: '0.75rem 0.85rem',
-        border: '1px solid rgba(255, 255, 255, 0.07)',
-        borderLeft: `4px solid ${accentColor}`,
-        boxShadow: '0 2px 6px rgba(0, 0, 0, 0.25)',
+        border: `1.5px solid ${currentTheme.border}`,
+        borderLeft: `4px solid ${currentTheme.solid}`,
+        boxShadow: `0 3px 10px rgba(0, 0, 0, 0.35), 0 0 12px ${currentTheme.glow}`,
         cursor: 'pointer',
-        transition: 'all 0.15s ease',
+        transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.45rem',
+        position: 'relative',
       }}
       onMouseOver={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 6px 16px rgba(0, 0, 0, 0.4), 0 0 8px ${accentColor}30`;
-        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-        e.currentTarget.style.backgroundColor = '#131e35';
+        e.currentTarget.style.boxShadow = `0 8px 25px rgba(0, 0, 0, 0.5), 0 0 20px ${currentTheme.glowHover}`;
+        e.currentTarget.style.borderColor = currentTheme.solid;
+        e.currentTarget.style.backgroundColor = '#101c33';
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.25)';
-        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.07)';
-        e.currentTarget.style.backgroundColor = '#0f172a';
+        e.currentTarget.style.boxShadow = `0 3px 10px rgba(0, 0, 0, 0.35), 0 0 12px ${currentTheme.glow}`;
+        e.currentTarget.style.borderColor = currentTheme.border;
+        e.currentTarget.style.backgroundColor = '#0c1424';
       }}
     >
       {/* Top Row: Protocol + Sector + Priority */}
@@ -86,11 +124,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             fontFamily: 'var(--font-mono, monospace)',
             fontSize: '0.675rem',
             fontWeight: 800,
-            color: '#22d3ee',
-            backgroundColor: 'rgba(6, 182, 212, 0.1)',
+            color: currentTheme.solid,
+            backgroundColor: currentTheme.bgBadge,
             padding: '0.1rem 0.4rem',
             borderRadius: '4px',
-            border: '1px solid rgba(6, 182, 212, 0.2)',
+            border: `1px solid ${currentTheme.border}`,
             letterSpacing: '0.02em',
             whiteSpace: 'nowrap',
           }}
@@ -103,14 +141,14 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             <span
               style={{
                 fontSize: '0.65rem',
-                color: '#94a3b8',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#cbd5e1',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
                 padding: '0.08rem 0.35rem',
                 borderRadius: '4px',
                 fontWeight: 600,
                 whiteSpace: 'nowrap',
-                maxWidth: '80px',
+                maxWidth: '85px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
@@ -128,7 +166,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         style={{
           fontSize: '0.84375rem',
           fontWeight: 700,
-          color: '#f1f5f9',
+          color: '#f8fafc',
           fontFamily: 'var(--font-heading)',
           lineHeight: 1.35,
           margin: 0,
@@ -151,8 +189,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 fontSize: '0.675rem',
                 fontWeight: 700,
                 color: isCompleted ? '#34d399' : '#38bdf8',
-                backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.1)' : 'rgba(56, 189, 248, 0.1)',
-                border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.25)' : 'rgba(56, 189, 248, 0.25)'}`,
+                backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.12)' : 'rgba(56, 189, 248, 0.12)',
+                border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
                 padding: '0.08rem 0.35rem',
                 borderRadius: '4px',
                 display: 'inline-flex',
@@ -170,8 +208,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 fontSize: '0.65rem',
                 fontWeight: 700,
                 color: '#c084fc',
-                backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
+                backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
                 padding: '0.08rem 0.35rem',
                 borderRadius: '4px',
               }}
@@ -189,7 +227,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: '0.35rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
           fontSize: '0.7rem',
           color: '#94a3b8',
         }}
@@ -200,20 +238,20 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '0.25rem',
-            color: isOverdue ? '#f87171' : '#94a3b8',
+            color: isOverdue ? '#f87171' : isCompleted ? '#34d399' : '#94a3b8',
             fontWeight: isOverdue ? 700 : 500,
           }}
           title={isOverdue ? 'Prazo expirado' : `Data limite: ${formatDate(action.dueDate)}`}
         >
-          <Calendar size={12} color={isOverdue ? '#f87171' : '#64748b'} />
+          <Calendar size={12} color={isOverdue ? '#f87171' : isCompleted ? '#34d399' : '#64748b'} />
           <span>{action.dueDate ? formatDate(action.dueDate) : '--'}</span>
           {isOverdue && (
             <span
               style={{
                 fontSize: '0.575rem',
-                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
                 color: '#f87171',
-                padding: '0.02rem 0.2rem',
+                padding: '0.02rem 0.25rem',
                 borderRadius: '3px',
                 fontWeight: 800,
               }}
