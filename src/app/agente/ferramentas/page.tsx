@@ -36,7 +36,7 @@ const LEAN_TOOLS: ToolCardItem[] = [
   {
     id: 'cronoanalise',
     href: '/agente/ferramentas/cronoanalise',
-    title: 'Cronoanálise & Estudo de Tempos Lean',
+    title: 'Estudo de Tempos',
     badge: 'Chão de Fábrica',
     badgeColor: '#22d3ee',
     description:

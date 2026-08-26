@@ -74,7 +74,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { href: '/admin/relatorios', label: 'Custo Evitado & ROI', icon: TrendingUp },
         { href: '/agente/ferramentas', label: 'Ferramentas Lean', icon: Wrench },
-        { href: '/agente/ferramentas/cronoanalise', label: 'Cronoanálise & Tempos', icon: Timer, badge: 'Novo' },
+        { href: '/agente/ferramentas/cronoanalise', label: 'Estudo de Tempos', icon: Timer, badge: 'Novo' },
       ],
     },
     {
@@ -98,7 +98,7 @@ export const Sidebar: React.FC = () => {
       label: 'Práticas & Métodos',
       items: [
         { href: '/agente/ferramentas', label: 'Hub de Ferramentas', icon: Wrench },
-        { href: '/agente/ferramentas/cronoanalise', label: 'Cronoanálise & Tempos', icon: Timer, badge: 'Novo' },
+        { href: '/agente/ferramentas/cronoanalise', label: 'Estudo de Tempos', icon: Timer, badge: 'Novo' },
         { href: '/agente/ferramentas/calculadora-roi', label: 'Calculadora de ROI', icon: Calculator },
       ],
     },
