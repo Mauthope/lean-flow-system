@@ -17,8 +17,23 @@ import {
   Inbox,
   Award,
   Sparkles,
+  Zap,
+  Target,
+  Activity,
+  Layers,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
+
+const SECTOR_ACCENTS = [
+  { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' },
+  { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' },
+  { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', border: 'rgba(139, 92, 246, 0.3)' },
+  { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' },
+  { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.3)' },
+  { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.3)' },
+];
 
 export default function AdminDashboardPage() {
   const { dataVersion } = useAuth();
@@ -31,51 +46,144 @@ export default function AdminDashboardPage() {
     return dataService.getActions().filter((a) => a.isPublicDemand && a.status === 'aberta' && !a.assignedAgentId);
   }, [dataVersion]);
 
+  // Breakdown calculations for the executive financial sources
+  const breakdownList = useMemo(() => {
+    const total = metrics.totalActualCostAvoided || 1;
+    const b = metrics.costBreakdownTotals;
+    return [
+      {
+        label: 'Mão de Obra & Tempo de Ciclo',
+        value: b.laborSavings || 0,
+        pct: Math.round(((b.laborSavings || 0) / total) * 100),
+        color: '#06b6d4',
+        icon: '👷‍♂️',
+      },
+      {
+        label: 'Aumento de Produção & Capacidade',
+        value: b.productionIncrease || 0,
+        pct: Math.round(((b.productionIncrease || 0) / total) * 100),
+        color: '#10b981',
+        icon: '🚀',
+      },
+      {
+        label: 'Redução de Sucata & Refugo',
+        value: b.scrapReduction || 0,
+        pct: Math.round(((b.scrapReduction || 0) / total) * 100),
+        color: '#ec4899',
+        icon: '♻️',
+      },
+      {
+        label: 'Paradas de Máquina & Insumos',
+        value: (b.machineDowntime || 0) + (b.toolingAndEnergy || 0) + (b.logisticsAndFreight || 0),
+        pct: Math.round((((b.machineDowntime || 0) + (b.toolingAndEnergy || 0) + (b.logisticsAndFreight || 0)) / total) * 100),
+        color: '#f59e0b',
+        icon: '⚙️',
+      },
+    ].filter((item) => item.value > 0 || total > 1);
+  }, [metrics]);
+
+  const totalPipeline = metrics.totalActions || 1;
+  const pctOpen = Math.round((metrics.openActions / totalPipeline) * 100);
+  const pctInProgress = Math.round((metrics.inProgressActions / totalPipeline) * 100);
+  const pctCompleted = Math.round((metrics.completedActions / totalPipeline) * 100);
+  const pctRejected = Math.round((metrics.rejectedActions / totalPipeline) * 100);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      {/* Top Banner with Quick Highlights */}
+      {/* ================= TOP HERO BANNER (SOFISTICAÇÃO EXECUTIVA) ================= */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #091326 0%, #0d2347 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.25)',
-          borderRadius: '16px',
-          padding: '1.75rem 2rem',
+          background: 'linear-gradient(135deg, #091326 0%, #0c1c38 45%, #070e1d 100%)',
+          border: '1px solid rgba(6, 182, 212, 0.3)',
+          borderRadius: '20px',
+          padding: '1.85rem 2.25rem',
           color: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1.25rem',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+          gap: '1.5rem',
+          boxShadow: '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.08)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
+        {/* Subtle decorative glow orb in background */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-50px',
+            right: '20%',
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+          {/* Executive Badges Strip */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
             <span
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
                 color: '#22d3ee',
                 border: '1px solid rgba(6, 182, 212, 0.35)',
-                padding: '0.15rem 0.55rem',
+                padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.05em',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
-              VISÃO EXECUTIVA MASTER
+              <ShieldCheck size={12} color="#22d3ee" /> VISÃO EXECUTIVA MASTER
+            </span>
+
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                color: '#34d399',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                padding: '0.2rem 0.65rem',
+                borderRadius: '9999px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              ● {metrics.resolutionRate}% RESOLUÇÃO
+            </span>
+
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 800,
+                backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                color: '#c084fc',
+                border: '1px solid rgba(139, 92, 246, 0.35)',
+                padding: '0.2rem 0.65rem',
+                borderRadius: '9999px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              ⏱️ {metrics.averageCycleDays}d CICLO MÉDIO
             </span>
           </div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-            Painel Geral do Supervisor
+
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            Painel de Inteligência Operacional Lean
           </h2>
-          <p style={{ fontSize: '0.84375rem', color: '#94a3b8', maxWidth: '600px', marginTop: '0.25rem' }}>
-            Controle integrado de projetos de melhoria contínua, custo evitado por operador e triagem de
-            demandas da fábrica.
+          <p style={{ fontSize: '0.875rem', color: '#94a3b8', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
+            Controle integrado de iniciativas de melhoria contínua, custo evitado homologado por operador e fluxo ágil de chão de fábrica.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
           {pendingDemands.length > 0 && (
             <Link
               href="/admin/triagem"
@@ -83,18 +191,20 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                backgroundColor: '#f59e0b',
-                color: '#020617',
+                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                border: '1px solid rgba(245, 158, 11, 0.5)',
+                color: '#fbbf24',
                 fontWeight: 800,
                 fontSize: '0.84375rem',
-                padding: '0.625rem 1rem',
-                borderRadius: '10px',
+                padding: '0.65rem 1.15rem',
+                borderRadius: '12px',
                 textDecoration: 'none',
-                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.3)',
+                boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)',
+                transition: 'all 0.15s ease',
               }}
             >
               <Inbox size={16} />
-              <span>{pendingDemands.length} Demandas em Triagem</span>
+              <span>{pendingDemands.length} Triagens Pendentes</span>
             </Link>
           )}
 
@@ -104,43 +214,45 @@ export default function AdminDashboardPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#f8fafc',
-              fontWeight: 700,
+              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+              border: '1px solid rgba(6, 182, 212, 0.4)',
+              color: '#22d3ee',
+              fontWeight: 800,
               fontSize: '0.84375rem',
-              padding: '0.625rem 1rem',
-              borderRadius: '10px',
+              padding: '0.65rem 1.15rem',
+              borderRadius: '12px',
               textDecoration: 'none',
+              boxShadow: '0 0 20px rgba(6, 182, 212, 0.15)',
+              transition: 'all 0.15s ease',
             }}
           >
             <Kanban size={16} color="#22d3ee" />
-            <span>Ver Kanban Geral</span>
+            <span>Kanban Geral</span>
           </Link>
         </div>
       </div>
 
-      {/* KPI Stats Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '1.25rem' }}>
+      {/* ================= 4 CARDS DE MÉTRICAS PRINCIPAIS (COM GLOW SUTIL) ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
           title="Custo Evitado Real (ROI)"
           value={formatCurrency(metrics.totalActualCostAvoided)}
-          subtitle="Economia comprovada em ações concluídas"
+          subtitle="Economia comprovada em ações homologadas"
           icon={<DollarSign size={22} />}
           accentColor="#10b981"
           trend={{ value: '+18.4% no mês', isPositive: true }}
         />
 
         <StatsCard
-          title="Custo Evitado em Andamento"
+          title="Potencial em Andamento"
           value={formatCurrency(metrics.totalEstimatedCostAvoided - metrics.totalActualCostAvoided)}
-          subtitle="Potencial de economia nas ações ativas"
+          subtitle="Projeção ativa nos ciclos em execução"
           icon={<TrendingUp size={22} />}
           accentColor="#06b6d4"
         />
 
         <StatsCard
-          title="Total de Ações Geradas"
+          title="Total de Ações & Projetos"
           value={metrics.totalActions}
           subtitle={`${metrics.completedActions} concluídas | ${metrics.inProgressActions} em andamento`}
           icon={<Kanban size={22} />}
@@ -156,37 +268,278 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Visão Geral de Cada Agente */}
-      <div className="card">
-        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+      {/* ================= 2 PAINÉIS DE DESTAQUE OPERACIONAL & FINANCEIRO ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+        {/* Painel 1: Fluxo do Pipeline de Projetos Lean */}
+        <div
+          className="card"
+          style={{
+            backgroundColor: '#0f172a',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '1.25rem',
+          }}
+        >
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-              Visão Geral de Desempenho por Agente
-            </h3>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
-              Acompanhamento individual de ações atribuídas, entregas e custo evitado gerado por operador
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Activity size={18} color="#22d3ee" />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                  Pipeline Operacional de Projetos
+                </h3>
+              </div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                {metrics.totalActions} ações cadastradas
+              </span>
+            </div>
+            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: 0 }}>
+              Distribuição proporcional das iniciativas pelas etapas do fluxo Lean
             </p>
           </div>
-          <Link href="/admin/agentes" className="btn btn-secondary btn-sm">
+
+          {/* Segmented Pipeline Visual Bar */}
+          <div>
+            <div
+              style={{
+                width: '100%',
+                height: '12px',
+                borderRadius: '9999px',
+                backgroundColor: '#090e1a',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                overflow: 'hidden',
+                marginBottom: '1rem',
+              }}
+            >
+              {pctCompleted > 0 && (
+                <div
+                  title={`Concluídas: ${metrics.completedActions} (${pctCompleted}%)`}
+                  style={{
+                    width: `${pctCompleted}%`,
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              )}
+              {pctInProgress > 0 && (
+                <div
+                  title={`Em Andamento: ${metrics.inProgressActions} (${pctInProgress}%)`}
+                  style={{
+                    width: `${pctInProgress}%`,
+                    backgroundColor: '#8b5cf6',
+                    boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              )}
+              {pctOpen > 0 && (
+                <div
+                  title={`Abertas: ${metrics.openActions} (${pctOpen}%)`}
+                  style={{
+                    width: `${pctOpen}%`,
+                    backgroundColor: '#06b6d4',
+                    boxShadow: '0 0 10px rgba(6, 182, 212, 0.5)',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              )}
+              {pctRejected > 0 && (
+                <div
+                  title={`Recusadas: ${metrics.rejectedActions} (${pctRejected}%)`}
+                  style={{
+                    width: `${pctRejected}%`,
+                    backgroundColor: '#f87171',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Micro-Badges Indicators */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.625rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+                  Concluídas
+                </span>
+                <strong style={{ fontSize: '0.875rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.completedActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctCompleted}%)</span>
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8b5cf6', boxShadow: '0 0 6px #8b5cf6' }} />
+                  Em Andamento
+                </span>
+                <strong style={{ fontSize: '0.875rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.inProgressActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctInProgress}%)</span>
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#06b6d4', boxShadow: '0 0 6px #06b6d4' }} />
+                  Abertas / Novas
+                </span>
+                <strong style={{ fontSize: '0.875rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.openActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctOpen}%)</span>
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                  Recusadas
+                </span>
+                <strong style={{ fontSize: '0.875rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.rejectedActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctRejected}%)</span>
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Link
+              href="/admin/kanban"
+              style={{
+                fontSize: '0.78125rem',
+                fontWeight: 700,
+                color: '#22d3ee',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+              }}
+            >
+              Acessar Quadro Kanban Completo <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Painel 2: Composição Financeira do Custo Evitado */}
+        <div
+          className="card"
+          style={{
+            backgroundColor: '#0f172a',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '1.25rem',
+            boxShadow: '0 8px 30px -10px rgba(16, 185, 129, 0.12)',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap size={18} color="#34d399" />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                  Composição do Retorno Lean
+                </h3>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.725rem',
+                  fontWeight: 800,
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  color: '#34d399',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: '9999px',
+                }}
+              >
+                ROI Homologado
+              </span>
+            </div>
+            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: 0 }}>
+              Fontes reais de geração de valor financeiro validadas em fábrica
+            </p>
+          </div>
+
+          {/* Breakdown Items with Progress Gauges */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            {breakdownList.map((item, idx) => (
+              <div key={idx}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem', fontSize: '0.8125rem' }}>
+                  <span style={{ color: '#cbd5e1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span>{item.icon}</span> {item.label}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                      {formatCurrency(item.value)}
+                    </strong>
+                    <span style={{ fontSize: '0.725rem', fontWeight: 800, color: item.color, fontFamily: 'var(--font-mono)' }}>
+                      ({item.pct}%)
+                    </span>
+                  </div>
+                </div>
+                <div style={{ width: '100%', height: '6px', backgroundColor: '#090e1a', borderRadius: '9999px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(8, item.pct))}%`,
+                      height: '100%',
+                      backgroundColor: item.color,
+                      borderRadius: '9999px',
+                      boxShadow: `0 0 8px ${item.color}80`,
+                      transition: 'width 0.3s ease',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Total Homologado:</span>
+            <strong style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+              {formatCurrency(metrics.totalActualCostAvoided)}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= VISÃO GERAL DE DESEMPENHO POR AGENTE ================= */}
+      <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Users size={18} color="#a78bfa" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                Workstation de Operadores & Especialistas Lean
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+              Acompanhamento individual de ações atribuídas, entregas concluídas e custo evitado gerado
+            </p>
+          </div>
+          <Link href="/admin/agentes" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Users size={14} /> Gerenciar Agentes
           </Link>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: '750px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <th style={{ padding: '0.875rem 1.25rem' }}>Agente</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Atribuídas</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Em Andamento</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Concluídas</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Custo Evitado Gerado</th>
-                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Taxa Eficiência</th>
+                <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Eficiência</th>
               </tr>
             </thead>
             <tbody>
-              {metrics.byAgent.map((agent) => (
+              {metrics.byAgent.map((agent, i) => (
                 <tr
                   key={agent.agentId}
                   style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background-color 0.15s ease' }}
@@ -195,51 +548,113 @@ export default function AdminDashboardPage() {
                 >
                   <td style={{ padding: '0.875rem 1.25rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <img
-                        src={
-                          agent.avatarUrl ||
-                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                        }
-                        alt={agent.agentName}
-                        style={{ width: '34px', height: '34px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255, 255, 255, 0.15)' }}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={
+                            agent.avatarUrl ||
+                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={agent.agentName}
+                          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(6, 182, 212, 0.4)' }}
+                        />
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            right: 0,
+                            width: '9px',
+                            height: '9px',
+                            borderRadius: '50%',
+                            backgroundColor: '#10b981',
+                            border: '1.5px solid #0f172a',
+                          }}
+                        />
+                      </div>
                       <div>
-                        <p style={{ fontWeight: 700, color: '#f8fafc', margin: 0 }}>{agent.agentName}</p>
+                        <p style={{ fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>{agent.agentName}</p>
                         <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Especialista Lean</p>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '0.875rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {agent.sectorName || 'Geral'}
+                  <td style={{ padding: '0.875rem 1rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        color: '#cbd5e1',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {agent.sectorName || 'Geral'}
+                    </span>
                   </td>
-                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 700, color: '#f8fafc' }}>
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
                     {agent.assignedCount}
                   </td>
                   <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                    <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontWeight: 700, fontSize: '0.75rem' }}>
+                    <span
+                      style={{
+                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                        color: '#fbbf24',
+                        border: '1px solid rgba(245, 158, 11, 0.35)',
+                        padding: '0.15rem 0.55rem',
+                        borderRadius: '9999px',
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
                       {agent.inProgressCount}
                     </span>
                   </td>
                   <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                    <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontWeight: 700, fontSize: '0.75rem' }}>
+                    <span
+                      style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        color: '#34d399',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        padding: '0.15rem 0.55rem',
+                        borderRadius: '9999px',
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
                       {agent.completedCount}
                     </span>
                   </td>
-                  <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#34d399', fontSize: '0.9375rem' }}>
-                    {formatCurrency(agent.actualCostAvoided)}
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                    <span
+                      style={{
+                        fontWeight: 800,
+                        color: '#34d399',
+                        fontSize: '0.9375rem',
+                        fontFamily: 'var(--font-mono)',
+                        backgroundColor: agent.actualCostAvoided > 0 ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+                        padding: agent.actualCostAvoided > 0 ? '0.2rem 0.5rem' : '0',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {formatCurrency(agent.actualCostAvoided)}
+                    </span>
                   </td>
                   <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                      <div style={{ width: '60px', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: '70px', height: '7px', backgroundColor: '#090e1a', borderRadius: '999px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                         <div
                           style={{
                             width: `${agent.efficiencyRate}%`,
                             height: '100%',
-                            backgroundColor: agent.efficiencyRate >= 60 ? '#10b981' : '#06b6d4',
+                            background: agent.efficiencyRate >= 60 ? 'linear-gradient(90deg, #06b6d4, #10b981)' : '#f59e0b',
+                            borderRadius: '999px',
+                            boxShadow: agent.efficiencyRate >= 60 ? '0 0 6px rgba(16, 185, 129, 0.6)' : 'none',
                           }}
                         />
                       </div>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f8fafc' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: agent.efficiencyRate >= 60 ? '#34d399' : '#fbbf24', fontFamily: 'var(--font-mono)' }}>
                         {agent.efficiencyRate}%
                       </span>
                     </div>
@@ -251,59 +666,101 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Sectors ROI Breakdown */}
-      <div className="card">
-        <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-            Impacto & Custo Evitado por Setor
-          </h3>
-          <Link href="/admin/setores" className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem' }}>
-            Ver Setores
+      {/* ================= IMPACTO & CUSTO EVITADO POR SETOR ================= */}
+      <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.5rem' }}>
+        <div className="card-header" style={{ padding: 0, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Building2 size={18} color="#22d3ee" />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                Impacto & Custo Evitado por Setor
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+              Volume de projetos executados e retorno financeiro comprovado por área fabril
+            </p>
+          </div>
+          <Link href="/admin/setores" className="btn btn-secondary btn-sm" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Building2 size={14} /> Ver Todos os Setores
           </Link>
         </div>
-        <div className="card-body" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
-          {metrics.bySector.map((sec) => (
-            <div
-              key={sec.sectorId}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 0.85rem',
-                backgroundColor: '#090e1a',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Building2 size={18} color="#22d3ee" />
-                </div>
-                <div>
-                  <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#f8fafc', margin: 0 }}>{sec.sectorName}</p>
-                  <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{sec.count} ações registradas</p>
-                </div>
-              </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Custo Evitado</span>
-                <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
-                  {formatCurrency(sec.costAvoided)}
-                </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+          {metrics.bySector.map((sec, idx) => {
+            const accent = SECTOR_ACCENTS[idx % SECTOR_ACCENTS.length];
+            const maxSectorCost = Math.max(...metrics.bySector.map((s) => s.costAvoided), 1);
+            const sectorPct = Math.round((sec.costAvoided / maxSectorCost) * 100);
+
+            return (
+              <div
+                key={sec.sectorId}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                  padding: '1rem 1.15rem',
+                  backgroundColor: '#090e1a',
+                  borderRadius: '12px',
+                  border: `1px solid ${accent.border}`,
+                  boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3), 0 0 15px ${accent.color}0a`,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '10px',
+                        backgroundColor: accent.bg,
+                        border: `1px solid ${accent.border}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: `0 0 12px ${accent.color}25`,
+                      }}
+                    >
+                      <Building2 size={18} color={accent.color} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        {sec.sectorName}
+                      </p>
+                      <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>
+                        {sec.count} {sec.count === 1 ? 'ação registrada' : 'ações registradas'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Custo Evitado
+                    </span>
+                    <p style={{ fontSize: '1rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                      {formatCurrency(sec.costAvoided)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Contribution visual bar */}
+                <div>
+                  <div style={{ width: '100%', height: '5px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.max(5, sectorPct)}%`,
+                        height: '100%',
+                        backgroundColor: accent.color,
+                        boxShadow: `0 0 8px ${accent.color}60`,
+                        borderRadius: '999px',
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
