@@ -49,7 +49,7 @@ export default function AdminDashboardPage() {
   // Breakdown calculations for the executive financial sources
   const breakdownList = useMemo(() => {
     const total = metrics.totalActualCostAvoided || 1;
-    const b = metrics.costBreakdownTotals;
+    const b = metrics.costBreakdownTotals || {};
     return [
       {
         label: 'Mão de Obra & Tempo de Ciclo',
@@ -539,7 +539,7 @@ export default function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {metrics.byAgent.map((agent, i) => (
+              {metrics.byAgent.map((agent) => (
                 <tr
                   key={agent.agentId}
                   style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background-color 0.15s ease' }}
