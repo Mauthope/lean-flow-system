@@ -46,15 +46,7 @@ export interface MotivoConfig {
   color: string;
 }
 
-const DEFAULT_MOTIVOS: MotivoConfig[] = [
-  { name: 'Ciclo Produtivo Padrão', type: 'VA', color: '#10b981' },
-  { name: 'Troca de Ferramenta / Setup (SMED)', type: 'NVA', color: '#f59e0b' },
-  { name: 'Falta de Material / Abastecimento', type: 'NVA', color: '#ef4444' },
-  { name: 'Ajuste de Máquina / Regulagem', type: 'NVA', color: '#8b5cf6' },
-  { name: 'Inspeção / Controle de Qualidade', type: 'NNVA', color: '#06b6d4' },
-  { name: 'Micro-parada / Travamento', type: 'NVA', color: '#ec4899' },
-  { name: 'Espera / Movimentação', type: 'NVA', color: '#64748b' },
-];
+const DEFAULT_MOTIVOS: MotivoConfig[] = [];
 
 type StudyTab = 'cronometro' | 'analise' | 'estatistica' | 'historico';
 
@@ -735,7 +727,25 @@ export default function EstudoDeTemposPage() {
 
             {/* Activities List (Touch-Friendly) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '520px', overflowY: 'auto' }}>
-              {motivos.map((m) => {
+              {motivos.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2.5rem 1rem',
+                  border: '1.5px dashed rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  backgroundColor: '#090e1a',
+                  color: '#94a3b8',
+                }}>
+                  <Tag size={28} color="#64748b" style={{ margin: '0 auto 0.5rem' }} />
+                  <strong style={{ display: 'block', fontSize: '0.84375rem', color: '#ffffff' }}>
+                    Nenhuma atividade cadastrada
+                  </strong>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.35rem 0 0', lineHeight: 1.4 }}>
+                    Digite o nome da etapa no campo acima (ex: <em>Montagem</em>, <em>Troca de Ferramenta</em>, <em>Inspeção</em>) e toque em <strong>Add</strong> para começar a cronometrar.
+                  </p>
+                </div>
+              ) : (
+                motivos.map((m) => {
                 const active = activeTimers[m.name];
                 const isRunning = active?.isRunning;
                 const isFocused = focusedMotivo === m.name;
@@ -810,7 +820,7 @@ export default function EstudoDeTemposPage() {
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
         </div>
