@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
@@ -40,6 +40,8 @@ import {
   BarChart3,
   Check,
   Compass,
+  X,
+  Send,
 } from 'lucide-react';
 
 interface UnifiedKaizen {
@@ -74,6 +76,14 @@ interface UnifiedKaizen {
   photoUrl?: string;
   url: string;
   a3Url?: string;
+}
+
+interface ChatMessage {
+  id: string;
+  sender: 'user' | 'ai';
+  text: string;
+  matchedKaizens?: UnifiedKaizen[];
+  timestamp: string;
 }
 
 const MONTH_NAMES = [
@@ -112,15 +122,19 @@ export default function HistoricoKaizenPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [expandedKaizenId, setExpandedKaizenId] = useState<string | null>(null);
 
-  // AI Assistant Query & Response State
-  const [aiQuery, setAiQuery] = useState('');
-  const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiResponse, setAiResponse] = useState<{
-    summary: string;
-    matchedKaizens: UnifiedKaizen[];
-    totalSavings: number;
-    lessons: string[];
-  } | null>(null);
+  // Floating AI Assistant Chatbot State
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [isAiThinking, setIsAiThinking] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: 'msg_welcome',
+      sender: 'ai',
+      text: 'Olá! Sou o Assistente de Inteligência Artificial Kaizen da fábrica. 🤖\n\nPosso vasculhar todo o histórico de Projetos Lean (PDCA), causas raízes (Ishikawa 6M / 5 Porquês), Pareto e lições aprendidas (Yokoten) para responder suas dúvidas técnicas ou buscar precedentes de soluções.\n\nO que você gostaria de pesquisar hoje?',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   // Load data
   useEffect(() => {
@@ -131,13 +145,19 @@ export default function HistoricoKaizenPage() {
     setLoading(false);
   }, [currentTenant]);
 
+  // Auto scroll chat to bottom
+  useEffect(() => {
+    if (isAiChatOpen) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isAiThinking, isAiChatOpen]);
+
   // Unify and filter completed Kaizens
   const unifiedKaizens = useMemo<UnifiedKaizen[]>(() => {
     const list: UnifiedKaizen[] = [];
 
     // 1. Process Actions (Projetos Lean PDCA Concluídos)
     actions.forEach((act) => {
-      // Consider completed if status is 'concluida', or stage is 'act' / completedAt exists
       const isCompleted =
         act.status === 'concluida' ||
         act.pdcaStage === 'act' ||
@@ -354,16 +374,24 @@ export default function HistoricoKaizenPage() {
     };
   }, [filteredKaizens]);
 
-  // AI Semantic Assistant Search Simulation & Intelligence
-  const handleRunAiSearch = (customPrompt?: string) => {
-    const promptText = (customPrompt || aiQuery).trim();
-    if (!promptText) return;
+  // Handle AI Chat Messages
+  const handleSendMessage = (customText?: string) => {
+    const textToSend = (customText || chatInput).trim();
+    if (!textToSend) return;
 
-    setIsAiSearching(true);
-    setAiResponse(null);
+    const userMsg: ChatMessage = {
+      id: 'usr_' + Date.now(),
+      sender: 'user',
+      text: textToSend,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setChatMessages((prev) => [...prev, userMsg]);
+    setChatInput('');
+    setIsAiThinking(true);
 
     setTimeout(() => {
-      const q = promptText.toLowerCase();
+      const q = textToSend.toLowerCase();
       const matched = unifiedKaizens.filter((k) => {
         const textToSearch = [
           k.title,
@@ -390,28 +418,31 @@ export default function HistoricoKaizenPage() {
         return words.some((word) => textToSearch.includes(word));
       });
 
-      const items = matched.length > 0 ? matched : unifiedKaizens.slice(0, 3);
+      const items = matched.length > 0 ? matched : unifiedKaizens.slice(0, 2);
       const totalSavingsFound = items.reduce((acc, k) => acc + (k.actualCostAvoided || 0), 0);
 
-      const lessonsExtracted = items
-        .map((k) => k.lessonsLearned || k.yokotenReplication)
-        .filter(Boolean) as string[];
-
-      let summaryText = `Localizei **${items.length} Kaizen(s)** relacionados ao tema "*${promptText}*" no histórico da fábrica. `;
+      let answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" no histórico da fábrica.`;
       if (totalSavingsFound > 0) {
-        summaryText += `Essas melhorias geraram uma economia acumulada de **${formatCurrency(totalSavingsFound)}/ano**. `;
+        answer += `\n\n💰 **Impacto Financeiro Acumulado**: ${formatCurrency(totalSavingsFound)}/ano economizados.`;
       }
-      summaryText += `As principais causas raízes resolvidas envolveram padronização de métodos, eliminação de tempos de espera e manutenção preditiva em postos de trabalho.`;
+      if (items[0]?.problemStatement) {
+        answer += `\n\n🎯 **Causa Raiz Comprovada**: ${items[0].problemStatement}`;
+      }
+      if (items[0]?.lessonsLearned || items[0]?.yokotenReplication) {
+        answer += `\n\n📚 **Padrão / Lição Yokoten**: ${items[0].lessonsLearned || items[0].yokotenReplication}`;
+      }
 
-      setAiResponse({
-        summary: summaryText,
+      const aiMsg: ChatMessage = {
+        id: 'ai_' + Date.now(),
+        sender: 'ai',
+        text: answer,
         matchedKaizens: items,
-        totalSavings: totalSavingsFound,
-        lessons: lessonsExtracted.slice(0, 3),
-      });
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
 
-      setIsAiSearching(false);
-    }, 750);
+      setChatMessages((prev) => [...prev, aiMsg]);
+      setIsAiThinking(false);
+    }, 700);
   };
 
   const clearFilters = () => {
@@ -424,7 +455,7 @@ export default function HistoricoKaizenPage() {
   };
 
   return (
-    <div style={{ padding: '1.75rem', maxWidth: '1600px', margin: '0 auto' }}>
+    <div style={{ padding: '1.75rem', maxWidth: '1600px', margin: '0 auto', position: 'relative' }}>
       {/* Header Executivo com Badge IA */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
@@ -804,208 +835,6 @@ export default function HistoricoKaizenPage() {
             >
               Ver todos os meses do ano
             </button>
-          </div>
-        )}
-      </div>
-
-      {/* ========================================================================= */}
-      {/* ASSISTENTE DE IA KAIZEN (PESQUISA SEMÂNTICA, CAUSA RAIZ & YOKOTEN)          */}
-      {/* ========================================================================= */}
-      <div
-        className="card"
-        style={{
-          padding: '1.5rem',
-          backgroundColor: '#0a0f1d',
-          borderRadius: '16px',
-          border: '1px solid rgba(168, 85, 247, 0.35)',
-          marginBottom: '1.5rem',
-          background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%)',
-          boxShadow: '0 0 25px rgba(168, 85, 247, 0.1)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              backgroundColor: 'rgba(168, 85, 247, 0.2)',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <BrainCircuit size={18} color="#c084fc" />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-              Assistente de IA Kaizen • Consulta Causal & Yokoten
-            </h3>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.1rem 0 0 0' }}>
-              Pesquise diagnósticos, 5 Porquês, Ishikawa, lições aprendidas e soluções já aplicadas na fábrica com inteligência contextual.
-            </p>
-          </div>
-        </div>
-
-        {/* Input da IA com Botão de Pesquisa */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Ex: Quais kaizens reduziram tempo de setup na extrusora? / O que fizemos para eliminar paradas na tecelagem?"
-              value={aiQuery}
-              onChange={(e) => setAiQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleRunAiSearch();
-              }}
-              style={{
-                backgroundColor: '#060a13',
-                borderColor: 'rgba(168, 85, 247, 0.35)',
-                color: '#ffffff',
-                paddingLeft: '2.5rem',
-                fontSize: '0.875rem',
-              }}
-            />
-            <Bot size={16} color="#c084fc" style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)' }} />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleRunAiSearch()}
-            disabled={isAiSearching}
-            className="btn btn-primary"
-            style={{
-              backgroundColor: '#8b5cf6',
-              borderColor: '#8b5cf6',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              minWidth: '140px',
-              justifyContent: 'center',
-            }}
-          >
-            {isAiSearching ? (
-              <>
-                <Clock size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Analisando...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles size={14} />
-                <span>Consultar IA</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Sugestões de Prompts Rápidos */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>Perguntas sugeridas:</span>
-          {[
-            'Setup rápido (SMED) na Extrusora',
-            'Paradas de máquina e OEE na Tecelagem',
-            'Desperdício de retrabalho no Acabamento',
-            'Ideias do chão de fábrica com maior economia',
-          ].map((prompt, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setAiQuery(prompt);
-                handleRunAiSearch(prompt);
-              }}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#cbd5e1',
-                padding: '0.2rem 0.55rem',
-                borderRadius: '6px',
-                fontSize: '0.7rem',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              💡 {prompt}
-            </button>
-          ))}
-        </div>
-
-        {/* Resposta Gerada pela IA */}
-        {aiResponse && (
-          <div
-            style={{
-              marginTop: '1rem',
-              backgroundColor: '#060a13',
-              borderRadius: '12px',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              padding: '1.25rem',
-              animation: 'fadeIn 0.25s ease',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Sparkles size={16} color="#c084fc" />
-                <span style={{ fontSize: '0.78125rem', fontWeight: 900, color: '#c084fc', textTransform: 'uppercase' }}>
-                  Síntese da Inteligência Kaizen
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAiResponse(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.7rem', cursor: 'pointer' }}
-              >
-                Limpar resposta
-              </button>
-            </div>
-
-            <p style={{ fontSize: '0.84375rem', color: '#f1f5f9', lineHeight: 1.5, margin: '0 0 1rem 0' }}>
-              {aiResponse.summary}
-            </p>
-
-            {/* Matched Kaizens Badges */}
-            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '0.4rem' }}>
-              Kaizens Encontrados ({aiResponse.matchedKaizens.length}):
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.6rem' }}>
-              {aiResponse.matchedKaizens.map((k) => (
-                <Link
-                  key={k.id}
-                  href={k.url}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    backgroundColor: '#090e1a',
-                    padding: '0.6rem 0.85rem',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    textDecoration: 'none',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <div style={{ overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
-                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: k.origin === 'projeto' ? '#38bdf8' : '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                        {k.protocol}
-                      </span>
-                      <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>• {k.sectorName}</span>
-                    </div>
-                    <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#ffffff', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {k.title}
-                    </span>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.75rem' }}>
-                    <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                      {formatCurrency(k.actualCostAvoided)}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
           </div>
         )}
       </div>
@@ -1474,6 +1303,321 @@ export default function HistoricoKaizenPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* BOTÃO FLUTUANTE & GAVETA DE CHAT DA IA KAIZEN (FAB WIDGET)               */}
+      {/* ========================================================================= */}
+      {!isAiChatOpen && (
+        <button
+          type="button"
+          onClick={() => setIsAiChatOpen(true)}
+          style={{
+            position: 'fixed',
+            bottom: '1.75rem',
+            right: '1.75rem',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            padding: '0.85rem 1.4rem',
+            borderRadius: '9999px',
+            background: 'linear-gradient(135deg, #9333ea 0%, #2563eb 50%, #06b6d4 100%)',
+            color: '#ffffff',
+            fontWeight: 900,
+            fontSize: '0.875rem',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 8px 30px rgba(147, 51, 234, 0.5), 0 0 15px rgba(6, 182, 212, 0.4)',
+            cursor: 'pointer',
+            transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
+          }}
+          title="Abrir Assistente de Inteligência Artificial Kaizen"
+        >
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <BrainCircuit size={17} color="#ffffff" />
+          </div>
+          <span>Consultar IA Kaizen</span>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 900,
+              backgroundColor: 'rgba(255, 255, 255, 0.25)',
+              padding: '0.1rem 0.45rem',
+              borderRadius: '9999px',
+              letterSpacing: '0.04em',
+            }}
+          >
+            IA ATIVA ✨
+          </span>
+        </button>
+      )}
+
+      {/* JANELA FLUTUANTE DE CONVERSA COM A IA */}
+      {isAiChatOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            width: '430px',
+            maxWidth: 'calc(100vw - 2.5rem)',
+            height: '620px',
+            maxHeight: 'calc(100vh - 3rem)',
+            backgroundColor: '#0a0f1d',
+            borderRadius: '20px',
+            border: '1.5px solid rgba(168, 85, 247, 0.5)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 10000,
+            overflow: 'hidden',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          {/* Header da Janela de Chat */}
+          <div
+            style={{
+              padding: '0.85rem 1.15rem',
+              background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+              borderBottom: '1px solid rgba(168, 85, 247, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #9333ea, #2563eb)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 12px rgba(168, 85, 247, 0.5)',
+                }}
+              >
+                <BrainCircuit size={20} color="#ffffff" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <h4 style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                    IA Kaizen Assistant
+                  </h4>
+                  <span style={{ width: '8px', height: '8px', backgroundColor: '#34d399', borderRadius: '50%', display: 'inline-block' }} />
+                </div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                  {unifiedKaizens.length} Kaizens indexados na memória
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAiChatOpen(false)}
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                border: 'none',
+                color: '#cbd5e1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+              title="Fechar chat"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Histórico de Mensagens */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+            }}
+          >
+            {chatMessages.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  gap: '0.25rem',
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: '88%',
+                    padding: '0.75rem 0.95rem',
+                    borderRadius: msg.sender === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                    backgroundColor: msg.sender === 'user' ? '#7c3aed' : '#1e293b',
+                    color: '#ffffff',
+                    fontSize: '0.8125rem',
+                    lineHeight: 1.45,
+                    border: msg.sender === 'user' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {msg.text}
+
+                  {/* Cards de Kaizens citados na resposta */}
+                  {msg.matchedKaizens && msg.matchedKaizens.length > 0 && (
+                    <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                        Kaizens Relacionados:
+                      </span>
+                      {msg.matchedKaizens.map((mk) => (
+                        <Link
+                          key={mk.id}
+                          href={mk.url}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#090e1a',
+                            padding: '0.45rem 0.65rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            textDecoration: 'none',
+                            gap: '0.5rem',
+                          }}
+                        >
+                          <div style={{ overflow: 'hidden' }}>
+                            <span style={{ fontSize: '0.625rem', color: mk.origin === 'projeto' ? '#38bdf8' : '#fbbf24', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                              {mk.protocol}
+                            </span>
+                            <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 600, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {mk.title}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                            {formatCurrency(mk.actualCostAvoided)}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <span style={{ fontSize: '0.625rem', color: '#64748b', padding: '0 0.35rem' }}>
+                  {msg.timestamp}
+                </span>
+              </div>
+            ))}
+
+            {isAiThinking && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', backgroundColor: '#1e293b', borderRadius: '12px', width: 'fit-content' }}>
+                <Clock size={13} color="#c084fc" className="animate-spin" />
+                <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Vasculhando memória de Kaizens...</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* Sugestões Rápidas de Pergunta */}
+          <div
+            style={{
+              padding: '0.5rem 0.85rem',
+              backgroundColor: '#080d1a',
+              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              overflowX: 'auto',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {[
+              'Setup na Extrusora',
+              'Paradas na Tecelagem',
+              'Refugo no Acabamento',
+              'Maiores economias R$',
+            ].map((prompt, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleSendMessage(prompt)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#cbd5e1',
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '6px',
+                  fontSize: '0.675rem',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                💡 {prompt}
+              </button>
+            ))}
+          </div>
+
+          {/* Campo de Entrada de Mensagem */}
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              backgroundColor: '#090e1a',
+              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            }}
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage();
+              }}
+              style={{ display: 'flex', gap: '0.5rem' }}
+            >
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Pergunte sobre diagnósticos, causas ou lições..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                style={{
+                  backgroundColor: '#060a13',
+                  borderColor: 'rgba(168, 85, 247, 0.35)',
+                  color: '#ffffff',
+                  fontSize: '0.8125rem',
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!chatInput.trim() || isAiThinking}
+                className="btn btn-primary"
+                style={{
+                  backgroundColor: '#8b5cf6',
+                  borderColor: '#8b5cf6',
+                  padding: '0 0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Send size={15} />
+              </button>
+            </form>
           </div>
         </div>
       )}
