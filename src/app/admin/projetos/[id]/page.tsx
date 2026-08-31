@@ -3650,17 +3650,15 @@ export default function AdminProjectDetailPage() {
               </div>
             </div>
 
-            {/* Slide Body - Scrollbar Habilitada e Estilizada para Apresentação */}
+            {/* Slide Body - Layout Dinâmico Executivo (Zero Scrollbar) */}
             <div
               style={{
                 flex: 1,
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                padding: '1.25rem 1.75rem',
+                overflow: 'hidden',
+                padding: '1.15rem 1.5rem',
                 display: 'flex',
                 flexDirection: 'column',
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(6, 182, 212, 0.5) rgba(255, 255, 255, 0.05)',
+                justifyContent: 'space-between',
               }}
             >
               {/* =================================================================== */}
@@ -3703,7 +3701,7 @@ export default function AdminProjectDetailPage() {
                   : (action.teamMembers || []);
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -3895,7 +3893,7 @@ export default function AdminProjectDetailPage() {
                 const completionRate = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 100;
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4036,7 +4034,7 @@ export default function AdminProjectDetailPage() {
                 const netValue = netSavings > 0 ? netSavings : grossValue;
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: '0.65rem' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
@@ -4256,7 +4254,7 @@ export default function AdminProjectDetailPage() {
               {/* SLIDE 4: A • ACT (Compilação Dinâmica de Padronização & 3 Meses)    */}
               {/* =================================================================== */}
               {presentationSlide === 4 && (
-                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                   {/* Header */}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4389,7 +4387,7 @@ export default function AdminProjectDetailPage() {
               {/* SLIDE 5: 📸 ANTES & DEPOIS (Apenas Foto Antes e Foto Depois)        */}
               {/* =================================================================== */}
               {presentationSlide === 5 && (
-                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                   {/* Header */}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4406,7 +4404,7 @@ export default function AdminProjectDetailPage() {
                   {/* 2 Fotos Salvas no Próprio Projeto (Antes e Depois) */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                     {/* Foto do Antes */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '16px', border: '1.5px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '16px', border: '1.5px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           📸 ANTES DA MELHORIA
@@ -4418,13 +4416,13 @@ export default function AdminProjectDetailPage() {
                       </div>
 
                       {photoBeforeUrl ? (
-                        <div style={{ height: '280px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div style={{ height: '225px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
                           <img src={photoBeforeUrl} alt="Antes" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
                         <label
                           style={{
-                            height: '280px',
+                            height: '225px',
                             backgroundColor: '#090e1a',
                             border: '2px dashed rgba(239, 68, 68, 0.25)',
                             borderRadius: '10px',
@@ -4446,7 +4444,7 @@ export default function AdminProjectDetailPage() {
                     </div>
 
                     {/* Foto do Depois */}
-                    <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '16px', border: '1.5px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.5rem', boxShadow: '0 0 25px rgba(16, 185, 129, 0.08)' }}>
+                    <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '16px', border: '1.5px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.4rem', boxShadow: '0 0 25px rgba(16, 185, 129, 0.08)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           📸 DEPOIS (POSTO PADRONIZADO)
@@ -4458,13 +4456,13 @@ export default function AdminProjectDetailPage() {
                       </div>
 
                       {photoAfterUrl ? (
-                        <div style={{ height: '280px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div style={{ height: '225px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
                           <img src={photoAfterUrl} alt="Depois" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
                         <label
                           style={{
-                            height: '280px',
+                            height: '225px',
                             backgroundColor: '#090e1a',
                             border: '2px dashed rgba(16, 185, 129, 0.25)',
                             borderRadius: '10px',
