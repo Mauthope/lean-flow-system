@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,6 +42,11 @@ export default function KaizenPDCAExecutionPage() {
   const [idea, setIdea] = useState<KaizenIdea | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'plan' | 'do' | 'check' | 'act'>('plan');
+  
+  // Status de Auto-Save em Tempo Real
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const isInitialLoadRef = useRef(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Form states: P - PLAN
   const [targetMetricName, setTargetMetricName] = useState('');
@@ -129,6 +134,9 @@ export default function KaizenPDCAExecutionPage() {
         setYokotenReplication(found.yokotenReplication || '');
       }
       setLoading(false);
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+      }, 200);
     }
   }, [ideaId, dataVersion]);
 
@@ -141,8 +149,8 @@ export default function KaizenPDCAExecutionPage() {
     return l + p + s + m;
   }, [laborSavings, productionIncrease, scrapReduction, machineDowntime]);
 
-  // Save changes
-  const handleSavePDCA = (targetStage?: 'plan' | 'do' | 'check' | 'act') => {
+  // Save changes (Auto-save & stage switch)
+  const saveIdeaData = useCallback((targetStage?: 'plan' | 'do' | 'check' | 'act') => {
     if (!idea) return;
 
     const nextStage = targetStage || activeTab;
@@ -191,9 +199,74 @@ export default function KaizenPDCAExecutionPage() {
     });
 
     setIdea(updated);
+    setSaveStatus('saved');
     refreshData();
-    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-  };
+  }, [
+    idea,
+    activeTab,
+    calculatedSavings,
+    targetMetricName,
+    targetMetricUnit,
+    baselineValue,
+    targetGoalValue,
+    rootCauseAnalysis,
+    fiveWhys,
+    checklist,
+    pilotArea,
+    pilotTestObservations,
+    evidenceBeforeUrl,
+    evidenceAfterUrl,
+    achievedValue,
+    laborSavings,
+    productionIncrease,
+    scrapReduction,
+    machineDowntime,
+    estimatedCostAvoided,
+    hoursSaved,
+    financialGainNotes,
+    standardWorkUpdated,
+    standardWorkDocRef,
+    lessonsLearned,
+    yokotenReplication,
+    refreshData,
+  ]);
+
+  // Debounced auto-save effect (600ms)
+  useEffect(() => {
+    if (isInitialLoadRef.current) return;
+    if (!idea) return;
+
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveIdeaData();
+    }, 600);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [saveIdeaData]);
+
+  // Flush on unmount or beforeunload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveIdeaData();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveIdeaData();
+      }
+    };
+  }, [saveIdeaData]);
 
   // Add Why
   const handleAddWhy = () => {
@@ -337,16 +410,35 @@ export default function KaizenPDCAExecutionPage() {
           </div>
         </div>
 
-        {/* Action Button */}
+        {/* Real-time Auto-Save Status Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            type="button"
-            onClick={() => handleSavePDCA()}
-            className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1.15rem' }}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+              border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+              padding: '0.4rem 0.85rem',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
+              transition: 'all 0.2s ease',
+            }}
           >
-            <Save size={16} /> Salvar Alterações
-          </button>
+            {saveStatus === 'saving' ? (
+              <>
+                <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Salvando...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={13} color="#34d399" />
+                <span>Salvo automaticamente ✓</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -600,12 +692,12 @@ export default function KaizenPDCAExecutionPage() {
             <button
               type="button"
               onClick={() => {
-                handleSavePDCA('do');
+                saveIdeaData('do');
                 setActiveTab('do');
               }}
               className="btn btn-primary"
             >
-              Salvar & Avançar para D • DO (Execução) →
+              Avançar para D • DO (Execução) →
             </button>
           </div>
         </div>
@@ -815,12 +907,12 @@ export default function KaizenPDCAExecutionPage() {
             <button
               type="button"
               onClick={() => {
-                handleSavePDCA('check');
+                saveIdeaData('check');
                 setActiveTab('check');
               }}
               className="btn btn-primary"
             >
-              Salvar & Avançar para C • CHECK (Ganhos & ROI) →
+              Avançar para C • CHECK (Ganhos & ROI) →
             </button>
           </div>
         </div>
@@ -979,7 +1071,7 @@ export default function KaizenPDCAExecutionPage() {
             <button
               type="button"
               onClick={() => {
-                handleSavePDCA('act');
+                saveIdeaData('act');
                 setActiveTab('act');
               }}
               className="btn btn-primary"

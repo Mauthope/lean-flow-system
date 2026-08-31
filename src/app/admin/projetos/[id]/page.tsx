@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
@@ -71,7 +71,11 @@ export default function AdminProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<PDCAMethodologyStage>('plan');
-  const [isSaved, setIsSaved] = useState(false);
+  
+  // Status de Auto-Save em Tempo Real
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const isInitialLoadRef = useRef(true);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Modo Apresentação (Hero Banner Pop-up com Slides P -> D -> C -> A -> Antes/Depois)
   const [presentationOpen, setPresentationOpen] = useState(false);
@@ -252,6 +256,9 @@ export default function AdminProjectDetailPage() {
         setPhotoAfterUrl(found.photoAfterUrl || '');
       }
       setLoading(false);
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+      }, 200);
     }
   }, [projectId]);
 
@@ -346,7 +353,10 @@ export default function AdminProjectDetailPage() {
     );
   }, [attachments]);
 
-  const handleSaveAll = () => {
+  // =========================================================================
+  // SALVAMENTO AUTOMÁTICO EM TEMPO REAL (AUTO-SAVE COM DEBOUNCE)
+  // =========================================================================
+  const saveProjectData = useCallback(() => {
     if (!action) return;
 
     const parsedTeamMembers = teamMembersInput
@@ -417,10 +427,98 @@ export default function AdminProjectDetailPage() {
     });
 
     setAction(updated);
-    setIsSaved(true);
+    setSaveStatus('saved');
     refreshData();
-    setTimeout(() => setIsSaved(false), 3000);
-  };
+  }, [
+    action,
+    leaderName,
+    teamMembersInput,
+    activeTab,
+    problemStatement,
+    targetMetricName,
+    targetMetricUnit,
+    baselineValue,
+    targetGoalValue,
+    achievedValue,
+    currentProblemCostMonthly,
+    fiveWhys,
+    paretoImageUrl,
+    paretoImageName,
+    paretoVitalCauses,
+    paretoCumulativePercent,
+    ishikawaMethod,
+    ishikawaMachine,
+    ishikawaMaterial,
+    ishikawaManpower,
+    ishikawaMeasurement,
+    ishikawaEnvironment,
+    ishikawaRootCause,
+    pilotArea,
+    pilotTestObservations,
+    photoBeforeUrl,
+    photoAfterUrl,
+    checklistItems,
+    partsAndEquipment,
+    thirdPartyServices,
+    internalLaborHours,
+    laborHourlyRate,
+    otherCosts,
+    machineDowntime,
+    laborSavings,
+    scrapReduction,
+    toolingAndEnergy,
+    logisticsAndFreight,
+    productionIncrease,
+    otherSavings,
+    totalInvestmentCost,
+    totalGrossSavings,
+    netSavings,
+    roiPercentage,
+    paybackMonths,
+    attachments,
+    standardWorkUpdated,
+    standardWorkDocRef,
+    yokotenReplication,
+    lessonsLearned,
+    refreshData,
+  ]);
+
+  // Dispara o Auto-Save a cada alteração com debounce de 600ms
+  useEffect(() => {
+    if (isInitialLoadRef.current) return;
+    if (!action) return;
+
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveProjectData();
+    }, 600);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [saveProjectData]);
+
+  // Garante a gravação instantânea se o usuário fechar ou mudar de aba (Flush)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveProjectData();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveProjectData();
+      }
+    };
+  }, [saveProjectData]);
 
   const handleParetoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -770,14 +868,34 @@ export default function AdminProjectDetailPage() {
             <span>Modo Apresentação</span>
           </button>
 
-          <button
-            onClick={handleSaveAll}
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: isSaved ? '#059669' : undefined }}
+          {/* Indicador em Tempo Real de Auto-Save */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+              border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+              padding: '0.35rem 0.8rem',
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
+              transition: 'all 0.2s ease',
+            }}
           >
-            {isSaved ? <Check size={15} /> : <Save size={15} />}
-            <span>{isSaved ? 'Alterações Salvas!' : 'Salvar Projeto'}</span>
-          </button>
+            {saveStatus === 'saving' ? (
+              <>
+                <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Salvando...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={13} color="#34d399" />
+                <span>Salvo automaticamente ✓</span>
+              </>
+            )}
+          </div>
 
           <button onClick={handleCopyLink} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}>
             <Share2 size={14} /> {copied ? 'Copiado!' : 'Compartilhar'}
