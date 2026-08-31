@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +54,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Maximize2,
   Users,
 } from 'lucide-react';
@@ -95,6 +97,18 @@ export default function AdminProjectDetailPage() {
   const [paretoImageName, setParetoImageName] = useState<string>('');
   const [paretoVitalCauses, setParetoVitalCauses] = useState<string>('');
   const [paretoCumulativePercent, setParetoCumulativePercent] = useState<number | ''>(80);
+
+  // Ishikawa 6M Analysis
+  const [ishikawaMethod, setIshikawaMethod] = useState<string>('');
+  const [ishikawaMachine, setIshikawaMachine] = useState<string>('');
+  const [ishikawaMaterial, setIshikawaMaterial] = useState<string>('');
+  const [ishikawaManpower, setIshikawaManpower] = useState<string>('');
+  const [ishikawaMeasurement, setIshikawaMeasurement] = useState<string>('');
+  const [ishikawaEnvironment, setIshikawaEnvironment] = useState<string>('');
+  const [ishikawaRootCause, setIshikawaRootCause] = useState<string>('');
+
+  // Seletor de Ferramentas Ativas no PLAN ('fiveWhys' | 'pareto' | 'ishikawa')
+  const [selectedDiagnosticTools, setSelectedDiagnosticTools] = useState<string[]>(['fiveWhys']);
 
   // Costs (Investimento Capex/Opex)
   const [partsAndEquipment, setPartsAndEquipment] = useState<number>(0);
@@ -175,6 +189,37 @@ export default function AdminProjectDetailPage() {
           found.pareto?.cumulativeImpactPercentage !== undefined ? found.pareto.cumulativeImpactPercentage : 80
         );
 
+        // Ishikawa 6M
+        setIshikawaMethod(found.ishikawa?.method || '');
+        setIshikawaMachine(found.ishikawa?.machine || '');
+        setIshikawaMaterial(found.ishikawa?.material || '');
+        setIshikawaManpower(found.ishikawa?.manpower || '');
+        setIshikawaMeasurement(found.ishikawa?.measurement || '');
+        setIshikawaEnvironment(found.ishikawa?.environment || '');
+        setIshikawaRootCause(found.ishikawa?.primaryRootCause || '');
+
+        // Diagnóstico e Causa: selecionar ferramentas que possuem dados ou 5 Porquês por padrão
+        const activeTools: string[] = [];
+        const has5WhysData = Boolean(found.fiveWhys && found.fiveWhys.some((w) => w && w.trim()));
+        const hasParetoData = Boolean(found.pareto?.chartImageUrl || (found.pareto?.vitalCausesSummary && found.pareto.vitalCausesSummary.trim()));
+        const hasIshikawaData = Boolean(
+          found.ishikawa &&
+            (found.ishikawa.method ||
+              found.ishikawa.machine ||
+              found.ishikawa.material ||
+              found.ishikawa.manpower ||
+              found.ishikawa.measurement ||
+              found.ishikawa.environment ||
+              found.ishikawa.primaryRootCause)
+        );
+
+        if (has5WhysData) activeTools.push('fiveWhys');
+        if (hasParetoData) activeTools.push('pareto');
+        if (hasIshikawaData) activeTools.push('ishikawa');
+        if (activeTools.length === 0) activeTools.push('fiveWhys');
+
+        setSelectedDiagnosticTools(activeTools);
+
         // D - DO
         setChecklistItems(found.checklist || []);
         setPilotArea(found.pilotArea || '');
@@ -209,6 +254,35 @@ export default function AdminProjectDetailPage() {
       setLoading(false);
     }
   }, [projectId]);
+
+  // Contadores auxiliares para badges e seletor
+  const fiveWhysFilledCount = useMemo(() => {
+    return fiveWhys.filter((w) => w && w.trim().length > 0).length;
+  }, [fiveWhys]);
+
+  const ishikawaFilledCount = useMemo(() => {
+    return [
+      ishikawaMethod,
+      ishikawaMachine,
+      ishikawaMaterial,
+      ishikawaManpower,
+      ishikawaMeasurement,
+      ishikawaEnvironment,
+    ].filter((v) => v && v.trim().length > 0).length;
+  }, [
+    ishikawaMethod,
+    ishikawaMachine,
+    ishikawaMaterial,
+    ishikawaManpower,
+    ishikawaMeasurement,
+    ishikawaEnvironment,
+  ]);
+
+  const toggleDiagnosticTool = (toolKey: string) => {
+    setSelectedDiagnosticTools((prev) =>
+      prev.includes(toolKey) ? prev.filter((t) => t !== toolKey) : [...prev, toolKey]
+    );
+  };
 
   // Navegação por teclado no Modo Apresentação
   useEffect(() => {
@@ -246,13 +320,20 @@ export default function AdminProjectDetailPage() {
     productionIncrease +
     otherSavings;
 
-  const netSavings = totalGrossSavings - totalInvestmentCost;
+  const netSavings = Math.max(0, totalGrossSavings - totalInvestmentCost);
   const roiPercentage = totalInvestmentCost > 0 ? Math.round((netSavings / totalInvestmentCost) * 100) : 0;
   const monthlyGrossSavings = totalGrossSavings / 12;
   const paybackMonths =
-    monthlyGrossSavings > 0 && totalInvestmentCost > 0
-      ? Number((totalInvestmentCost / monthlyGrossSavings).toFixed(1))
-      : 0;
+    totalGrossSavings > 0 ? Number(((totalInvestmentCost / totalGrossSavings) * 12).toFixed(1)) : 0;
+
+  // Formatted Attachments list sorted by upload date
+  const sortedAttachments = useMemo(() => {
+    return [...attachments].sort((a, b) => {
+      const tA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+      const tB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+      return tB - tA;
+    });
+  }, [attachments]);
 
   // Evidências de Fotos para o Slide 5 da Apresentação
   const photoAttachments = useMemo(() => {
@@ -273,6 +354,16 @@ export default function AdminProjectDetailPage() {
       .map((s) => s.trim())
       .filter(Boolean);
 
+    const ishikawaData: IshikawaAnalysis = {
+      method: ishikawaMethod.trim() || undefined,
+      machine: ishikawaMachine.trim() || undefined,
+      material: ishikawaMaterial.trim() || undefined,
+      manpower: ishikawaManpower.trim() || undefined,
+      measurement: ishikawaMeasurement.trim() || undefined,
+      environment: ishikawaEnvironment.trim() || undefined,
+      primaryRootCause: ishikawaRootCause.trim() || undefined,
+    };
+
     const updated = dataService.updateAction(action.id, {
       leaderName: leaderName.trim() || undefined,
       teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
@@ -291,6 +382,7 @@ export default function AdminProjectDetailPage() {
         vitalCausesSummary: paretoVitalCauses,
         cumulativeImpactPercentage: paretoCumulativePercent === '' ? 80 : Number(paretoCumulativePercent),
       },
+      ishikawa: ishikawaData,
       pilotArea,
       pilotTestObservations,
       photoBeforeUrl,
@@ -969,229 +1061,782 @@ export default function AdminProjectDetailPage() {
             </div>
           </div>
 
-          {/* Card: 5 Porquês */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <HelpCircle size={20} color="#22d3ee" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                1.2 Análise dos 5 Porquês (Causa Raiz)
-              </h3>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {fiveWhys.map((why, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 182, 212, 0.15)',
-                      color: index === 4 ? '#f87171' : '#22d3ee',
-                      border: `1px solid ${index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 900,
-                      fontSize: '0.75rem',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {index + 1}
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control"
-                    style={{
-                      fontWeight: index === 4 ? 800 : 400,
-                      borderColor: index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.12)',
-                      backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.08)' : '#090e1a',
-                      color: '#ffffff',
-                    }}
-                    placeholder={index === 4 ? '5. Causa Raiz definitiva...' : `Por quê ${index + 1}...`}
-                    value={why}
-                    onChange={(e) => {
-                      const updated = [...fiveWhys];
-                      updated[index] = e.target.value;
-                      setFiveWhys(updated);
-                    }}
-                  />
+          {/* ========================================================================= */}
+          {/* 1.2 HUB DE FERRAMENTAS DE DIAGNÓSTICO & ANÁLISE DE CAUSA RAIZ (EXPANSÍVEL) */}
+          {/* ========================================================================= */}
+          <div
+            className="card"
+            style={{
+              padding: '1.5rem',
+              borderRadius: '16px',
+              backgroundColor: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+            }}
+          >
+            {/* Header & Guia do Hub */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Sparkles size={18} color="#22d3ee" />
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Card: Comprovação por Gráfico de Pareto (Regra 80/20) */}
-          <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BarChart3 size={20} color="#22d3ee" />
                 <div>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                    1.3 Comprovação por Gráfico de Pareto (Regra 80/20)
+                    1.2 Ferramentas de Diagnóstico & Causa Raiz
                   </h3>
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
-                    Identifique e comprove visualmente os 20% das causas vitais que geram 80% das perdas.
+                  <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                    Selecione as ferramentas Lean que deseja utilizar neste projeto. Apenas as ferramentas ativas ficam expandidas, mantendo a página limpa e escalável.
                   </p>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span
-                  style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    color: '#22d3ee',
-                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                    padding: '0.25rem 0.65rem',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(6, 182, 212, 0.35)',
-                  }}
-                >
-                  ⚡ REGRA 80/20
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                <span style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', fontFamily: 'var(--font-mono)' }}>
+                  {selectedDiagnosticTools.length} ferramenta{selectedDiagnosticTools.length !== 1 ? 's' : ''} em uso
                 </span>
               </div>
             </div>
 
-            {/* Pareto Content: Image & Vital Causes */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem' }}>
-              {/* Left Column: Pareto Chart Image / Visualizer */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#cbd5e1' }}>
-                  📊 Imagem do Gráfico de Pareto Gerado:
-                </span>
-
-                {paretoImageUrl ? (
-                  <div
+            {/* Selector Tiles Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.85rem' }}>
+              {/* Tile 1: 5 Porquês */}
+              <button
+                type="button"
+                onClick={() => toggleDiagnosticTool('fiveWhys')}
+                style={{
+                  textAlign: 'left',
+                  padding: '1rem 1.15rem',
+                  borderRadius: '12px',
+                  backgroundColor: selectedDiagnosticTools.includes('fiveWhys') ? 'rgba(6, 182, 212, 0.12)' : '#090e1a',
+                  border: `1.5px solid ${selectedDiagnosticTools.includes('fiveWhys') ? '#06b6d4' : 'rgba(255, 255, 255, 0.08)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>🔍</span>
+                  <span
                     style={{
-                      position: 'relative',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      backgroundColor: '#090e1a',
-                      boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '9999px',
+                      backgroundColor: selectedDiagnosticTools.includes('fiveWhys')
+                        ? 'rgba(6, 182, 212, 0.25)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                      color: selectedDiagnosticTools.includes('fiveWhys') ? '#22d3ee' : '#94a3b8',
+                      border: `1px solid ${selectedDiagnosticTools.includes('fiveWhys') ? 'rgba(6, 182, 212, 0.4)' : 'transparent'}`,
                     }}
                   >
-                    <img
-                      src={paretoImageUrl}
-                      alt="Gráfico de Pareto 80/20"
-                      style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', backgroundColor: '#090e1a' }}
-                    />
-                    <div
+                    {selectedDiagnosticTools.includes('fiveWhys') ? '● Em Uso (Expandido)' : '○ Oculto (Clique p/ Ativar)'}
+                  </span>
+                </div>
+                <strong style={{ fontSize: '0.9rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                  5 Porquês
+                </strong>
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                  Investigação causal sequencial em 5 níveis até a causa raiz definitiva.
+                </span>
+                {fiveWhysFilledCount > 0 && (
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
+                    ✓ {fiveWhysFilledCount}/5 etapas preenchidas
+                  </span>
+                )}
+              </button>
+
+              {/* Tile 2: Gráfico de Pareto 80/20 */}
+              <button
+                type="button"
+                onClick={() => toggleDiagnosticTool('pareto')}
+                style={{
+                  textAlign: 'left',
+                  padding: '1rem 1.15rem',
+                  borderRadius: '12px',
+                  backgroundColor: selectedDiagnosticTools.includes('pareto') ? 'rgba(139, 92, 246, 0.12)' : '#090e1a',
+                  border: `1.5px solid ${selectedDiagnosticTools.includes('pareto') ? '#8b5cf6' : 'rgba(255, 255, 255, 0.08)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>📊</span>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '9999px',
+                      backgroundColor: selectedDiagnosticTools.includes('pareto')
+                        ? 'rgba(139, 92, 246, 0.25)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                      color: selectedDiagnosticTools.includes('pareto') ? '#c084fc' : '#94a3b8',
+                      border: `1px solid ${selectedDiagnosticTools.includes('pareto') ? 'rgba(139, 92, 246, 0.4)' : 'transparent'}`,
+                    }}
+                  >
+                    {selectedDiagnosticTools.includes('pareto') ? '● Em Uso (Expandido)' : '○ Oculto (Clique p/ Ativar)'}
+                  </span>
+                </div>
+                <strong style={{ fontSize: '0.9rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                  Gráfico de Pareto (80/20)
+                </strong>
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                  Priorização estatística dos 20% de causas vitais que causam 80% das perdas.
+                </span>
+                {(paretoImageUrl || paretoVitalCauses) && (
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
+                    ✓ Pareto registrado
+                  </span>
+                )}
+              </button>
+
+              {/* Tile 3: Diagrama de Ishikawa (6M) */}
+              <button
+                type="button"
+                onClick={() => toggleDiagnosticTool('ishikawa')}
+                style={{
+                  textAlign: 'left',
+                  padding: '1rem 1.15rem',
+                  borderRadius: '12px',
+                  backgroundColor: selectedDiagnosticTools.includes('ishikawa') ? 'rgba(16, 185, 129, 0.12)' : '#090e1a',
+                  border: `1.5px solid ${selectedDiagnosticTools.includes('ishikawa') ? '#10b981' : 'rgba(255, 255, 255, 0.08)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  position: 'relative',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>🐟</span>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '9999px',
+                      backgroundColor: selectedDiagnosticTools.includes('ishikawa')
+                        ? 'rgba(16, 185, 129, 0.25)'
+                        : 'rgba(255, 255, 255, 0.06)',
+                      color: selectedDiagnosticTools.includes('ishikawa') ? '#34d399' : '#94a3b8',
+                      border: `1px solid ${selectedDiagnosticTools.includes('ishikawa') ? 'rgba(16, 185, 129, 0.4)' : 'transparent'}`,
+                    }}
+                  >
+                    {selectedDiagnosticTools.includes('ishikawa') ? '● Em Uso (Expandido)' : '○ Oculto (Clique p/ Ativar)'}
+                  </span>
+                </div>
+                <strong style={{ fontSize: '0.9rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                  Diagrama de Ishikawa (6M)
+                </strong>
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                  Espinha de peixe estruturada nos 6M: Método, Máquina, Material, etc.
+                </span>
+                {ishikawaFilledCount > 0 && (
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
+                    ✓ {ishikawaFilledCount}/6 M&apos;s preenchidos
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* FERRAMENTA 1: 5 PORQUÊS (SE ATIVO)                                       */}
+          {/* ========================================================================= */}
+          {selectedDiagnosticTools.includes('fiveWhys') && (
+            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <HelpCircle size={20} color="#22d3ee" />
+                  <div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      🔍 Análise dos 5 Porquês (Causa Raiz)
+                    </h3>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+                      Questione sucessivamente o motivo da falha até chegar na causa que elimina a reincidência.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: '#22d3ee',
+                      backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                    }}
+                  >
+                    5 WHYS
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleDiagnosticTool('fiveWhys')}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem' }}
+                    title="Ocultar esta ferramenta"
+                  >
+                    <ChevronUp size={14} /> Recolher
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {fiveWhys.map((why, index) => (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span
                       style={{
-                        padding: '0.5rem 0.75rem',
-                        backgroundColor: '#0d1527',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                        color: index === 4 ? '#f87171' : '#22d3ee',
+                        border: `1px solid ${index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
+                        justifyContent: 'center',
+                        fontWeight: 900,
                         fontSize: '0.75rem',
+                        flexShrink: 0,
                       }}
                     >
-                      <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{paretoImageName || 'Grafico_Pareto_80_20.png'}</span>
-                      <button
-                        type="button"
-                        onClick={handleRemoveParetoImage}
-                        className="btn btn-sm"
-                        style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.2rem 0.5rem' }}
-                      >
-                        <Trash2 size={12} /> Remover Imagem
-                      </button>
-                    </div>
+                      {index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      style={{
+                        fontWeight: index === 4 ? 800 : 400,
+                        borderColor: index === 4 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.12)',
+                        backgroundColor: index === 4 ? 'rgba(239, 68, 68, 0.08)' : '#090e1a',
+                        color: '#ffffff',
+                      }}
+                      placeholder={index === 4 ? '5. Causa Raiz definitiva...' : `Por quê ${index + 1}...`}
+                      value={why}
+                      onChange={(e) => {
+                        const updated = [...fiveWhys];
+                        updated[index] = e.target.value;
+                        setFiveWhys(updated);
+                      }}
+                    />
                   </div>
-                ) : (
-                  <div
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* FERRAMENTA 2: GRÁFICO DE PARETO (80/20) (SE ATIVO)                       */}
+          {/* ========================================================================= */}
+          {selectedDiagnosticTools.includes('pareto') && (
+            <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', backgroundColor: '#0f172a', border: '1px solid rgba(139, 92, 246, 0.35)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BarChart3 size={20} color="#c084fc" />
+                  <div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      📊 Comprovação por Gráfico de Pareto (Regra 80/20)
+                    </h3>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+                      Identifique e comprove visualmente os 20% das causas vitais que geram 80% das perdas fabris.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
                     style={{
-                      padding: '1.5rem 1rem',
-                      borderRadius: '12px',
-                      border: '1.5px dashed rgba(6, 182, 212, 0.4)',
-                      backgroundColor: '#090e1a',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      gap: '0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: '#c084fc',
+                      backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(139, 92, 246, 0.35)',
                     }}
                   >
-                    {/* Simulated SVG Pareto illustration */}
-                    <div style={{ width: '100%', maxWidth: '260px', height: '100px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#060a13', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                      <div style={{ width: '22%', height: '85%', backgroundColor: '#06b6d4', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 900 }}>48%</div>
-                      <div style={{ width: '22%', height: '60%', backgroundColor: '#14b8a6', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 900 }}>34%</div>
-                      <div style={{ width: '22%', height: '22%', backgroundColor: '#38bdf8', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 800 }}>11%</div>
-                      <div style={{ width: '22%', height: '12%', backgroundColor: '#64748b', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.65rem', fontWeight: 700 }}>7%</div>
+                    ⚡ REGRA 80/20
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleDiagnosticTool('pareto')}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem' }}
+                    title="Ocultar esta ferramenta"
+                  >
+                    <ChevronUp size={14} /> Recolher
+                  </button>
+                </div>
+              </div>
+
+              {/* Pareto Content: Image & Vital Causes */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem' }}>
+                {/* Left Column: Pareto Chart Image / Visualizer */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#cbd5e1' }}>
+                    📊 Imagem do Gráfico de Pareto Gerado:
+                  </span>
+
+                  {paretoImageUrl ? (
+                    <div
+                      style={{
+                        position: 'relative',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        backgroundColor: '#090e1a',
+                        boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                      }}
+                    >
+                      <img
+                        src={paretoImageUrl}
+                        alt="Gráfico de Pareto 80/20"
+                        style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', backgroundColor: '#090e1a' }}
+                      />
+                      <div
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          backgroundColor: '#0d1527',
+                          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{paretoImageName || 'Grafico_Pareto_80_20.png'}</span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveParetoImage}
+                          className="btn btn-sm"
+                          style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '0.2rem 0.5rem' }}
+                        >
+                          <Trash2 size={12} /> Remover Imagem
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: '1.5rem 1rem',
+                        borderRadius: '12px',
+                        border: '1.5px dashed rgba(139, 92, 246, 0.4)',
+                        backgroundColor: '#090e1a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        gap: '0.75rem',
+                      }}
+                    >
+                      {/* Simulated SVG Pareto illustration */}
+                      <div style={{ width: '100%', maxWidth: '260px', height: '100px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0.5rem', backgroundColor: '#060a13', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div style={{ width: '22%', height: '85%', backgroundColor: '#8b5cf6', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.65rem', fontWeight: 900 }}>48%</div>
+                        <div style={{ width: '22%', height: '60%', backgroundColor: '#a855f7', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.65rem', fontWeight: 900 }}>34%</div>
+                        <div style={{ width: '22%', height: '22%', backgroundColor: '#c084fc', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#020617', fontSize: '0.65rem', fontWeight: 800 }}>11%</div>
+                        <div style={{ width: '22%', height: '12%', backgroundColor: '#64748b', borderRadius: '4px 4px 0 0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '0.65rem', fontWeight: 700 }}>7%</div>
+                      </div>
+
+                      <div>
+                        <strong style={{ fontSize: '0.85rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                          Carregue a imagem do Gráfico de Pareto (Excel / Minitab / Foto)
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                          Formatos suportados: PNG, JPG, JPEG, WEBP, SVG
+                        </span>
+                      </div>
+
+                      <label
+                        className="btn btn-primary btn-sm"
+                        style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#8b5cf6', borderColor: '#7c3aed' }}
+                      >
+                        <ImageIcon size={14} /> Selecionar Imagem do Pareto
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleParetoImageUpload}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Vital Causes Formulation */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#cbd5e1' }}>
+                      🎯 Causas Vitais Identificadas (os 20% priorizados no Pareto):
+                    </label>
+                    <textarea
+                      className="form-control"
+                      rows={4}
+                      value={paretoVitalCauses}
+                      onChange={(e) => setParetoVitalCauses(e.target.value)}
+                      placeholder="Descreva quais são as causas vitais que correspondem a 80% do problema..."
+                      style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: '#090e1a', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>
+                        % Impacto Acumulado Resolvido:
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <input
+                          type="number"
+                          className="form-control form-control-sm"
+                          value={paretoCumulativePercent}
+                          onChange={(e) => setParetoCumulativePercent(e.target.value === '' ? '' : Number(e.target.value))}
+                          placeholder="80"
+                          style={{ backgroundColor: '#060a13', borderColor: 'rgba(139, 92, 246, 0.35)', color: '#c084fc', fontWeight: 800 }}
+                        />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#c084fc' }}>%</span>
+                      </div>
                     </div>
 
                     <div>
-                      <strong style={{ fontSize: '0.85rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
-                        Carregue a imagem do Gráfico de Pareto (Excel / Minitab / Foto)
-                      </strong>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                        Formatos suportados: PNG, JPG, JPEG, WEBP, SVG
+                      <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', display: 'block' }}>
+                        Foco de Ataque Lean:
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
+                        ✓ Alta Prioridade no Plano 5W2H
                       </span>
                     </div>
-
-                    <label
-                      className="btn btn-primary btn-sm"
-                      style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
-                    >
-                      <ImageIcon size={14} /> Selecionar Imagem do Pareto
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleParetoImageUpload}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Vital Causes Formulation */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#cbd5e1' }}>
-                    🎯 Causas Vitais Identificadas (os 20% priorizados no Pareto):
-                  </label>
-                  <textarea
-                    className="form-control"
-                    rows={4}
-                    value={paretoVitalCauses}
-                    onChange={(e) => setParetoVitalCauses(e.target.value)}
-                    placeholder="Descreva quais são as causas vitais que correspondem a 80% do problema..."
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', backgroundColor: '#090e1a', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8' }}>
-                      % Impacto Acumulado Resolvido:
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <input
-                        type="number"
-                        className="form-control form-control-sm"
-                        value={paretoCumulativePercent}
-                        onChange={(e) => setParetoCumulativePercent(e.target.value === '' ? '' : Number(e.target.value))}
-                        placeholder="80"
-                        style={{ backgroundColor: '#060a13', borderColor: 'rgba(6, 182, 212, 0.35)', color: '#22d3ee', fontWeight: 800 }}
-                      />
-                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee' }}>%</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', display: 'block' }}>
-                      Foco de Ataque Lean:
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
-                      ✓ Alta Prioridade no Plano 5W2H
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* FERRAMENTA 3: DIAGRAMA DE ISHIKAWA (6M - ESPINHA DE PEIXE) (SE ATIVO)    */}
+          {/* ========================================================================= */}
+          {selectedDiagnosticTools.includes('ishikawa') && (
+            <div
+              className="card"
+              style={{
+                padding: '1.5rem',
+                borderRadius: '16px',
+                backgroundColor: '#0f172a',
+                border: '1.5px solid rgba(16, 185, 129, 0.4)',
+                boxShadow: '0 8px 24px -4px rgba(16, 185, 129, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1.25rem',
+              }}
+            >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <div
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.45)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>🐟</span>
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Diagrama de Ishikawa (Espinha de Peixe • 6M)
+                    </h3>
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+                      Estratificação de causas potenciais nas 6 categorias fabris: Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      color: '#34d399',
+                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                    }}
+                  >
+                    ISHIKAWA 6M
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleDiagnosticTool('ishikawa')}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.75rem', padding: '0.25rem 0.55rem' }}
+                    title="Ocultar esta ferramenta"
+                  >
+                    <ChevronUp size={14} /> Recolher
+                  </button>
+                </div>
+              </div>
+
+              {/* Problem/Effect Banner at Top of Fishbone */}
+              <div
+                style={{
+                  backgroundColor: '#090e1a',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
+                  padding: '0.85rem 1.15rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: '0.2rem 0.55rem', borderRadius: '6px' }}>
+                    EFEITO (PROBLEMA)
+                  </span>
+                  <span style={{ fontSize: '0.875rem', color: '#ffffff', fontWeight: 700 }}>
+                    {problemStatement || action?.description || 'Problema em análise no setor'}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                  Meta: {targetGoalValue || '—'} {targetMetricUnit || ''}
+                </span>
+              </div>
+
+              {/* 6M Fishbone Grid (3 columns x 2 rows) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+                {/* 1. Método */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>📐</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#22d3ee', fontFamily: 'var(--font-heading)' }}>
+                        1. Método (Procedimentos & Padrões)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>SOP / Sequência</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Ausência de procedimento padrão para setup rápido ou sequência de troca indefinida..."
+                    value={ishikawaMethod}
+                    onChange={(e) => setIshikawaMethod(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+
+                {/* 2. Máquina */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>⚙️</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#fbbf24', fontFamily: 'var(--font-heading)' }}>
+                        2. Máquina (Equipamentos & Ferramentas)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Manutenção / Ajustes</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Falta de engates rápidos, desgaste de roscas, paradas por falta de ar comprimido..."
+                    value={ishikawaMachine}
+                    onChange={(e) => setIshikawaMachine(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+
+                {/* 3. Material */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(236, 72, 153, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>📦</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#f472b6', fontFamily: 'var(--font-heading)' }}>
+                        3. Material (Matéria-Prima & Insumos)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Variação de Lote</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Variação de fluidez no lote de resina, embalagens fora da especificação..."
+                    value={ishikawaMaterial}
+                    onChange={(e) => setIshikawaMaterial(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+
+                {/* 4. Mão de Obra */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>👷‍♂️</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#34d399', fontFamily: 'var(--font-heading)' }}>
+                        4. Mão de Obra (Habilidade & Treinamento)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Capacitação</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Operadores novatos sem treinamento na técnica SMED, falta de alinhamento entre turnos..."
+                    value={ishikawaManpower}
+                    onChange={(e) => setIshikawaManpower(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+
+                {/* 5. Medição */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>📏</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#c084fc', fontFamily: 'var(--font-heading)' }}>
+                        5. Medição (Instrumentos & Critérios)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Calibração / Amostragem</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Sem cronometragem detalhada das microetapas, manômetro descalibrado..."
+                    value={ishikawaMeasurement}
+                    onChange={(e) => setIshikawaMeasurement(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+
+                {/* 6. Meio Ambiente */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(56, 189, 248, 0.3)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '1rem' }}>🌡️</span>
+                      <strong style={{ fontSize: '0.85rem', color: '#38bdf8', fontFamily: 'var(--font-heading)' }}>
+                        6. Meio Ambiente (Layout & Condições)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>5S / Espaço</span>
+                  </div>
+                  <textarea
+                    className="form-control"
+                    rows={2}
+                    placeholder="Ex: Ferramentas dispersas ao redor da extrusora, iluminação deficiente no painel..."
+                    value={ishikawaEnvironment}
+                    onChange={(e) => setIshikawaEnvironment(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.8125rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Primary Root Cause Conclusion from Ishikawa */}
+              <div
+                style={{
+                  backgroundColor: '#090e1a',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  borderRadius: '12px',
+                  padding: '1rem 1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                }}
+              >
+                <label className="form-label" style={{ fontWeight: 800, fontSize: '0.85rem', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🎯 Causa Raiz Principal Priorizada no Ishikawa (Conclusão 6M):
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ex: Falta de dispositivo poka-yoke e procedimento de troca rápida sem distinção entre setup interno e externo."
+                  value={ishikawaRootCause}
+                  onChange={(e) => setIshikawaRootCause(e.target.value)}
+                  style={{ backgroundColor: '#060a13', borderColor: 'rgba(16, 185, 129, 0.35)', color: '#ffffff', fontWeight: 600 }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2736,6 +3381,16 @@ export default function AdminProjectDetailPage() {
                 };
                 const hasPareto = Boolean(paretoImg || isParetoFilled(paretoVitalCauses));
 
+                const ishikawaItems = [
+                  { label: 'Método', val: ishikawaMethod || action.ishikawa?.method, icon: '📐' },
+                  { label: 'Máquina', val: ishikawaMachine || action.ishikawa?.machine, icon: '⚙️' },
+                  { label: 'Material', val: ishikawaMaterial || action.ishikawa?.material, icon: '📦' },
+                  { label: 'Mão de Obra', val: ishikawaManpower || action.ishikawa?.manpower, icon: '👷‍♂️' },
+                  { label: 'Medição', val: ishikawaMeasurement || action.ishikawa?.measurement, icon: '📏' },
+                  { label: 'Meio Ambiente', val: ishikawaEnvironment || action.ishikawa?.environment, icon: '🌡️' },
+                ].filter((item) => Boolean(item.val && item.val.trim()));
+                const hasIshikawa = ishikawaItems.length > 0;
+
                 const hasProblemCost = Boolean(currentProblemCostMonthly && Number(currentProblemCostMonthly) > 0);
 
                 const effectiveLeader = leaderName || action.leaderName || action.assignedAgentName;
@@ -2760,14 +3415,14 @@ export default function AdminProjectDetailPage() {
 
                     {/* Dynamic 2-Column Balanced Content */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
-                      {/* Left Column: Diagnóstico Causal (Problema, 5 Porquês e Pareto se houver) */}
+                      {/* Left Column: Diagnóstico Causal (Problema, 5 Porquês, Pareto e Ishikawa se houver) */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', justifyContent: 'center' }}>
                         {/* Declaração da Causa Raiz & Problema */}
-                        <div style={{ backgroundColor: '#0f172a', padding: (!hasFiveWhys && !hasPareto) ? '1.5rem' : '0.85rem 1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: (!hasFiveWhys && !hasPareto && !hasIshikawa) ? '1.5rem' : '0.85rem 1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                           <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.35rem' }}>
                             🎯 Declaração da Causa Raiz & Problema
                           </h4>
-                          <p style={{ margin: 0, fontSize: (!hasFiveWhys && !hasPareto) ? '1rem' : '0.8125rem', color: '#ffffff', lineHeight: 1.45 }}>
+                          <p style={{ margin: 0, fontSize: (!hasFiveWhys && !hasPareto && !hasIshikawa) ? '1rem' : '0.8125rem', color: '#ffffff', lineHeight: 1.45 }}>
                             {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
                           </p>
                         </div>
@@ -2793,6 +3448,40 @@ export default function AdminProjectDetailPage() {
                                   }}
                                 >
                                   <strong style={{ color: '#22d3ee', marginRight: '0.3rem' }}>{idx + 1}º:</strong> {whyText.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Compilação Dinâmica: Exibe Ishikawa 6M se houver preenchimento */}
+                        {hasIshikawa && (
+                          <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '14px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                              <h4 style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', margin: 0 }}>
+                                🐟 Ishikawa 6M (Espinha de Peixe)
+                              </h4>
+                              <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                                {ishikawaItems.length}/6 M&apos;s
+                              </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
+                              {ishikawaItems.slice(0, 4).map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    fontSize: '0.6875rem',
+                                    color: '#cbd5e1',
+                                    backgroundColor: '#090e1a',
+                                    padding: '0.3rem 0.5rem',
+                                    borderRadius: '6px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                  }}
+                                >
+                                  <span style={{ marginRight: '0.25rem' }}>{item.icon}</span>
+                                  <strong style={{ color: '#34d399' }}>{item.label}:</strong> {item.val}
                                 </div>
                               ))}
                             </div>
@@ -2852,7 +3541,7 @@ export default function AdminProjectDetailPage() {
                               <div
                                 onClick={() => setParetoZoomOpen(true)}
                                 style={{
-                                  height: hasFiveWhys ? '135px' : '175px',
+                                  height: (hasFiveWhys || hasIshikawa) ? '135px' : '175px',
                                   width: '100%',
                                   backgroundColor: '#040711',
                                   borderRadius: '8px',

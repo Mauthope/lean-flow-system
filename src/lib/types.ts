@@ -111,14 +111,15 @@ export interface ParetoAnalysis {
   topCauses?: { cause: string; percentage: number }[];
 }
 
-// Ishikawa 6M (Causas Raízes - compatibilidade)
+// Ishikawa 6M (Causas Raízes - Espinha de Peixe)
 export interface IshikawaAnalysis {
-  method?: string;       // Método de trabalho
-  machine?: string;      // Máquinas e ferramentas
+  method?: string;       // Método de trabalho / Procedimentos
+  machine?: string;      // Máquinas, equipamentos e ferramentas
   material?: string;     // Matéria-prima e insumos
-  manpower?: string;     // Mão de obra / Habilidades
-  measurement?: string;  // Medição e calibração
-  environment?: string;  // Meio ambiente / Condições do setor
+  manpower?: string;     // Mão de obra / Treinamento / Habilidades
+  measurement?: string;  // Medição, calibração e critérios
+  environment?: string;  // Meio ambiente, layout e setor
+  primaryRootCause?: string; // Causa raiz prioritária diagnosticada no 6M
 }
 
 // Anexos de Projeto (PDFs de Memorial de Cálculo, Relatórios, Fotos de Evidência)
