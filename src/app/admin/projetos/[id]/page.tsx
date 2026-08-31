@@ -60,6 +60,7 @@ import {
   Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import SenseiVoiceAssistant from '@/components/presentation/SenseiVoiceAssistant';
 
 export default function AdminProjectDetailPage() {
   const params = useParams();
@@ -3616,8 +3617,11 @@ export default function AdminProjectDetailPage() {
                 ))}
               </div>
 
-              {/* Right Counter & Close Button */}
+              {/* Right: Sensei Voice Assistant, Counter & Close Button */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {/* Assistente de Voz ao Vivo: SENSEI */}
+                <SenseiVoiceAssistant project={action} currentSlide={presentationSlide} />
+
                 <span
                   style={{
                     fontSize: '0.725rem',
@@ -4552,9 +4556,9 @@ export default function AdminProjectDetailPage() {
                 <ChevronLeft size={15} /> Anterior
               </button>
 
-              {/* Dica de Passador de Slides / Teclado */}
+              {/* Dica de Passador de Slides / Teclado / Sensei */}
               <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                🎮 <strong>Passador de Slides</strong> (PageDown/Up) • Teclas <strong>⬅️ ➡️ Espaço</strong> • <strong>ESC</strong> para sair
+                🎮 <strong>Passador / Teclado</strong> • 🥋 <strong>Voz:</strong> Diga <em>&ldquo;Sensei...&rdquo;</em> • <strong>ESC</strong> para sair
               </span>
 
               {/* Botão Próximo ou Concluir */}
