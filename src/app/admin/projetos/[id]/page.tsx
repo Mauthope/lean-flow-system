@@ -258,7 +258,7 @@ export default function AdminProjectDetailPage() {
       setLoading(false);
       setTimeout(() => {
         isInitialLoadRef.current = false;
-      }, 200);
+      }, 400);
     }
   }, [projectId]);
 
@@ -354,83 +354,9 @@ export default function AdminProjectDetailPage() {
   }, [attachments]);
 
   // =========================================================================
-  // SALVAMENTO AUTOMÁTICO EM TEMPO REAL (AUTO-SAVE COM DEBOUNCE)
+  // SALVAMENTO AUTOMÁTICO EM TEMPO REAL (AUTO-SAVE COM DEBOUNCE & REF SEGURO)
   // =========================================================================
-  const saveProjectData = useCallback(() => {
-    if (!action) return;
-
-    const parsedTeamMembers = teamMembersInput
-      .split(/[,;\n]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    const ishikawaData: IshikawaAnalysis = {
-      method: ishikawaMethod.trim() || undefined,
-      machine: ishikawaMachine.trim() || undefined,
-      material: ishikawaMaterial.trim() || undefined,
-      manpower: ishikawaManpower.trim() || undefined,
-      measurement: ishikawaMeasurement.trim() || undefined,
-      environment: ishikawaEnvironment.trim() || undefined,
-      primaryRootCause: ishikawaRootCause.trim() || undefined,
-    };
-
-    const updated = dataService.updateAction(action.id, {
-      leaderName: leaderName.trim() || undefined,
-      teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
-      pdcaStage: activeTab,
-      problemStatement,
-      targetMetricName,
-      targetMetricUnit,
-      baselineValue: baselineValue === '' ? undefined : Number(baselineValue),
-      targetGoalValue: targetGoalValue === '' ? undefined : Number(targetGoalValue),
-      achievedValue: achievedValue === '' ? undefined : Number(achievedValue),
-      currentProblemCostMonthly: currentProblemCostMonthly === '' ? undefined : Number(currentProblemCostMonthly),
-      fiveWhys,
-      pareto: {
-        chartImageUrl: paretoImageUrl,
-        chartImageName: paretoImageName,
-        vitalCausesSummary: paretoVitalCauses,
-        cumulativeImpactPercentage: paretoCumulativePercent === '' ? 80 : Number(paretoCumulativePercent),
-      },
-      ishikawa: ishikawaData,
-      pilotArea,
-      pilotTestObservations,
-      photoBeforeUrl,
-      photoAfterUrl,
-      checklist: checklistItems,
-      projectCosts: {
-        partsAndEquipment,
-        thirdPartyServices,
-        internalLaborHours,
-        laborHourlyRate,
-        otherCosts,
-        totalCost: totalInvestmentCost,
-      },
-      costBreakdown: {
-        machineDowntime,
-        laborSavings,
-        scrapReduction,
-        toolingAndEnergy,
-        logisticsAndFreight,
-        productionIncrease,
-        otherSavings,
-      },
-      actualCostAvoided: totalGrossSavings,
-      netSavings,
-      roiPercentage,
-      paybackMonths,
-      attachments,
-      standardWorkUpdated,
-      standardWorkDocRef,
-      yokotenReplication,
-      lessonsLearned,
-    });
-
-    setAction(updated);
-    setSaveStatus('saved');
-    refreshData();
-  }, [
-    action,
+  const stateRef = useRef({
     leaderName,
     teamMembersInput,
     activeTab,
@@ -480,13 +406,139 @@ export default function AdminProjectDetailPage() {
     standardWorkDocRef,
     yokotenReplication,
     lessonsLearned,
-    refreshData,
-  ]);
+  });
 
-  // Dispara o Auto-Save a cada alteração com debounce de 600ms
+  useEffect(() => {
+    stateRef.current = {
+      leaderName,
+      teamMembersInput,
+      activeTab,
+      problemStatement,
+      targetMetricName,
+      targetMetricUnit,
+      baselineValue,
+      targetGoalValue,
+      achievedValue,
+      currentProblemCostMonthly,
+      fiveWhys,
+      paretoImageUrl,
+      paretoImageName,
+      paretoVitalCauses,
+      paretoCumulativePercent,
+      ishikawaMethod,
+      ishikawaMachine,
+      ishikawaMaterial,
+      ishikawaManpower,
+      ishikawaMeasurement,
+      ishikawaEnvironment,
+      ishikawaRootCause,
+      pilotArea,
+      pilotTestObservations,
+      photoBeforeUrl,
+      photoAfterUrl,
+      checklistItems,
+      partsAndEquipment,
+      thirdPartyServices,
+      internalLaborHours,
+      laborHourlyRate,
+      otherCosts,
+      machineDowntime,
+      laborSavings,
+      scrapReduction,
+      toolingAndEnergy,
+      logisticsAndFreight,
+      productionIncrease,
+      otherSavings,
+      totalInvestmentCost,
+      totalGrossSavings,
+      netSavings,
+      roiPercentage,
+      paybackMonths,
+      attachments,
+      standardWorkUpdated,
+      standardWorkDocRef,
+      yokotenReplication,
+      lessonsLearned,
+    };
+  });
+
+  const executeSave = useCallback(() => {
+    if (!projectId) return;
+    const s = stateRef.current;
+
+    const parsedTeamMembers = s.teamMembersInput
+      .split(/[,;\n]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const ishikawaData: IshikawaAnalysis = {
+      method: s.ishikawaMethod.trim() || undefined,
+      machine: s.ishikawaMachine.trim() || undefined,
+      material: s.ishikawaMaterial.trim() || undefined,
+      manpower: s.ishikawaManpower.trim() || undefined,
+      measurement: s.ishikawaMeasurement.trim() || undefined,
+      environment: s.ishikawaEnvironment.trim() || undefined,
+      primaryRootCause: s.ishikawaRootCause.trim() || undefined,
+    };
+
+    dataService.updateAction(projectId, {
+      leaderName: s.leaderName.trim() || undefined,
+      teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
+      pdcaStage: s.activeTab,
+      problemStatement: s.problemStatement,
+      targetMetricName: s.targetMetricName,
+      targetMetricUnit: s.targetMetricUnit,
+      baselineValue: s.baselineValue === '' ? undefined : Number(s.baselineValue),
+      targetGoalValue: s.targetGoalValue === '' ? undefined : Number(s.targetGoalValue),
+      achievedValue: s.achievedValue === '' ? undefined : Number(s.achievedValue),
+      currentProblemCostMonthly: s.currentProblemCostMonthly === '' ? undefined : Number(s.currentProblemCostMonthly),
+      fiveWhys: s.fiveWhys,
+      pareto: {
+        chartImageUrl: s.paretoImageUrl,
+        chartImageName: s.paretoImageName,
+        vitalCausesSummary: s.paretoVitalCauses,
+        cumulativeImpactPercentage: s.paretoCumulativePercent === '' ? 80 : Number(s.paretoCumulativePercent),
+      },
+      ishikawa: ishikawaData,
+      pilotArea: s.pilotArea,
+      pilotTestObservations: s.pilotTestObservations,
+      photoBeforeUrl: s.photoBeforeUrl,
+      photoAfterUrl: s.photoAfterUrl,
+      checklist: s.checklistItems,
+      projectCosts: {
+        partsAndEquipment: s.partsAndEquipment,
+        thirdPartyServices: s.thirdPartyServices,
+        internalLaborHours: s.internalLaborHours,
+        laborHourlyRate: s.laborHourlyRate,
+        otherCosts: s.otherCosts,
+        totalCost: s.totalInvestmentCost,
+      },
+      costBreakdown: {
+        machineDowntime: s.machineDowntime,
+        laborSavings: s.laborSavings,
+        scrapReduction: s.scrapReduction,
+        toolingAndEnergy: s.toolingAndEnergy,
+        logisticsAndFreight: s.logisticsAndFreight,
+        productionIncrease: s.productionIncrease,
+        otherSavings: s.otherSavings,
+      },
+      actualCostAvoided: s.totalGrossSavings,
+      netSavings: s.netSavings,
+      roiPercentage: s.roiPercentage,
+      paybackMonths: s.paybackMonths,
+      attachments: s.attachments,
+      standardWorkUpdated: s.standardWorkUpdated,
+      standardWorkDocRef: s.standardWorkDocRef,
+      yokotenReplication: s.yokotenReplication,
+      lessonsLearned: s.lessonsLearned,
+    });
+
+    setSaveStatus('saved');
+  }, [projectId]);
+
+  // Dispara o Auto-Save quando qualquer campo editável é alterado
   useEffect(() => {
     if (isInitialLoadRef.current) return;
-    if (!action) return;
 
     setSaveStatus('saving');
     if (saveTimeoutRef.current) {
@@ -494,20 +546,66 @@ export default function AdminProjectDetailPage() {
     }
 
     saveTimeoutRef.current = setTimeout(() => {
-      saveProjectData();
+      executeSave();
     }, 600);
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [saveProjectData]);
+  }, [
+    leaderName,
+    teamMembersInput,
+    activeTab,
+    problemStatement,
+    targetMetricName,
+    targetMetricUnit,
+    baselineValue,
+    targetGoalValue,
+    achievedValue,
+    currentProblemCostMonthly,
+    fiveWhys,
+    paretoImageUrl,
+    paretoImageName,
+    paretoVitalCauses,
+    paretoCumulativePercent,
+    ishikawaMethod,
+    ishikawaMachine,
+    ishikawaMaterial,
+    ishikawaManpower,
+    ishikawaMeasurement,
+    ishikawaEnvironment,
+    ishikawaRootCause,
+    pilotArea,
+    pilotTestObservations,
+    photoBeforeUrl,
+    photoAfterUrl,
+    checklistItems,
+    partsAndEquipment,
+    thirdPartyServices,
+    internalLaborHours,
+    laborHourlyRate,
+    otherCosts,
+    machineDowntime,
+    laborSavings,
+    scrapReduction,
+    toolingAndEnergy,
+    logisticsAndFreight,
+    productionIncrease,
+    otherSavings,
+    attachments,
+    standardWorkUpdated,
+    standardWorkDocRef,
+    yokotenReplication,
+    lessonsLearned,
+    executeSave,
+  ]);
 
   // Garante a gravação instantânea se o usuário fechar ou mudar de aba (Flush)
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
-        saveProjectData();
+        executeSave();
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -515,10 +613,10 @@ export default function AdminProjectDetailPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
-        saveProjectData();
+        executeSave();
       }
     };
-  }, [saveProjectData]);
+  }, [executeSave]);
 
   const handleParetoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

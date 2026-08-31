@@ -136,7 +136,7 @@ export default function KaizenPDCAExecutionPage() {
       setLoading(false);
       setTimeout(() => {
         isInitialLoadRef.current = false;
-      }, 200);
+      }, 400);
     }
   }, [ideaId, dataVersion]);
 
@@ -149,62 +149,8 @@ export default function KaizenPDCAExecutionPage() {
     return l + p + s + m;
   }, [laborSavings, productionIncrease, scrapReduction, machineDowntime]);
 
-  // Save changes (Auto-save & stage switch)
-  const saveIdeaData = useCallback((targetStage?: 'plan' | 'do' | 'check' | 'act') => {
-    if (!idea) return;
-
-    const nextStage = targetStage || activeTab;
-    const actualCost = calculatedSavings > 0 ? calculatedSavings : Number(idea.actualCostAvoided) || 0;
-
-    let execStatus = idea.executionStatus || 'planejamento';
-    if (nextStage === 'do') execStatus = 'em_implantacao';
-    if (nextStage === 'check') execStatus = 'em_implantacao';
-    if (nextStage === 'act' && idea.masterApproved) execStatus = 'implantada_sucesso';
-
-    const costBreakdown: LeanCostBreakdown = {
-      laborSavings: laborSavings !== '' ? Number(laborSavings) : undefined,
-      productionIncrease: productionIncrease !== '' ? Number(productionIncrease) : undefined,
-      scrapReduction: scrapReduction !== '' ? Number(scrapReduction) : undefined,
-      machineDowntime: machineDowntime !== '' ? Number(machineDowntime) : undefined,
-    };
-
-    const updated = dataService.updateKaizenIdea(idea.id, {
-      pdcaStage: nextStage,
-      executionStatus: execStatus,
-      // P
-      targetMetricName,
-      targetMetricUnit,
-      baselineValue: baselineValue !== '' ? Number(baselineValue) : undefined,
-      targetGoalValue: targetGoalValue !== '' ? Number(targetGoalValue) : undefined,
-      rootCauseAnalysis,
-      fiveWhys,
-      checklist,
-      // D
-      pilotArea,
-      pilotTestObservations,
-      evidenceBeforeUrl,
-      evidenceAfterUrl,
-      // C
-      achievedValue: achievedValue !== '' ? Number(achievedValue) : undefined,
-      costBreakdown,
-      estimatedCostAvoided: estimatedCostAvoided !== '' ? Number(estimatedCostAvoided) : idea.estimatedCostAvoided,
-      actualCostAvoided: actualCost,
-      hoursSaved: hoursSaved !== '' ? Number(hoursSaved) : idea.hoursSaved,
-      financialGainNotes,
-      // A
-      standardWorkUpdated,
-      standardWorkDocRef,
-      lessonsLearned,
-      yokotenReplication,
-    });
-
-    setIdea(updated);
-    setSaveStatus('saved');
-    refreshData();
-  }, [
-    idea,
+  const stateRef = useRef({
     activeTab,
-    calculatedSavings,
     targetMetricName,
     targetMetricUnit,
     baselineValue,
@@ -228,13 +174,95 @@ export default function KaizenPDCAExecutionPage() {
     standardWorkDocRef,
     lessonsLearned,
     yokotenReplication,
-    refreshData,
-  ]);
+    calculatedSavings,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      activeTab,
+      targetMetricName,
+      targetMetricUnit,
+      baselineValue,
+      targetGoalValue,
+      rootCauseAnalysis,
+      fiveWhys,
+      checklist,
+      pilotArea,
+      pilotTestObservations,
+      evidenceBeforeUrl,
+      evidenceAfterUrl,
+      achievedValue,
+      laborSavings,
+      productionIncrease,
+      scrapReduction,
+      machineDowntime,
+      estimatedCostAvoided,
+      hoursSaved,
+      financialGainNotes,
+      standardWorkUpdated,
+      standardWorkDocRef,
+      lessonsLearned,
+      yokotenReplication,
+      calculatedSavings,
+    };
+  });
+
+  // Save changes (Auto-save & stage switch)
+  const saveIdeaData = useCallback((targetStage?: 'plan' | 'do' | 'check' | 'act') => {
+    if (!ideaId) return;
+    const s = stateRef.current;
+
+    const nextStage = targetStage || s.activeTab;
+    const actualCost = s.calculatedSavings > 0 ? s.calculatedSavings : 0;
+
+    let execStatus = idea?.executionStatus || 'planejamento';
+    if (nextStage === 'do') execStatus = 'em_implantacao';
+    if (nextStage === 'check') execStatus = 'em_implantacao';
+    if (nextStage === 'act' && idea?.masterApproved) execStatus = 'implantada_sucesso';
+
+    const costBreakdown: LeanCostBreakdown = {
+      laborSavings: s.laborSavings !== '' ? Number(s.laborSavings) : undefined,
+      productionIncrease: s.productionIncrease !== '' ? Number(s.productionIncrease) : undefined,
+      scrapReduction: s.scrapReduction !== '' ? Number(s.scrapReduction) : undefined,
+      machineDowntime: s.machineDowntime !== '' ? Number(s.machineDowntime) : undefined,
+    };
+
+    dataService.updateKaizenIdea(ideaId, {
+      pdcaStage: nextStage,
+      executionStatus: execStatus,
+      // P
+      targetMetricName: s.targetMetricName,
+      targetMetricUnit: s.targetMetricUnit,
+      baselineValue: s.baselineValue !== '' ? Number(s.baselineValue) : undefined,
+      targetGoalValue: s.targetGoalValue !== '' ? Number(s.targetGoalValue) : undefined,
+      rootCauseAnalysis: s.rootCauseAnalysis,
+      fiveWhys: s.fiveWhys,
+      checklist: s.checklist,
+      // D
+      pilotArea: s.pilotArea,
+      pilotTestObservations: s.pilotTestObservations,
+      evidenceBeforeUrl: s.evidenceBeforeUrl,
+      evidenceAfterUrl: s.evidenceAfterUrl,
+      // C
+      achievedValue: s.achievedValue !== '' ? Number(s.achievedValue) : undefined,
+      costBreakdown,
+      estimatedCostAvoided: s.estimatedCostAvoided !== '' ? Number(s.estimatedCostAvoided) : undefined,
+      actualCostAvoided: actualCost,
+      hoursSaved: s.hoursSaved !== '' ? Number(s.hoursSaved) : undefined,
+      financialGainNotes: s.financialGainNotes,
+      // A
+      standardWorkUpdated: s.standardWorkUpdated,
+      standardWorkDocRef: s.standardWorkDocRef,
+      lessonsLearned: s.lessonsLearned,
+      yokotenReplication: s.yokotenReplication,
+    });
+
+    setSaveStatus('saved');
+  }, [ideaId, idea?.executionStatus, idea?.masterApproved]);
 
   // Debounced auto-save effect (600ms)
   useEffect(() => {
     if (isInitialLoadRef.current) return;
-    if (!idea) return;
 
     setSaveStatus('saving');
     if (saveTimeoutRef.current) {
@@ -248,7 +276,33 @@ export default function KaizenPDCAExecutionPage() {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [saveIdeaData]);
+  }, [
+    activeTab,
+    targetMetricName,
+    targetMetricUnit,
+    baselineValue,
+    targetGoalValue,
+    rootCauseAnalysis,
+    fiveWhys,
+    checklist,
+    pilotArea,
+    pilotTestObservations,
+    evidenceBeforeUrl,
+    evidenceAfterUrl,
+    achievedValue,
+    laborSavings,
+    productionIncrease,
+    scrapReduction,
+    machineDowntime,
+    estimatedCostAvoided,
+    hoursSaved,
+    financialGainNotes,
+    standardWorkUpdated,
+    standardWorkDocRef,
+    lessonsLearned,
+    yokotenReplication,
+    saveIdeaData,
+  ]);
 
   // Flush on unmount or beforeunload
   useEffect(() => {
