@@ -99,12 +99,9 @@ export default function AdminSetoresPage() {
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '0.35rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '1rem' }}>
                   {sec.name}
                 </h3>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.4, marginBottom: '1.25rem' }}>
-                  {sec.description || 'Departamento operacional da planta.'}
-                </p>
 
                 {/* Avoided cost snippet */}
                 {stats && stats.costAvoided > 0 && (

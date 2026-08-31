@@ -31,7 +31,7 @@ export interface Sector {
   tenantId: string;
   name: string;
   code: string;
-  description: string;
+  description?: string;
   color: string; // e.g. '#2563eb'
   iconName?: string;
   createdAt: string;

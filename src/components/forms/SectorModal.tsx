@@ -24,19 +24,16 @@ export const SectorModal: React.FC<SectorModalProps> = ({
 
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [description, setDescription] = useState('');
   const [color, setColor] = useState('#06b6d4');
 
   useEffect(() => {
     if (sector) {
       setName(sector.name);
       setCode(sector.code);
-      setDescription(sector.description || '');
       setColor(sector.color || '#06b6d4');
     } else {
       setName('');
       setCode('');
-      setDescription('');
       setColor('#06b6d4');
     }
   }, [sector, isOpen]);
@@ -49,7 +46,6 @@ export const SectorModal: React.FC<SectorModalProps> = ({
       dataService.updateSector(sector.id, {
         name,
         code: code.toUpperCase(),
-        description,
         color,
       });
     } else {
@@ -57,7 +53,6 @@ export const SectorModal: React.FC<SectorModalProps> = ({
         tenantId: currentTenant.id,
         name,
         code: code.toUpperCase(),
-        description,
         color,
       });
     }
@@ -109,17 +104,6 @@ export const SectorModal: React.FC<SectorModalProps> = ({
               required
             />
           </div>
-        </div>
-
-        <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição das Atividades Lean no Setor:</label>
-          <textarea
-            className="form-textarea"
-            rows={2}
-            placeholder="Ex: Responsável por balanceamento de linhas, projetos Kaizen e TPM..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
         </div>
 
         <div className="form-group" style={{ margin: 0 }}>
