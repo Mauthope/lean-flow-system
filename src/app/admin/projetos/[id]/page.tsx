@@ -292,23 +292,109 @@ export default function AdminProjectDetailPage() {
   };
 
   // Navegação por teclado no Modo Apresentação
+  // Modo Apresentação: Controle por Passador de Slides (Wireless Presenter) & Teclado
   useEffect(() => {
     if (!presentationOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      // Don't intercept if user is typing inside an input or textarea
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const key = e.key;
+      const code = e.code;
+      const keyCode = e.keyCode;
+
+      // Exit / Close (Escape)
+      if (key === 'Escape' || keyCode === 27) {
+        e.preventDefault();
         if (paretoZoomOpen) {
           setParetoZoomOpen(false);
         } else {
           setPresentationOpen(false);
         }
-      } else if (e.key === 'ArrowRight' && !paretoZoomOpen) {
+        return;
+      }
+
+      if (paretoZoomOpen) return;
+
+      // Next Slide Commands:
+      // - PageDown (Hardware Clicker Next)
+      // - ArrowRight / ArrowDown
+      // - Spacebar
+      // - N / n
+      const isNext =
+        key === 'PageDown' ||
+        key === 'ArrowRight' ||
+        key === 'ArrowDown' ||
+        key === ' ' ||
+        key === 'Spacebar' ||
+        code === 'PageDown' ||
+        code === 'ArrowRight' ||
+        code === 'ArrowDown' ||
+        code === 'Space' ||
+        keyCode === 34 || // PageDown
+        keyCode === 39 || // ArrowRight
+        keyCode === 40 || // ArrowDown
+        keyCode === 32 || // Space
+        key === 'n' ||
+        key === 'N';
+
+      // Previous Slide Commands:
+      // - PageUp (Hardware Clicker Previous)
+      // - ArrowLeft / ArrowUp
+      // - Backspace
+      // - P / p
+      const isPrev =
+        key === 'PageUp' ||
+        key === 'ArrowLeft' ||
+        key === 'ArrowUp' ||
+        key === 'Backspace' ||
+        code === 'PageUp' ||
+        code === 'ArrowLeft' ||
+        code === 'ArrowUp' ||
+        code === 'Backspace' ||
+        keyCode === 33 || // PageUp
+        keyCode === 37 || // ArrowLeft
+        keyCode === 38 || // ArrowUp
+        keyCode === 8 || // Backspace
+        key === 'p' ||
+        key === 'P';
+
+      // Home (First slide)
+      if (key === 'Home' || keyCode === 36) {
+        e.preventDefault();
+        setPresentationSlide(1);
+        return;
+      }
+
+      // End (Last slide)
+      if (key === 'End' || keyCode === 35) {
+        e.preventDefault();
+        setPresentationSlide(5);
+        return;
+      }
+
+      if (isNext) {
+        e.preventDefault();
+        e.stopPropagation();
         setPresentationSlide((prev) => (prev < 5 ? ((prev + 1) as 1 | 2 | 3 | 4 | 5) : prev));
-      } else if (e.key === 'ArrowLeft' && !paretoZoomOpen) {
+      } else if (isPrev) {
+        e.preventDefault();
+        e.stopPropagation();
         setPresentationSlide((prev) => (prev > 1 ? ((prev - 1) as 1 | 2 | 3 | 4 | 5) : prev));
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [presentationOpen, paretoZoomOpen]);
 
   // Dynamic Calculated Financials
@@ -3564,15 +3650,17 @@ export default function AdminProjectDetailPage() {
               </div>
             </div>
 
-            {/* Slide Body - Strictly No Scrollbar */}
+            {/* Slide Body - Scrollbar Habilitada e Estilizada para Apresentação */}
             <div
               style={{
                 flex: 1,
-                overflow: 'hidden',
+                overflowY: 'auto',
+                overflowX: 'hidden',
                 padding: '1.25rem 1.75rem',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(6, 182, 212, 0.5) rgba(255, 255, 255, 0.05)',
               }}
             >
               {/* =================================================================== */}
@@ -3615,7 +3703,7 @@ export default function AdminProjectDetailPage() {
                   : (action.teamMembers || []);
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -3909,7 +3997,7 @@ export default function AdminProjectDetailPage() {
                 const completionRate = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 100;
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4050,7 +4138,7 @@ export default function AdminProjectDetailPage() {
                 const netValue = netSavings > 0 ? netSavings : grossValue;
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: '0.85rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
                     {/* Header */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
@@ -4270,7 +4358,7 @@ export default function AdminProjectDetailPage() {
               {/* SLIDE 4: A • ACT (Compilação Dinâmica de Padronização & 3 Meses)    */}
               {/* =================================================================== */}
               {presentationSlide === 4 && (
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
                   {/* Header */}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4403,7 +4491,7 @@ export default function AdminProjectDetailPage() {
               {/* SLIDE 5: 📸 ANTES & DEPOIS (Apenas Foto Antes e Foto Depois)        */}
               {/* =================================================================== */}
               {presentationSlide === 5 && (
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', gap: '1rem', paddingBottom: '0.5rem' }}>
                   {/* Header */}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
@@ -4568,9 +4656,9 @@ export default function AdminProjectDetailPage() {
                 <ChevronLeft size={15} /> Anterior
               </button>
 
-              {/* Dica de Teclado */}
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                Use as setas <strong>⬅️ ➡️</strong> do teclado ou <strong>ESC</strong> para sair
+              {/* Dica de Passador de Slides / Teclado */}
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                🎮 <strong>Passador de Slides</strong> (PageDown/Up) • Teclas <strong>⬅️ ➡️ Espaço</strong> • <strong>ESC</strong> para sair
               </span>
 
               {/* Botão Próximo ou Concluir */}
