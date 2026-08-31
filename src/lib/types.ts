@@ -45,6 +45,8 @@ export interface User {
   role: UserRole;
   sectorId?: string;
   sectorName?: string;
+  sectorIds?: string[];
+  allSectors?: boolean;
   jobTitle?: string;
   avatarUrl?: string;
   active: boolean;

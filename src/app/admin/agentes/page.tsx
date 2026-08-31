@@ -131,7 +131,14 @@ export default function AdminAgentesPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.8125rem', color: '#cbd5e1', marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Building2 size={14} color="#22d3ee" />
-                    <span>Setor: <strong style={{ color: '#ffffff' }}>{agent.sectorName || 'Não Definido'}</strong></span>
+                    <span>
+                      Setor:{' '}
+                      {agent.allSectors || agent.sectorName === 'Todos os Setores (Geral)' ? (
+                        <span style={{ color: '#34d399', fontWeight: 800 }}>🌟 Todos os Setores (Planta Geral)</span>
+                      ) : (
+                        <strong style={{ color: '#ffffff' }}>{agent.sectorName || 'Não Definido'}</strong>
+                      )}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Mail size={14} color="#94a3b8" />

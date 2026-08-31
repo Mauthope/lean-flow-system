@@ -186,9 +186,14 @@ export const dataService = {
   createUser(user: Omit<User, 'id' | 'createdAt'>): User {
     const users = this.getUsers();
     
-    // Check sector name if sectorId provided
-    let sectorName: string | undefined = undefined;
-    if (user.sectorId) {
+    // Check sector name if sectorId or allSectors provided
+    let sectorName: string | undefined = user.sectorName;
+    if (user.allSectors) {
+      sectorName = 'Todos os Setores (Geral)';
+    } else if (user.sectorIds && user.sectorIds.length > 0) {
+      const names = user.sectorIds.map((id) => this.getSectorById(id)?.name).filter(Boolean);
+      if (names.length > 0) sectorName = names.join(', ');
+    } else if (user.sectorId) {
       const sec = this.getSectorById(user.sectorId);
       if (sec) sectorName = sec.name;
     }
@@ -209,9 +214,16 @@ export const dataService = {
     const index = users.findIndex((u) => u.id === id);
     if (index === -1) throw new Error('Usuário não encontrado');
 
-    if (updates.sectorId) {
-      const sec = this.getSectorById(updates.sectorId);
-      if (sec) updates.sectorName = sec.name;
+    if (updates.allSectors !== undefined || updates.sectorIds !== undefined || updates.sectorId !== undefined) {
+      if (updates.allSectors) {
+        updates.sectorName = 'Todos os Setores (Geral)';
+      } else if (updates.sectorIds && updates.sectorIds.length > 0) {
+        const names = updates.sectorIds.map((id) => this.getSectorById(id)?.name).filter(Boolean);
+        if (names.length > 0) updates.sectorName = names.join(', ');
+      } else if (updates.sectorId) {
+        const sec = this.getSectorById(updates.sectorId);
+        if (sec) updates.sectorName = sec.name;
+      }
     }
 
     users[index] = { ...users[index], ...updates };
