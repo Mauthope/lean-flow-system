@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
+
 const SECTOR_ACCENTS = [
   { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' },
   { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' },
@@ -42,7 +44,6 @@ const SECTOR_ACCENTS = [
 
 export default function AdminDashboardPage() {
   const { dataVersion } = useAuth();
-  const [overdueFilterTab, setOverdueFilterTab] = useState<'all' | 'projects' | 'activities'>('all');
 
   const metrics = useMemo(() => {
     return dataService.getMetrics();
@@ -59,53 +60,32 @@ export default function AdminDashboardPage() {
       .filter((a) => a.masterApproved || a.status === 'concluida' || a.quarterlyFollowUp?.enabled);
   }, [dataVersion]);
 
-  // ─── MONITORAMENTO DE ATRASOS (PROJETOS & ATIVIDADES 5W2H) ───
-  const { overdueProjects, overdueActivities, totalOverdueCount } = useMemo(() => {
-    const allActions = dataService.getActions();
+  // Resumo de contagem de alertas de prazos para o badge do Hero
+  const { overdueCount, nearDueCount } = useMemo(() => {
+    const all = dataService.getActions();
     const now = new Date().setHours(0, 0, 0, 0);
+    let ov = 0;
+    let nr = 0;
 
-    const ovProjects: {
-      action: LeanAction;
-      dueDateStr: string;
-      daysOverdue: number;
-    }[] = [];
-
-    const ovActivities: {
-      action: LeanAction;
-      item: ActionChecklistItem;
-      dueDateStr: string;
-      daysOverdue: number;
-    }[] = [];
-
-    allActions.forEach((act) => {
-      // 1. Projeto em atraso: não concluído e não recusado com data limite vencida
+    all.forEach((act) => {
       if (act.status !== 'concluida' && act.status !== 'nao_aprovada' && act.dueDate) {
-        const dTime = new Date(act.dueDate).getTime();
-        if (!isNaN(dTime) && dTime < now) {
-          const days = Math.max(1, Math.floor((now - dTime) / (1000 * 60 * 60 * 24)));
-          ovProjects.push({
-            action: act,
-            dueDateStr: act.dueDate,
-            daysOverdue: days,
-          });
+        const d = new Date(act.dueDate).getTime();
+        if (!isNaN(d)) {
+          const diffDays = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+          if (diffDays < 0) ov++;
+          else if (diffDays <= 3) nr++;
         }
       }
-
-      // 2. Atividades 5W2H em atraso
       if (act.status !== 'concluida' && act.status !== 'nao_aprovada' && act.checklist) {
         act.checklist.forEach((item) => {
           if (!item.completed && item.status !== 'concluida') {
             const targetDate = item.endDate || item.plannedEnd;
             if (targetDate) {
-              const itemTime = new Date(targetDate).getTime();
-              if (!isNaN(itemTime) && itemTime < now) {
-                const days = Math.max(1, Math.floor((now - itemTime) / (1000 * 60 * 60 * 24)));
-                ovActivities.push({
-                  action: act,
-                  item,
-                  dueDateStr: targetDate,
-                  daysOverdue: days,
-                });
+              const d = new Date(targetDate).getTime();
+              if (!isNaN(d)) {
+                const diffDays = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+                if (diffDays < 0) ov++;
+                else if (diffDays <= 3) nr++;
               }
             }
           }
@@ -113,11 +93,7 @@ export default function AdminDashboardPage() {
       }
     });
 
-    return {
-      overdueProjects: ovProjects.sort((a, b) => b.daysOverdue - a.daysOverdue),
-      overdueActivities: ovActivities.sort((a, b) => b.daysOverdue - a.daysOverdue),
-      totalOverdueCount: ovProjects.length + ovActivities.length,
-    };
+    return { overdueCount: ov, nearDueCount: nr };
   }, [dataVersion]);
 
   // Breakdown calculations for the executive financial sources
@@ -221,8 +197,8 @@ export default function AdminDashboardPage() {
               <ShieldCheck size={12} color="#22d3ee" /> VISÃO EXECUTIVA MASTER
             </span>
 
-            {/* Overdue Badge in Hero */}
-            {totalOverdueCount > 0 ? (
+            {/* Overdue / Near-due Badge in Hero */}
+            {overdueCount > 0 ? (
               <span
                 style={{
                   fontSize: '0.7rem',
@@ -238,7 +214,25 @@ export default function AdminDashboardPage() {
                   boxShadow: '0 0 10px rgba(239, 68, 68, 0.25)',
                 }}
               >
-                <AlertTriangle size={12} color="#f87171" /> 🚨 {totalOverdueCount} PENDÊNCIA(S) EM ATRASO
+                <AlertTriangle size={12} color="#f87171" /> 🚨 {overdueCount} EM ATRASO {nearDueCount > 0 ? `• 🟡 ${nearDueCount} QUASE ATRASADOS` : ''}
+              </span>
+            ) : nearDueCount > 0 ? (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 900,
+                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                  color: '#fbbf24',
+                  border: '1px solid rgba(245, 158, 11, 0.45)',
+                  padding: '0.2rem 0.65rem',
+                  borderRadius: '9999px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)',
+                }}
+              >
+                <Clock size={12} color="#fbbf24" /> 🟡 {nearDueCount} VENCENDO EM BREVE
               </span>
             ) : (
               <span
@@ -348,8 +342,8 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ================= 5 CARDS DE MÉTRICAS PRINCIPAIS (INCLUINDO MONITORAMENTO DE PRAZOS) ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1.15rem' }}>
+      {/* ================= 4 CARDS DE MÉTRICAS PRINCIPAIS ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
           title="Custo Evitado Real (ROI)"
           value={formatCurrency(metrics.totalActualCostAvoided)}
@@ -382,388 +376,10 @@ export default function AdminDashboardPage() {
           icon={<Clock size={22} />}
           accentColor="#f59e0b"
         />
-
-        {/* 5º Card: Indicador de Entregas & Atrasos */}
-        <StatsCard
-          title="Monitoramento de Prazos"
-          value={totalOverdueCount > 0 ? `${totalOverdueCount} em Atraso` : '100% no Prazo'}
-          subtitle={
-            totalOverdueCount > 0
-              ? `${overdueProjects.length} projeto(s) • ${overdueActivities.length} atividade(s)`
-              : 'Nenhum projeto ou atividade atrasada'
-          }
-          icon={totalOverdueCount > 0 ? <AlertTriangle size={22} color="#f87171" /> : <CheckCircle2 size={22} color="#34d399" />}
-          accentColor={totalOverdueCount > 0 ? '#ef4444' : '#10b981'}
-          trend={
-            totalOverdueCount > 0
-              ? { value: `${totalOverdueCount} fora do prazo`, isPositive: false }
-              : { value: 'Zero atrasos', isPositive: true }
-          }
-        />
       </div>
 
-      {/* ========================================================================= */}
-      {/* CENTRAL MASTER: MONITORAMENTO DE ATIVIDADES E PROJETOS EM ATRASO         */}
-      {/* ========================================================================= */}
-      {totalOverdueCount > 0 && (
-        <div
-          className="card"
-          style={{
-            backgroundColor: '#0f172a',
-            border: '1.5px solid rgba(239, 68, 68, 0.45)',
-            borderRadius: '18px',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px -5px rgba(239, 68, 68, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4)',
-          }}
-        >
-          {/* Header */}
-          <div
-            style={{
-              padding: '1.25rem 1.65rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1rem',
-              background: 'linear-gradient(90deg, rgba(239, 68, 68, 0.12) 0%, transparent 100%)',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div
-                  style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    border: '1px solid rgba(239, 68, 68, 0.45)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 0 12px rgba(239, 68, 68, 0.3)',
-                  }}
-                >
-                  <AlertTriangle size={18} color="#f87171" />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                    🚨 Central de Monitoramento de Atrasos ({totalOverdueCount} pendência{totalOverdueCount > 1 ? 's' : ''})
-                  </h3>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: '0.35rem 0 0' }}>
-                Iniciativas Lean e atividades 5W2H com prazo expirado que requerem alinhamento e cobrança do Gestor Master.
-              </p>
-            </div>
-
-            {/* Filter Tabs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <button
-                type="button"
-                onClick={() => setOverdueFilterTab('all')}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '7px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  backgroundColor: overdueFilterTab === 'all' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
-                  color: overdueFilterTab === 'all' ? '#f87171' : '#94a3b8',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Todos ({totalOverdueCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setOverdueFilterTab('projects')}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '7px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  backgroundColor: overdueFilterTab === 'projects' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
-                  color: overdueFilterTab === 'projects' ? '#f87171' : '#94a3b8',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Projetos ({overdueProjects.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setOverdueFilterTab('activities')}
-                style={{
-                  padding: '0.4rem 0.85rem',
-                  borderRadius: '7px',
-                  border: 'none',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  backgroundColor: overdueFilterTab === 'activities' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
-                  color: overdueFilterTab === 'activities' ? '#fbbf24' : '#94a3b8',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Atividades 5W2H ({overdueActivities.length})
-              </button>
-            </div>
-          </div>
-
-          {/* List/Table */}
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: '880px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '0.875rem 1.25rem' }}>Tipo</th>
-                  <th style={{ padding: '0.875rem 1rem' }}>Título & Escopo</th>
-                  <th style={{ padding: '0.875rem 1rem' }}>Responsável / Líder</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Prazo Estipulado</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Tempo em Atraso</th>
-                  <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação Rápida</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* 1. Projetos em Atraso */}
-                {(overdueFilterTab === 'all' || overdueFilterTab === 'projects') &&
-                  overdueProjects.map(({ action: act, dueDateStr, daysOverdue }) => (
-                    <tr
-                      key={`proj-${act.id}`}
-                      style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        backgroundColor: 'rgba(239, 68, 68, 0.03)',
-                        transition: 'background-color 0.15s ease',
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.03)')}
-                    >
-                      <td style={{ padding: '0.875rem 1.25rem' }}>
-                        <span
-                          style={{
-                            fontSize: '0.675rem',
-                            fontWeight: 900,
-                            backgroundColor: 'rgba(239, 68, 68, 0.18)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.45)',
-                            padding: '0.2rem 0.55rem',
-                            borderRadius: '6px',
-                            textTransform: 'uppercase',
-                            fontFamily: 'var(--font-mono)',
-                            letterSpacing: '0.04em',
-                          }}
-                        >
-                          PROJETO LEAN
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <Link
-                          href={`/admin/projetos/${act.id}`}
-                          style={{
-                            fontWeight: 800,
-                            color: '#ffffff',
-                            textDecoration: 'none',
-                            fontSize: '0.875rem',
-                            fontFamily: 'var(--font-heading)',
-                            display: 'block',
-                          }}
-                        >
-                          {act.title}
-                        </Link>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                            {act.protocol}
-                          </span>
-                          <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
-                          <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
-                            {act.originSectorName || 'Fábrica'}
-                          </span>
-                        </div>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          {act.assignedAgentAvatar ? (
-                            <img
-                              src={act.assignedAgentAvatar}
-                              alt={act.assignedAgentName || 'Agente'}
-                              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(239, 68, 68, 0.4)' }}
-                            />
-                          ) : (
-                            <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#ffffff', fontWeight: 800 }}>
-                              {(act.assignedAgentName || 'A')[0]}
-                            </div>
-                          )}
-                          <div>
-                            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', display: 'block' }}>
-                              {act.assignedAgentName || 'Não atribuído'}
-                            </span>
-                            {act.leaderName && act.leaderName !== act.assignedAgentName && (
-                              <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                                Líder: {act.leaderName}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1', fontWeight: 700 }}>
-                          {formatDate(dueDateStr)}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        <span
-                          style={{
-                            backgroundColor: 'rgba(239, 68, 68, 0.25)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.5)',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '8px',
-                            fontWeight: 900,
-                            fontSize: '0.75rem',
-                            fontFamily: 'var(--font-mono)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            boxShadow: '0 0 10px rgba(239, 68, 68, 0.2)',
-                          }}
-                        >
-                          <AlertTriangle size={12} color="#f87171" />
-                          {daysOverdue} dia{daysOverdue > 1 ? 's' : ''} em atraso
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
-                        <Link
-                          href={`/admin/projetos/${act.id}`}
-                          className="btn btn-sm"
-                          style={{
-                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.4)',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                          }}
-                        >
-                          <span>Acessar</span> <ExternalLink size={12} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-
-                {/* 2. Atividades 5W2H em Atraso */}
-                {(overdueFilterTab === 'all' || overdueFilterTab === 'activities') &&
-                  overdueActivities.map(({ action: act, item, dueDateStr, daysOverdue }) => (
-                    <tr
-                      key={`act-${act.id}-${item.id}`}
-                      style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        backgroundColor: 'rgba(245, 158, 11, 0.03)',
-                        transition: 'background-color 0.15s ease',
-                      }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.08)')}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.03)')}
-                    >
-                      <td style={{ padding: '0.875rem 1.25rem' }}>
-                        <span
-                          style={{
-                            fontSize: '0.675rem',
-                            fontWeight: 900,
-                            backgroundColor: 'rgba(245, 158, 11, 0.18)',
-                            color: '#fbbf24',
-                            border: '1px solid rgba(245, 158, 11, 0.45)',
-                            padding: '0.2rem 0.55rem',
-                            borderRadius: '6px',
-                            textTransform: 'uppercase',
-                            fontFamily: 'var(--font-mono)',
-                            letterSpacing: '0.04em',
-                          }}
-                        >
-                          ETAPA 5W2H
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
-                          {item.label}
-                        </strong>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Projeto:</span>
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            style={{ fontSize: '0.725rem', color: '#22d3ee', textDecoration: 'none', fontWeight: 700 }}
-                          >
-                            {act.protocol} - {act.title}
-                          </Link>
-                        </div>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
-                          {item.responsibleName || act.assignedAgentName || 'Agente'}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1', fontWeight: 700 }}>
-                          {formatDate(dueDateStr)}
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        <span
-                          style={{
-                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                            color: '#fbbf24',
-                            border: '1px solid rgba(245, 158, 11, 0.45)',
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '8px',
-                            fontWeight: 900,
-                            fontSize: '0.75rem',
-                            fontFamily: 'var(--font-mono)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                          }}
-                        >
-                          <AlertTriangle size={12} color="#fbbf24" />
-                          {daysOverdue} dia{daysOverdue > 1 ? 's' : ''} em atraso
-                        </span>
-                      </td>
-
-                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
-                        <Link
-                          href={`/admin/projetos/${act.id}`}
-                          className="btn btn-sm"
-                          style={{
-                            backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                            color: '#fbbf24',
-                            border: '1px solid rgba(245, 158, 11, 0.35)',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                          }}
-                        >
-                          <span>Ver 5W2H</span> <ExternalLink size={12} />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {/* ================= CENTRAL DE MONITORAMENTO DE PRAZOS & ATRASOS ================= */}
+      <DeadlineMonitoringPanel isAdmin={true} />
 
       {/* ================= 2 PAINÉIS DE DESTAQUE OPERACIONAL & FINANCEIRO ================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>

@@ -8,6 +8,8 @@ import { StatsCard } from '@/components/ui/StatsCard';
 import { formatCurrency } from '@/lib/utils';
 import { CheckCircle2, Clock, DollarSign, Kanban, UserCheck } from 'lucide-react';
 
+import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
+
 export default function AgenteKanbanPage() {
   const { currentUser, dataVersion, refreshData } = useAuth();
 
@@ -125,6 +127,14 @@ export default function AgenteKanbanPage() {
           accentColor="#059669"
         />
       </div>
+
+      {/* Central de Prazos & Atenção (Apenas ações e etapas do próprio agente) */}
+      <DeadlineMonitoringPanel
+        agentId={currentUser?.id}
+        agentName={currentUser?.name}
+        isAdmin={false}
+        warningDaysThreshold={3}
+      />
 
       {/* Restricted Agent Kanban Board */}
       <KanbanBoard
