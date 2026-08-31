@@ -135,7 +135,6 @@ export default function AdminProjectDetailPage() {
   const [newActionResp, setNewActionResp] = useState('');
   const [newActionStart, setNewActionStart] = useState('');
   const [newActionEnd, setNewActionEnd] = useState('');
-  const [newActionHours, setNewActionHours] = useState<number | ''>('');
 
   // Acompanhamento Trimestral pós-homologação (3 Meses)
   const [followUpModalMonth, setFollowUpModalMonth] = useState<1 | 2 | 3 | null>(null);
@@ -559,7 +558,6 @@ export default function AdminProjectDetailPage() {
       responsibleName: newActionResp.trim() || action.assignedAgentName || 'Agente',
       startDate: newActionStart.trim() || undefined,
       endDate: newActionEnd.trim() || undefined,
-      durationHours: newActionHours !== '' ? Number(newActionHours) : undefined,
       status: 'pendente',
       completed: false,
     };
@@ -571,7 +569,6 @@ export default function AdminProjectDetailPage() {
     setNewActionResp('');
     setNewActionStart('');
     setNewActionEnd('');
-    setNewActionHours('');
     refreshData();
   };
 
@@ -1251,7 +1248,6 @@ export default function AdminProjectDetailPage() {
                           <span>👤 {item.responsibleName || 'Agente'}</span>
                           {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
                           {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
-                          {item.durationHours && <span>⏱️ {item.durationHours}h</span>}
                         </div>
                       </div>
                     </div>
@@ -1279,7 +1275,7 @@ export default function AdminProjectDetailPage() {
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem' }}>
                 ➕ Adicionar Nova Atividade 5W2H:
               </span>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 80px auto', gap: '0.5rem', alignItems: 'end' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'end' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>O que fazer (Ação): *</label>
                   <input
@@ -1323,18 +1319,6 @@ export default function AdminProjectDetailPage() {
                     className="form-control form-control-sm"
                     value={newActionEnd}
                     onChange={(e) => setNewActionEnd(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Horas:</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    placeholder="12"
-                    value={newActionHours}
-                    onChange={(e) => setNewActionHours(e.target.value === '' ? '' : Number(e.target.value))}
                     style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>

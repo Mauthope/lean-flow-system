@@ -900,17 +900,6 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                     onChange={(e) => setActivityResponsible(e.target.value)}
                   />
                 </div>
-
-                <div>
-                  <label className="form-label">Horas Estimadas:</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    placeholder="Ex: 8"
-                    value={activityHours}
-                    onChange={(e) => setActivityHours(e.target.value)}
-                  />
-                </div>
               </div>
 
               <div className="form-group" style={{ margin: '0 0 1rem 0' }}>
@@ -1016,12 +1005,6 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                           {act.responsibleName && (
                             <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
                               👤 {act.responsibleName}
-                            </span>
-                          )}
-
-                          {act.durationHours && (
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                              ⏱️ {act.durationHours}h
                             </span>
                           )}
                         </div>
