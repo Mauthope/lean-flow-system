@@ -318,7 +318,7 @@ export default function LeanArticleModal({
                   {article.category}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  <Clock size={12} /> Mínimo: {formatTimer(minRequiredTime)} • Estimado: {article.readTimeMinutes} min
+                  <Clock size={12} /> Estimado: {article.readTimeMinutes} min de leitura
                 </span>
                 {isRead && (
                   <span
@@ -366,26 +366,6 @@ export default function LeanArticleModal({
               <Sparkles size={14} color="#c084fc" />
               <span>{isSenseiChatOpen ? 'Ocultar Sensei' : '💬 Dúvidas com o Sensei'}</span>
             </button>
-
-            {/* Monitor de Leitura Ativa */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                backgroundColor: '#0f172a',
-                border: `1px solid ${isOverTimeLimit ? '#ef4444' : secondsSpent >= minRequiredTime && hasScrolledToBottom ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
-                padding: '0.3rem 0.65rem',
-                borderRadius: '8px',
-                fontSize: '0.725rem',
-                color: isOverTimeLimit ? '#f87171' : secondsSpent >= minRequiredTime && hasScrolledToBottom ? '#34d399' : '#cbd5e1',
-                fontFamily: 'var(--font-mono)',
-              }}
-              title={`Tempo ativo de estudo: ${formatTimer(secondsSpent)} (Mínimo exigido: ${formatTimer(minRequiredTime)})`}
-            >
-              <Activity size={13} />
-              <span>{formatTimer(secondsSpent)}</span>
-            </div>
 
             <button
               type="button"
@@ -755,21 +735,13 @@ export default function LeanArticleModal({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {isCurrentlyValidated || (isRead && isValidatedRead) ? (
+            {isRead ? (
               <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <CheckCircle2 size={14} color="#10b981" /> Leitura e mentoria validadas para a prova de certificação!
-              </span>
-            ) : isOverTimeLimit ? (
-              <span style={{ fontSize: '0.75rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                <AlertCircle size={14} /> Tempo excedeu 15 minutos de inatividade. Faça uma leitura atenta.
+                <CheckCircle2 size={14} color="#10b981" /> Leitura concluída e registrada no seu perfil!
               </span>
             ) : (
-              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                {!hasScrolledToBottom
-                  ? 'Role até o final do artigo para validar a leitura'
-                  : secondsSpent < minRequiredTime
-                  ? `Tempo mínimo exigido: ${formatTimer(minRequiredTime)} (Faltam ${minRequiredTime - secondsSpent}s)`
-                  : 'Tempo e rolagem atingidos! Pronto para concluir.'}
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <BookOpen size={13} color="#22d3ee" /> Leia o conteúdo e tire dúvidas com o Sensei para concluir seus estudos.
               </span>
             )}
           </div>

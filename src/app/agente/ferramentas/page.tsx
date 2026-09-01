@@ -271,33 +271,35 @@ export default function LeanToolsIndexPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            type="button"
-            onClick={() => setIsExamModalOpen(true)}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: canTakeExam ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-              border: canTakeExam ? '1.5px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.15)',
-              color: canTakeExam ? '#fbbf24' : '#94a3b8',
-              fontWeight: 800,
-              padding: '0.55rem 1.15rem',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              cursor: 'pointer',
-              boxShadow: canTakeExam ? '0 0 15px rgba(251, 191, 36, 0.2)' : 'none',
-            }}
-          >
-            {canTakeExam ? <Unlock size={15} color="#fbbf24" /> : <Lock size={15} color="#94a3b8" />}
-            {latestExam?.passed
-              ? 'Selo de Especialista Conquistado 🏆'
-              : canTakeExam
-              ? 'Iniciar Prova (50 Questões • 12 min)'
-              : 'Prova Bloqueada (Requer 95% lidos)'}
-          </button>
-        </div>
+        {!isAdmin && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => setIsExamModalOpen(true)}
+              className="btn btn-sm"
+              style={{
+                backgroundColor: canTakeExam ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: canTakeExam ? '1.5px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: canTakeExam ? '#fbbf24' : '#94a3b8',
+                fontWeight: 800,
+                padding: '0.55rem 1.15rem',
+                borderRadius: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                cursor: 'pointer',
+                boxShadow: canTakeExam ? '0 0 15px rgba(251, 191, 36, 0.2)' : 'none',
+              }}
+            >
+              {canTakeExam ? <Unlock size={15} color="#fbbf24" /> : <Lock size={15} color="#94a3b8" />}
+              {latestExam?.passed
+                ? 'Selo de Especialista Conquistado 🏆'
+                : canTakeExam
+                ? 'Iniciar Prova (50 Questões • 12 min)'
+                : 'Prova Bloqueada (Requer 95% lidos)'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ================================================================= */}
@@ -492,84 +494,87 @@ export default function LeanToolsIndexPage() {
       {/* ================================================================= */}
       {activeMainTab === 'articles' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Card de Progresso do Agente */}
-          <div
-            style={{
-              backgroundColor: '#090e1a',
-              border: '1px solid rgba(168, 85, 247, 0.3)',
-              borderRadius: '18px',
-              padding: '1.25rem 1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1rem',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div
-                style={{
-                  width: '50px',
-                  height: '50px',
-                  borderRadius: '14px',
-                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                  border: '1.5px solid #a855f7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.6rem',
-                }}
-              >
-                🎓
-              </div>
-              <div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
-                  Sua Jornada de Capacitação Lean
-                </span>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
-                  {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
-                </h3>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                  {latestExam?.passed
-                    ? `🏆 Aprovado na Prova com Nota ${latestExam.score.toFixed(1)} • Apto a Recompensa!`
-                    : canTakeExam
-                    ? '🔓 Requisito atingido (≥95%)! Você já pode realizar a Prova de Certificação.'
-                    : `🔒 Complete mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
-                  <span>Validação Master</span>
-                  <strong style={{ color: validatedPercent >= 95 ? '#34d399' : '#ffffff' }}>{validatedPercent}%</strong>
+          {/* Card de Progresso na Academia Lean (Visão do Agente) */}
+          {!isAdmin && (
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #130f2e 0%, #090e1a 100%)',
+                backgroundColor: '#090e1a',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                borderRadius: '18px',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    border: '1.5px solid #a855f7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.6rem',
+                  }}
+                >
+                  🎓
                 </div>
-                <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${validatedPercent}%`, backgroundColor: validatedPercent >= 95 ? '#10b981' : '#a855f7' }} />
+                <div>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
+                    Sua Jornada de Capacitação Lean
+                  </span>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
+                    {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    {latestExam?.passed
+                      ? `🏆 Aprovado na Prova com Nota ${latestExam.score.toFixed(1)} • Apto a Recompensa!`
+                      : canTakeExam
+                      ? '🔓 Requisito atingido (≥95%)! Você já pode realizar a Prova de Certificação.'
+                      : `🔒 Complete mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
+                  </span>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsExamModalOpen(true)}
-                className="btn btn-primary btn-sm"
-                style={{
-                  fontWeight: 800,
-                  padding: '0.55rem 1.25rem',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  backgroundColor: canTakeExam ? '#10b981' : undefined,
-                }}
-              >
-                <Award size={15} />
-                {latestExam?.passed ? 'Ver Certificado' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
+                    <span>Validação Master</span>
+                    <strong style={{ color: validatedPercent >= 95 ? '#34d399' : '#ffffff' }}>{validatedPercent}%</strong>
+                  </div>
+                  <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${validatedPercent}%`, backgroundColor: validatedPercent >= 95 ? '#10b981' : '#a855f7' }} />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExamModalOpen(true)}
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    fontWeight: 800,
+                    padding: '0.55rem 1.25rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    backgroundColor: canTakeExam ? '#10b981' : undefined,
+                  }}
+                >
+                  <Award size={15} />
+                  {latestExam?.passed ? 'Ver Certificado' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ============================================================= */}
           {/* TABELA DE RANKING DOS AGENTES (VISÃO DO MASTER / ADMIN)        */}
