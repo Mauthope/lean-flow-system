@@ -416,7 +416,7 @@ export default function TenantPublicDemandPage() {
 
       {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748b', fontSize: '0.78125rem' }}>
-        Plataforma LeanFlow • Licenciado para <strong style={{ color: '#94a3b8' }}>{tenant.name}</strong> • Arquiteto: Mauricio Grigol
+        Plataforma FluxoLean • Licenciado para <strong style={{ color: '#94a3b8' }}>{tenant.name}</strong> • Arquiteto: Mauricio Grigol
       </footer>
     </div>
   );

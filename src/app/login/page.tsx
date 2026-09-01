@@ -148,7 +148,7 @@ export default function LoginPage() {
             {tenant.name}
           </h1>
           <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.35rem' }}>
-            Portal de Acesso • Sistema LeanFlow 4.0
+            Portal de Acesso • Sistema FluxoLean 4.0
           </p>
         </div>
 

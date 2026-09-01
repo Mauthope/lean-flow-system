@@ -894,7 +894,7 @@ export default function AdminProjectDetailPage() {
       a.click();
       document.body.removeChild(a);
     } else {
-      const sampleText = `LEANFLOW 4.0 - MEMORIAL DE CÁLCULO\n\nProjeto: ${action?.protocol} - ${action?.title}\nDocumento: ${att.name}\nResponsável: ${att.uploadedBy || 'Agente'}\nData de Emissão: ${formatDateTime(att.uploadedAt)}\n\n--- CUSTOS DO PROJETO (INVESTIMENTO) ---\n- Peças e Equipamentos: R$ ${partsAndEquipment}\n- Serviços de Terceiros: R$ ${thirdPartyServices}\n- Horas Equipe Interna: ${internalLaborHours}h (Taxa: R$ ${laborHourlyRate}/h = R$ ${internalLaborHours * laborHourlyRate})\n- Outras Despesas: R$ ${otherCosts}\nInvestimento Total: R$ ${totalInvestmentCost}\n\n--- GANHOS BRUTOS MAPEADOS (7 FONTES) ---\n- Redução de Paradas (OEE): R$ ${machineDowntime}\n- Mão de Obra Otimizada: R$ ${laborSavings}\n- Redução de Refugo: R$ ${scrapReduction}\n- Ferramental e Energia: R$ ${toolingAndEnergy}\n- Aumento de Produção: R$ ${productionIncrease}\nGanhos Brutos Totais: R$ ${totalGrossSavings}\n\n--- RETORNO FINANCEIRO E INDICADORES ---\n- Lucro Líquido Real: R$ ${netSavings}\n- Retorno sobre Investimento (ROI): ${roiPercentage}%\n- Tempo de Payback: ${paybackMonths} meses\n\nHomologação Técnica Registrada.`;
+      const sampleText = `FLUXOLEAN 4.0 - MEMORIAL DE CÁLCULO\n\nProjeto: ${action?.protocol} - ${action?.title}\nDocumento: ${att.name}\nResponsável: ${att.uploadedBy || 'Agente'}\nData de Emissão: ${formatDateTime(att.uploadedAt)}\n\n--- CUSTOS DO PROJETO (INVESTIMENTO) ---\n- Peças e Equipamentos: R$ ${partsAndEquipment}\n- Serviços de Terceiros: R$ ${thirdPartyServices}\n- Horas Equipe Interna: ${internalLaborHours}h (Taxa: R$ ${laborHourlyRate}/h = R$ ${internalLaborHours * laborHourlyRate})\n- Outras Despesas: R$ ${otherCosts}\nInvestimento Total: R$ ${totalInvestmentCost}\n\n--- GANHOS BRUTOS MAPEADOS (7 FONTES) ---\n- Redução de Paradas (OEE): R$ ${machineDowntime}\n- Mão de Obra Otimizada: R$ ${laborSavings}\n- Redução de Refugo: R$ ${scrapReduction}\n- Ferramental e Energia: R$ ${toolingAndEnergy}\n- Aumento de Produção: R$ ${productionIncrease}\nGanhos Brutos Totais: R$ ${totalGrossSavings}\n\n--- RETORNO FINANCEIRO E INDICADORES ---\n- Lucro Líquido Real: R$ ${netSavings}\n- Retorno sobre Investimento (ROI): ${roiPercentage}%\n- Tempo de Payback: ${paybackMonths} meses\n\nHomologação Técnica Registrada.`;
       const blob = new Blob([sampleText], { type: 'text/plain;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -4792,7 +4792,7 @@ export default function AdminProjectDetailPage() {
         }}
       >
         <div>
-          Plataforma <strong style={{ color: '#ffffff' }}>LeanFlow 4.0</strong> • Metodologia PDCA & Engenharia de Custos Evitados
+          Plataforma <strong style={{ color: '#ffffff' }}>FluxoLean 4.0</strong> • Metodologia PDCA & Engenharia de Custos Evitados
         </div>
         <div>
           Emissão em {formatDate(new Date().toISOString())}

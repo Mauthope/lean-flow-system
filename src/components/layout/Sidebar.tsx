@@ -178,7 +178,7 @@ export const Sidebar: React.FC = () => {
                   cursor: isSidebarCollapsed ? 'pointer' : 'default',
                   flexShrink: 0,
                 }}
-                title={isSidebarCollapsed ? 'Clique para expandir o menu' : 'LeanFlow PRO'}
+                title={isSidebarCollapsed ? 'Clique para expandir o menu' : 'FluxoLean PRO'}
               >
                 <div
                   style={{
@@ -194,7 +194,7 @@ export const Sidebar: React.FC = () => {
                     color: '#22d3ee',
                   }}
                 >
-                  LF
+                  FL
                 </div>
               </div>
 
@@ -202,7 +202,7 @@ export const Sidebar: React.FC = () => {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                      Lean<span style={{ background: 'linear-gradient(90deg, #22d3ee, #5eead4, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Flow</span>
+                      Fluxo<span style={{ background: 'linear-gradient(90deg, #22d3ee, #5eead4, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lean</span>
                     </span>
                     <span
                       style={{
@@ -527,7 +527,7 @@ export const Sidebar: React.FC = () => {
         isOpen={showAuthorModal}
         onClose={() => setShowAuthorModal(false)}
         title="Créditos de Desenvolvimento & Autoria"
-        subtitle="Informações técnicas e arquiteturais da plataforma LeanFlow"
+        subtitle="Informações técnicas e arquiteturais da plataforma FluxoLean"
         maxWidth="md"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'center', alignItems: 'center' }}>

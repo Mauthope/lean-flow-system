@@ -598,9 +598,6 @@ export default function LeanToolsIndexPage() {
                     Ranking de Estudos dos Agentes & Status de Recompensas
                   </h3>
                 </div>
-                <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                  Critério Master: Leitura com rolagem e tempo entre 30s e 15min + Prova (12min, Nota ≥ 8.0)
-                </span>
               </div>
 
               <div style={{ overflowX: 'auto' }}>

@@ -746,7 +746,7 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
           }}
         >
           <div>
-            Metodologia <strong>LeanFlow 4.0</strong> • Ciclo PDCA & Engenharia de Custos Evitados • Consultor <strong>Mauricio Grigol</strong>
+            Metodologia <strong>FluxoLean 4.0</strong> • Ciclo PDCA & Engenharia de Custos Evitados • Consultor <strong>Mauricio Grigol</strong>
           </div>
           <div>
             Entidade: <strong>Rafitec</strong> • Documento emitido em {formatDate(new Date().toISOString())}

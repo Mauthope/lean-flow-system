@@ -151,7 +151,7 @@ export default function LandingPage() {
                 border: '1px solid rgba(255, 255, 255, 0.3)',
               }}
             >
-              LF
+              FL
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -164,7 +164,7 @@ export default function LandingPage() {
                     textShadow: '0 2px 10px rgba(0,0,0,0.5)',
                   }}
                 >
-                  LeanFlow
+                  FluxoLean
                 </span>
                 <span
                   style={{
@@ -470,7 +470,7 @@ export default function LandingPage() {
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-                  SISTEMA LEAN FLOW OPERANDO EM TEMPO REAL
+                  SISTEMA FLUXOLEAN OPERANDO EM TEMPO REAL
                 </span>
               </div>
 
@@ -1030,7 +1030,7 @@ export default function LandingPage() {
       >
         <div style={{ maxWidth: '1360px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
           <div>
-            © {new Date().getFullYear()} <strong>LeanFlow System 4.0</strong> • Concebido e arquitetado por <strong>Mauricio Grigol</strong>.
+            © {new Date().getFullYear()} <strong>FluxoLean System 4.0</strong> • Concebido e arquitetado por <strong>Mauricio Grigol</strong>.
           </div>
           <div style={{ display: 'flex', gap: '1.5rem' }}>
             <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}>Login & Entidades</Link>
