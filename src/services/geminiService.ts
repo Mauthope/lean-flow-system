@@ -35,10 +35,11 @@ export interface SenseiVoiceResponse {
 }
 
 // =============================================================================
-// ARMAZENAMENTO LOCAL - Chave e preferências
+// ARMAZENAMENTO LOCAL - Chave, preferências e modelos descobertos
 // =============================================================================
 const STORAGE_KEY = 'sensei_gemini_api_key';
 const STORAGE_VOICE_KEY = 'sensei_voice_preference';
+const STORAGE_WORKING_MODEL_KEY = 'sensei_working_gemini_model';
 
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
@@ -52,6 +53,7 @@ export function saveGeminiApiKey(key: string): void {
   if (typeof window !== 'undefined') {
     if (!key || !key.trim()) {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_WORKING_MODEL_KEY);
     } else {
       localStorage.setItem(STORAGE_KEY, key.trim());
     }
@@ -73,38 +75,105 @@ export function saveVoicePreference(voice: string): void {
 }
 
 // =============================================================================
-// VALIDAÇÃO DA CHAVE GEMINI
-// Testa a chave do usuário contra a API oficial do Google
+// VALIDAÇÃO DA CHAVE GEMINI COM DESCOBERTA DINÂMICA DE MODELOS
 // =============================================================================
 export async function validateGeminiApiKey(
   key: string
-): Promise<{ valid: boolean; error?: string }> {
+): Promise<{ valid: boolean; error?: string; availableModels?: string[] }> {
   if (!key || !key.trim()) {
     return { valid: false, error: 'Chave não informada.' };
   }
 
+  const cleanKey = key.trim();
+
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key.trim()}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Ping' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
-      }
+    // 1. Tenta listar os modelos habilitados para esta chave específica (ListModels)
+    const listRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`
     );
 
-    if (res.ok) {
-      return { valid: true };
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const models = (listData.models || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((m: any) =>
+          (m.supportedGenerationMethods || []).includes('generateContent')
+        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((m: any) => m.name.replace('models/', ''));
+
+      if (models.length > 0) {
+        // Encontrou modelos disponíveis! Escolhe o melhor (ex: gemini-1.5-flash ou gemini-2.0-flash)
+        const preferred =
+          models.find((m: string) => m.includes('1.5-flash')) ||
+          models.find((m: string) => m.includes('2.0-flash')) ||
+          models.find((m: string) => m.includes('flash')) ||
+          models[0];
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_WORKING_MODEL_KEY, preferred);
+        }
+
+        return { valid: true, availableModels: models };
+      }
     }
 
-    const errData = await res.json().catch(() => ({}));
-    const message =
-      errData?.error?.message ||
-      `Erro ${res.status}: Verifique se a chave de API do Google AI Studio está correta.`;
-    return { valid: false, error: message };
+    // 2. Teste direto em múltiplos modelos padrão
+    const testCandidateModels = [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
+      'gemini-pro',
+    ];
+
+    for (const model of testCandidateModels) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: 'Ping' }] }],
+              generationConfig: { maxOutputTokens: 5 },
+            }),
+          }
+        );
+
+        if (res.ok) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_WORKING_MODEL_KEY, model);
+          }
+          return { valid: true };
+        }
+      } catch {
+        // Tenta o próximo
+      }
+    }
+
+    // Se nenhum modelo respondeu, analisa a mensagem de erro do Google
+    const errData = await listRes.json().catch(() => ({}));
+    const message = errData?.error?.message || '';
+
+    if (message.includes('API_KEY_INVALID') || message.includes('not valid')) {
+      return {
+        valid: false,
+        error: 'Chave de API inválida. Certifique-se de copiar a chave completa gerada no Google AI Studio.',
+      };
+    }
+
+    if (message.includes('Generative Language API has not been used') || message.includes('disabled')) {
+      return {
+        valid: false,
+        error: 'A API Generative Language não está ativada neste projeto do Google Cloud. Crie uma chave nova e gratuita diretamente em aistudio.google.com/apikey (clique em "Create API Key" -> "Create in new project").',
+      };
+    }
+
+    return {
+      valid: false,
+      error: message || 'Esta chave não possui modelos Gemini habilitados. Crie uma nova chave gratuita em aistudio.google.com/apikey.',
+    };
   } catch (err: any) {
     return {
       valid: false,
@@ -115,8 +184,6 @@ export async function validateGeminiApiKey(
 
 // =============================================================================
 // CONVERSOR PCM -> WAV (Compatibilidade universal com navegadores)
-// Gemini 2.0 retorna áudio bruto em PCM 16-bit 24kHz.
-// Esta função adiciona o cabeçalho RIFF WAV de 44 bytes para tocar nativamente.
 // =============================================================================
 export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
   try {
@@ -141,13 +208,13 @@ export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
     view.setUint8(13, 'm'.charCodeAt(0));
     view.setUint8(14, 't'.charCodeAt(0));
     view.setUint8(15, ' '.charCodeAt(0));
-    view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-    view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
-    view.setUint16(22, 1, true); // NumChannels (1 = mono)
+    view.setUint32(16, 16, true); // Subchunk1Size
+    view.setUint16(20, 1, true); // AudioFormat (PCM)
+    view.setUint16(22, 1, true); // NumChannels (mono)
     view.setUint32(24, sampleRate, true); // SampleRate
-    view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * 1 * 2)
-    view.setUint16(32, 2, true); // BlockAlign (1 * 2)
-    view.setUint16(34, 16, true); // BitsPerSample (16)
+    view.setUint32(28, sampleRate * 2, true); // ByteRate
+    view.setUint16(32, 2, true); // BlockAlign
+    view.setUint16(34, 16, true); // BitsPerSample
 
     // data sub-chunk
     view.setUint8(36, 'd'.charCodeAt(0));
@@ -368,7 +435,7 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
 }
 
 // =============================================================================
-// ETAPA 1: Gera a resposta textual do Sensei com Gemini 1.5 Flash / 2.0 Flash
+// ETAPA 1: Gera a resposta textual do Sensei com Descoberta Dinâmica de Modelo
 // =============================================================================
 async function askSenseiText(
   question: string,
@@ -387,9 +454,22 @@ PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 
 SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em português do Brasil):`;
 
-  const textModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  // Tenta primeiro o modelo salvo da validação, depois os candidatos
+  const savedModel =
+    typeof window !== 'undefined'
+      ? localStorage.getItem(STORAGE_WORKING_MODEL_KEY)
+      : null;
 
-  for (const model of textModels) {
+  const candidateModels = [
+    savedModel,
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro',
+    'gemini-pro',
+  ].filter(Boolean) as string[];
+
+  for (const model of candidateModels) {
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -420,7 +500,7 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em 
 }
 
 // =============================================================================
-// ETAPA 2: Síntese de Áudio Neural com Gemini 2.0 Flash
+// ETAPA 2: Síntese de Áudio Neural com Gemini
 // =============================================================================
 async function synthesizeWithGeminiAudio(
   text: string,
@@ -458,8 +538,6 @@ async function synthesizeWithGeminiAudio(
       );
 
       if (!response.ok) {
-        const err = await response.text();
-        console.warn(`[Sensei] Modelo de áudio ${model} retornou:`, err);
         continue;
       }
 
@@ -474,10 +552,9 @@ async function synthesizeWithGeminiAudio(
         const rawMime = audioPart.inlineData.mimeType || '';
         const rawData = audioPart.inlineData.data;
 
-        // Se for PCM bruto, converte para WAV para tocar em qualquer navegador
+        // Se for PCM bruto, converte para WAV para tocar nativamente
         if (rawMime.includes('pcm') || rawMime.includes('L16') || !rawMime.includes('wav')) {
-          const sampleRate = rawMime.includes('24000') ? 24000 : 24000;
-          const wavBase64 = pcmToWav(rawData, sampleRate);
+          const wavBase64 = pcmToWav(rawData, 24000);
           return {
             audioBase64: wavBase64,
             mimeType: 'audio/wav',
@@ -489,8 +566,8 @@ async function synthesizeWithGeminiAudio(
           mimeType: rawMime || 'audio/wav',
         };
       }
-    } catch (err) {
-      console.warn(`[Sensei] Erro no modelo de áudio ${model}:`, err);
+    } catch {
+      // Tenta próximo
     }
   }
 
