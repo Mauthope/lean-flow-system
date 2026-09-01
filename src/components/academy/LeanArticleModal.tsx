@@ -74,45 +74,11 @@ export default function LeanArticleModal({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  const minRequiredTime = article?.minReadTimeSeconds || 120; // Tempo mínimo personalizado do artigo
-  const maxAllowedTime = 900; // 15 minutos (teto contra abas esquecidas)
+  const minRequiredTime = article?.minReadTimeSeconds || 120;
+  const maxAllowedTime = 900; // 15 minutos
 
-  // Inicia e gerencia o cronômetro ativo de leitura
-  useEffect(() => {
-    if (isOpen && article) {
-      setSecondsSpent(0);
-      setHasScrolledToBottom(false);
-      setInteractionCount(1);
-      setIsSenseiChatOpen(false);
-      setChatMessages([
-        {
-          id: 'welcome',
-          sender: 'sensei',
-          text: `Olá! Sou o Sensei. Estou acompanhando sua leitura de "${article.title}". Qualquer dúvida sobre como aplicar esse conceito na fábrica ou pegadinhas da prova, pode me perguntar aqui! Nosso tempo de conversa também conta como tempo de estudo.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      ]);
-
-      timerRef.current = setInterval(() => {
-        setSecondsSpent((prev) => prev + 1);
-      }, 1000);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      stopAudio();
-    };
-  }, [isOpen, article]);
-
-  useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-    }
-  }, [chatMessages, isSenseiTyping]);
-
-  if (!isOpen || !article) return null;
-
-  const stopAudio = () => {
+  // 1. Funções de Áudio & Controle
+  const stopAudio = useCallback(() => {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.pause();
       audioPlayerRef.current = null;
@@ -121,9 +87,9 @@ export default function LeanArticleModal({
       window.speechSynthesis.cancel();
     }
     setPlayingAudioId(null);
-  };
+  }, []);
 
-  const playVoiceForText = async (messageId: string, text: string) => {
+  const playVoiceForText = useCallback(async (messageId: string, text: string) => {
     if (playingAudioId === messageId) {
       stopAudio();
       return;
@@ -132,7 +98,6 @@ export default function LeanArticleModal({
     setPlayingAudioId(messageId);
 
     try {
-      // Sintetiza com o Google Cloud Neural2
       const apiKey = getGeminiApiKey();
       if (apiKey) {
         const res = await synthesizeSpeechGoogleCloud({
@@ -153,7 +118,6 @@ export default function LeanArticleModal({
       console.warn('[Sensei Article Audio]', e);
     }
 
-    // Fallback de síntese local
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'pt-BR';
@@ -161,10 +125,10 @@ export default function LeanArticleModal({
       u.onerror = () => setPlayingAudioId(null);
       window.speechSynthesis.speak(u);
     }
-  };
+  }, [playingAudioId, stopAudio]);
 
-  // Monitora rolagem de página para atestar leitura real
-  const handleScroll = () => {
+  // 2. Telemetria & Rolagem
+  const handleScroll = useCallback(() => {
     setInteractionCount((prev) => prev + 1);
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -173,17 +137,17 @@ export default function LeanArticleModal({
     if (scrollDepth >= 0.75) {
       setHasScrolledToBottom(true);
     }
-  };
+  }, []);
 
-  const handleInteraction = () => {
+  const handleInteraction = useCallback(() => {
     setInteractionCount((prev) => prev + 1);
-  };
+  }, []);
 
-  // Regra de Validação Master: rolou >= 75%, tempo entre minRequiredTime e 15min (900s)
   const isCurrentlyValidated = hasScrolledToBottom && secondsSpent >= minRequiredTime && secondsSpent <= maxAllowedTime;
   const isOverTimeLimit = secondsSpent > maxAllowedTime;
 
-  const handleConfirmRead = () => {
+  const handleConfirmRead = useCallback(() => {
+    if (!article) return;
     const telemetry: ArticleReadingTelemetry = {
       timeSpentSeconds: secondsSpent,
       scrolledToBottom: hasScrolledToBottom,
@@ -191,11 +155,12 @@ export default function LeanArticleModal({
       isValidated: isCurrentlyValidated || (isRead && isValidatedRead),
     };
     onMarkAsRead(article.id, telemetry);
-  };
+  }, [article, secondsSpent, hasScrolledToBottom, interactionCount, isCurrentlyValidated, isRead, isValidatedRead, onMarkAsRead]);
 
-  const handleSendMessage = async (textToSend?: string) => {
+  // 3. Envio de Mensagem ao Sensei
+  const handleSendMessage = useCallback(async (textToSend?: string) => {
     const q = textToSend || inputMessage;
-    if (!q.trim() || isSenseiTyping) return;
+    if (!q.trim() || isSenseiTyping || !article) return;
 
     setInteractionCount((prev) => prev + 2);
     const userMsg: ChatMessage = {
@@ -236,13 +201,48 @@ export default function LeanArticleModal({
       console.error('[Sensei Chat Error]', err);
       setIsSenseiTyping(false);
     }
-  };
+  }, [article, inputMessage, isSenseiTyping, chatMessages]);
 
   const formatTimer = (totalSecs: number) => {
     const m = Math.floor(totalSecs / 60);
     const s = totalSecs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  // Efeito de inicialização e contagem de tempo
+  useEffect(() => {
+    if (isOpen && article) {
+      setSecondsSpent(0);
+      setHasScrolledToBottom(false);
+      setInteractionCount(1);
+      setIsSenseiChatOpen(false);
+      setChatMessages([
+        {
+          id: 'welcome',
+          sender: 'sensei',
+          text: `Olá! Sou o Sensei. Estou acompanhando sua leitura de "${article.title}". Qualquer dúvida sobre como aplicar esse conceito na fábrica ou pegadinhas da prova, pode me perguntar aqui! Nosso tempo de conversa também conta como tempo de estudo.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+
+      timerRef.current = setInterval(() => {
+        setSecondsSpent((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      stopAudio();
+    };
+  }, [isOpen, article, stopAudio]);
+
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages, isSenseiTyping]);
+
+  if (!isOpen || !article) return null;
 
   return (
     <div
@@ -407,11 +407,9 @@ export default function LeanArticleModal({
           </div>
         </div>
 
-        {/* ============================================================= */}
-        {/* CORPO: CONTEÚDO DO ARTIGO + CHAT COM O SENSEI (LADO A LADO)    */}
-        {/* ============================================================= */}
+        {/* Corpo com Artigo e Chat */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          {/* LADO ESQUERDO: CONTEÚDO DO ARTIGO COM SCROLL TRACKING */}
+          {/* LADO ESQUERDO: CONTEÚDO DO ARTIGO */}
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
@@ -539,7 +537,7 @@ export default function LeanArticleModal({
             )}
           </div>
 
-          {/* LADO DIREITO: CHAT INTERATIVO COM O SENSEI TUTOR */}
+          {/* LADO DIREITO: CHAT COM O SENSEI */}
           {isSenseiChatOpen && (
             <div
               style={{
