@@ -23,7 +23,7 @@ import {
 import { LeanArticle } from '@/data/leanArticlesData';
 import {
   chatWithSenseiAboutArticle,
-  askSenseiWithVoice,
+  synthesizeSpeechGoogleCloud,
   getGeminiApiKey,
 } from '@/services/geminiService';
 
@@ -134,19 +134,20 @@ export default function LeanArticleModal({
     try {
       // Sintetiza com o Google Cloud Neural2
       const apiKey = getGeminiApiKey();
-      const res = await askSenseiWithVoice({
-        question: text,
-        project: { title: article.title } as any,
-        apiKey,
-      });
+      if (apiKey) {
+        const res = await synthesizeSpeechGoogleCloud({
+          text,
+          apiKey,
+        });
 
-      if (res.audioBase64) {
-        const audio = new Audio(`data:${res.mimeType || 'audio/mp3'};base64,${res.audioBase64}`);
-        audioPlayerRef.current = audio;
-        audio.onended = () => setPlayingAudioId(null);
-        audio.onerror = () => setPlayingAudioId(null);
-        await audio.play();
-        return;
+        if (res.audioBase64) {
+          const audio = new Audio(`data:audio/mp3;base64,${res.audioBase64}`);
+          audioPlayerRef.current = audio;
+          audio.onended = () => setPlayingAudioId(null);
+          audio.onerror = () => setPlayingAudioId(null);
+          await audio.play();
+          return;
+        }
       }
     } catch (e) {
       console.warn('[Sensei Article Audio]', e);
