@@ -154,7 +154,7 @@ export default function LeanToolsIndexPage() {
   const { currentUser, currentTenant } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
 
-  const [activeMainTab, setActiveMainTab] = useState<'tools' | 'articles'>('tools');
+  const [activeMainTab, setActiveMainTab] = useState<'articles' | 'tools'>('articles');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
   // Gamificação & Telemetria
@@ -303,194 +303,92 @@ export default function LeanToolsIndexPage() {
       </div>
 
       {/* ================================================================= */}
-      {/* ABAS PRINCIPAIS: FERRAMENTAS vs ARTIGOS (ACADEMIA LEAN)           */}
+      {/* ABAS PRINCIPAIS: 1º ARTIGOS (ACADEMIA) | 2º FERRAMENTAS (GEMBA)    */}
       {/* ================================================================= */}
       <div
         style={{
-          display: 'flex',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          backgroundColor: '#090e1a',
-          borderRadius: '14px',
-          padding: '0.35rem 0.5rem',
-          gap: '0.5rem',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          backgroundColor: '#060a13',
+          borderRadius: '16px',
+          padding: '0.45rem',
+          gap: '0.65rem',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
-        <button
-          type="button"
-          onClick={() => setActiveMainTab('tools')}
-          style={{
-            flex: 1,
-            padding: '0.75rem 1.25rem',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: activeMainTab === 'tools' ? 'rgba(6, 182, 212, 0.18)' : 'transparent',
-            color: activeMainTab === 'tools' ? '#22d3ee' : '#94a3b8',
-            fontWeight: 800,
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.45rem',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <Wrench size={16} />
-          Ferramentas Interativas ({LEAN_TOOLS.length})
-        </button>
-
+        {/* 1º ARTIGOS DA ACADEMIA LEAN (Paleta Violeta / Roxo Mestre) */}
         <button
           type="button"
           onClick={() => setActiveMainTab('articles')}
           style={{
-            flex: 1,
-            padding: '0.75rem 1.25rem',
-            borderRadius: '10px',
-            border: 'none',
-            backgroundColor: activeMainTab === 'articles' ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
-            color: activeMainTab === 'articles' ? '#c084fc' : '#94a3b8',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '12px',
+            border: activeMainTab === 'articles' ? '1.5px solid #a855f7' : '1px solid rgba(168, 85, 247, 0.25)',
+            background:
+              activeMainTab === 'articles'
+                ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(124, 58, 237, 0.2) 100%)'
+                : 'rgba(168, 85, 247, 0.05)',
+            color: activeMainTab === 'articles' ? '#ffffff' : '#c084fc',
             fontWeight: 800,
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.45rem',
-            transition: 'all 0.15s ease',
+            gap: '0.55rem',
+            transition: 'all 0.2s ease',
+            boxShadow: activeMainTab === 'articles' ? '0 4px 20px rgba(168, 85, 247, 0.35)' : 'none',
           }}
         >
-          <BookOpen size={16} />
-          Artigos da Academia Lean ({LEAN_ARTICLES.length})
+          <BookOpen size={18} color={activeMainTab === 'articles' ? '#c084fc' : '#a855f7'} />
+          <span>1. Artigos da Academia ({LEAN_ARTICLES.length})</span>
           {validatedCount > 0 && (
             <span
               style={{
                 fontSize: '0.65rem',
                 backgroundColor: '#10b981',
                 color: '#000000',
-                padding: '0.1rem 0.4rem',
+                padding: '0.12rem 0.45rem',
                 borderRadius: '999px',
                 fontWeight: 900,
               }}
             >
-              {validatedCount}/{totalArticles} Validados
+              {validatedCount}/{totalArticles} Concluídos
             </span>
           )}
+        </button>
+
+        {/* 2º FERRAMENTAS INTERATIVAS OPERACIONAIS (Paleta Ciano / Turquesa Gemba) */}
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('tools')}
+          style={{
+            padding: '0.85rem 1.25rem',
+            borderRadius: '12px',
+            border: activeMainTab === 'tools' ? '1.5px solid #22d3ee' : '1px solid rgba(6, 182, 212, 0.25)',
+            background:
+              activeMainTab === 'tools'
+                ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.3) 0%, rgba(13, 148, 136, 0.2) 100%)'
+                : 'rgba(6, 182, 212, 0.05)',
+            color: activeMainTab === 'tools' ? '#ffffff' : '#22d3ee',
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.55rem',
+            transition: 'all 0.2s ease',
+            boxShadow: activeMainTab === 'tools' ? '0 4px 20px rgba(6, 182, 212, 0.35)' : 'none',
+          }}
+        >
+          <Wrench size={18} color={activeMainTab === 'tools' ? '#22d3ee' : '#06b6d4'} />
+          <span>2. Ferramentas Interativas ({LEAN_TOOLS.length})</span>
         </button>
       </div>
 
       {/* ================================================================= */}
-      {/* ABA 1: FERRAMENTAS INTERATIVAS                                     */}
-      {/* ================================================================= */}
-      {activeMainTab === 'tools' && (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '1.5rem',
-          }}
-        >
-          {LEAN_TOOLS.map((tool) => {
-            const IconComponent = tool.icon;
-            return (
-              <div
-                key={tool.id}
-                style={{
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '16px',
-                  padding: '1.5rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                    <div
-                      style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '12px',
-                        backgroundColor: tool.iconBg,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <IconComponent size={24} color={tool.iconColor} />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 800,
-                        backgroundColor: `${tool.badgeColor}20`,
-                        color: tool.badgeColor,
-                        padding: '0.2rem 0.55rem',
-                        borderRadius: '9999px',
-                        border: `1px solid ${tool.badgeColor}40`,
-                      }}
-                    >
-                      {tool.badge}
-                    </span>
-                  </div>
-
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>
-                    {tool.title}
-                  </h3>
-
-                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1rem' }}>
-                    {tool.description}
-                  </p>
-
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
-                    {tool.highlights.map((h, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          fontSize: '0.6875rem',
-                          backgroundColor: '#090e1a',
-                          color: '#cbd5e1',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '6px',
-                          border: '1px solid rgba(255, 255, 255, 0.06)',
-                        }}
-                      >
-                        ✓ {h}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <Link
-                  href={tool.href}
-                  className="btn btn-primary"
-                  style={{
-                    width: '100%',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '0.8125rem',
-                    padding: '0.625rem 1rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <span>Abrir Ferramenta</span>
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ================================================================= */}
-      {/* ABA 2: ARTIGOS & ACADEMIA LEAN                                     */}
+      {/* ABA 1: ARTIGOS & ACADEMIA LEAN (PRIMEIRA OPÇÃO)                    */}
       {/* ================================================================= */}
       {activeMainTab === 'articles' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -709,7 +607,7 @@ export default function LeanToolsIndexPage() {
             </div>
           )}
 
-          {/* Filtros de Categoria */}
+          {/* Filtros de Categoria (Paleta Violeta da Academia) */}
           <div style={{ display: 'flex', gap: '0.45rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
             {categories.map((cat) => (
               <button
@@ -717,15 +615,16 @@ export default function LeanToolsIndexPage() {
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
                 style={{
-                  backgroundColor: selectedCategory === cat ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                  border: selectedCategory === cat ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.08)',
-                  color: selectedCategory === cat ? '#22d3ee' : '#cbd5e1',
-                  fontWeight: 700,
+                  backgroundColor: selectedCategory === cat ? 'rgba(168, 85, 247, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                  border: selectedCategory === cat ? '1.5px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
+                  color: selectedCategory === cat ? '#ffffff' : '#94a3b8',
+                  fontWeight: selectedCategory === cat ? 800 : 600,
                   fontSize: '0.75rem',
                   padding: '0.35rem 0.85rem',
                   borderRadius: '999px',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
+                  boxShadow: selectedCategory === cat ? '0 0 12px rgba(168, 85, 247, 0.35)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -753,7 +652,7 @@ export default function LeanToolsIndexPage() {
                     border: isValidated
                       ? '1px solid rgba(16, 185, 129, 0.4)'
                       : isRead
-                      ? '1px solid rgba(6, 182, 212, 0.3)'
+                      ? '1px solid rgba(168, 85, 247, 0.4)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '16px',
                     padding: '1.25rem',
@@ -773,9 +672,9 @@ export default function LeanToolsIndexPage() {
                             style={{
                               fontSize: '0.65rem',
                               fontWeight: 800,
-                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                              border: '1px solid rgba(6, 182, 212, 0.3)',
-                              color: '#22d3ee',
+                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                              border: '1px solid rgba(168, 85, 247, 0.3)',
+                              color: '#c084fc',
                               padding: '0.1rem 0.45rem',
                               borderRadius: '6px',
                             }}
@@ -802,9 +701,9 @@ export default function LeanToolsIndexPage() {
                             style={{
                               fontSize: '0.65rem',
                               fontWeight: 800,
-                              backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                              border: '1px solid #22d3ee',
-                              color: '#22d3ee',
+                              backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                              border: '1px solid #a855f7',
+                              color: '#c084fc',
                               padding: '0.1rem 0.45rem',
                               borderRadius: '999px',
                             }}
@@ -834,9 +733,9 @@ export default function LeanToolsIndexPage() {
                       onClick={() => handleOpenArticle(article)}
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: isValidated ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                        border: isValidated ? '1px solid #10b981' : '1px solid #22d3ee',
-                        color: isValidated ? '#34d399' : '#22d3ee',
+                        backgroundColor: isValidated ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.18)',
+                        border: isValidated ? '1px solid #10b981' : '1.5px solid #a855f7',
+                        color: isValidated ? '#34d399' : '#c084fc',
                         fontWeight: 800,
                         fontSize: '0.75rem',
                         padding: '0.35rem 0.85rem',
@@ -855,6 +754,118 @@ export default function LeanToolsIndexPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* ABA 2: FERRAMENTAS INTERATIVAS (SEGUNDA OPÇÃO)                     */}
+      {/* ================================================================= */}
+      {activeMainTab === 'tools' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          {LEAN_TOOLS.map((tool) => {
+            const IconComponent = tool.icon;
+            return (
+              <div
+                key={tool.id}
+                style={{
+                  backgroundColor: '#0f172a',
+                  border: '1px solid rgba(6, 182, 212, 0.2)',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div
+                      style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        backgroundColor: tool.iconBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <IconComponent size={24} color={tool.iconColor} />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        backgroundColor: `${tool.badgeColor}20`,
+                        color: tool.badgeColor,
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '9999px',
+                        border: `1px solid ${tool.badgeColor}40`,
+                      }}
+                    >
+                      {tool.badge}
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>
+                    {tool.title}
+                  </h3>
+
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    {tool.description}
+                  </p>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+                    {tool.highlights.map((h, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: '0.6875rem',
+                          backgroundColor: '#090e1a',
+                          color: '#cbd5e1',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }}
+                      >
+                        ✓ {h}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <Link
+                  href={tool.href}
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                    padding: '0.625rem 1rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    textDecoration: 'none',
+                    backgroundColor: '#06b6d4',
+                    border: '1px solid #22d3ee',
+                  }}
+                >
+                  <span>Abrir Ferramenta</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            );
+          })}
         </div>
       )}
 
