@@ -78,7 +78,7 @@ export function getVoicePreference(): string {
     const v = localStorage.getItem(STORAGE_VOICE_KEY);
     if (v) return v;
   }
-  return 'pt-BR-Neural2-B'; // Voz executiva masculina com alta naturalidade
+  return 'pt-BR-Neural2-A'; // Voz executiva feminina com máxima naturalidade e suavidade
 }
 
 /**

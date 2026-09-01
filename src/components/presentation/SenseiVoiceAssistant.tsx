@@ -69,7 +69,7 @@ export default function SenseiVoiceAssistant({
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [geminiKeyInput, setGeminiKeyInput] = useState<string>('');
   const [ttsKeyInput, setTtsKeyInput] = useState<string>('');
-  const [selectedVoice, setSelectedVoice] = useState<string>('pt-BR-Neural2-B');
+  const [selectedVoice, setSelectedVoice] = useState<string>('pt-BR-Neural2-A');
   const [savedKeySuccess, setSavedKeySuccess] = useState<boolean>(false);
   const [testingVoice, setTestingVoice] = useState<boolean>(false);
 
@@ -233,11 +233,11 @@ export default function SenseiVoiceAssistant({
         const naturalVoice =
           ptVoices.find(
             (v) =>
-              v.name.includes('Antonio') ||
-              v.name.includes('Daniel') ||
-              v.name.includes('Thiago') ||
-              v.name.includes('Male') ||
-              (v.name.includes('Google') && !v.name.includes('Female')) ||
+              v.name.includes('Francisca') ||
+              v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Maria') ||
+              v.name.includes('Luciana') ||
               v.name.includes('pt-BR')
           ) || ptVoices[0];
 
@@ -624,10 +624,10 @@ export default function SenseiVoiceAssistant({
                   borderRadius: '8px',
                 }}
               >
-                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva - Padrão Sensei / Ultra Natural)</option>
-                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet - Clareza Industrial)</option>
-                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva)</option>
-                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave)</option>
+                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva - Padrão Sensei / Máxima Naturalidade)</option>
+                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave - Estúdio)</option>
+                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva)</option>
+                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet)</option>
               </select>
             </div>
 
