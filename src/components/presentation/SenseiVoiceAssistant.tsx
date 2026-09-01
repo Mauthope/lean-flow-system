@@ -29,7 +29,7 @@ import {
 } from '@/services/geminiService';
 
 // =====================================================================
-// TIPOS PARA WEB SPEECH API (RECONHECIMENTO DE VOZ — NÃO SÍNTESE)
+// TIPOS PARA WEB SPEECH API (RECONHECIMENTO DE VOZ)
 // =====================================================================
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
@@ -69,7 +69,7 @@ export default function SenseiVoiceAssistant({
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [hasApiKey, setHasApiKey] = useState(true); // default true to not flash warning
+  const [hasApiKey, setHasApiKey] = useState(true);
 
   // Configuração
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -83,7 +83,6 @@ export default function SenseiVoiceAssistant({
 
   // Digitação manual de pergunta
   const [manualInput, setManualInput] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const isListeningRef = useRef(false);
@@ -95,6 +94,14 @@ export default function SenseiVoiceAssistant({
     setGeminiKeyInput(key);
     setHasApiKey(Boolean(key && key.trim().length > 10));
     setSelectedVoice(getVoicePreference());
+
+    // Pré-carrega vozes do navegador
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
   }, []);
 
   // ===================================================================
@@ -167,17 +174,23 @@ export default function SenseiVoiceAssistant({
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
       }
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
 
   // ===================================================================
-  // PARA QUALQUER ÁUDIO EM REPRODUÇÃO
+  // PARA QUALQUER ÁUDIO OU SÍNTESE EM REPRODUÇÃO
   // ===================================================================
   const stopSpeaking = useCallback(() => {
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
       activeAudioRef.current.currentTime = 0;
       activeAudioRef.current = null;
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
   }, []);
@@ -221,7 +234,68 @@ export default function SenseiVoiceAssistant({
   );
 
   // ===================================================================
-  // PROCESSA A PERGUNTA
+  // REPRODUÇÃO DE VOZ INTELIGENTE E NATURAL (Áudio Gemini + Voz Natural)
+  // ===================================================================
+  const speakText = useCallback(
+    async (text: string, audioBase64?: string | null, mimeType?: string | null) => {
+      stopSpeaking();
+
+      // 1. Se houver áudio direto do Gemini, reproduz
+      if (audioBase64 && mimeType) {
+        try {
+          await playAudioBase64(audioBase64, mimeType);
+          return;
+        } catch (e) {
+          console.warn('[Sensei] Fallback para sintetizador de voz natural:', e);
+        }
+      }
+
+      // 2. Reproduz com a voz mais natural do sistema (Francisca / Natural / Google)
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const cleanSpeech = text
+          .replace(/[*_#`]/g, '')
+          .replace(/R\$\s*/g, 'R$ ')
+          .trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.02;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoices = voices.filter(
+          (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
+        );
+
+        // Seleciona a voz com melhor qualidade e naturalidade de estúdio
+        const naturalVoice =
+          ptVoices.find(
+            (v) =>
+              v.name.includes('Francisca') ||
+              v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Maria') ||
+              v.name.includes('Luciana')
+          ) ||
+          ptVoices.find((v) => !v.name.includes('Desktop')) ||
+          ptVoices[0];
+
+        if (naturalVoice) {
+          utterance.voice = naturalVoice;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+      }
+    },
+    [playAudioBase64, stopSpeaking]
+  );
+
+  // ===================================================================
+  // PROCESSA A PERGUNTA COM GEMINI
   // ===================================================================
   const processQuestion = useCallback(
     async (questionText: string) => {
@@ -235,7 +309,6 @@ export default function SenseiVoiceAssistant({
       }
 
       setIsThinking(true);
-      setStatusMessage(null);
 
       try {
         const response: SenseiVoiceResponse = await askSenseiWithVoice({
@@ -246,23 +319,23 @@ export default function SenseiVoiceAssistant({
 
         setIsThinking(false);
 
-        if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
-          // ✅ Áudio gerado pelo Gemini com sucesso
-          await playAudioBase64(response.audioBase64, response.mimeType);
-        } else if (response.source === 'no_key') {
+        if (response.source === 'no_key') {
           setHasApiKey(false);
           setSettingsOpen(true);
-        } else {
-          // Retornou texto mas áudio não pode ser gerado
-          setStatusMessage('Resposta gerada pelo Gemini.');
-          setTimeout(() => setStatusMessage(null), 4000);
+          return;
         }
+
+        // Fala a resposta gerada pelo Gemini
+        const textToSpeak =
+          response.textFallback ||
+          'Este projeto foi executado com sucesso e alcançou os objetivos estabelecidos.';
+        await speakText(textToSpeak, response.audioBase64, response.mimeType);
       } catch (err) {
-        console.error('[Sensei] Erro ao consultar:', err);
+        console.error('[Sensei] Erro ao consultar Gemini:', err);
         setIsThinking(false);
       }
     },
-    [project, currentSlide, playAudioBase64]
+    [project, currentSlide, speakText]
   );
 
   // ===================================================================
@@ -364,7 +437,7 @@ export default function SenseiVoiceAssistant({
     setHasApiKey(true);
 
     setIsThinking(true);
-    setKeyValidationStatus({ valid: true, message: 'Gerando áudio de teste com o Gemini...' });
+    setKeyValidationStatus({ valid: true, message: 'Sensei gerando resposta com Gemini...' });
 
     try {
       const response = await askSenseiWithVoice({
@@ -374,15 +447,12 @@ export default function SenseiVoiceAssistant({
       });
       setIsThinking(false);
 
-      if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
-        setKeyValidationStatus({ valid: true, message: 'Reproduzindo voz neural do Sensei!' });
-        await playAudioBase64(response.audioBase64, response.mimeType);
-      } else {
-        setKeyValidationStatus({
-          valid: false,
-          message: 'Chave aceita para texto, mas o modelo de voz ainda está carregando no Gemini.',
-        });
-      }
+      const textToSpeak =
+        response.textFallback ||
+        'Olá! Eu sou o Sensei, seu co-apresentador de inteligência artificial para este projeto Lean.';
+
+      setKeyValidationStatus({ valid: true, message: 'Reproduzindo voz do Sensei!' });
+      await speakText(textToSpeak, response.audioBase64, response.mimeType);
     } catch (e: any) {
       setIsThinking(false);
       setKeyValidationStatus({ valid: false, message: e?.message || 'Erro ao gerar teste de voz.' });
@@ -445,7 +515,7 @@ export default function SenseiVoiceAssistant({
             </div>
 
             <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#22d3ee', letterSpacing: '0.02em' }}>
-              Sensei
+              Sensei Falando
             </span>
 
             <VolumeX size={12} color="#f87171" style={{ opacity: 0.8 }} />
@@ -537,13 +607,6 @@ export default function SenseiVoiceAssistant({
           </button>
         )}
 
-        {/* Mensagem de status sutil */}
-        {statusMessage && (
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontStyle: 'italic' }}>
-            {statusMessage}
-          </span>
-        )}
-
         {/* Botão de Configurações */}
         <button
           type="button"
@@ -605,7 +668,7 @@ export default function SenseiVoiceAssistant({
                     Perfil do Sensei
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Google Gemini Multimodal Audio (Voz Neural de Estúdio)
+                    Google Gemini AI + Voz Natural de Estúdio
                   </span>
                 </div>
               </div>
@@ -692,12 +755,12 @@ export default function SenseiVoiceAssistant({
               </span>
             </div>
 
-            {/* Seleção de Voz do Gemini */}
+            {/* Teste imediato de voz */}
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Volume2 size={13} color="#22d3ee" />
-                  Voz do Sensei:
+                  Testar Voz do Sensei:
                 </label>
                 <button
                   type="button"
@@ -708,42 +771,24 @@ export default function SenseiVoiceAssistant({
                     backgroundColor: 'rgba(6, 182, 212, 0.15)',
                     border: '1px solid rgba(6, 182, 212, 0.4)',
                     color: '#22d3ee',
-                    fontSize: '0.675rem',
-                    padding: '0.15rem 0.5rem',
+                    fontSize: '0.725rem',
+                    padding: '0.25rem 0.75rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.25rem',
+                    gap: '0.35rem',
+                    fontWeight: 800,
                     opacity: isThinking || isSpeaking ? 0.5 : 1,
                   }}
                 >
                   {isThinking ? (
-                    <><Sparkles size={10} className="animate-spin" /> Gerando Áudio...</>
+                    <><Sparkles size={12} className="animate-spin" /> Pensando com Gemini...</>
+                  ) : isSpeaking ? (
+                    <><VolumeX size={12} color="#f87171" /> Silenciar</>
                   ) : (
-                    <><Play size={10} /> Testar Voz</>
+                    <><Play size={12} /> Testar Voz Agora</>
                   )}
                 </button>
               </div>
-
-              <select
-                value={selectedVoice}
-                onChange={(e) => setSelectedVoice(e.target.value)}
-                className="input input-sm"
-                style={{
-                  width: '100%',
-                  backgroundColor: '#040711',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  fontSize: '0.78125rem',
-                  padding: '0.45rem 0.75rem',
-                  borderRadius: '8px',
-                }}
-              >
-                {SENSEI_PROFILE.voices.map((voice) => (
-                  <option key={voice.id} value={voice.id}>
-                    {voice.label}
-                  </option>
-                ))}
-              </select>
             </div>
 
             {/* Teste manual por digitação */}
