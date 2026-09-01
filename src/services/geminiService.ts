@@ -78,7 +78,7 @@ export function saveVoicePreference(voice: string): void {
 }
 
 // =============================================================================
-// CONVERSOR INTELIGENTE DE NÚMEROS E VALORES PARA FALA HUMANA NATURAL
+// CONVERSOR INTELIGENTE DE NÚMEROS E VALORES PARA FALA HUMANA NATURAL (100% PT-BR)
 // =============================================================================
 function convertNumberToPortugueseWords(num: number): string {
   if (isNaN(num) || num === 0) return 'zero';
@@ -125,6 +125,20 @@ export function formatTextForHumanSpeech(text: string): string {
   // Remove marcações de formatação markdown
   spoken = spoken.replace(/[*_#`~[\]]/g, '');
 
+  // Converte valores fracionários com unidades para evitar leitura em inglês
+  spoken = spoken
+    .replace(/\b1[.,]5\s*meses?\b/gi, 'um mês e meio')
+    .replace(/\b1[.,]5\s*horas?\b/gi, 'uma hora e meia')
+    .replace(/\b1[.,]5\s*dias?\b/gi, 'um dia e meio')
+    .replace(/\b1[.,]5\s*anos?\b/gi, 'um ano e meio')
+    .replace(/\b0[.,]5\s*meses?\b/gi, 'meio mês')
+    .replace(/\b0[.,]5\s*horas?\b/gi, 'meia hora')
+    .replace(/\b0[.,]5\s*dias?\b/gi, 'meio dia')
+    .replace(/\b0[.,]5\s*anos?\b/gi, 'meio ano')
+    .replace(/\b2[.,]5\s*meses?\b/gi, 'dois meses e meio')
+    .replace(/\b2[.,]5\s*horas?\b/gi, 'duas horas e meia')
+    .replace(/\b3[.,]5\s*meses?\b/gi, 'três meses e meio');
+
   // Converte valores monetários: "R$ 48.000,00" ou "R$ 48.000" para fala humana
   spoken = spoken.replace(/R\$\s*([0-9.,]+)/gi, (_match, valStr) => {
     const cleanNum = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
@@ -146,7 +160,19 @@ export function formatTextForHumanSpeech(text: string): string {
     return `${words} por cento`;
   });
 
-  // Converte siglas industriais para pronúncia falada fluida
+  // Converte decimais isolados para fala fluida
+  spoken = spoken
+    .replace(/\b1[.,]5\b/g, 'um e meio')
+    .replace(/\b2[.,]5\b/g, 'dois e meio')
+    .replace(/\b3[.,]5\b/g, 'três e meio')
+    .replace(/\b0[.,]5\b/g, 'meio')
+    .replace(/([0-9]+)[.,]([0-9]+)/g, (_m, intStr, decStr) => {
+      const intNum = parseInt(intStr, 10);
+      const decNum = parseInt(decStr, 10);
+      return `${convertNumberToPortugueseWords(intNum)} vírgula ${convertNumberToPortugueseWords(decNum)}`;
+    });
+
+  // Converte termos e siglas para pronúncia 100% em português brasileiro
   spoken = spoken
     .replace(/\bROI\b/g, 'retorno sobre o investimento')
     .replace(/\bOEE\b/g, 'oê-ê')
@@ -157,7 +183,12 @@ export function formatTextForHumanSpeech(text: string): string {
     .replace(/\bVSM\b/g, 'mapa do fluxo de valor')
     .replace(/\b5S\b/g, 'cinco ésses')
     .replace(/\b6M\b/g, 'seis eme')
-    .replace(/\bTPM\b/g, 'manutenção produtiva total');
+    .replace(/\bTPM\b/g, 'manutenção produtiva total')
+    .replace(/\bvs\.?\b/gi, 'versus')
+    .replace(/\bpayback\b/gi, 'tempo de retorno')
+    .replace(/\bsetup\b/gi, 'tempo de preparação de máquina')
+    .replace(/\blead time\b/gi, 'tempo de atravessamento')
+    .replace(/\bbaseline\b/gi, 'situação inicial');
 
   return spoken.trim();
 }
@@ -316,7 +347,7 @@ export async function synthesizeSpeechGoogleCloud({
       selectedVoice = 'pt-BR-Neural2-B';
     }
 
-    // Formata o texto para fala humana ultra-natural
+    // Formata o texto para fala humana ultra-natural (100% PT-BR)
     const speechOptimizedText = formatTextForHumanSpeech(text);
 
     const res = await fetch(
@@ -368,11 +399,22 @@ function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
 Você está no palco co-apresentando esta reunião AO VIVO ao lado do apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
 
+REGRA ABSOLUTA DE IDIOMA E NÚMEROS (100% PORTUGUÊS DO BRASIL - ZERO PALAVRAS OU PRONÚNCIAS EM INGLÊS):
+- Você NUNCA deve falar termos em inglês ou misturar pronúncias em inglês (como falar "one point five" para 1,5).
+- Todos os números decimais e frações DEVEM ser expressos por extenso em português:
+  * "1,5 mês" fale "um mês e meio" ou "um vírgula cinco meses".
+  * "1,5 hora" fale "uma hora e meia".
+  * "2,5" fale "dois e meio" ou "dois vírgula cinco".
+  * "0,5" fale "meio" ou "zero vírgula cinco".
+  * Termos como "payback" fale "tempo de retorno".
+  * Termos como "setup" fale "tempo de preparação de máquina".
+  * Termos como "baseline" fale "situação inicial".
+
 SEU PAPEL E PERSONALIDADE (HUMANO, VIBRANTE, DIDÁTICO, CALOROSO E INTERATIVO):
 - Você NÃO fala como um robô que dita números ou relatórios secos. Você conversa com entusiasmo profissional, clareza pedagógica e simpatia natural.
 - Quando o usuário ou a plateia fizer uma pergunta (como "Sensei, qual foi o ROI deste projeto mesmo?"), responda de forma direta, calorosa e engajadora:
-  Exemplo: "Excelente pergunta! Tivemos um retorno sobre o investimento espetacular de 280% neste projeto. Na prática, cada real investido no posto piloto retornou como economia sólida e eliminação de retrabalho para a fábrica!"
-- Escreva valores em reais de forma falada e natural (ex: "quarenta e oito mil reais por ano", "três meses de payback", "duzentas horas economizadas").
+  Exemplo: "Excelente pergunta! Tivemos um retorno sobre o investimento espetacular de duzentos e oitenta por cento neste projeto. Na prática, cada real investido no posto piloto retornou como economia sólida e eliminação de retrabalho para a fábrica!"
+- Escreva valores em reais de forma falada e natural por extenso (ex: "quarenta e oito mil reais por ano", "três meses de retorno", "duzentas horas economizadas").
 - Mantenha respostas faladas de tamanho perfeito para apresentações executivas: 2 a 3 frases ricas, envolventes e objetivas (cerca de 40 a 65 palavras).
 - NÃO use asteriscos, negritos, tópicos em traços ou formatação markdown, pois o texto será FALADO em voz alta.
 
@@ -495,9 +537,9 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   }
   if (q.includes('payback') || q.includes('tempo de retorno')) {
     if (project.paybackMonths && project.paybackMonths > 0) {
-      return `O payback deste projeto foi excelente, alcançado em apenas ${convertNumberToPortugueseWords(project.paybackMonths)} meses! O investimento foi amortizado rapidamente e já garante lucro líquido sustentável para a operação.`;
+      return `O tempo de retorno deste projeto foi excelente, alcançado em apenas ${convertNumberToPortugueseWords(project.paybackMonths)} meses! O investimento foi amortizado rapidamente e já garante lucro líquido sustentável para a operação.`;
     }
-    return `O payback foi imediato! A equipe utilizou a criatividade Kaizen e recursos já existentes no posto, gerando economia líquida desde o primeiro dia de implantação.`;
+    return `O retorno foi imediato! A equipe utilizou a criatividade Kaizen e recursos já existentes no posto, gerando economia líquida desde o primeiro dia de implantação.`;
   }
   if (q.includes('quanto economizou') || q.includes('economia') || q.includes('financeiro') || q.includes('custo') || q.includes('ganho')) {
     return `Em termos financeiros, este projeto alcançou um ganho bruto homologado de ${convertNumberToPortugueseWords(Math.round(grossSavings))} reais ao ano, garantindo lucro líquido de ${convertNumberToPortugueseWords(Math.round(netSavings))} reais e liberando ${convertNumberToPortugueseWords(project.hoursSaved || 0)} horas produtivas para a equipe!`;
@@ -509,7 +551,7 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
     return 'Com certeza! Kaizen é a prática japonesa de melhoria contínua gradual envolvendo todos na empresa, do operador à diretoria. O princípio fundamental é que hoje deve ser melhor que ontem, e amanhã melhor que hoje.';
   }
   if (q.includes('smed') || q.includes('troca rápida') || q.includes('setup rápido')) {
-    return 'Muito bem lembrado! O SMED, ou Troca Rápida de Ferramentas, é a metodologia criada por Shigeo Shingo para reduzir o tempo de setup para menos de dez minutos, convertendo atividades internas em externas e padronizando ajustes operacionais.';
+    return 'Muito bem lembrado! A Troca Rápida de Ferramentas, ou SMED, é a metodologia criada por Shigeo Shingo para reduzir o tempo de preparação de máquina para menos de dez minutos, convertendo atividades internas em externas e padronizando ajustes operacionais.';
   }
   if (q.includes('oee') || q.includes('eficiência global')) {
     return 'O OEE é o indicador padrão mundial que mede a Eficiência Global dos Equipamentos, multiplicando Disponibilidade, Desempenho e Qualidade para quantificar o quanto da capacidade da máquina é realmente convertida em produção perfeita.';
@@ -555,7 +597,7 @@ ${projectContext}
 PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 "${question}"
 
-SUA RESPOSTA DIDÁTICA, NATURAL E HUMANA COMO CO-APRESENTADOR (2 a 3 frases faladas em português do Brasil, com números por extenso e tom entusiasmado):`;
+SUA RESPOSTA DIDÁTICA, NATURAL E HUMANA COMO CO-APRESENTADOR (2 a 3 frases faladas 100% em português brasileiro, com números por extenso e zero termos em inglês):`;
 
   const candidateModels = [
     'gemini-1.5-flash',
