@@ -117,13 +117,13 @@ export default function SenseiVoiceAssistant({
   }, []);
 
   // ===================================================================
-  // REPRODUÇÃO DE ÁUDIO (GOOGLE CLOUD STUDIO / NEURAL2 MP3 HD)
+  // REPRODUÇÃO DE ÁUDIO (GOOGLE CLOUD NEURAL2 MP3 HD)
   // ===================================================================
   const speakText = useCallback(
     async (text: string, audioBase64?: string | null, mimeType?: string | null) => {
       stopSpeaking();
 
-      // 1. Áudio Oficial do Google Cloud Text-to-Speech (Studio / Neural2 MP3)
+      // 1. Áudio Oficial do Google Cloud Text-to-Speech (Neural2 MP3)
       if (audioBase64) {
         try {
           const type = mimeType || 'audio/mp3';
@@ -136,7 +136,7 @@ export default function SenseiVoiceAssistant({
             activeAudioRef.current = null;
           };
           audio.onerror = (e) => {
-            console.warn('[Sensei] Erro ao tocar MP3 HD:', e);
+            console.warn('[Sensei] Erro ao tocar MP3 Neural2:', e);
             setIsSpeaking(false);
           };
 
@@ -187,7 +187,7 @@ export default function SenseiVoiceAssistant({
   );
 
   // ===================================================================
-  // PROCESSA A PERGUNTA COM O MOTOR GEMINI + GOOGLE CLOUD TTS
+  // PROCESSA A PERGUNTA COM O MOTOR GEMINI + GOOGLE CLOUD NEURAL2
   // ===================================================================
   const processQuestion = useCallback(
     async (questionText: string) => {
@@ -434,7 +434,7 @@ export default function SenseiVoiceAssistant({
       setKeyValidationStatus({
         valid: true,
         ttsEnabled: true,
-        message: 'Chave 100% Conectada! Google Cloud Studio / Neural2 ativo com sucesso.',
+        message: 'Chave 100% Conectada! Google Cloud Neural2 ativo com sucesso.',
       });
       setTimeout(() => {
         setSettingsOpen(false);
@@ -449,7 +449,7 @@ export default function SenseiVoiceAssistant({
         ttsEnabled: false,
         showTtsLink: true,
         message:
-          'Gemini Ativo! Para ativar a voz de Estúdio do Google, ative a API Cloud Text-to-Speech no link abaixo:',
+          'Gemini Ativo! Para ativar a voz Neural2 oficial do Google, ative a API Cloud Text-to-Speech no link abaixo:',
       });
     } else {
       setKeyValidationStatus({
@@ -460,7 +460,7 @@ export default function SenseiVoiceAssistant({
   };
 
   // ===================================================================
-  // TESTE RÁPIDO DE VOZ COM GEMINI + CLOUD STUDIO / NEURAL2
+  // TESTE RÁPIDO DE VOZ COM GEMINI + CLOUD NEURAL2
   // ===================================================================
   const handleTestVoice = async () => {
     const key = geminiKeyInput.trim() || getGeminiApiKey();
@@ -475,7 +475,7 @@ export default function SenseiVoiceAssistant({
     setHasApiKey(true);
 
     setIsThinking(true);
-    setKeyValidationStatus({ valid: true, message: 'Sensei gerando áudio de estúdio com Google Cloud...' });
+    setKeyValidationStatus({ valid: true, message: 'Sensei gerando áudio com Google Cloud Neural2...' });
 
     try {
       const response = await askSenseiWithVoice({
@@ -493,7 +493,7 @@ export default function SenseiVoiceAssistant({
         setKeyValidationStatus({
           valid: true,
           ttsEnabled: true,
-          message: `Reproduzindo áudio de alta fidelidade: ${response.voiceUsed || selectedVoice}!`,
+          message: `Reproduzindo voz oficial Google Cloud Neural2: ${response.voiceUsed || selectedVoice}!`,
         });
       } else {
         setKeyValidationStatus({
@@ -501,7 +501,7 @@ export default function SenseiVoiceAssistant({
           showTtsLink: true,
           message:
             response.errorDetails ||
-            'Reproduzindo resposta! Para liberar o áudio Studio HD, ative o Cloud Text-to-Speech no link abaixo:',
+            'Reproduzindo resposta! Para liberar o áudio Neural2 de estúdio, ative o Cloud Text-to-Speech no link abaixo:',
         });
       }
 
@@ -613,8 +613,6 @@ export default function SenseiVoiceAssistant({
                 ? '#fbbf24'
                 : '#cbd5e1',
               boxShadow: isListening
-                ? '0 0 15px rgba(16, 185, 129, 0.4)'
-                : isThinking
                 ? '0 0 15px rgba(168, 85, 247, 0.4)'
                 : 'none',
             }}
@@ -742,7 +740,7 @@ export default function SenseiVoiceAssistant({
                     Perfil do Sensei
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Google Gemini AI + Google Cloud Studio / Neural2 HD
+                    Google Gemini AI + Google Cloud Neural2 HD
                   </span>
                 </div>
               </div>
@@ -869,11 +867,11 @@ export default function SenseiVoiceAssistant({
               )}
             </div>
 
-            {/* Seleção de Voz Google Cloud Studio / Neural2 */}
+            {/* Seleção de Voz Google Cloud Neural2 */}
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
                 <Volume2 size={13} color="#22d3ee" />
-                Voz de Estúdio do Sensei:
+                Voz Neural2 do Sensei:
               </label>
 
               <select
