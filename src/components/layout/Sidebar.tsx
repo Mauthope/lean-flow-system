@@ -31,6 +31,7 @@ import {
   Sparkles,
   Layers,
   Bot,
+  BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -76,7 +77,7 @@ export const Sidebar: React.FC = () => {
         { href: '/admin/historico-kaizen', label: 'Histórico Kaizen', icon: Sparkles, badge: 'IA' },
         { href: '/admin/integracoes-ia', label: 'Integrações de IA', icon: Bot, badge: 'Sensei' },
         { href: '/admin/relatorios', label: 'Custo Evitado & ROI', icon: TrendingUp },
-        { href: '/agente/ferramentas', label: 'Ferramentas Lean', icon: Wrench },
+        { href: '/agente/ferramentas', label: 'Academia Lean', icon: BookOpen, badge: 'Edu' },
         { href: '/agente/ferramentas/cronoanalise', label: 'Estudo de Tempos', icon: Timer, badge: 'Novo' },
       ],
     },
@@ -101,7 +102,7 @@ export const Sidebar: React.FC = () => {
       label: 'Práticas & Métodos',
       items: [
         { href: '/agente/historico-kaizen', label: 'Histórico Kaizen', icon: Sparkles, badge: 'IA' },
-        { href: '/agente/ferramentas', label: 'Hub de Ferramentas', icon: Wrench },
+        { href: '/agente/ferramentas', label: 'Academia Lean', icon: BookOpen, badge: 'Edu' },
         { href: '/agente/ferramentas/cronoanalise', label: 'Estudo de Tempos', icon: Timer, badge: 'Novo' },
         { href: '/agente/ferramentas/calculadora-roi', label: 'Calculadora de ROI', icon: Calculator },
       ],

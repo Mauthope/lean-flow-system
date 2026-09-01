@@ -460,6 +460,10 @@ export interface AgentArticleProgress {
   agentId: string;
   articleId: string;
   readAt: string;
+  timeSpentSeconds: number;     // Tempo real ativo de leitura
+  scrolledToBottom: boolean;    // Rolou até o final (profundidade de rolagem >= 80%)
+  interactionsCount: number;    // Cliques e rolagens ativas
+  isValidated: boolean;         // Validado para o Master (scroll === true && time >= 30s && time <= 900s)
 }
 
 export interface AgentExamResult {
@@ -471,6 +475,7 @@ export interface AgentExamResult {
   passed: boolean; // score >= 8.0
   answers: Record<number, number>; // questionId -> selectedOptionIndex
   completedAt: string;
+  durationSeconds?: number;
   rewardClaimed?: boolean;
   rewardClaimedAt?: string;
 }
@@ -481,8 +486,11 @@ export interface AgentLearningRanking {
   agentEmail: string;
   agentAvatar?: string;
   articlesReadCount: number;
+  validatedArticlesReadCount: number;
   totalArticlesCount: number;
   articlesReadPercent: number;
+  validatedArticlesReadPercent: number;
+  canTakeExam: boolean; // true if validatedArticlesReadPercent >= 95%
   latestExam?: AgentExamResult;
   passedExam: boolean;
   rewardClaimed: boolean;

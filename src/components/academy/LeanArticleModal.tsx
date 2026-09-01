@@ -1,15 +1,23 @@
 'use client';
 
-import React from 'react';
-import { X, CheckCircle2, Clock, BookOpen, Lightbulb, Factory, ShieldCheck, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, CheckCircle2, Clock, BookOpen, Lightbulb, Factory, ShieldCheck, Sparkles, Activity, AlertCircle } from 'lucide-react';
 import { LeanArticle } from '@/data/leanArticlesData';
+
+export interface ArticleReadingTelemetry {
+  timeSpentSeconds: number;
+  scrolledToBottom: boolean;
+  interactionsCount: number;
+  isValidated: boolean;
+}
 
 interface LeanArticleModalProps {
   article: LeanArticle | null;
   isOpen: boolean;
   onClose: () => void;
   isRead: boolean;
-  onMarkAsRead: (articleId: string) => void;
+  isValidatedRead?: boolean;
+  onMarkAsRead: (articleId: string, telemetry: ArticleReadingTelemetry) => void;
 }
 
 export default function LeanArticleModal({
@@ -17,9 +25,70 @@ export default function LeanArticleModal({
   isOpen,
   onClose,
   isRead,
+  isValidatedRead = false,
   onMarkAsRead,
 }: LeanArticleModalProps) {
+  const [secondsSpent, setSecondsSpent] = useState(0);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [interactionCount, setInteractionCount] = useState(0);
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Inicia e gerencia o cronômetro ativo de leitura
+  useEffect(() => {
+    if (isOpen && article) {
+      setSecondsSpent(0);
+      setHasScrolledToBottom(false);
+      setInteractionCount(1);
+
+      timerRef.current = setInterval(() => {
+        setSecondsSpent((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isOpen, article]);
+
   if (!isOpen || !article) return null;
+
+  // Monitora rolagem de página para atestar leitura real
+  const handleScroll = () => {
+    setInteractionCount((prev) => prev + 1);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const scrollDepth = (el.scrollTop + el.clientHeight) / el.scrollHeight;
+    if (scrollDepth >= 0.75) {
+      setHasScrolledToBottom(true);
+    }
+  };
+
+  const handleInteraction = () => {
+    setInteractionCount((prev) => prev + 1);
+  };
+
+  // Regra de Validação Master: rolou pelo menos 75-80%, tempo entre 30s e 15min (900s)
+  const isCurrentlyValidated = hasScrolledToBottom && secondsSpent >= 30 && secondsSpent <= 900;
+  const isOverTimeLimit = secondsSpent > 900;
+
+  const handleConfirmRead = () => {
+    const telemetry: ArticleReadingTelemetry = {
+      timeSpentSeconds: secondsSpent,
+      scrolledToBottom: hasScrolledToBottom,
+      interactionsCount: interactionCount,
+      isValidated: isCurrentlyValidated || (isRead && isValidatedRead),
+    };
+    onMarkAsRead(article.id, telemetry);
+  };
+
+  const formatTimer = (totalSecs: number) => {
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div
@@ -34,6 +103,7 @@ export default function LeanArticleModal({
         zIndex: 9999,
         padding: '1rem',
       }}
+      onClick={handleInteraction}
     >
       <div
         style={{
@@ -41,8 +111,8 @@ export default function LeanArticleModal({
           border: '1.5px solid rgba(6, 182, 212, 0.4)',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '850px',
-          maxHeight: '90vh',
+          maxWidth: '860px',
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 30px rgba(6, 182, 212, 0.2)',
@@ -92,7 +162,7 @@ export default function LeanArticleModal({
                   {article.category}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  <Clock size={12} /> {article.readTimeMinutes} min de leitura
+                  <Clock size={12} /> Estimado: {article.readTimeMinutes} min
                 </span>
                 {isRead && (
                   <span
@@ -116,27 +186,51 @@ export default function LeanArticleModal({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '0.4rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-            title="Fechar (ESC)"
-          >
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            {/* Monitor de Leitura Ativa */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                backgroundColor: '#0f172a',
+                border: `1px solid ${isOverTimeLimit ? '#ef4444' : hasScrolledToBottom && secondsSpent >= 30 ? '#10b981' : 'rgba(255, 255, 255, 0.1)'}`,
+                padding: '0.3rem 0.65rem',
+                borderRadius: '8px',
+                fontSize: '0.725rem',
+                color: isOverTimeLimit ? '#f87171' : hasScrolledToBottom && secondsSpent >= 30 ? '#34d399' : '#cbd5e1',
+                fontFamily: 'var(--font-mono)',
+              }}
+              title="Telemetria de leitura ativa validada para o Master"
+            >
+              <Activity size={13} />
+              <span>{formatTimer(secondsSpent)}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title="Fechar (ESC)"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
-        {/* Content Body */}
+        {/* Content Body com Scroll Tracking */}
         <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
           style={{
             flex: 1,
             overflowY: 'auto',
@@ -251,6 +345,13 @@ export default function LeanArticleModal({
               </p>
             </div>
           </div>
+
+          {/* Alerta de Validação de Leitura */}
+          {!hasScrolledToBottom && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#94a3b8', fontSize: '0.75rem', justifyContent: 'center' }}>
+              <span>Role até o final do conteúdo para validar a conclusão da leitura.</span>
+            </div>
+          )}
         </div>
 
         {/* Footer com Ação de Gamificação */}
@@ -262,18 +363,29 @@ export default function LeanArticleModal({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
           }}
         >
-          <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>
-            {isRead ? 'Você já completou a leitura deste artigo!' : 'Complete a leitura para somar pontos de conhecimento.'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {isCurrentlyValidated || (isRead && isValidatedRead) ? (
+              <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <CheckCircle2 size={14} color="#10b981" /> Leitura validada para a prova de certificação!
+              </span>
+            ) : isOverTimeLimit ? (
+              <span style={{ fontSize: '0.75rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <AlertCircle size={14} /> Tempo excedeu 15 minutos de inatividade. Faça uma leitura atenta.
+              </span>
+            ) : (
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                {!hasScrolledToBottom ? 'Role até o final do artigo' : secondsSpent < 30 ? `Leia com atenção (${30 - secondsSpent}s restantes)` : 'Pronto para concluir!'}
+              </span>
+            )}
+          </div>
 
           <button
             type="button"
-            onClick={() => {
-              onMarkAsRead(article.id);
-            }}
-            disabled={isRead}
+            onClick={handleConfirmRead}
             className="btn btn-primary"
             style={{
               fontWeight: 800,
@@ -287,7 +399,7 @@ export default function LeanArticleModal({
             }}
           >
             <CheckCircle2 size={16} />
-            {isRead ? 'Artigo Concluído ✓' : 'Marcar como Lido (+10 XP)'}
+            {isRead ? 'Artigo Concluído ✓' : 'Concluir Leitura (+10 XP)'}
           </button>
         </div>
       </div>

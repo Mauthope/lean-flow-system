@@ -14,9 +14,11 @@ import {
   FileCheck,
   RotateCcw,
   ShieldCheck,
+  Lock,
+  BookOpen,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '@/data/leanExamQuestions';
+import { LEAN_EXAM_QUESTIONS } from '@/data/leanExamQuestions';
 import { dataService } from '@/services/dataService';
 import { AgentExamResult } from '@/lib/types';
 
@@ -26,7 +28,10 @@ interface LeanExamModalProps {
   agentId: string;
   agentName: string;
   onExamCompleted: (result: AgentExamResult) => void;
+  onNavigateToArticles?: () => void;
 }
+
+const EXAM_MAX_DURATION_SECONDS = 720; // 12 minutos cravados
 
 export default function LeanExamModal({
   isOpen,
@@ -34,6 +39,7 @@ export default function LeanExamModal({
   agentId,
   agentName,
   onExamCompleted,
+  onNavigateToArticles,
 }: LeanExamModalProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -41,21 +47,31 @@ export default function LeanExamModal({
   const [examResult, setExamResult] = useState<AgentExamResult | null>(null);
   const [showReview, setShowReview] = useState(false);
 
-  // Timer
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
+  // Countdown Timer: 12 minutos
+  const [timeLeft, setTimeLeft] = useState(EXAM_MAX_DURATION_SECONDS);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Verificação de Liberação (95% dos artigos lidos e validados)
+  const eligibility = dataService.canAgentTakeExam(agentId);
+
   useEffect(() => {
-    if (isOpen && !isSubmitted) {
-      setSecondsElapsed(0);
+    if (isOpen && eligibility.canTake && !isSubmitted) {
+      setTimeLeft(EXAM_MAX_DURATION_SECONDS);
       timerRef.current = setInterval(() => {
-        setSecondsElapsed((prev) => prev + 1);
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            handleSubmitExam();
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isOpen, isSubmitted]);
+  }, [isOpen, eligibility.canTake, isSubmitted]);
 
   if (!isOpen) return null;
 
@@ -86,11 +102,14 @@ export default function LeanExamModal({
       }
     });
 
+    const elapsed = EXAM_MAX_DURATION_SECONDS - timeLeft;
+
     const result = dataService.saveAgentExamResult({
       agentId,
       correctCount,
       totalQuestions,
       answers,
+      durationSeconds: elapsed,
     });
 
     setExamResult(result);
@@ -99,8 +118,8 @@ export default function LeanExamModal({
 
     if (result.passed) {
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 150,
+        spread: 90,
         origin: { y: 0.6 },
         colors: ['#22d3ee', '#10b981', '#fbbf24', '#a855f7'],
       });
@@ -113,8 +132,124 @@ export default function LeanExamModal({
     setExamResult(null);
     setShowReview(false);
     setCurrentQuestionIndex(0);
-    setSecondsElapsed(0);
+    setTimeLeft(EXAM_MAX_DURATION_SECONDS);
   };
+
+  // Se o agente não atingiu 95% dos artigos lidos e validados, bloqueia a prova
+  if (!eligibility.canTake) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem',
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#090e1a',
+            border: '1.5px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '24px',
+            width: '100%',
+            maxWidth: '600px',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 35px rgba(239, 68, 68, 0.2)',
+          }}
+        >
+          <div
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              border: '2px solid #ef4444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+              fontSize: '2rem',
+            }}
+          >
+            <Lock size={32} color="#f87171" />
+          </div>
+
+          <span
+            style={{
+              fontSize: '0.725rem',
+              fontWeight: 800,
+              color: '#f87171',
+              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+              padding: '0.15rem 0.65rem',
+              borderRadius: '999px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Certificação Bloqueada
+          </span>
+
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', margin: '0.65rem 0 0.4rem', fontFamily: 'var(--font-heading)' }}>
+            Pré-Requisito de Estudos Pendente
+          </h3>
+
+          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0 0 1.5rem' }}>
+            Para liberar a Prova Oficial de Certificação Especialista Lean, o agente deve ter concluído e validado a leitura de pelo menos <strong>95% dos artigos da Academia Lean</strong>.
+          </p>
+
+          <div
+            style={{
+              backgroundColor: '#0f172a',
+              borderRadius: '14px',
+              padding: '1rem',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              marginBottom: '1.75rem',
+              textAlign: 'left',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem', marginBottom: '0.4rem' }}>
+              <span style={{ color: '#94a3b8' }}>Artigos com Leitura Validada:</span>
+              <strong style={{ color: '#ffffff' }}>{eligibility.validatedCount} de {eligibility.totalArticles} ({eligibility.validatedPercent}%)</strong>
+            </div>
+            <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ width: `${eligibility.validatedPercent}%`, height: '100%', backgroundColor: '#ef4444' }} />
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#f87171', display: 'block', marginTop: '0.45rem' }}>
+              ⚠️ Faltam {eligibility.missingCount} artigo(s) com leitura ativa validada (tempo entre 30s e 15min com rolagem de página).
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary"
+              style={{ fontWeight: 800, padding: '0.65rem 1.4rem', borderRadius: '10px' }}
+            >
+              Fechar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (onNavigateToArticles) onNavigateToArticles();
+              }}
+              className="btn btn-primary"
+              style={{ fontWeight: 800, padding: '0.65rem 1.4rem', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <BookOpen size={16} />
+              Estudar Artigos Agora
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -183,7 +318,7 @@ export default function LeanExamModal({
                     fontFamily: 'var(--font-heading)',
                   }}
                 >
-                  Prova Oficial de Certificação Lean Manufacturing
+                  Prova Oficial de Certificação Especialista Lean
                 </h3>
                 <span
                   style={{
@@ -196,7 +331,7 @@ export default function LeanExamModal({
                     borderRadius: '999px',
                   }}
                 >
-                  50 Questões • Nota Mínima: 8.0
+                  50 Questões • Nível Especialista • Nota Mínima: 8.0
                 </span>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -211,19 +346,21 @@ export default function LeanExamModal({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  backgroundColor: '#0f172a',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  padding: '0.35rem 0.75rem',
-                  borderRadius: '8px',
-                  fontSize: '0.8125rem',
-                  color: '#fbbf24',
+                  gap: '0.4rem',
+                  backgroundColor: timeLeft <= 120 ? 'rgba(239, 68, 68, 0.25)' : '#0f172a',
+                  border: `1.5px solid ${timeLeft <= 120 ? '#ef4444' : 'rgba(251, 191, 36, 0.4)'}`,
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '10px',
+                  fontSize: '0.875rem',
+                  color: timeLeft <= 120 ? '#f87171' : '#fbbf24',
                   fontFamily: 'var(--font-mono)',
-                  fontWeight: 700,
+                  fontWeight: 800,
+                  animation: timeLeft <= 120 ? 'pulse 1s infinite' : 'none',
                 }}
+                title="Tempo Restante (Limite máximo: 12 minutos)"
               >
-                <Clock size={14} />
-                <span>{formatTimer(secondsElapsed)}</span>
+                <Clock size={15} />
+                <span>{formatTimer(timeLeft)}</span>
               </div>
             )}
 
@@ -292,7 +429,7 @@ export default function LeanExamModal({
                   borderRadius: '999px',
                 }}
               >
-                {examResult.passed ? 'APROVADO COM EXCELÊNCIA' : 'NÃO APROVADO • TENTE NOVAMENTE'}
+                {examResult.passed ? 'APROVADO COM EXCELÊNCIA' : 'NÃO APROVADO • REVISE OS CONCEITOS'}
               </span>
 
               <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#ffffff', margin: '0.5rem 0 0.25rem', fontFamily: 'var(--font-heading)' }}>
@@ -302,11 +439,11 @@ export default function LeanExamModal({
               <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0.5rem 0 0' }}>
                 {examResult.passed ? (
                   <>
-                    Parabéns, <strong>{agentName}</strong>! Você acertou <strong>{examResult.correctCount} de 50 questões</strong> e conquistou a certificação de <strong>Especialista Lean</strong>. Você já está <strong>Apto a Receber a Recompensa</strong> com a liderança Master!
+                    Parabéns, <strong>{agentName}</strong>! Você acertou <strong>{examResult.correctCount} de 50 questões</strong> e conquistou a certificação de <strong>Especialista Lean</strong>. Você já está <strong>Apto a Receber a Recompensa</strong> junto à liderança Master!
                   </>
                 ) : (
                   <>
-                    Você acertou <strong>{examResult.correctCount} de 50 questões</strong>. A nota mínima exigida para certificação e recompensa é <strong>8.0 (40 acertos)</strong>. Revise os artigos na Academia Lean e tente novamente!
+                    Você acertou <strong>{examResult.correctCount} de 50 questões</strong>. A nota mínima de aprovação para recompensa é <strong>8.0 (40 acertos)</strong>. Revise os artigos na Academia Lean e realize uma nova tentativa!
                   </>
                 )}
               </p>
@@ -394,7 +531,7 @@ export default function LeanExamModal({
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                 <span style={{ color: '#94a3b8' }}>
-                  Questão <strong style={{ color: '#ffffff' }}>{currentQuestionIndex + 1}</strong> de {totalQuestions} • Categoria: <strong style={{ color: '#22d3ee' }}>{currentQ.category}</strong>
+                  Questão <strong style={{ color: '#ffffff' }}>{currentQuestionIndex + 1}</strong> de {totalQuestions} • Domínio: <strong style={{ color: '#22d3ee' }}>{currentQ.category}</strong>
                 </span>
                 <span style={{ color: '#fbbf24', fontWeight: 700 }}>
                   {answeredCount} / {totalQuestions} Respondidas ({progressPercent}%)
@@ -413,7 +550,7 @@ export default function LeanExamModal({
                 />
               </div>
 
-              {/* Grade de 50 bolinhas/números de navegação rápida */}
+              {/* Grade de 50 botões de navegação rápida */}
               <div
                 style={{
                   display: 'flex',
@@ -506,7 +643,7 @@ export default function LeanExamModal({
                   </span>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• {currentQ.category}</span>
                 </div>
-                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.5 }}>
+                <h4 style={{ margin: 0, fontSize: '1.025rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.55 }}>
                   {currentQ.question}
                 </h4>
               </div>
@@ -596,7 +733,7 @@ export default function LeanExamModal({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.3rem' }}>
                     <ShieldCheck size={16} color="#22d3ee" />
                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
-                      Explicação do Sensei:
+                      Fundamentação Científica do Sensei:
                     </span>
                   </div>
                   <p style={{ margin: 0, fontSize: '0.8125rem', color: '#e2e8f0', lineHeight: 1.5 }}>

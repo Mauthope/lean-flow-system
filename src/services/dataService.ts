@@ -1460,17 +1460,82 @@ export const dataService = {
     return progressList.filter((p) => p.agentId === agentId).map((p) => p.articleId);
   },
 
-  markArticleAsRead(agentId: string, articleId: string): void {
+  getAgentValidatedArticles(agentId: string): string[] {
     const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
-    const exists = progressList.some((p) => p.agentId === agentId && p.articleId === articleId);
-    if (!exists) {
-      progressList.push({
-        agentId,
-        articleId,
-        readAt: new Date().toISOString(),
-      });
-      setStoredData(STORAGE_KEYS.AGENT_ARTICLES, progressList);
+    return progressList
+      .filter((p) => p.agentId === agentId && p.isValidated)
+      .map((p) => p.articleId);
+  },
+
+  markArticleAsRead(
+    agentId: string,
+    articleId: string,
+    telemetry?: {
+      timeSpentSeconds?: number;
+      scrolledToBottom?: boolean;
+      interactionsCount?: number;
+      isValidated?: boolean;
     }
+  ): void {
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const existingIndex = progressList.findIndex((p) => p.agentId === agentId && p.articleId === articleId);
+
+    const timeSpent = telemetry?.timeSpentSeconds ?? 45;
+    const scrolled = telemetry?.scrolledToBottom ?? true;
+    const interactions = telemetry?.interactionsCount ?? 3;
+    // Regra do Master: rolagem confirmada, tempo >= 30s e tempo <= 15min (900s)
+    const isValidated =
+      telemetry?.isValidated !== undefined
+        ? telemetry.isValidated
+        : scrolled && timeSpent >= 30 && timeSpent <= 900;
+
+    const entry: AgentArticleProgress = {
+      agentId,
+      articleId,
+      readAt: new Date().toISOString(),
+      timeSpentSeconds: timeSpent,
+      scrolledToBottom: scrolled,
+      interactionsCount: interactions,
+      isValidated,
+    };
+
+    if (existingIndex >= 0) {
+      progressList[existingIndex] = entry;
+    } else {
+      progressList.push(entry);
+    }
+
+    setStoredData(STORAGE_KEYS.AGENT_ARTICLES, progressList);
+  },
+
+  canAgentTakeExam(agentId: string): {
+    canTake: boolean;
+    readPercent: number;
+    validatedPercent: number;
+    validatedCount: number;
+    totalArticles: number;
+    requiredPercent: number;
+    missingCount: number;
+  } {
+    const total = LEAN_ARTICLES.length;
+    const validated = this.getAgentValidatedArticles(agentId).length;
+    const reads = this.getAgentReadArticles(agentId).length;
+
+    const readPercent = total > 0 ? Math.round((reads / total) * 100) : 0;
+    const validatedPercent = total > 0 ? Math.round((validated / total) * 100) : 0;
+    const requiredCount = Math.ceil(total * 0.95);
+    const canTake = validatedPercent >= 95 || validated >= requiredCount;
+    const missingCount = Math.max(0, requiredCount - validated);
+
+    return {
+      canTake,
+      readPercent,
+      validatedPercent,
+      validatedCount: validated,
+      totalArticles: total,
+      requiredPercent: 95,
+      missingCount,
+    };
   },
 
   // =========================================================================
@@ -1490,6 +1555,7 @@ export const dataService = {
     correctCount: number;
     totalQuestions: number;
     answers: Record<number, number>;
+    durationSeconds?: number;
   }): AgentExamResult {
     const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
     const score = Number(((params.correctCount / params.totalQuestions) * 10).toFixed(1));
@@ -1504,6 +1570,7 @@ export const dataService = {
       passed,
       answers: params.answers,
       completedAt: new Date().toISOString(),
+      durationSeconds: params.durationSeconds,
       rewardClaimed: false,
     };
 
@@ -1528,9 +1595,14 @@ export const dataService = {
 
     return users.map((agent) => {
       const readArticles = this.getAgentReadArticles(agent.id);
+      const validatedArticles = this.getAgentValidatedArticles(agent.id);
       const latestExam = this.getAgentLatestExam(agent.id);
       const passedExam = Boolean(latestExam?.passed);
       const rewardClaimed = Boolean(latestExam?.rewardClaimed);
+
+      const articlesReadPercent = totalArticles > 0 ? Math.round((readArticles.length / totalArticles) * 100) : 0;
+      const validatedArticlesReadPercent = totalArticles > 0 ? Math.round((validatedArticles.length / totalArticles) * 100) : 0;
+      const canTakeExam = validatedArticlesReadPercent >= 95 || validatedArticles.length >= Math.ceil(totalArticles * 0.95);
 
       return {
         agentId: agent.id,
@@ -1538,8 +1610,11 @@ export const dataService = {
         agentEmail: agent.email,
         agentAvatar: agent.avatarUrl,
         articlesReadCount: readArticles.length,
+        validatedArticlesReadCount: validatedArticles.length,
         totalArticlesCount: totalArticles,
-        articlesReadPercent: totalArticles > 0 ? Math.round((readArticles.length / totalArticles) * 100) : 0,
+        articlesReadPercent,
+        validatedArticlesReadPercent,
+        canTakeExam,
         latestExam,
         passedExam,
         rewardClaimed,
@@ -1549,7 +1624,7 @@ export const dataService = {
       const scoreA = a.latestExam?.score || 0;
       const scoreB = b.latestExam?.score || 0;
       if (scoreA !== scoreB) return scoreB - scoreA;
-      return b.articlesReadPercent - a.articlesReadPercent;
+      return b.validatedArticlesReadPercent - a.validatedArticlesReadPercent;
     });
   },
 

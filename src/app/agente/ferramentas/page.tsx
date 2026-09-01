@@ -24,9 +24,13 @@ import {
   Users,
   Gift,
   Check,
+  Lock,
+  Unlock,
+  Activity,
+  ShieldCheck,
 } from 'lucide-react';
 import { LEAN_ARTICLES, LeanArticle } from '@/data/leanArticlesData';
-import LeanArticleModal from '@/components/academy/LeanArticleModal';
+import LeanArticleModal, { ArticleReadingTelemetry } from '@/components/academy/LeanArticleModal';
 import LeanExamModal from '@/components/academy/LeanExamModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
@@ -146,9 +150,10 @@ export default function LeanToolsIndexPage() {
   const [activeMainTab, setActiveMainTab] = useState<'tools' | 'articles'>('tools');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
-  // Gamificação: Artigos Lidos pelo Agente Atual
+  // Gamificação & Telemetria
   const currentAgentId = currentUser?.id || 'agent_default';
   const [readArticleIds, setReadArticleIds] = useState<string[]>([]);
+  const [validatedArticleIds, setValidatedArticleIds] = useState<string[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<LeanArticle | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
 
@@ -162,6 +167,9 @@ export default function LeanToolsIndexPage() {
   const loadData = () => {
     const reads = dataService.getAgentReadArticles(currentAgentId);
     setReadArticleIds(reads);
+
+    const validated = dataService.getAgentValidatedArticles(currentAgentId);
+    setValidatedArticleIds(validated);
 
     const exam = dataService.getAgentLatestExam(currentAgentId);
     setLatestExam(exam);
@@ -181,9 +189,12 @@ export default function LeanToolsIndexPage() {
     setIsArticleModalOpen(true);
   };
 
-  const handleMarkAsRead = (articleId: string) => {
-    dataService.markArticleAsRead(currentAgentId, articleId);
+  const handleMarkAsRead = (articleId: string, telemetry: ArticleReadingTelemetry) => {
+    dataService.markArticleAsRead(currentAgentId, articleId, telemetry);
     setReadArticleIds((prev) => (prev.includes(articleId) ? prev : [...prev, articleId]));
+    if (telemetry.isValidated) {
+      setValidatedArticleIds((prev) => (prev.includes(articleId) ? prev : [...prev, articleId]));
+    }
     loadData();
   };
 
@@ -198,8 +209,9 @@ export default function LeanToolsIndexPage() {
   };
 
   const totalArticles = LEAN_ARTICLES.length;
-  const readCount = readArticleIds.length;
-  const progressPercent = totalArticles > 0 ? Math.round((readCount / totalArticles) * 100) : 0;
+  const validatedCount = validatedArticleIds.length;
+  const validatedPercent = totalArticles > 0 ? Math.round((validatedCount / totalArticles) * 100) : 0;
+  const canTakeExam = validatedPercent >= 95 || validatedCount >= Math.ceil(totalArticles * 0.95);
 
   const categories = ['Todos', 'Fundamentos', 'Qualidade', 'Produtividade', 'Métodos', 'Manutenção'];
   const filteredArticles =
@@ -241,14 +253,14 @@ export default function LeanToolsIndexPage() {
                 gap: '0.3rem',
               }}
             >
-              <Sparkles size={12} /> HUB DE MÉTODOS & ACADEMIA LEAN
+              <Sparkles size={12} /> ACADEMIA LEAN MANUFACTURING
             </span>
           </div>
           <h2 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
-            Ferramentas & Academia Lean Manufacturing
+            Academia Lean & Ferramentas Operacionais
           </h2>
           <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '640px', marginTop: '0.35rem' }}>
-            Acesse as ferramentas operacionais de diagnóstico ou estude os conceitos da Academia Lean para conquistar a certificação e recompensas!
+            Estude os conceitos fundamentais do TPS, valide leituras ativas e conquiste a Certificação Oficial de Especialista Lean!
           </p>
         </div>
 
@@ -258,9 +270,9 @@ export default function LeanToolsIndexPage() {
             onClick={() => setIsExamModalOpen(true)}
             className="btn btn-sm"
             style={{
-              backgroundColor: 'rgba(251, 191, 36, 0.15)',
-              border: '1.5px solid #fbbf24',
-              color: '#fbbf24',
+              backgroundColor: canTakeExam ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+              border: canTakeExam ? '1.5px solid #fbbf24' : '1px solid rgba(255, 255, 255, 0.15)',
+              color: canTakeExam ? '#fbbf24' : '#94a3b8',
               fontWeight: 800,
               padding: '0.55rem 1.15rem',
               borderRadius: '10px',
@@ -268,11 +280,15 @@ export default function LeanToolsIndexPage() {
               alignItems: 'center',
               gap: '0.45rem',
               cursor: 'pointer',
-              boxShadow: '0 0 15px rgba(251, 191, 36, 0.2)',
+              boxShadow: canTakeExam ? '0 0 15px rgba(251, 191, 36, 0.2)' : 'none',
             }}
           >
-            <Award size={16} />
-            {latestExam?.passed ? 'Selo de Especialista Conquistado 🏆' : 'Fazer Prova de Certificação (50 Questões)'}
+            {canTakeExam ? <Unlock size={15} color="#fbbf24" /> : <Lock size={15} color="#94a3b8" />}
+            {latestExam?.passed
+              ? 'Selo de Especialista Conquistado 🏆'
+              : canTakeExam
+              ? 'Iniciar Prova (50 Questões • 12 min)'
+              : 'Prova Bloqueada (Requer 95% lidos)'}
           </button>
         </div>
       </div>
@@ -336,8 +352,8 @@ export default function LeanToolsIndexPage() {
           }}
         >
           <BookOpen size={16} />
-          Artigos & Academia Lean ({LEAN_ARTICLES.length})
-          {readCount > 0 && (
+          Artigos da Academia Lean ({LEAN_ARTICLES.length})
+          {validatedCount > 0 && (
             <span
               style={{
                 fontSize: '0.65rem',
@@ -348,7 +364,7 @@ export default function LeanToolsIndexPage() {
                 fontWeight: 900,
               }}
             >
-              {readCount}/{totalArticles}
+              {validatedCount}/{totalArticles} Validados
             </span>
           )}
         </button>
@@ -505,14 +521,14 @@ export default function LeanToolsIndexPage() {
                   Sua Jornada de Capacitação Lean
                 </span>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
-                  {readCount} de {totalArticles} Artigos Lidos ({progressPercent}%)
+                  {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
                 </h3>
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                   {latestExam?.passed
                     ? `🏆 Aprovado na Prova com Nota ${latestExam.score.toFixed(1)} • Apto a Recompensa!`
-                    : latestExam
-                    ? `Última tentativa: Nota ${latestExam.score.toFixed(1)} (Necessário >= 8.0)`
-                    : 'Leia os artigos e faça a prova para conquistar a recompensa!'}
+                    : canTakeExam
+                    ? '🔓 Requisito atingido (≥95%)! Você já pode realizar a Prova de Certificação.'
+                    : `🔒 Complete mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
                 </span>
               </div>
             </div>
@@ -520,11 +536,11 @@ export default function LeanToolsIndexPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
-                  <span>Progresso</span>
-                  <strong style={{ color: '#ffffff' }}>{progressPercent}%</strong>
+                  <span>Validação Master</span>
+                  <strong style={{ color: validatedPercent >= 95 ? '#34d399' : '#ffffff' }}>{validatedPercent}%</strong>
                 </div>
                 <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#a855f7' }} />
+                  <div style={{ height: '100%', width: `${validatedPercent}%`, backgroundColor: validatedPercent >= 95 ? '#10b981' : '#a855f7' }} />
                 </div>
               </div>
 
@@ -539,10 +555,11 @@ export default function LeanToolsIndexPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
+                  backgroundColor: canTakeExam ? '#10b981' : undefined,
                 }}
               >
                 <Award size={15} />
-                {latestExam?.passed ? 'Ver Certificado' : 'Fazer Prova'}
+                {latestExam?.passed ? 'Ver Certificado' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
               </button>
             </div>
           </div>
@@ -569,8 +586,8 @@ export default function LeanToolsIndexPage() {
                     Ranking de Estudos dos Agentes & Status de Recompensas
                   </h3>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                  Painel exclusivo do Master Lean
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                  Critério Master: Leitura com rolagem e tempo entre 30s e 15min + Prova (12min, Nota ≥ 8.0)
                 </span>
               </div>
 
@@ -579,7 +596,8 @@ export default function LeanToolsIndexPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'left', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase' }}>
                       <th style={{ padding: '0.65rem 0.75rem' }}>Posição / Agente</th>
-                      <th style={{ padding: '0.65rem 0.75rem' }}>Artigos Lidos</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Leitura Validada (Master)</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Apto ao Exame (≥95%)</th>
                       <th style={{ padding: '0.65rem 0.75rem' }}>Nota na Prova</th>
                       <th style={{ padding: '0.65rem 0.75rem' }}>Status</th>
                       <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Recompensa</th>
@@ -612,7 +630,21 @@ export default function LeanToolsIndexPage() {
                         </td>
 
                         <td style={{ padding: '0.75rem', color: '#cbd5e1' }}>
-                          <span style={{ fontWeight: 700, color: '#ffffff' }}>{rank.articlesReadCount}</span> / {rank.totalArticlesCount} ({rank.articlesReadPercent}%)
+                          <span style={{ fontWeight: 700, color: rank.validatedArticlesReadPercent >= 95 ? '#34d399' : '#ffffff' }}>
+                            {rank.validatedArticlesReadCount}
+                          </span> / {rank.totalArticlesCount} ({rank.validatedArticlesReadPercent}%)
+                        </td>
+
+                        <td style={{ padding: '0.75rem' }}>
+                          {rank.canTakeExam ? (
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid #10b981' }}>
+                              🔓 Liberado
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                              🔒 Bloqueado ({rank.validatedArticlesReadPercent}%)
+                            </span>
+                          )}
                         </td>
 
                         <td style={{ padding: '0.75rem' }}>
@@ -621,7 +653,7 @@ export default function LeanToolsIndexPage() {
                               {rank.latestExam.score.toFixed(1)} / 10.0
                             </strong>
                           ) : (
-                            <span style={{ color: '#94a3b8' }}>Pendente</span>
+                            <span style={{ color: '#94a3b8' }}>Não realizada</span>
                           )}
                         </td>
 
@@ -631,9 +663,9 @@ export default function LeanToolsIndexPage() {
                               🏆 Apto a Recompensa
                             </span>
                           ) : rank.latestExam ? (
-                            <span style={{ fontSize: '0.675rem', color: '#f87171' }}>Nota insuficiente (&lt; 8.0)</span>
+                            <span style={{ fontSize: '0.675rem', color: '#f87171' }}>Nota &lt; 8.0</span>
                           ) : (
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>Em estudos</span>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>Em capacitação</span>
                           )}
                         </td>
 
@@ -703,12 +735,17 @@ export default function LeanToolsIndexPage() {
           >
             {filteredArticles.map((article) => {
               const isRead = readArticleIds.includes(article.id);
+              const isValidated = validatedArticleIds.includes(article.id);
               return (
                 <div
                   key={article.id}
                   style={{
                     backgroundColor: '#0f172a',
-                    border: isRead ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    border: isValidated
+                      ? '1px solid rgba(16, 185, 129, 0.4)'
+                      : isRead
+                      ? '1px solid rgba(6, 182, 212, 0.3)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '16px',
                     padding: '1.25rem',
                     display: 'flex',
@@ -737,7 +774,7 @@ export default function LeanToolsIndexPage() {
                             {article.badge}
                           </span>
                         )}
-                        {isRead && (
+                        {isValidated ? (
                           <span
                             style={{
                               fontSize: '0.65rem',
@@ -749,9 +786,23 @@ export default function LeanToolsIndexPage() {
                               borderRadius: '999px',
                             }}
                           >
-                            Lido ✓
+                            Validado ✓
                           </span>
-                        )}
+                        ) : isRead ? (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                              border: '1px solid #22d3ee',
+                              color: '#22d3ee',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '999px',
+                            }}
+                          >
+                            Lido
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -774,9 +825,9 @@ export default function LeanToolsIndexPage() {
                       onClick={() => handleOpenArticle(article)}
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: isRead ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                        border: isRead ? '1px solid #10b981' : '1px solid #22d3ee',
-                        color: isRead ? '#34d399' : '#22d3ee',
+                        backgroundColor: isValidated ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                        border: isValidated ? '1px solid #10b981' : '1px solid #22d3ee',
+                        color: isValidated ? '#34d399' : '#22d3ee',
                         fontWeight: 800,
                         fontSize: '0.75rem',
                         padding: '0.35rem 0.85rem',
@@ -787,7 +838,7 @@ export default function LeanToolsIndexPage() {
                         gap: '0.3rem',
                       }}
                     >
-                      <span>{isRead ? 'Reler Artigo' : 'Ler Artigo (+10 XP)'}</span>
+                      <span>{isValidated ? 'Reler Artigo' : 'Ler Artigo (+10 XP)'}</span>
                       <ArrowRight size={13} />
                     </button>
                   </div>
@@ -804,6 +855,7 @@ export default function LeanToolsIndexPage() {
         isOpen={isArticleModalOpen}
         onClose={() => setIsArticleModalOpen(false)}
         isRead={selectedArticle ? readArticleIds.includes(selectedArticle.id) : false}
+        isValidatedRead={selectedArticle ? validatedArticleIds.includes(selectedArticle.id) : false}
         onMarkAsRead={handleMarkAsRead}
       />
 
@@ -813,6 +865,7 @@ export default function LeanToolsIndexPage() {
         agentId={currentAgentId}
         agentName={currentUser?.name || 'Agente Lean'}
         onExamCompleted={handleExamCompleted}
+        onNavigateToArticles={() => setActiveMainTab('articles')}
       />
     </div>
   );
