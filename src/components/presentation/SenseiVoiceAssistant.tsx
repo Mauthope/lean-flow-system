@@ -13,22 +13,22 @@ import {
   Key,
   CheckCircle2,
   Play,
-  Activity,
+  AlertTriangle,
 } from 'lucide-react';
 import { LeanAction } from '@/lib/types';
 import {
-  askSensei,
+  askSenseiWithVoice,
   getGeminiApiKey,
   saveGeminiApiKey,
-  getGoogleTtsApiKey,
-  saveGoogleTtsApiKey,
   getVoicePreference,
   saveVoicePreference,
-  synthesizeSpeechGoogleCloud,
-  SenseiResponse,
+  SENSEI_PROFILE,
+  SenseiVoiceResponse,
 } from '@/services/geminiService';
 
-// Extensão de tipos para Web Speech API
+// =====================================================================
+// TIPOS PARA WEB SPEECH API (RECONHECIMENTO DE VOZ — NÃO SÍNTESE)
+// =====================================================================
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
@@ -51,6 +51,9 @@ interface SpeechRecognitionInstance extends EventTarget {
   onresult: ((event: SpeechRecognitionEvent) => void) | null;
 }
 
+// =====================================================================
+// COMPONENTE PRINCIPAL
+// =====================================================================
 interface SenseiVoiceAssistantProps {
   project: LeanAction;
   currentSlide: number;
@@ -60,35 +63,34 @@ export default function SenseiVoiceAssistant({
   project,
   currentSlide,
 }: SenseiVoiceAssistantProps) {
-  const [isListening, setIsListening] = useState<boolean>(false);
-  const [isThinking, setIsThinking] = useState<boolean>(false);
-  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-  const [speechSupported, setSpeechSupported] = useState<boolean>(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [needsApiKey, setNeedsApiKey] = useState(false);
 
-  // Configuração da chave do Gemini e Google Cloud TTS
-  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
-  const [geminiKeyInput, setGeminiKeyInput] = useState<string>('');
-  const [ttsKeyInput, setTtsKeyInput] = useState<string>('');
-  const [selectedVoice, setSelectedVoice] = useState<string>('pt-BR-Neural2-A');
-  const [savedKeySuccess, setSavedKeySuccess] = useState<boolean>(false);
-  const [testingVoice, setTestingVoice] = useState<boolean>(false);
+  // Configuração
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [selectedVoice, setSelectedVoice] = useState<string>(SENSEI_PROFILE.defaultVoice);
+  const [savedKeySuccess, setSavedKeySuccess] = useState(false);
 
   // Digitação manual de pergunta
-  const [manualInput, setManualInput] = useState<string>('');
+  const [manualInput, setManualInput] = useState('');
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const isListeningRef = useRef<boolean>(false);
+  const isListeningRef = useRef(false);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
-  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Carrega chaves e preferências salvas
+  // Carrega chave e preferências salvas
   useEffect(() => {
     setGeminiKeyInput(getGeminiApiKey());
-    setTtsKeyInput(getGoogleTtsApiKey());
     setSelectedVoice(getVoicePreference());
   }, []);
 
-  // Inicializa suporte a Web Speech API
+  // ===================================================================
+  // INICIALIZAÇÃO DO WEB SPEECH RECOGNITION (apenas escuta, NÃO fala)
+  // ===================================================================
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -116,7 +118,7 @@ export default function SenseiVoiceAssistant({
           try {
             recognition.start();
           } catch {
-            // Ignora erro de reinicialização rápida
+            // Ignora erro de reinicialização
           }
         } else {
           setIsListening(false);
@@ -124,10 +126,8 @@ export default function SenseiVoiceAssistant({
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        if (event.error === 'no-speech' || event.error === 'network') {
-          return;
-        }
-        console.warn('SpeechRecognition erro:', event.error);
+        if (event.error === 'no-speech' || event.error === 'network') return;
+        console.warn('[Sensei] SpeechRecognition erro:', event.error);
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -142,7 +142,7 @@ export default function SenseiVoiceAssistant({
 
       recognitionRef.current = recognition;
     } catch (e) {
-      console.warn('Erro ao instanciar SpeechRecognition:', e);
+      console.warn('[Sensei] Erro ao instanciar SpeechRecognition:', e);
       setSpeechSupported(false);
     }
 
@@ -158,115 +158,62 @@ export default function SenseiVoiceAssistant({
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
       }
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
     };
   }, []);
 
-  /**
-   * Para qualquer áudio ou voz em reprodução
-   */
+  // ===================================================================
+  // PARA QUALQUER ÁUDIO EM REPRODUÇÃO
+  // ===================================================================
   const stopSpeaking = useCallback(() => {
     if (activeAudioRef.current) {
       activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
       activeAudioRef.current = null;
-    }
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
   }, []);
 
-  /**
-   * Fala a resposta em voz alta utilizando Google Cloud Text-to-Speech (Neural2)
-   * com fallback transparente para a voz nativa do navegador
-   */
-  const speakText = useCallback(
-    async (text: string) => {
-      stopSpeaking();
+  // ===================================================================
+  // REPRODUZ ÁUDIO BASE64 GERADO PELO GEMINI
+  // ===================================================================
+  const playAudioBase64 = useCallback(
+    (base64: string, mimeType: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        stopSpeaking();
 
-      // 1. Tenta sintetizar com Google Cloud Text-to-Speech (Neural2 de estúdio)
-      try {
-        const audioBase64 = await synthesizeSpeechGoogleCloud({
-          text,
-          voiceName: selectedVoice,
-        });
+        const audio = new Audio(`data:${mimeType};base64,${base64}`);
+        activeAudioRef.current = audio;
 
-        if (audioBase64) {
-          const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
-          activeAudioRef.current = audio;
+        audio.onplay = () => setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          activeAudioRef.current = null;
+          resolve();
+        };
+        audio.onerror = (err) => {
+          setIsSpeaking(false);
+          activeAudioRef.current = null;
+          reject(err);
+        };
 
-          audio.onplay = () => setIsSpeaking(true);
-          audio.onended = () => {
-            setIsSpeaking(false);
-            activeAudioRef.current = null;
-          };
-          audio.onerror = () => {
-            setIsSpeaking(false);
-            activeAudioRef.current = null;
-          };
-
-          await audio.play();
-          return;
-        }
-      } catch (err) {
-        console.warn('Falha no Google Cloud TTS, usando sintetizador nativo:', err);
-      }
-
-      // 2. Fallback para sintetizador nativo caso a chave do Google Cloud não esteja configurada
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        const cleanSpeech = text
-          .replace(/[*_#`]/g, '')
-          .replace(/R\$\s*/g, 'R$ ')
-          .trim();
-
-        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 1.03;
-        utterance.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        const ptVoices = voices.filter(
-          (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
-        );
-        const naturalVoice =
-          ptVoices.find(
-            (v) =>
-              v.name.includes('Francisca') ||
-              v.name.includes('Natural') ||
-              v.name.includes('Google') ||
-              v.name.includes('Maria') ||
-              v.name.includes('Luciana') ||
-              v.name.includes('pt-BR')
-          ) || ptVoices[0];
-
-        if (naturalVoice) {
-          utterance.voice = naturalVoice;
-        }
-
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        currentUtteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
-      }
+        audio.play().catch(reject);
+      });
     },
-    [selectedVoice, stopSpeaking]
+    [stopSpeaking]
   );
 
-  /**
-   * Processa a pergunta com o motor Gemini / Inteligência Sensei
-   */
+  // ===================================================================
+  // PROCESSA A PERGUNTA — GEMINI GERA ÁUDIO DIRETAMENTE
+  // ===================================================================
   const processQuestion = useCallback(
     async (questionText: string) => {
       if (!questionText.trim()) return;
 
       setIsThinking(true);
+      setNeedsApiKey(false);
 
       try {
-        const response: SenseiResponse = await askSensei({
+        const response: SenseiVoiceResponse = await askSenseiWithVoice({
           question: questionText,
           project,
           currentSlideIndex: currentSlide,
@@ -274,38 +221,46 @@ export default function SenseiVoiceAssistant({
 
         setIsThinking(false);
 
-        // Reproduz a resposta puramente em áudio de alta fidelidade
-        await speakText(response.answer);
+        if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
+          // Áudio de alta qualidade gerado pelo Gemini — reproduz diretamente
+          await playAudioBase64(response.audioBase64, response.mimeType);
+        } else if (response.source === 'no_key') {
+          // Sem chave configurada — abre o painel de configuração
+          setNeedsApiKey(true);
+          setSettingsOpen(true);
+        } else {
+          // Fallback textual — não reproduz voz robótica, apenas exibe alerta
+          console.warn('[Sensei] Resposta em texto (sem áudio):', response.textFallback);
+          setNeedsApiKey(true);
+        }
       } catch (err) {
-        console.error('Erro ao consultar Sensei:', err);
+        console.error('[Sensei] Erro ao consultar:', err);
         setIsThinking(false);
       }
     },
-    [project, currentSlide, speakText]
+    [project, currentSlide, playAudioBase64]
   );
 
-  /**
-   * Trata o áudio capturado pela escuta contínua com wake word "Sensei"
-   */
+  // ===================================================================
+  // DETECÇÃO DE WAKE WORD "SENSEI"
+  // ===================================================================
   const handleDetectedSpeech = useCallback(
     (transcript: string) => {
       const lower = transcript.toLowerCase();
 
-      // Verifica se chamou a Wake Word "Sensei"
       if (lower.includes('sensei')) {
         const parts = transcript.split(/sensei/i);
         const rawQuestion = parts[parts.length - 1]?.replace(/^[,.:\s\-]+/, '').trim();
         const effectiveQuestion = rawQuestion || transcript;
-
         processQuestion(effectiveQuestion);
       }
     },
     [processQuestion]
   );
 
-  /**
-   * Alterna estado da escuta contínua do microfone
-   */
+  // ===================================================================
+  // TOGGLE ESCUTA DO MICROFONE
+  // ===================================================================
   const toggleListening = () => {
     if (!speechSupported) {
       setSettingsOpen(true);
@@ -316,51 +271,61 @@ export default function SenseiVoiceAssistant({
       isListeningRef.current = false;
       setIsListening(false);
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
+        try { recognitionRef.current.stop(); } catch { /* ignore */ }
       }
     } else {
       isListeningRef.current = true;
       setIsListening(true);
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch (e) {
-          console.warn('Falha ao iniciar reconhecimento:', e);
+        try { recognitionRef.current.start(); } catch (e) {
+          console.warn('[Sensei] Falha ao iniciar reconhecimento:', e);
         }
       }
     }
   };
 
-  /**
-   * Salva as configurações de chave e voz
-   */
+  // ===================================================================
+  // SALVAR CONFIGURAÇÕES
+  // ===================================================================
   const handleSaveSettings = () => {
     saveGeminiApiKey(geminiKeyInput);
-    saveGoogleTtsApiKey(ttsKeyInput);
     saveVoicePreference(selectedVoice);
     setSavedKeySuccess(true);
+    setNeedsApiKey(false);
     setTimeout(() => {
       setSavedKeySuccess(false);
       setSettingsOpen(false);
     }, 1000);
   };
 
-  /**
-   * Teste de áudio imediato com a voz selecionada
-   */
+  // ===================================================================
+  // TESTE RÁPIDO DE VOZ COM GEMINI
+  // ===================================================================
   const handleTestVoice = async () => {
-    setTestingVoice(true);
-    await speakText('Olá! Eu sou o Sensei, seu assistente de inteligência artificial na apresentação.');
-    setTestingVoice(false);
+    const key = geminiKeyInput || getGeminiApiKey();
+    if (!key) {
+      setNeedsApiKey(true);
+      return;
+    }
+
+    setIsThinking(true);
+    const response = await askSenseiWithVoice({
+      question: 'Apresente-se brevemente como o Sensei, co-apresentador desta reunião.',
+      project,
+      apiKey: key,
+    });
+    setIsThinking(false);
+
+    if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
+      await playAudioBase64(response.audioBase64, response.mimeType);
+    } else {
+      setNeedsApiKey(true);
+    }
   };
 
-  /**
-   * Envio manual por texto
-   */
+  // ===================================================================
+  // ENVIO MANUAL POR TEXTO
+  // ===================================================================
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualInput.trim()) return;
@@ -370,13 +335,15 @@ export default function SenseiVoiceAssistant({
     processQuestion(q);
   };
 
+  // ===================================================================
+  // RENDER
+  // ===================================================================
   return (
     <>
-      {/* =================================================================== */}
-      {/* SENSEI HUD BAR - COM ANIMAÇÃO DINÂMICA DE ONDAS DE VOZ              */}
-      {/* =================================================================== */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-        {/* Animação Visual de Onda Sonora quando o Sensei está FALANDO */}
+        {/* ============================================================= */}
+        {/* WAVEFORM ANIMADO QUANDO O SENSEI ESTÁ FALANDO                  */}
+        {/* ============================================================= */}
         {isSpeaking ? (
           <div
             onClick={stopSpeaking}
@@ -392,59 +359,35 @@ export default function SenseiVoiceAssistant({
               boxShadow: '0 0 20px rgba(6, 182, 212, 0.5)',
               animation: 'pulse 1.5s infinite',
             }}
-            title="Sensei falando... Clique para pausar áudio"
+            title="Sensei falando... Clique para silenciar"
           >
-            {/* Ícone de Som */}
             <Volume2 size={15} color="#22d3ee" />
 
-            {/* 4 Barras de Onda Sonora Animada (Waveform) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2.5px', height: '14px' }}>
-              <span
-                style={{
-                  width: '3px',
-                  height: '14px',
-                  backgroundColor: '#22d3ee',
-                  borderRadius: '2px',
-                  animation: 'soundWave 0.8s ease-in-out infinite alternate',
-                }}
-              />
-              <span
-                style={{
-                  width: '3px',
-                  height: '8px',
-                  backgroundColor: '#38bdf8',
-                  borderRadius: '2px',
-                  animation: 'soundWave 0.6s ease-in-out 0.2s infinite alternate',
-                }}
-              />
-              <span
-                style={{
-                  width: '3px',
-                  height: '16px',
-                  backgroundColor: '#22d3ee',
-                  borderRadius: '2px',
-                  animation: 'soundWave 0.7s ease-in-out 0.4s infinite alternate',
-                }}
-              />
-              <span
-                style={{
-                  width: '3px',
-                  height: '10px',
-                  backgroundColor: '#38bdf8',
-                  borderRadius: '2px',
-                  animation: 'soundWave 0.5s ease-in-out 0.1s infinite alternate',
-                }}
-              />
+            {/* 5 Barras de Onda Sonora Animada */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2.5px', height: '16px' }}>
+              {[0.8, 0.6, 0.7, 0.5, 0.75].map((dur, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: '3px',
+                    backgroundColor: i % 2 === 0 ? '#22d3ee' : '#38bdf8',
+                    borderRadius: '2px',
+                    animation: `soundWave ${dur}s ease-in-out ${i * 0.1}s infinite alternate`,
+                  }}
+                />
+              ))}
             </div>
 
             <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#22d3ee', letterSpacing: '0.02em' }}>
-              Sensei Falando
+              Sensei
             </span>
 
-            <VolumeX size={12} color="#f87171" style={{ marginLeft: '0.2rem', opacity: 0.8 }} />
+            <VolumeX size={12} color="#f87171" style={{ opacity: 0.8 }} />
           </div>
         ) : (
-          /* Botão Padrão do Sensei (Ouvindo / Standby / Pensando) */
+          /* ============================================================= */
+          /* BOTÃO PRINCIPAL: OUVINDO / PENSANDO / STANDBY                  */
+          /* ============================================================= */
           <button
             type="button"
             onClick={toggleListening}
@@ -463,13 +406,23 @@ export default function SenseiVoiceAssistant({
                 ? 'rgba(16, 185, 129, 0.2)'
                 : isThinking
                 ? 'rgba(139, 92, 246, 0.25)'
+                : needsApiKey
+                ? 'rgba(251, 191, 36, 0.15)'
                 : 'rgba(255, 255, 255, 0.06)',
               border: isListening
                 ? '1.5px solid #10b981'
                 : isThinking
                 ? '1.5px solid #a855f7'
+                : needsApiKey
+                ? '1.5px solid #fbbf24'
                 : '1px solid rgba(255, 255, 255, 0.15)',
-              color: isListening ? '#34d399' : isThinking ? '#c084fc' : '#cbd5e1',
+              color: isListening
+                ? '#34d399'
+                : isThinking
+                ? '#c084fc'
+                : needsApiKey
+                ? '#fbbf24'
+                : '#cbd5e1',
               boxShadow: isListening
                 ? '0 0 15px rgba(16, 185, 129, 0.4)'
                 : isThinking
@@ -478,14 +431,21 @@ export default function SenseiVoiceAssistant({
             }}
             title={
               isListening
-                ? 'Sensei está ouvindo a sala! Fale "Sensei..." ou faça uma pergunta'
-                : 'Clique para ativar o Sensei (Assistente de Voz ao Vivo)'
+                ? 'Sensei está ouvindo! Fale "Sensei..."'
+                : needsApiKey
+                ? 'Configure sua chave do Gemini para ativar o Sensei'
+                : 'Ativar Sensei (Assistente de Voz ao Vivo)'
             }
           >
             {isThinking ? (
               <>
                 <Sparkles size={14} className="animate-spin" color="#c084fc" />
                 <span>Sensei pensando...</span>
+              </>
+            ) : needsApiKey && !isListening ? (
+              <>
+                <AlertTriangle size={14} color="#fbbf24" />
+                <span>Configurar Chave</span>
               </>
             ) : isListening ? (
               <>
@@ -505,13 +465,13 @@ export default function SenseiVoiceAssistant({
             ) : (
               <>
                 <MicOff size={14} color="#94a3b8" />
-                <span>Ativar Sensei (Voz)</span>
+                <span>Ativar Sensei</span>
               </>
             )}
           </button>
         )}
 
-        {/* Botão de Configurações do Token / Voz / Testes */}
+        {/* Botão de Configurações */}
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
@@ -526,15 +486,15 @@ export default function SenseiVoiceAssistant({
             display: 'flex',
             alignItems: 'center',
           }}
-          title="Configurar Vozes do Google Cloud, Chaves ou Enviar Pergunta por Texto"
+          title="Configurar Sensei: Voz, Chave do Gemini e Testes"
         >
           <Settings size={13} />
         </button>
       </div>
 
-      {/* =================================================================== */}
-      {/* MODAL DE CONFIGURAÇÃO DE VOZ GOOGLE CLOUD TTS & CHAVES              */}
-      {/* =================================================================== */}
+      {/* ================================================================= */}
+      {/* MODAL DE CONFIGURAÇÃO DO SENSEI                                    */}
+      {/* ================================================================= */}
       {settingsOpen && (
         <div
           style={{
@@ -566,10 +526,10 @@ export default function SenseiVoiceAssistant({
                 <span style={{ fontSize: '1.3rem' }}>🥋</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                    Configurar Sensei AI
+                    Perfil do Sensei
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Google Cloud Text-to-Speech (Neural2) & Motor Gemini
+                    Voz gerada nativamente pelo Gemini 2.5 Flash (Ultra Natural)
                   </span>
                 </div>
               </div>
@@ -583,17 +543,39 @@ export default function SenseiVoiceAssistant({
               </button>
             </div>
 
-            {/* Seleção de Voz do Google Cloud TTS */}
+            {/* Alerta se falta chave */}
+            {needsApiKey && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                  border: '1px solid rgba(251, 191, 36, 0.35)',
+                  borderRadius: '10px',
+                  padding: '0.75rem',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.5rem',
+                }}
+              >
+                <AlertTriangle size={16} color="#fbbf24" style={{ marginTop: '2px', flexShrink: 0 }} />
+                <div style={{ fontSize: '0.75rem', color: '#fde68a' }}>
+                  <strong>Chave de API necessária.</strong> O Sensei precisa de uma chave do Google Gemini para gerar voz de alta qualidade.
+                  Crie gratuitamente em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>aistudio.google.com</a>
+                </div>
+              </div>
+            )}
+
+            {/* Seleção de Voz do Gemini */}
             <div style={{ marginBottom: '1.15rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Volume2 size={13} color="#22d3ee" />
-                  Voz do Sensei (Google Cloud Neural2):
+                  Voz do Sensei (Gemini Neural Nativo):
                 </label>
                 <button
                   type="button"
                   onClick={handleTestVoice}
-                  disabled={testingVoice}
+                  disabled={isThinking || isSpeaking}
                   className="btn btn-sm"
                   style={{
                     backgroundColor: 'rgba(6, 182, 212, 0.15)',
@@ -604,9 +586,14 @@ export default function SenseiVoiceAssistant({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.25rem',
+                    opacity: isThinking || isSpeaking ? 0.5 : 1,
                   }}
                 >
-                  <Play size={10} /> Testar Voz
+                  {isThinking ? (
+                    <><Sparkles size={10} className="animate-spin" /> Gerando...</>
+                  ) : (
+                    <><Play size={10} /> Testar Voz</>
+                  )}
                 </button>
               </div>
 
@@ -624,28 +611,26 @@ export default function SenseiVoiceAssistant({
                   borderRadius: '8px',
                 }}
               >
-                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva - Padrão Sensei / Máxima Naturalidade)</option>
-                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave - Estúdio)</option>
-                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva)</option>
-                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet)</option>
+                {SENSEI_PROFILE.voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Campo da Chave de API Google (Gemini & Cloud TTS) */}
+            {/* Chave de API do Gemini */}
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
                 <Key size={13} color="#fbbf24" />
-                Sua Chave de API Google (Token Particular):
+                Sua Chave de API do Gemini (Token Particular):
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
                   type="password"
                   value={geminiKeyInput}
-                  onChange={(e) => {
-                    setGeminiKeyInput(e.target.value);
-                    setTtsKeyInput(e.target.value);
-                  }}
-                  placeholder="Cole aqui sua API Key do Google..."
+                  onChange={(e) => setGeminiKeyInput(e.target.value)}
+                  placeholder="Cole aqui sua API Key do Google AI Studio..."
                   className="input input-sm"
                   style={{
                     flex: 1,
@@ -667,11 +652,11 @@ export default function SenseiVoiceAssistant({
                 </button>
               </div>
               <span style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.35rem', display: 'block' }}>
-                💡 A chave é salva de forma segura e privada diretamente no seu navegador.
+                💡 A mesma chave do Gemini gera inteligência e voz. Salva privativamente no seu navegador.
               </span>
               {savedKeySuccess && (
                 <div style={{ marginTop: '0.4rem', color: '#34d399', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <CheckCircle2 size={13} /> Configurações e voz salvas com sucesso!
+                  <CheckCircle2 size={13} /> Perfil do Sensei salvo com sucesso!
                 </div>
               )}
             </div>
@@ -712,14 +697,14 @@ export default function SenseiVoiceAssistant({
         </div>
       )}
 
-      {/* CSS Keyframes inline para animações sutis de som */}
+      {/* CSS Keyframes */}
       <style jsx global>{`
         @keyframes soundWave {
           0% {
             height: 4px;
           }
           100% {
-            height: 15px;
+            height: 16px;
           }
         }
       `}</style>
