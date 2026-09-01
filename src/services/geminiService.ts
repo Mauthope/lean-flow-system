@@ -88,6 +88,7 @@ export async function validateGeminiApiKey(
   error?: string;
   ttsError?: string;
   workingModel?: string;
+  isKeyRestricted?: boolean;
 }> {
   if (!key || !key.trim()) {
     return { valid: false, ttsEnabled: false, error: 'Chave não informada.' };
@@ -98,6 +99,7 @@ export async function validateGeminiApiKey(
   // 1. Testa o Google Cloud Text-to-Speech (Neural2)
   let ttsEnabled = false;
   let ttsError = '';
+  let isKeyRestricted = false;
 
   try {
     const ttsRes = await fetch(
@@ -117,7 +119,21 @@ export async function validateGeminiApiKey(
       ttsEnabled = true;
     } else {
       const errData = await ttsRes.json().catch(() => ({}));
-      ttsError = errData?.error?.message || 'API Cloud Text-to-Speech precisa ser ativada no projeto.';
+      const rawMsg = errData?.error?.message || '';
+      console.warn('[Sensei TTS Validation Response]:', ttsRes.status, errData);
+
+      if (
+        rawMsg.includes('Requests to this API texttospeech.googleapis.com') ||
+        rawMsg.includes('blocked') ||
+        rawMsg.includes('PERMISSION_DENIED') ||
+        rawMsg.includes('restricted')
+      ) {
+        isKeyRestricted = true;
+        ttsError =
+          'Sua chave está com Restrição de API. No Google Cloud Console -> Credenciais -> Clique na sua chave -> Em "Restrições de API", marque "Não restringir chave" ou adicione "Cloud Text-to-Speech API".';
+      } else {
+        ttsError = rawMsg || 'API Cloud Text-to-Speech precisa ser autorizada para esta chave.';
+      }
     }
   } catch (e: any) {
     ttsError = e?.message || 'Erro de conexão com Text-to-Speech.';
@@ -189,9 +205,10 @@ export async function validateGeminiApiKey(
   }
 
   return {
-    valid: textValid || ttsEnabled, // Se TTS está habilitado, a chave já é válida no Google Cloud!
+    valid: textValid || ttsEnabled,
     ttsEnabled,
     workingModel,
+    isKeyRestricted,
     error: !textValid && !ttsEnabled ? 'Chave de API não autorizada no Google Cloud.' : undefined,
     ttsError: !ttsEnabled ? ttsError : undefined,
   };
@@ -253,6 +270,7 @@ export async function synthesizeSpeechGoogleCloud({
 
     const data = await res.json();
     if (data?.audioContent) {
+      console.log(`[Sensei TTS Sucesso]: Áudio gerado com ${selectedVoice}`);
       return { audioBase64: data.audioContent, voiceUsed: selectedVoice };
     }
 

@@ -83,7 +83,6 @@ export default function SenseiVoiceAssistant({
     ttsEnabled?: boolean;
     message?: string;
     showTtsLink?: boolean;
-    showGenerativeLink?: boolean;
   } | null>(null);
 
   // Digitação manual de pergunta
@@ -450,7 +449,8 @@ export default function SenseiVoiceAssistant({
         ttsEnabled: false,
         showTtsLink: true,
         message:
-          'Chave reconhecida! Para ativar a voz oficial Google Neural2, ative o Cloud Text-to-Speech no link abaixo:',
+          check.ttsError ||
+          'Chave reconhecida! Para ativar a voz oficial Google Neural2, verifique a permissão do Cloud Text-to-Speech no link abaixo:',
       });
     } else {
       setKeyValidationStatus({
@@ -502,7 +502,7 @@ export default function SenseiVoiceAssistant({
           showTtsLink: true,
           message:
             response.errorDetails ||
-            'Reproduzindo resposta! Para liberar o áudio Neural2 de estúdio, ative o Cloud Text-to-Speech no link abaixo:',
+            'Reproduzindo resposta! Para liberar o áudio Neural2 de estúdio, verifique as permissões de API no Google Cloud:',
         });
       }
 
@@ -826,50 +826,23 @@ export default function SenseiVoiceAssistant({
                       : '#f87171',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem' }}>
                     {keyValidationStatus.valid ? (
                       keyValidationStatus.ttsEnabled ? (
-                        <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+                        <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
                       ) : (
-                        <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                        <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
                       )
                     ) : (
-                      <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                      <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
                     )}
-                    <span>{keyValidationStatus.message}</span>
+                    <span style={{ lineHeight: 1.4 }}>{keyValidationStatus.message}</span>
                   </div>
 
-                  {/* Link direto para ativar a API Generative Language (Gemini) */}
-                  {keyValidationStatus.showGenerativeLink && (
-                    <a
-                      href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-sm"
-                      style={{
-                        backgroundColor: '#059669',
-                        color: '#ffffff',
-                        fontSize: '0.7rem',
-                        fontWeight: 800,
-                        padding: '0.35rem 0.65rem',
-                        borderRadius: '6px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        alignSelf: 'flex-start',
-                        marginTop: '0.2rem',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <ExternalLink size={12} />
-                      1 Clique: Ativar Generative Language API no Google Cloud
-                    </a>
-                  )}
-
-                  {/* Link direto para ativar a API Text-to-Speech no Google Cloud */}
+                  {/* Link direto para abrir Credenciais do Google Cloud */}
                   {keyValidationStatus.showTtsLink && (
                     <a
-                      href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com"
+                      href="https://console.cloud.google.com/apis/credentials"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-sm"
@@ -889,7 +862,7 @@ export default function SenseiVoiceAssistant({
                       }}
                     >
                       <ExternalLink size={12} />
-                      Clique aqui para Ativar Text-to-Speech no Google Cloud (Grátis)
+                      Abrir Google Cloud &gt; Credenciais (Desmarcar restrição da chave)
                     </a>
                   )}
                 </div>
@@ -905,7 +878,11 @@ export default function SenseiVoiceAssistant({
 
               <select
                 value={selectedVoice}
-                onChange={(e) => setSelectedVoice(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedVoice(val);
+                  saveVoicePreference(val);
+                }}
                 className="input input-sm"
                 style={{
                   width: '100%',
