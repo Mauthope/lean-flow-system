@@ -87,6 +87,7 @@ export async function validateGeminiApiKey(
   ttsEnabled: boolean;
   error?: string;
   ttsError?: string;
+  needsGenerativeApiEnable?: boolean;
 }> {
   if (!key || !key.trim()) {
     return { valid: false, ttsEnabled: false, error: 'Chave não informada.' };
@@ -97,28 +98,41 @@ export async function validateGeminiApiKey(
   // 1. Testa a inteligência do Gemini (generateContent)
   let textValid = false;
   let textError = '';
+  let needsGenerativeApiEnable = false;
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Ping' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
+  const testModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+
+  for (const model of testModels) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Ping' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        }
+      );
+
+      if (res.ok) {
+        textValid = true;
+        textError = '';
+        break;
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        const rawMsg = errData?.error?.message || '';
+        if (rawMsg.includes('not found') || rawMsg.includes('disabled') || rawMsg.includes('has not been used')) {
+          needsGenerativeApiEnable = true;
+          textError = 'A API Generative Language precisa ser ativada neste projeto do Google Cloud.';
+        } else {
+          textError = rawMsg || 'Chave não autorizada para o Gemini.';
+        }
       }
-    );
-
-    if (res.ok) {
-      textValid = true;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      textError = errData?.error?.message || 'Chave não autorizada para o Gemini.';
+    } catch (e: any) {
+      textError = e?.message || 'Erro de conexão com o Gemini.';
     }
-  } catch (e: any) {
-    textError = e?.message || 'Erro de conexão com o Gemini.';
   }
 
   // 2. Testa o Google Cloud Text-to-Speech (Neural2-B)
@@ -154,6 +168,7 @@ export async function validateGeminiApiKey(
     ttsEnabled,
     error: textError,
     ttsError,
+    needsGenerativeApiEnable,
   };
 }
 
@@ -472,7 +487,7 @@ export async function askSenseiWithVoice({
     };
   }
 
-  // ETAPA 1: Gera a resposta textual com o Gemini
+  // ETAPA 1: Gera a resposta textual com o Gemini (ou resposta didática do projeto)
   const answerText = await askSenseiText(question, project, effectiveKey);
 
   // ETAPA 2: Sintetiza a voz Neural2 oficial do Google Cloud

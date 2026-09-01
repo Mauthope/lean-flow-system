@@ -83,6 +83,7 @@ export default function SenseiVoiceAssistant({
     ttsEnabled?: boolean;
     message?: string;
     showTtsLink?: boolean;
+    showGenerativeLink?: boolean;
   } | null>(null);
 
   // Digitação manual de pergunta
@@ -434,12 +435,22 @@ export default function SenseiVoiceAssistant({
       setKeyValidationStatus({
         valid: true,
         ttsEnabled: true,
-        message: 'Chave 100% Conectada! Google Cloud Neural2 ativo com sucesso.',
+        message: 'Chave 100% Conectada! Gemini + Google Cloud Neural2 ativos com sucesso.',
       });
       setTimeout(() => {
         setSettingsOpen(false);
         setKeyValidationStatus(null);
       }, 1400);
+    } else if (check.needsGenerativeApiEnable) {
+      saveGeminiApiKey(trimmedKey);
+      saveVoicePreference(selectedVoice);
+      setHasApiKey(true);
+      setKeyValidationStatus({
+        valid: false,
+        showGenerativeLink: true,
+        message:
+          'A API Generative Language (Gemini) precisa ser ativada neste projeto do Google Cloud. Clique no botão abaixo para ativar:',
+      });
     } else if (check.valid && !check.ttsEnabled) {
       saveGeminiApiKey(trimmedKey);
       saveVoicePreference(selectedVoice);
@@ -838,6 +849,34 @@ export default function SenseiVoiceAssistant({
                     <span>{keyValidationStatus.message}</span>
                   </div>
 
+                  {/* Link direto para ativar a API Generative Language (Gemini) */}
+                  {keyValidationStatus.showGenerativeLink && (
+                    <a
+                      href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: '#059669',
+                        color: '#ffffff',
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        alignSelf: 'flex-start',
+                        marginTop: '0.2rem',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <ExternalLink size={12} />
+                      1 Clique: Ativar Generative Language API no Google Cloud
+                    </a>
+                  )}
+
+                  {/* Link direto para ativar a API Text-to-Speech no Google Cloud */}
                   {keyValidationStatus.showTtsLink && (
                     <a
                       href="https://console.cloud.google.com/apis/library/texttospeech.googleapis.com"
@@ -860,7 +899,7 @@ export default function SenseiVoiceAssistant({
                       }}
                     >
                       <ExternalLink size={12} />
-                      Clique aqui para Ativar a API no Google Cloud (Grátis)
+                      Clique aqui para Ativar Text-to-Speech no Google Cloud (Grátis)
                     </a>
                   )}
                 </div>
