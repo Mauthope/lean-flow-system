@@ -1,6 +1,6 @@
-import { LeanAction, ActionChecklistItem } from '@/lib/types';
+import { Tenant, LeanAction, ActionChecklistItem } from '@/lib/types';
 import { SENSEI_KNOWLEDGE_BASE } from '@/data/senseiKnowledgeBase';
-import { dataService } from '@/services/dataService';
+import { STORAGE_KEYS, getStoredData, setStoredData, INITIAL_TENANT } from '@/lib/storage';
 
 // =============================================================================
 // PERFIL DO SENSEI - Vozes Oficiais Google Neural2 (Compatíveis com API Key)
@@ -73,11 +73,31 @@ const STORAGE_KEY = 'sensei_gemini_api_key';
 const STORAGE_VOICE_KEY = 'sensei_voice_preference';
 const STORAGE_WORKING_MODEL_KEY = 'sensei_working_gemini_model';
 
+function updateTenantAiSettingsDirect(settings: Partial<{ geminiApiKey?: string; preferredVoice?: string; model?: string }>) {
+  if (typeof window === 'undefined') return;
+  try {
+    const tenant = getStoredData<Tenant>(STORAGE_KEYS.CURRENT_TENANT, INITIAL_TENANT);
+    const updatedTenant: Tenant = {
+      ...tenant,
+      aiSettings: {
+        ...(tenant.aiSettings || {}),
+        ...settings,
+      },
+    };
+    setStoredData(STORAGE_KEYS.CURRENT_TENANT, updatedTenant);
+    const tenants = getStoredData<Tenant[]>(STORAGE_KEYS.TENANTS, [INITIAL_TENANT]);
+    const updatedTenants = tenants.map((t) => (t.id === updatedTenant.id ? updatedTenant : t));
+    setStoredData(STORAGE_KEYS.TENANTS, updatedTenants);
+  } catch {
+    // continua
+  }
+}
+
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
-    // 1. Tenta chave da Entidade atual (salva no dataService)
+    // 1. Tenta chave da Entidade atual
     try {
-      const tenant = dataService.getCurrentTenant();
+      const tenant = getStoredData<Tenant | null>(STORAGE_KEYS.CURRENT_TENANT, null);
       if (tenant?.aiSettings?.geminiApiKey && tenant.aiSettings.geminiApiKey.trim()) {
         return tenant.aiSettings.geminiApiKey.trim();
       }
@@ -99,11 +119,7 @@ export function saveGeminiApiKey(key: string): void {
       localStorage.removeItem(STORAGE_WORKING_MODEL_KEY);
     } else {
       localStorage.setItem(STORAGE_KEY, key.trim());
-      try {
-        dataService.saveTenantAiSettings({ geminiApiKey: key.trim() });
-      } catch {
-        // continua
-      }
+      updateTenantAiSettingsDirect({ geminiApiKey: key.trim() });
     }
   }
 }
@@ -111,7 +127,7 @@ export function saveGeminiApiKey(key: string): void {
 export function getVoicePreference(): string {
   if (typeof window !== 'undefined') {
     try {
-      const tenant = dataService.getCurrentTenant();
+      const tenant = getStoredData<Tenant | null>(STORAGE_KEYS.CURRENT_TENANT, null);
       if (tenant?.aiSettings?.preferredVoice) {
         return tenant.aiSettings.preferredVoice;
       }
@@ -130,11 +146,7 @@ export function getVoicePreference(): string {
 export function saveVoicePreference(voice: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_VOICE_KEY, voice);
-    try {
-      dataService.saveTenantAiSettings({ preferredVoice: voice });
-    } catch {
-      // continua
-    }
+    updateTenantAiSettingsDirect({ preferredVoice: voice });
   }
 }
 
