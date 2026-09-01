@@ -237,63 +237,115 @@ ${actionsList || 'Ações de melhoria implantadas no posto.'}
 function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const q = question.toLowerCase();
 
+  // TRAVA DE SEGURANÇA: Bloqueio de assuntos fora do escopo Lean/Projeto
+  const forbiddenTopics = [
+    'futebol',
+    'política',
+    'politica',
+    'presidente',
+    'eleição',
+    'eleicao',
+    'religião',
+    'religiao',
+    'piada',
+    'fofoca',
+    'tempo amanhã',
+    'clima',
+    'filme',
+    'novela',
+    'horóscopo',
+  ];
+  if (forbiddenTopics.some((term) => q.includes(term))) {
+    return 'Como Sensei desta apresentação, meu foco é estritamente nos dados deste projeto e nas práticas de Lean Manufacturing e melhoria contínua da fábrica. Como posso te apoiar com os indicadores ou metodologias do projeto?';
+  }
+
   const grossSavings = project.actualCostAvoided || project.estimatedCostAvoided || 0;
   const investment = project.projectCosts?.totalCost || 0;
   const netSavings = project.netSavings !== undefined ? project.netSavings : grossSavings - investment;
 
+  // Perguntas Conceituais / Teóricas de Lean Manufacturing
+  if (q.includes('o que é lean') || q.includes('o que e lean') || q.includes('filosofia lean')) {
+    return 'O Lean Manufacturing é uma filosofia de gestão originada no Sistema Toyota de Produção, focada na eliminação contínua de desperdícios e maximização de valor para o cliente através do engajamento das pessoas no Gemba.';
+  }
+
+  if (q.includes('o que é kaizen') || q.includes('o que e kaizen') || q.includes('conceito kaizen')) {
+    return 'Kaizen é a prática japonesa de melhoria contínua gradual envolvendo todos na fábrica, do operador à diretoria. O princípio fundamental é que hoje deve ser melhor que ontem, e amanhã melhor que hoje.';
+  }
+
+  if (q.includes('smed') || q.includes('troca rápida') || q.includes('setup rápido')) {
+    return 'O SMED, ou Troca Rápida de Ferramentas, é a metodologia Lean criada por Shigeo Shingo para reduzir o tempo de setup para menos de dez minutos, convertendo atividades internas em externas e padronizando ajustes.';
+  }
+
+  if (q.includes('oee') || q.includes('eficiência global')) {
+    return 'O OEE é o indicador padrão mundial que mede a Eficiência Global dos Equipamentos, multiplicando Disponibilidade, Desempenho e Qualidade para quantificar o quanto da capacidade da máquina é realmente convertida em valor.';
+  }
+
+  if (q.includes('vsm') || q.includes('fluxo de valor') || q.includes('mapa de fluxo')) {
+    return 'O VSM, ou Mapeamento do Fluxo de Valor, é a ferramenta visual que mapeia todos os passos de material e informação necessários para levar um produto do fornecedor ao cliente, identificando gargalos e desperdícios.';
+  }
+
+  if (q.includes('poka yoke') || q.includes('poka-yoke') || q.includes('a prova de erros')) {
+    return 'Poka-Yoke é um dispositivo ou mecanismo físico a prova de erros projetado para prevenir ou detectar instantaneamente falhas operacionais antes que elas se transformem em refugos ou retrabalhos.';
+  }
+
+  if (q.includes('5s') || q.includes('cinco s')) {
+    return 'O 5S é a base disciplinar da manufatura enxuta, composto pelos cinco sensos: Utilização (Seiri), Organização (Seiton), Limpeza (Seiso), Padronização (Seiketsu) e Autodisciplina (Shitsuke).';
+  }
+
+  // Perguntas sobre os Dados do Projeto em Tela
   if (q.includes('payback') || q.includes('tempo de retorno')) {
     if (project.paybackMonths && project.paybackMonths > 0) {
-      return `O payback deste projeto é de ${project.paybackMonths} meses, com retorno financeiro líquido de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano.`;
+      return `Com base na nossa engenharia financeira, este projeto apresentou um payback excelente de ${project.paybackMonths} meses, garantindo um lucro líquido homologado de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano após amortizar o investimento.`;
     }
-    return `O payback foi imediato, pois a melhoria foi executada com recursos internos de baixo custo e gerou R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de economia anual.`;
+    return `O payback deste projeto foi de retorno imediato, pois a equipe utilizou a criatividade Kaizen e recursos internos de baixo custo, gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de economia anual direta para a empresa.`;
   }
 
   if (q.includes('roi') || q.includes('retorno')) {
     if (investment > 0) {
       const roi = Math.round((netSavings / investment) * 100);
-      return `O ROI homologado deste projeto foi de ${roi}%, gerando um lucro líquido anual de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} sobre um investimento de R$ ${investment.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`;
+      return `O Retorno sobre o Investimento, o ROI deste projeto, foi de ${roi}%. Isso demonstra uma eficiência de capital exemplar, onde cada real investido no posto retornou com expressivo ganho de produtividade e redução de perdas.`;
     }
-    return `O projeto teve ROI de retorno total imediato, gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano sem necessidade de investimento externo.`;
+    return `O projeto obteve ROI de retorno total imediato, gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano sem necessidade de aporte de capital externo, sendo uma autêntica melhoria Lean de baixo custo.`;
   }
 
   if (q.includes('ishikawa') || q.includes('espinha de peixe') || q.includes('6m')) {
     if (project.ishikawa?.primaryRootCause) {
-      return `Na análise de Ishikawa 6M, a causa raiz principal diagnosticada foi: ${project.ishikawa.primaryRootCause}.`;
+      return `Na estratificação com o Diagrama de Ishikawa 6M, a equipe mapeou as variáveis do processo e diagnosticou que a causa raiz prioritária foi: ${project.ishikawa.primaryRootCause}, permitindo focar a ação exatamente onde havia a maior perda.`;
     }
     if (project.ishikawa?.machine || project.ishikawa?.method) {
-      return `No Ishikawa, os principais fatores identificados foram na dimensão de Método (${project.ishikawa.method || 'ajustes operacionais'}) e Máquina (${project.ishikawa.machine || 'regulagens'}).`;
+      return `Na análise de Ishikawa 6M, os fatores determinantes foram identificados nas dimensões de Método (${project.ishikawa.method || 'padronização operacional'}) e Máquina (${project.ishikawa.machine || 'calibrações e dispositivos'}), direcionando nosso plano 5W2H.`;
     }
-    return `No diagrama de Ishikawa, a equipe mapeou as 6 dimensões operacionais, priorizando a eliminação das perdas de processo e padronização.`;
+    return `O Diagrama de Ishikawa 6M permitiu à equipe analisar sistemicamente Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente, assegurando que nenhuma causa potencial passasse despercebida.`;
   }
 
   if (q.includes('porquê') || q.includes('porque') || q.includes('causa raiz') || q.includes('problema')) {
     const whys = (project.fiveWhys || []).filter(Boolean);
     if (whys.length > 0) {
       const lastWhy = whys[whys.length - 1];
-      return `A investigação causal dos 5 Porquês identificou que a causa raiz foi: ${lastWhy.replace(/^[0-9]+[\.\)\-]?\s*/, '')}.`;
+      return `Aplicando a técnica dos 5 Porquês no Gemba, a equipe foi aprofundando o diagnóstico até identificar que a causa raiz fundamental foi: ${lastWhy.replace(/^[0-9]+[\.\)\-]?\s*/, '')}, eliminando o problema na sua origem.`;
     }
-    return `A declaração da causa raiz identificada no posto foi: ${project.problemStatement || project.description || 'Otimização operacional do fluxo produtivo'}.`;
+    return `No diagnóstico inicial da fase Plan, a causa raiz comprovada no posto foi: ${project.problemStatement || project.description || 'instabilidade no fluxo de trabalho'}, que foi atacada pelas ações corretivas.`;
   }
 
   if (q.includes('quanto economizou') || q.includes('economia') || q.includes('financeiro') || q.includes('custo') || q.includes('ganho')) {
-    return `Este projeto gerou um custo evitado bruto de R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} por ano, com lucro líquido de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} e economia de ${project.hoursSaved || 0} horas de trabalho.`;
+    return `Em termos financeiros, este projeto alcançou um ganho bruto homologado de R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano, com lucro líquido de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} e uma recuperação de ${project.hoursSaved || 0} horas produtivas para a operação.`;
   }
 
   if (q.includes('líder') || q.includes('lider') || q.includes('quem fez') || q.includes('equipe') || q.includes('participante')) {
     const leader = project.leaderName || project.assignedAgentName || 'Líder Lean';
     const team = (project.teamMembers || []).join(', ');
-    return `O projeto foi liderado por ${leader}${team ? `, com a participação direta de ${team}` : ''} no setor de ${project.originSectorName || 'Fábrica'}.`;
+    return `O projeto foi conduzido com liderança de ${leader}${team ? `, contando com a participação ativa e engajamento direto de ${team}` : ''}, atuando fortemente no setor de ${project.originSectorName || 'Fábrica'}.`;
   }
 
   if (q.includes('pop') || q.includes('padronização') || q.includes('padronizacao') || q.includes('sop') || q.includes('procedimento')) {
-    return `O procedimento operacional padrão foi atualizado sob a referência ${project.standardWorkDocRef || 'POP oficial'}, com treinamento prático concluído com todos os operadores de turno.`;
+    return `Para garantir a sustentabilidade dos ganhos, o Procedimento Operacional Padrão foi atualizado sob a referência ${project.standardWorkDocRef || 'POP oficial'}, com treinamento prático concluído com todos os operadores de turno.`;
   }
 
   if (q.includes('yokoten') || q.includes('replicar') || q.includes('outras áreas')) {
-    return `Para replicação Yokoten, ${project.yokotenReplication || 'recomenda-se aplicar este mesmo método em todas as linhas produtivas de perfil similar na fábrica'}.`;
+    return `Na fase Act de padronização, a prática de Yokoten recomenda que ${project.yokotenReplication || 'este mesmo padrão de melhoria seja compartilhado e replicado para todos os postos de mesmo perfil na planta'}.`;
   }
 
-  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} alcançou a meta com sucesso, atingindo ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano.`;
+  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} alcançou plenamente os objetivos traçados, atingindo ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e assegurando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano em ganhos sustentáveis.`;
 }
 
 /**
@@ -319,15 +371,24 @@ export async function askSensei({
   try {
     const projectContext = buildProjectContext(project);
 
-    const systemInstruction = `Você é o "Sensei", o assistente executivo de inteligência artificial especialista em Lean Manufacturing, Kaizen e metodologia PDCA da fábrica.
-Você está acompanhando ao vivo uma reunião de apresentação do projeto Lean exibido na tela para diretores, gerentes e engenheiros.
+    const systemInstruction = `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
+Você está co-apresentando esta reunião ao vivo lado a lado com o apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
 
-DIRETRIZES FUNDAMENTAIS PARA SUA RESPOSTA:
-1. Responda em Português do Brasil com tom executivo, elegante, seguro e direto.
-2. IMPORTANTE: Sua resposta será lida em voz alta por um sintetizador de fala na sala de reunião. Portanto, SEJA CONCISO: dê respostas de NO MÁXIMO 2 a 3 frases claras (máximo 45 a 60 palavras).
-3. Não use tabelas, listas numeradas longas, asteriscos excessivos ou markdown complexo na resposta, pois o texto será falado.
-4. Responda estritamente com base nos dados reais do projeto apresentados abaixo. Se o dado solicitado não existir, diga com educação que a informação não foi registrada no laudo.
-5. Fale valores financeiros em formato natural (exemplo: "quarenta e oito mil reais", ou "R$ 48.000").`;
+SEU PAPEL E PERSONALIDADE (DIDÁTICO, ELEGANTE E ENVOLVENTE):
+- Você NÃO é um robô de respostas secas. Você é um co-apresentador experiente, didático, entusiasmado, cortês e acolhedor.
+- Explique o "porquê" e o impacto dos resultados com clareza pedagógica, conectando a teoria Lean com a prática do projeto em tela.
+- Use linguagem falada natural, elegante e cativante em Português do Brasil.
+- Mantenha respostas faladas de tamanho ideal para reuniões: 2 a 4 frases ricas e objetivas (cerca de 50 a 80 palavras).
+
+SEU ESCOPO DE CONHECIMENTO (TEORIA & PRÁTICA LEAN):
+1. O Projeto em tela (Diagnóstico, 5 Porquês, Ishikawa, 5W2H, DRE Financeiro, ROI, Payback, Padronização POP, Yokoten e Fotos).
+2. Toda a Teoria e Ferramentas do Lean Manufacturing e Engenharia de Produção: 8 Desperdícios (Muda, Mura, Muri), 5S, VSM (Mapeamento do Fluxo de Valor), SMED (Troca Rápida de Ferramentas), TPM (Manutenção Produtiva Total), OEE, Kanban, Poka-Yoke, Heijunka, Jidoka, Takt Time, Ciclo PDCA, Matriz GUT, Gemba Walk, Trabalho Padronizado e DRE de Custos Industriais.
+
+TRAVAS E RESTRIÇÕES INVIOLÁVEIS DE SEGURANÇA (GUARDRAILS):
+- Você DEVE responder APENAS sobre: (a) o projeto atual nos slides ou (b) metodologias, ferramentas e teorias de Lean Manufacturing e melhoria contínua.
+- Se alguém fizer qualquer pergunta fora desse universo (como política, religião, piadas, futebol, fofocas ou assuntos gerais), RECUSE com polidez executiva:
+  "Como Sensei da apresentação, meu foco é estritamente nos dados deste projeto e nas metodologias de Lean Manufacturing e melhoria contínua da fábrica. Como posso te apoiar com o projeto?"
+- Fale valores e siglas de forma natural para serem ouvidos (ex: "quarenta e oito mil reais", "tempo de ciclo", "oê-ê", "érre-ó-í").`;
 
     const promptText = `${systemInstruction}
 
@@ -336,7 +397,7 @@ ${projectContext}
 PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 "${question}"
 
-SUA RESPOSTA FALADA DIRETA (2 a 3 frases):`;
+SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas):`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`,
@@ -352,8 +413,8 @@ SUA RESPOSTA FALADA DIRETA (2 a 3 frases):`;
             },
           ],
           generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 200,
+            temperature: 0.35,
+            maxOutputTokens: 250,
           },
         }),
       }

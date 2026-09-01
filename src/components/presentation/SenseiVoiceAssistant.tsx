@@ -233,10 +233,12 @@ export default function SenseiVoiceAssistant({
         const naturalVoice =
           ptVoices.find(
             (v) =>
-              v.name.includes('Natural') ||
-              v.name.includes('Google') ||
-              v.name.includes('Francisca') ||
-              v.name.includes('Antonio')
+              v.name.includes('Antonio') ||
+              v.name.includes('Daniel') ||
+              v.name.includes('Thiago') ||
+              v.name.includes('Male') ||
+              (v.name.includes('Google') && !v.name.includes('Female')) ||
+              v.name.includes('pt-BR')
           ) || ptVoices[0];
 
         if (naturalVoice) {
@@ -622,10 +624,10 @@ export default function SenseiVoiceAssistant({
                   borderRadius: '8px',
                 }}
               >
-                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva - Estúdio / Natural)</option>
-                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva - Clara / Natural)</option>
-                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave - Natural)</option>
-                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet)</option>
+                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva - Padrão Sensei / Ultra Natural)</option>
+                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet - Clareza Industrial)</option>
+                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva)</option>
+                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave)</option>
               </select>
             </div>
 
