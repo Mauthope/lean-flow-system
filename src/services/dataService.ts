@@ -15,7 +15,11 @@ import {
   TpmAudit,
   TpmTag,
   TpmMaintenanceMetrics,
+  AgentArticleProgress,
+  AgentExamResult,
+  AgentLearningRanking,
 } from '../lib/types';
+import { LEAN_ARTICLES } from '../data/leanArticlesData';
 import {
   STORAGE_KEYS,
   getStoredData,
@@ -1446,6 +1450,107 @@ export const dataService = {
       redTagsCount,
       blueTagsCount,
     };
+  },
+
+  // =========================================================================
+  // ACADEMIA LEAN: ARTIGOS & GAMIFICAÇÃO
+  // =========================================================================
+  getAgentReadArticles(agentId: string): string[] {
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    return progressList.filter((p) => p.agentId === agentId).map((p) => p.articleId);
+  },
+
+  markArticleAsRead(agentId: string, articleId: string): void {
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const exists = progressList.some((p) => p.agentId === agentId && p.articleId === articleId);
+    if (!exists) {
+      progressList.push({
+        agentId,
+        articleId,
+        readAt: new Date().toISOString(),
+      });
+      setStoredData(STORAGE_KEYS.AGENT_ARTICLES, progressList);
+    }
+  },
+
+  // =========================================================================
+  // ACADEMIA LEAN: PROVAS DE CERTIFICAÇÃO (50 QUESTÕES)
+  // =========================================================================
+  getAgentExams(agentId: string): AgentExamResult[] {
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    return exams.filter((e) => e.agentId === agentId).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
+  },
+
+  getAgentLatestExam(agentId: string): AgentExamResult | undefined {
+    return this.getAgentExams(agentId)[0];
+  },
+
+  saveAgentExamResult(params: {
+    agentId: string;
+    correctCount: number;
+    totalQuestions: number;
+    answers: Record<number, number>;
+  }): AgentExamResult {
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const score = Number(((params.correctCount / params.totalQuestions) * 10).toFixed(1));
+    const passed = score >= 8.0;
+
+    const newExam: AgentExamResult = {
+      id: generateId('exam'),
+      agentId: params.agentId,
+      score,
+      correctCount: params.correctCount,
+      totalQuestions: params.totalQuestions,
+      passed,
+      answers: params.answers,
+      completedAt: new Date().toISOString(),
+      rewardClaimed: false,
+    };
+
+    exams.push(newExam);
+    setStoredData(STORAGE_KEYS.AGENT_EXAMS, exams);
+    return newExam;
+  },
+
+  toggleExamRewardClaimed(agentId: string, claimed: boolean): void {
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const updated = exams.map((e) =>
+      e.agentId === agentId
+        ? { ...e, rewardClaimed: claimed, rewardClaimedAt: claimed ? new Date().toISOString() : undefined }
+        : e
+    );
+    setStoredData(STORAGE_KEYS.AGENT_EXAMS, updated);
+  },
+
+  getAllAgentsLearningRanking(tenantId?: string): AgentLearningRanking[] {
+    const users = this.getUsers(tenantId).filter((u) => u.role === 'agent');
+    const totalArticles = LEAN_ARTICLES.length;
+
+    return users.map((agent) => {
+      const readArticles = this.getAgentReadArticles(agent.id);
+      const latestExam = this.getAgentLatestExam(agent.id);
+      const passedExam = Boolean(latestExam?.passed);
+      const rewardClaimed = Boolean(latestExam?.rewardClaimed);
+
+      return {
+        agentId: agent.id,
+        agentName: agent.name,
+        agentEmail: agent.email,
+        agentAvatar: agent.avatarUrl,
+        articlesReadCount: readArticles.length,
+        totalArticlesCount: totalArticles,
+        articlesReadPercent: totalArticles > 0 ? Math.round((readArticles.length / totalArticles) * 100) : 0,
+        latestExam,
+        passedExam,
+        rewardClaimed,
+      };
+    }).sort((a, b) => {
+      if (a.passedExam !== b.passedExam) return a.passedExam ? -1 : 1;
+      const scoreA = a.latestExam?.score || 0;
+      const scoreB = b.latestExam?.score || 0;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return b.articlesReadPercent - a.articlesReadPercent;
+    });
   },
 
   // Reset to default seed

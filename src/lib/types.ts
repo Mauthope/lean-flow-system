@@ -455,3 +455,35 @@ export interface TpmMaintenanceMetrics {
   redTagsCount: number;                  // Especializadas
   blueTagsCount: number;                 // Autônomas
 }
+
+export interface AgentArticleProgress {
+  agentId: string;
+  articleId: string;
+  readAt: string;
+}
+
+export interface AgentExamResult {
+  id: string;
+  agentId: string;
+  score: number; // 0 a 10
+  correctCount: number;
+  totalQuestions: number;
+  passed: boolean; // score >= 8.0
+  answers: Record<number, number>; // questionId -> selectedOptionIndex
+  completedAt: string;
+  rewardClaimed?: boolean;
+  rewardClaimedAt?: string;
+}
+
+export interface AgentLearningRanking {
+  agentId: string;
+  agentName: string;
+  agentEmail: string;
+  agentAvatar?: string;
+  articlesReadCount: number;
+  totalArticlesCount: number;
+  articlesReadPercent: number;
+  latestExam?: AgentExamResult;
+  passedExam: boolean;
+  rewardClaimed: boolean;
+}

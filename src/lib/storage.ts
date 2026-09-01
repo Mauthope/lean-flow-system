@@ -11,6 +11,8 @@ export const STORAGE_KEYS = {
   TPM_MACHINES: 'lean_flow_tpm_machines',
   TPM_AUDITS: 'lean_flow_tpm_audits',
   TPM_TAGS: 'lean_flow_tpm_tags',
+  AGENT_ARTICLES: 'lean_flow_agent_articles',
+  AGENT_EXAMS: 'lean_flow_agent_exams',
 };
 
 export const INITIAL_TENANTS: Tenant[] = [

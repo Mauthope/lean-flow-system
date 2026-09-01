@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Calculator,
@@ -17,7 +17,20 @@ import {
   Layers,
   Smartphone,
   Timer,
+  BookOpen,
+  Wrench,
+  Award,
+  CheckCircle2,
+  Users,
+  Gift,
+  Check,
 } from 'lucide-react';
+import { LEAN_ARTICLES, LeanArticle } from '@/data/leanArticlesData';
+import LeanArticleModal from '@/components/academy/LeanArticleModal';
+import LeanExamModal from '@/components/academy/LeanExamModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { dataService } from '@/services/dataService';
+import { AgentExamResult, AgentLearningRanking } from '@/lib/types';
 
 interface ToolCardItem {
   id: string;
@@ -36,7 +49,7 @@ const LEAN_TOOLS: ToolCardItem[] = [
   {
     id: 'cronoanalise',
     href: '/agente/ferramentas/cronoanalise',
-    title: 'Estudo de Tempos',
+    title: 'Estudo de Tempos (Cronoanálise)',
     badge: 'Chão de Fábrica',
     badgeColor: '#22d3ee',
     description:
@@ -127,13 +140,80 @@ const LEAN_TOOLS: ToolCardItem[] = [
 ];
 
 export default function LeanToolsIndexPage() {
+  const { currentUser, currentTenant } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
+
+  const [activeMainTab, setActiveMainTab] = useState<'tools' | 'articles'>('tools');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+
+  // Gamificação: Artigos Lidos pelo Agente Atual
+  const currentAgentId = currentUser?.id || 'agent_default';
+  const [readArticleIds, setReadArticleIds] = useState<string[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<LeanArticle | null>(null);
+  const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+
+  // Prova de Certificação
+  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+  const [latestExam, setLatestExam] = useState<AgentExamResult | undefined>(undefined);
+
+  // Ranking de Agentes (Visão do Master/Admin)
+  const [rankingList, setRankingList] = useState<AgentLearningRanking[]>([]);
+
+  const loadData = () => {
+    const reads = dataService.getAgentReadArticles(currentAgentId);
+    setReadArticleIds(reads);
+
+    const exam = dataService.getAgentLatestExam(currentAgentId);
+    setLatestExam(exam);
+
+    if (isAdmin) {
+      const ranking = dataService.getAllAgentsLearningRanking(currentTenant?.id);
+      setRankingList(ranking);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [currentAgentId, isAdmin, currentTenant]);
+
+  const handleOpenArticle = (article: LeanArticle) => {
+    setSelectedArticle(article);
+    setIsArticleModalOpen(true);
+  };
+
+  const handleMarkAsRead = (articleId: string) => {
+    dataService.markArticleAsRead(currentAgentId, articleId);
+    setReadArticleIds((prev) => (prev.includes(articleId) ? prev : [...prev, articleId]));
+    loadData();
+  };
+
+  const handleExamCompleted = (result: AgentExamResult) => {
+    setLatestExam(result);
+    loadData();
+  };
+
+  const handleToggleReward = (agentId: string, examId: string, currentStatus: boolean) => {
+    dataService.toggleExamRewardClaimed(examId, !currentStatus);
+    loadData();
+  };
+
+  const totalArticles = LEAN_ARTICLES.length;
+  const readCount = readArticleIds.length;
+  const progressPercent = totalArticles > 0 ? Math.round((readCount / totalArticles) * 100) : 0;
+
+  const categories = ['Todos', 'Fundamentos', 'Qualidade', 'Produtividade', 'Métodos', 'Manutenção'];
+  const filteredArticles =
+    selectedCategory === 'Todos'
+      ? LEAN_ARTICLES
+      : LEAN_ARTICLES.filter((a) => a.category === selectedCategory);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       {/* Header Banner */}
       <div
         style={{
           background: 'linear-gradient(135deg, #091326 0%, #0d2d3a 100%)',
-          borderRadius: '16px',
+          borderRadius: '20px',
           padding: '1.75rem 2rem',
           color: '#ffffff',
           display: 'flex',
@@ -161,163 +241,579 @@ export default function LeanToolsIndexPage() {
                 gap: '0.3rem',
               }}
             >
-              <Sparkles size={12} /> HUB DE MÉTODOS LEAN
+              <Sparkles size={12} /> HUB DE MÉTODOS & ACADEMIA LEAN
             </span>
           </div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-            Ferramentas Operacionais Lean
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            Ferramentas & Academia Lean Manufacturing
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '620px', marginTop: '0.25rem' }}>
-            Selecione uma ferramenta abaixo. Cada ferramenta abre em uma tela dedicada, 100% adaptada para uso
-            no celular, tablet ou computador no chão de fábrica.
+          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '640px', marginTop: '0.35rem' }}>
+            Acesse as ferramentas operacionais de diagnóstico ou estude os conceitos da Academia Lean para conquistar a certificação e recompensas!
           </p>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            padding: '0.625rem 1rem',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-        >
-          <Smartphone size={20} color="#22d3ee" />
-          <span style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700 }}>
-            Telas Otimizadas para Celular
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => setIsExamModalOpen(true)}
+            className="btn btn-sm"
+            style={{
+              backgroundColor: 'rgba(251, 191, 36, 0.15)',
+              border: '1.5px solid #fbbf24',
+              color: '#fbbf24',
+              fontWeight: 800,
+              padding: '0.55rem 1.15rem',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 0 15px rgba(251, 191, 36, 0.2)',
+            }}
+          >
+            <Award size={16} />
+            {latestExam?.passed ? 'Selo de Especialista Conquistado 🏆' : 'Fazer Prova de Certificação (50 Questões)'}
+          </button>
         </div>
       </div>
 
-      {/* Grid of Tool Cards */}
+      {/* ================================================================= */}
+      {/* ABAS PRINCIPAIS: FERRAMENTAS vs ARTIGOS (ACADEMIA LEAN)           */}
+      {/* ================================================================= */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.5rem',
+          display: 'flex',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#090e1a',
+          borderRadius: '14px',
+          padding: '0.35rem 0.5rem',
+          gap: '0.5rem',
+          border: '1px solid rgba(255, 255, 255, 0.06)',
         }}
       >
-        {LEAN_TOOLS.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <div
-              key={tool.id}
-              className="card"
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('tools')}
+          style={{
+            flex: 1,
+            padding: '0.75rem 1.25rem',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: activeMainTab === 'tools' ? 'rgba(6, 182, 212, 0.18)' : 'transparent',
+            color: activeMainTab === 'tools' ? '#22d3ee' : '#94a3b8',
+            fontWeight: 800,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <Wrench size={16} />
+          Ferramentas Interativas ({LEAN_TOOLS.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('articles')}
+          style={{
+            flex: 1,
+            padding: '0.75rem 1.25rem',
+            borderRadius: '10px',
+            border: 'none',
+            backgroundColor: activeMainTab === 'articles' ? 'rgba(168, 85, 247, 0.18)' : 'transparent',
+            color: activeMainTab === 'articles' ? '#c084fc' : '#94a3b8',
+            fontWeight: 800,
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.45rem',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <BookOpen size={16} />
+          Artigos & Academia Lean ({LEAN_ARTICLES.length})
+          {readCount > 0 && (
+            <span
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                padding: '1.5rem',
-                borderRadius: '16px',
-                transition: 'all 0.2s ease',
-                backgroundColor: '#0f172a',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                fontSize: '0.65rem',
+                backgroundColor: '#10b981',
+                color: '#000000',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '999px',
+                fontWeight: 900,
               }}
             >
-              <div>
-                {/* Card Top: Icon & Badge */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '1.25rem',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '12px',
-                      backgroundColor: tool.iconBg,
-                      border: `1px solid ${tool.iconColor}44`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Icon size={24} color={tool.iconColor} />
-                  </div>
+              {readCount}/{totalArticles}
+            </span>
+          )}
+        </button>
+      </div>
 
-                  <span
-                    style={{
-                      fontSize: '0.725rem',
-                      fontWeight: 800,
-                      backgroundColor: `${tool.badgeColor}18`,
-                      color: tool.badgeColor,
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: '9999px',
-                      border: `1px solid ${tool.badgeColor}44`,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {tool.badge}
-                  </span>
-                </div>
-
-                {/* Title & Description */}
-                <h3
-                  style={{
-                    fontSize: '1.15rem',
-                    fontWeight: 800,
-                    color: '#ffffff',
-                    marginBottom: '0.5rem',
-                    lineHeight: 1.3,
-                    fontFamily: 'var(--font-heading)',
-                  }}
-                >
-                  {tool.title}
-                </h3>
-                <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                  {tool.description}
-                </p>
-
-                {/* Key Features Chips */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.5rem' }}>
-                  {tool.highlights.map((h, i) => (
-                    <span
-                      key={i}
+      {/* ================================================================= */}
+      {/* ABA 1: FERRAMENTAS INTERATIVAS                                     */}
+      {/* ================================================================= */}
+      {activeMainTab === 'tools' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '1.5rem',
+          }}
+        >
+          {LEAN_TOOLS.map((tool) => {
+            const IconComponent = tool.icon;
+            return (
+              <div
+                key={tool.id}
+                style={{
+                  backgroundColor: '#0f172a',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div
                       style={{
-                        fontSize: '0.725rem',
-                        fontWeight: 600,
-                        backgroundColor: '#090e1a',
-                        color: '#cbd5e1',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: '6px',
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '12px',
+                        backgroundColor: tool.iconBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      ✓ {h}
+                      <IconComponent size={24} color={tool.iconColor} />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.6875rem',
+                        fontWeight: 800,
+                        backgroundColor: `${tool.badgeColor}20`,
+                        color: tool.badgeColor,
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '9999px',
+                        border: `1px solid ${tool.badgeColor}40`,
+                      }}
+                    >
+                      {tool.badge}
                     </span>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-              {/* Action Button to Open Dedicated Page */}
-              <Link
-                href={tool.href}
-                className="btn btn-primary"
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem', fontFamily: 'var(--font-heading)' }}>
+                    {tool.title}
+                  </h3>
+
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1rem' }}>
+                    {tool.description}
+                  </p>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.25rem' }}>
+                    {tool.highlights.map((h, i) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: '0.6875rem',
+                          backgroundColor: '#090e1a',
+                          color: '#cbd5e1',
+                          padding: '0.2rem 0.5rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                        }}
+                      >
+                        ✓ {h}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <Link
+                  href={tool.href}
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.8125rem',
+                    padding: '0.625rem 1rem',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span>Abrir Ferramenta</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ================================================================= */}
+      {/* ABA 2: ARTIGOS & ACADEMIA LEAN                                     */}
+      {/* ================================================================= */}
+      {activeMainTab === 'articles' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Card de Progresso do Agente */}
+          <div
+            style={{
+              backgroundColor: '#090e1a',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              borderRadius: '18px',
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div
                 style={{
-                  width: '100%',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '14px',
+                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                  border: '1.5px solid #a855f7',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem',
-                  fontSize: '0.9375rem',
-                  borderRadius: '10px',
-                  textDecoration: 'none',
+                  fontSize: '1.6rem',
                 }}
               >
-                <span>Abrir Ferramenta</span>
-                <ArrowRight size={16} />
-              </Link>
+                🎓
+              </div>
+              <div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
+                  Sua Jornada de Capacitação Lean
+                </span>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
+                  {readCount} de {totalArticles} Artigos Lidos ({progressPercent}%)
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  {latestExam?.passed
+                    ? `🏆 Aprovado na Prova com Nota ${latestExam.score.toFixed(1)} • Apto a Recompensa!`
+                    : latestExam
+                    ? `Última tentativa: Nota ${latestExam.score.toFixed(1)} (Necessário >= 8.0)`
+                    : 'Leia os artigos e faça a prova para conquistar a recompensa!'}
+                </span>
+              </div>
             </div>
-          );
-        })}
-      </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
+                  <span>Progresso</span>
+                  <strong style={{ color: '#ffffff' }}>{progressPercent}%</strong>
+                </div>
+                <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${progressPercent}%`, backgroundColor: '#a855f7' }} />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsExamModalOpen(true)}
+                className="btn btn-primary btn-sm"
+                style={{
+                  fontWeight: 800,
+                  padding: '0.55rem 1.25rem',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <Award size={15} />
+                {latestExam?.passed ? 'Ver Certificado' : 'Fazer Prova'}
+              </button>
+            </div>
+          </div>
+
+          {/* ============================================================= */}
+          {/* TABELA DE RANKING DOS AGENTES (VISÃO DO MASTER / ADMIN)        */}
+          {/* ============================================================= */}
+          {isAdmin && (
+            <div
+              style={{
+                backgroundColor: '#0f172a',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: '18px',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <Users size={18} color="#22d3ee" />
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                    Ranking de Estudos dos Agentes & Status de Recompensas
+                  </h3>
+                </div>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  Painel exclusivo do Master Lean
+                </span>
+              </div>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', textAlign: 'left', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Posição / Agente</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Artigos Lidos</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Nota na Prova</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Status</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Recompensa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rankingList.map((rank, idx) => (
+                      <tr key={rank.agentId} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <span
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: idx === 0 ? '#fbbf24' : idx === 1 ? '#cbd5e1' : idx === 2 ? '#b45309' : 'rgba(255, 255, 255, 0.06)',
+                              color: idx <= 2 ? '#000000' : '#ffffff',
+                              fontWeight: 900,
+                              fontSize: '0.7rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <strong style={{ color: '#ffffff', display: 'block' }}>{rank.agentName}</strong>
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{rank.agentEmail}</span>
+                          </div>
+                        </td>
+
+                        <td style={{ padding: '0.75rem', color: '#cbd5e1' }}>
+                          <span style={{ fontWeight: 700, color: '#ffffff' }}>{rank.articlesReadCount}</span> / {rank.totalArticlesCount} ({rank.articlesReadPercent}%)
+                        </td>
+
+                        <td style={{ padding: '0.75rem' }}>
+                          {rank.latestExam ? (
+                            <strong style={{ color: rank.latestExam.passed ? '#34d399' : '#f87171', fontFamily: 'var(--font-mono)' }}>
+                              {rank.latestExam.score.toFixed(1)} / 10.0
+                            </strong>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>Pendente</span>
+                          )}
+                        </td>
+
+                        <td style={{ padding: '0.75rem' }}>
+                          {rank.passedExam ? (
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
+                              🏆 Apto a Recompensa
+                            </span>
+                          ) : rank.latestExam ? (
+                            <span style={{ fontSize: '0.675rem', color: '#f87171' }}>Nota insuficiente (&lt; 8.0)</span>
+                          ) : (
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>Em estudos</span>
+                          )}
+                        </td>
+
+                        <td style={{ padding: '0.75rem', textAlign: 'right' }}>
+                          {rank.passedExam && rank.latestExam ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleReward(rank.agentId, rank.latestExam!.id, rank.rewardClaimed)}
+                              className="btn btn-sm"
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                padding: '0.3rem 0.65rem',
+                                borderRadius: '6px',
+                                backgroundColor: rank.rewardClaimed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(251, 191, 36, 0.2)',
+                                border: `1px solid ${rank.rewardClaimed ? '#10b981' : '#fbbf24'}`,
+                                color: rank.rewardClaimed ? '#34d399' : '#fbbf24',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {rank.rewardClaimed ? '✓ Recompensa Entregue' : 'Marcar como Entregue'}
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>--</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Filtros de Categoria */}
+          <div style={{ display: 'flex', gap: '0.45rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                style={{
+                  backgroundColor: selectedCategory === cat ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                  border: selectedCategory === cat ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.08)',
+                  color: selectedCategory === cat ? '#22d3ee' : '#cbd5e1',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '999px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Grid de Cards de Artigos */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '1.25rem',
+            }}
+          >
+            {filteredArticles.map((article) => {
+              const isRead = readArticleIds.includes(article.id);
+              return (
+                <div
+                  key={article.id}
+                  style={{
+                    backgroundColor: '#0f172a',
+                    border: isRead ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '16px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+                    position: 'relative',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '1.75rem' }}>{article.icon}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        {article.badge && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              color: '#22d3ee',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '6px',
+                            }}
+                          >
+                            {article.badge}
+                          </span>
+                        )}
+                        {isRead && (
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              border: '1px solid #10b981',
+                              color: '#34d399',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '999px',
+                            }}
+                          >
+                            Lido ✓
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.35rem', fontFamily: 'var(--font-heading)' }}>
+                      {article.title}
+                    </h4>
+
+                    <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.45, marginBottom: '1rem' }}>
+                      {article.summary}
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
+                    <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Clock size={12} /> {article.readTimeMinutes} min
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenArticle(article)}
+                      className="btn btn-sm"
+                      style={{
+                        backgroundColor: isRead ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                        border: isRead ? '1px solid #10b981' : '1px solid #22d3ee',
+                        color: isRead ? '#34d399' : '#22d3ee',
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        padding: '0.35rem 0.85rem',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                      }}
+                    >
+                      <span>{isRead ? 'Reler Artigo' : 'Ler Artigo (+10 XP)'}</span>
+                      <ArrowRight size={13} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Modais */}
+      <LeanArticleModal
+        article={selectedArticle}
+        isOpen={isArticleModalOpen}
+        onClose={() => setIsArticleModalOpen(false)}
+        isRead={selectedArticle ? readArticleIds.includes(selectedArticle.id) : false}
+        onMarkAsRead={handleMarkAsRead}
+      />
+
+      <LeanExamModal
+        isOpen={isExamModalOpen}
+        onClose={() => setIsExamModalOpen(false)}
+        agentId={currentAgentId}
+        agentName={currentUser?.name || 'Agente Lean'}
+        onExamCompleted={handleExamCompleted}
+      />
     </div>
   );
 }
