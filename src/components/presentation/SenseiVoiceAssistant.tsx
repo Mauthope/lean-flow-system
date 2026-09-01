@@ -435,22 +435,12 @@ export default function SenseiVoiceAssistant({
       setKeyValidationStatus({
         valid: true,
         ttsEnabled: true,
-        message: 'Chave 100% Conectada! Gemini + Google Cloud Neural2 ativos com sucesso.',
+        message: 'Chave 100% Conectada! Google Cloud Neural2 ativo com sucesso.',
       });
       setTimeout(() => {
         setSettingsOpen(false);
         setKeyValidationStatus(null);
-      }, 1400);
-    } else if (check.needsGenerativeApiEnable) {
-      saveGeminiApiKey(trimmedKey);
-      saveVoicePreference(selectedVoice);
-      setHasApiKey(true);
-      setKeyValidationStatus({
-        valid: false,
-        showGenerativeLink: true,
-        message:
-          'A API Generative Language (Gemini) precisa ser ativada neste projeto do Google Cloud. Clique no botão abaixo para ativar:',
-      });
+      }, 1200);
     } else if (check.valid && !check.ttsEnabled) {
       saveGeminiApiKey(trimmedKey);
       saveVoicePreference(selectedVoice);
@@ -460,7 +450,7 @@ export default function SenseiVoiceAssistant({
         ttsEnabled: false,
         showTtsLink: true,
         message:
-          'Gemini Ativo! Para ativar a voz Neural2 oficial do Google, ative a API Cloud Text-to-Speech no link abaixo:',
+          'Chave reconhecida! Para ativar a voz oficial Google Neural2, ative o Cloud Text-to-Speech no link abaixo:',
       });
     } else {
       setKeyValidationStatus({

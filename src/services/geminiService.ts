@@ -87,7 +87,7 @@ export async function validateGeminiApiKey(
   ttsEnabled: boolean;
   error?: string;
   ttsError?: string;
-  needsGenerativeApiEnable?: boolean;
+  workingModel?: string;
 }> {
   if (!key || !key.trim()) {
     return { valid: false, ttsEnabled: false, error: 'Chave não informada.' };
@@ -95,47 +95,7 @@ export async function validateGeminiApiKey(
 
   const cleanKey = key.trim();
 
-  // 1. Testa a inteligência do Gemini (generateContent)
-  let textValid = false;
-  let textError = '';
-  let needsGenerativeApiEnable = false;
-
-  const testModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-
-  for (const model of testModels) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Ping' }] }],
-            generationConfig: { maxOutputTokens: 5 },
-          }),
-        }
-      );
-
-      if (res.ok) {
-        textValid = true;
-        textError = '';
-        break;
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        const rawMsg = errData?.error?.message || '';
-        if (rawMsg.includes('not found') || rawMsg.includes('disabled') || rawMsg.includes('has not been used')) {
-          needsGenerativeApiEnable = true;
-          textError = 'A API Generative Language precisa ser ativada neste projeto do Google Cloud.';
-        } else {
-          textError = rawMsg || 'Chave não autorizada para o Gemini.';
-        }
-      }
-    } catch (e: any) {
-      textError = e?.message || 'Erro de conexão com o Gemini.';
-    }
-  }
-
-  // 2. Testa o Google Cloud Text-to-Speech (Neural2-B)
+  // 1. Testa o Google Cloud Text-to-Speech (Neural2)
   let ttsEnabled = false;
   let ttsError = '';
 
@@ -163,12 +123,77 @@ export async function validateGeminiApiKey(
     ttsError = e?.message || 'Erro de conexão com Text-to-Speech.';
   }
 
+  // 2. Testa a inteligência do Gemini (ListModels / Endpoints v1beta e v1)
+  let textValid = false;
+  let workingModel = 'gemini-1.5-flash';
+
+  try {
+    const listRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`
+    );
+
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const models = (listData.models || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((m: any) =>
+          (m.supportedGenerationMethods || []).includes('generateContent')
+        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((m: any) => m.name.replace('models/', ''));
+
+      if (models.length > 0) {
+        workingModel =
+          models.find((m: string) => m.includes('1.5-flash')) ||
+          models.find((m: string) => m.includes('2.0-flash')) ||
+          models[0];
+        textValid = true;
+      }
+    }
+  } catch {
+    // continua
+  }
+
+  // Se ListModels não respondeu, testa chamadas diretas
+  if (!textValid) {
+    const candidateEndpoints = [
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${cleanKey}`,
+    ];
+
+    for (const url of candidateEndpoints) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Ping' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        });
+
+        if (res.ok) {
+          textValid = true;
+          break;
+        }
+      } catch {
+        // continua
+      }
+    }
+  }
+
+  if (typeof window !== 'undefined' && textValid) {
+    localStorage.setItem(STORAGE_WORKING_MODEL_KEY, workingModel);
+  }
+
   return {
-    valid: textValid,
+    valid: textValid || ttsEnabled, // Se TTS está habilitado, a chave já é válida no Google Cloud!
     ttsEnabled,
-    error: textError,
-    ttsError,
-    needsGenerativeApiEnable,
+    workingModel,
+    error: !textValid && !ttsEnabled ? 'Chave de API não autorizada no Google Cloud.' : undefined,
+    ttsError: !ttsEnabled ? ttsError : undefined,
   };
 }
 
@@ -341,7 +366,7 @@ ${actionsList || 'Ações de melhoria implantadas no posto.'}
 }
 
 // =============================================================================
-// FALLBACK LOCAL
+// FALLBACK LOCAL INTELIGENTE DO SENSEI
 // =============================================================================
 function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const q = question.toLowerCase();
@@ -359,6 +384,9 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const investment = project.projectCosts?.totalCost || 0;
   const netSavings = project.netSavings !== undefined ? project.netSavings : grossSavings - investment;
 
+  if (q.includes('apresente') || q.includes('apresentar') || q.includes('quem é') || q.includes('ola') || q.includes('olá')) {
+    return `Olá a todos! Eu sou o Sensei, co-apresentador de inteligência artificial desta reunião. Estou aqui para detalhar os resultados e responder a quaisquer dúvidas sobre a metodologia e o impacto deste projeto Lean.`;
+  }
   if (q.includes('o que é lean') || q.includes('o que e lean') || q.includes('filosofia lean')) {
     return 'Excelente pergunta! O Lean Manufacturing é uma filosofia de gestão originada no Sistema Toyota de Produção, focada na eliminação contínua de desperdícios e geração máxima de valor para o cliente através do engajamento de todos no chão de fábrica.';
   }
@@ -460,8 +488,8 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em 
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
         if (text) return text;
       }
-    } catch (err) {
-      console.warn(`[Sensei] Falha com modelo de texto ${model}:`, err);
+    } catch {
+      // continua
     }
   }
 
@@ -487,7 +515,7 @@ export async function askSenseiWithVoice({
     };
   }
 
-  // ETAPA 1: Gera a resposta textual com o Gemini (ou resposta didática do projeto)
+  // ETAPA 1: Gera a resposta textual com o Gemini (ou resposta didática local do projeto)
   const answerText = await askSenseiText(question, project, effectiveKey);
 
   // ETAPA 2: Sintetiza a voz Neural2 oficial do Google Cloud
