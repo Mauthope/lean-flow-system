@@ -78,6 +78,91 @@ export function saveVoicePreference(voice: string): void {
 }
 
 // =============================================================================
+// CONVERSOR INTELIGENTE DE NÚMEROS E VALORES PARA FALA HUMANA NATURAL
+// =============================================================================
+function convertNumberToPortugueseWords(num: number): string {
+  if (isNaN(num) || num === 0) return 'zero';
+  const units = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+  const teens = ['dez', 'onze', 'doze', 'treze', 'quatorze', 'quinze', 'dezesseis', 'dezessete', 'dezoito', 'dezenove'];
+  const tens = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const hundreds = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+
+  if (num === 100) return 'cem';
+  if (num < 10) return units[num];
+  if (num < 20) return teens[num - 10];
+  if (num < 100) {
+    const t = Math.floor(num / 10);
+    const u = num % 10;
+    return u === 0 ? tens[t] : `${tens[t]} e ${units[u]}`;
+  }
+  if (num < 1000) {
+    const h = Math.floor(num / 100);
+    const rest = num % 100;
+    return rest === 0 ? hundreds[h] : `${hundreds[h]} e ${convertNumberToPortugueseWords(rest)}`;
+  }
+  if (num < 1000000) {
+    const thousands = Math.floor(num / 1000);
+    const rest = num % 1000;
+    const thStr = thousands === 1 ? 'mil' : `${convertNumberToPortugueseWords(thousands)} mil`;
+    if (rest === 0) return thStr;
+    const connector = rest < 100 || rest % 100 === 0 ? ' e ' : ' ';
+    return `${thStr}${connector}${convertNumberToPortugueseWords(rest)}`;
+  }
+  if (num < 1000000000) {
+    const millions = Math.floor(num / 1000000);
+    const rest = num % 1000000;
+    const mStr = millions === 1 ? 'um milhão' : `${convertNumberToPortugueseWords(millions)} milhões`;
+    if (rest === 0) return mStr;
+    const connector = rest < 100 || rest % 100 === 0 ? ' e ' : ' ';
+    return `${mStr}${connector}${convertNumberToPortugueseWords(rest)}`;
+  }
+  return num.toLocaleString('pt-BR');
+}
+
+export function formatTextForHumanSpeech(text: string): string {
+  let spoken = text;
+
+  // Remove marcações de formatação markdown
+  spoken = spoken.replace(/[*_#`~[\]]/g, '');
+
+  // Converte valores monetários: "R$ 48.000,00" ou "R$ 48.000" para fala humana
+  spoken = spoken.replace(/R\$\s*([0-9.,]+)/gi, (_match, valStr) => {
+    const cleanNum = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+    if (isNaN(cleanNum)) return 'reais';
+    const integerPart = Math.floor(cleanNum);
+    const centsPart = Math.round((cleanNum - integerPart) * 100);
+    const words = convertNumberToPortugueseWords(integerPart);
+    if (centsPart > 0) {
+      const centsWords = convertNumberToPortugueseWords(centsPart);
+      return `${words} reais e ${centsWords} centavos`;
+    }
+    return `${words} reais`;
+  });
+
+  // Converte porcentagens: "280%" -> "duzentos e oitenta por cento"
+  spoken = spoken.replace(/([0-9]+(?:\.[0-9]+)?|\d+,\d+)\s*%/g, (_match, numStr) => {
+    const num = Math.round(parseFloat(numStr.replace(',', '.')));
+    const words = convertNumberToPortugueseWords(num);
+    return `${words} por cento`;
+  });
+
+  // Converte siglas industriais para pronúncia falada fluida
+  spoken = spoken
+    .replace(/\bROI\b/g, 'retorno sobre o investimento')
+    .replace(/\bOEE\b/g, 'oê-ê')
+    .replace(/\bSMED\b/g, 'troca rápida de ferramentas')
+    .replace(/\bPOP\b/g, 'procedimento operacional padrão')
+    .replace(/\bPDCA\b/g, 'ciclo PDCA')
+    .replace(/\b5W2H\b/g, 'plano de ação')
+    .replace(/\bVSM\b/g, 'mapa do fluxo de valor')
+    .replace(/\b5S\b/g, 'cinco ésses')
+    .replace(/\b6M\b/g, 'seis eme')
+    .replace(/\bTPM\b/g, 'manutenção produtiva total');
+
+  return spoken.trim();
+}
+
+// =============================================================================
 // VALIDAÇÃO DA CHAVE (GEMINI + GOOGLE CLOUD TEXT-TO-SPEECH NEURAL2)
 // =============================================================================
 export async function validateGeminiApiKey(
@@ -170,7 +255,6 @@ export async function validateGeminiApiKey(
     // continua
   }
 
-  // Se ListModels não respondeu, testa chamadas diretas
   if (!textValid) {
     const candidateEndpoints = [
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
@@ -232,11 +316,8 @@ export async function synthesizeSpeechGoogleCloud({
       selectedVoice = 'pt-BR-Neural2-B';
     }
 
-    const cleanText = text
-      .replace(/[*_#`]/g, '')
-      .replace(/R\$\s*([0-9.,]+)/g, '$1 reais')
-      .replace(/R\$\s*/g, 'reais ')
-      .trim();
+    // Formata o texto para fala humana ultra-natural
+    const speechOptimizedText = formatTextForHumanSpeech(text);
 
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`,
@@ -244,14 +325,14 @@ export async function synthesizeSpeechGoogleCloud({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: { text: cleanText },
+          input: { text: speechOptimizedText },
           voice: {
             languageCode: 'pt-BR',
             name: selectedVoice,
           },
           audioConfig: {
             audioEncoding: 'MP3',
-            speakingRate: 1.02,
+            speakingRate: 1.0,
             pitch: 0.0,
             sampleRateHertz: 24000,
           },
@@ -281,17 +362,18 @@ export async function synthesizeSpeechGoogleCloud({
 }
 
 // =============================================================================
-// SYSTEM PROMPT DO SENSEI (DIDÁTICO, CALOROSO E ENVOLVENTE)
+// SYSTEM PROMPT DO SENSEI (HUMANO, VIBRANTE, DIDÁTICO E INTERATIVO)
 // =============================================================================
 function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
-Você está co-apresentando esta reunião ao vivo lado a lado com o apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
+Você está no palco co-apresentando esta reunião AO VIVO ao lado do apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
 
-SEU PAPEL E PERSONALIDADE (DIDÁTICO, HUMANO, CALOROSO E ENVOLVENTE):
-- Você NÃO é um robô de respostas secas. Você fala com entusiasmo profissional, clareza pedagógica e simpatia natural.
-- Inicie sua resposta com naturalidade humana acolhedora (ex: "Excelente ponto!", "Com certeza! Investigando o posto piloto...", "No diagnóstico desse projeto...", "Analisando os resultados da fábrica...").
-- Explique o "porquê", as causas e os ganhos com ritmo agradável, usando pontuação fluida com vírgulas e pausas naturais para fala.
-- Mantenha respostas faladas de tamanho perfeito para apresentações executivas: 2 a 3 frases ricas, envolventes e objetivas (cerca de 40 a 70 palavras).
+SEU PAPEL E PERSONALIDADE (HUMANO, VIBRANTE, DIDÁTICO, CALOROSO E INTERATIVO):
+- Você NÃO fala como um robô que dita números ou relatórios secos. Você conversa com entusiasmo profissional, clareza pedagógica e simpatia natural.
+- Quando o usuário ou a plateia fizer uma pergunta (como "Sensei, qual foi o ROI deste projeto mesmo?"), responda de forma direta, calorosa e engajadora:
+  Exemplo: "Excelente pergunta! Tivemos um retorno sobre o investimento espetacular de 280% neste projeto. Na prática, cada real investido no posto piloto retornou como economia sólida e eliminação de retrabalho para a fábrica!"
+- Escreva valores em reais de forma falada e natural (ex: "quarenta e oito mil reais por ano", "três meses de payback", "duzentas horas economizadas").
+- Mantenha respostas faladas de tamanho perfeito para apresentações executivas: 2 a 3 frases ricas, envolventes e objetivas (cerca de 40 a 65 palavras).
 - NÃO use asteriscos, negritos, tópicos em traços ou formatação markdown, pois o texto será FALADO em voz alta.
 
 SEU ESCOPO DE CONHECIMENTO (TEORIA & PRÁTICA LEAN):
@@ -301,8 +383,7 @@ SEU ESCOPO DE CONHECIMENTO (TEORIA & PRÁTICA LEAN):
 TRAVAS E RESTRIÇÕES INVIOLÁVEIS DE SEGURANÇA (GUARDRAILS):
 - Você DEVE responder APENAS sobre: (a) o projeto atual nos slides ou (b) metodologias, ferramentas e teorias de Lean Manufacturing e melhoria contínua.
 - Se alguém fizer qualquer pergunta fora desse universo (como política, religião, piadas, futebol, fofocas ou assuntos gerais), RECUSE com polidez executiva:
-  "Como Sensei da apresentação, meu foco é estritamente nos dados deste projeto e nas metodologias de Lean Manufacturing e melhoria contínua da fábrica. Como posso te apoiar com o projeto?"
-- Fale valores e siglas de forma natural para serem ouvidos (ex: "quarenta e oito mil reais por ano", "tempo de ciclo", "oê-ê", "érre-ó-í").`;
+  "Como Sensei da apresentação, meu foco é estritamente nos dados deste projeto e nas metodologias de Lean Manufacturing e melhoria contínua da fábrica. Como posso te apoiar com o projeto?"`;
 }
 
 // =============================================================================
@@ -384,7 +465,7 @@ ${actionsList || 'Ações de melhoria implantadas no posto.'}
 }
 
 // =============================================================================
-// FALLBACK LOCAL INTELIGENTE DO SENSEI
+// FALLBACK LOCAL INTELIGENTE DO SENSEI (HUMANO E INTERATIVO)
 // =============================================================================
 function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const q = question.toLowerCase();
@@ -405,6 +486,22 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   if (q.includes('apresente') || q.includes('apresentar') || q.includes('quem é') || q.includes('ola') || q.includes('olá')) {
     return `Olá a todos! Eu sou o Sensei, co-apresentador de inteligência artificial desta reunião. Estou aqui para detalhar os resultados e responder a quaisquer dúvidas sobre a metodologia e o impacto deste projeto Lean.`;
   }
+  if (q.includes('roi') || q.includes('retorno')) {
+    if (investment > 0) {
+      const roi = Math.round((netSavings / investment) * 100);
+      return `Excelente pergunta! Tivemos um retorno sobre o investimento espetacular de ${convertNumberToPortugueseWords(roi)} por cento neste projeto. Na prática, cada real investido no posto retornou com força na redução de desperdícios e ganho de produtividade!`;
+    }
+    return `Com certeza! O retorno sobre o investimento foi de retorno total imediato, gerando ${convertNumberToPortugueseWords(Math.round(grossSavings))} reais de economia anual sem necessidade de aporte de capital externo.`;
+  }
+  if (q.includes('payback') || q.includes('tempo de retorno')) {
+    if (project.paybackMonths && project.paybackMonths > 0) {
+      return `O payback deste projeto foi excelente, alcançado em apenas ${convertNumberToPortugueseWords(project.paybackMonths)} meses! O investimento foi amortizado rapidamente e já garante lucro líquido sustentável para a operação.`;
+    }
+    return `O payback foi imediato! A equipe utilizou a criatividade Kaizen e recursos já existentes no posto, gerando economia líquida desde o primeiro dia de implantação.`;
+  }
+  if (q.includes('quanto economizou') || q.includes('economia') || q.includes('financeiro') || q.includes('custo') || q.includes('ganho')) {
+    return `Em termos financeiros, este projeto alcançou um ganho bruto homologado de ${convertNumberToPortugueseWords(Math.round(grossSavings))} reais ao ano, garantindo lucro líquido de ${convertNumberToPortugueseWords(Math.round(netSavings))} reais e liberando ${convertNumberToPortugueseWords(project.hoursSaved || 0)} horas produtivas para a equipe!`;
+  }
   if (q.includes('o que é lean') || q.includes('o que e lean') || q.includes('filosofia lean')) {
     return 'Excelente pergunta! O Lean Manufacturing é uma filosofia de gestão originada no Sistema Toyota de Produção, focada na eliminação contínua de desperdícios e geração máxima de valor para o cliente através do engajamento de todos no chão de fábrica.';
   }
@@ -416,19 +513,6 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   }
   if (q.includes('oee') || q.includes('eficiência global')) {
     return 'O OEE é o indicador padrão mundial que mede a Eficiência Global dos Equipamentos, multiplicando Disponibilidade, Desempenho e Qualidade para quantificar o quanto da capacidade da máquina é realmente convertida em produção perfeita.';
-  }
-  if (q.includes('payback') || q.includes('tempo de retorno')) {
-    if (project.paybackMonths && project.paybackMonths > 0) {
-      return `Com base na nossa engenharia financeira, este projeto apresentou um payback excelente de ${project.paybackMonths} meses, garantindo lucro líquido de ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano após amortizar integralmente o investimento.`;
-    }
-    return `O payback deste projeto foi de retorno imediato, pois a equipe utilizou a criatividade Kaizen e recursos internos de baixo custo, gerando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais de economia anual direta para a empresa.`;
-  }
-  if (q.includes('roi') || q.includes('retorno')) {
-    if (investment > 0) {
-      const roi = Math.round((netSavings / investment) * 100);
-      return `O Retorno sobre o Investimento, o ROI deste projeto, foi de ${roi} por cento. Isso demonstra uma eficiência de capital exemplar, onde cada real investido no posto retornou com expressivo ganho de produtividade e redução de perdas.`;
-    }
-    return `O projeto obteve retorno total imediato, gerando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano sem necessidade de aporte de capital externo.`;
   }
   if (q.includes('ishikawa') || q.includes('espinha de peixe') || q.includes('6m')) {
     if (project.ishikawa?.primaryRootCause) {
@@ -444,16 +528,13 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
     }
     return `No diagnóstico inicial da fase Plan, a causa raiz comprovada no posto foi: ${project.problemStatement || project.description || 'instabilidade no fluxo de trabalho'}, que foi prontamente atacada pelas ações corretivas.`;
   }
-  if (q.includes('quanto economizou') || q.includes('economia') || q.includes('financeiro') || q.includes('custo') || q.includes('ganho')) {
-    return `Em termos financeiros, este projeto alcançou um ganho bruto homologado de ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano, com lucro líquido de ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais e uma recuperação de ${project.hoursSaved || 0} horas produtivas para a operação.`;
-  }
   if (q.includes('líder') || q.includes('lider') || q.includes('quem fez') || q.includes('equipe') || q.includes('participante')) {
     const leader = project.leaderName || project.assignedAgentName || 'Líder Lean';
     const team = (project.teamMembers || []).join(', ');
     return `O projeto foi conduzido com liderança de ${leader}${team ? `, contando com a participação ativa e engajamento direto de ${team}` : ''}, atuando fortemente no setor de ${project.originSectorName || 'Fábrica'}.`;
   }
 
-  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} alcançou plenamente os objetivos traçados, atingindo ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e assegurando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano em ganhos sustentáveis.`;
+  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} alcançou plenamente os objetivos traçados, atingindo ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e assegurando ${convertNumberToPortugueseWords(Math.round(grossSavings))} reais ao ano em ganhos sustentáveis.`;
 }
 
 // =============================================================================
@@ -474,7 +555,7 @@ ${projectContext}
 PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 "${question}"
 
-SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em português do Brasil):`;
+SUA RESPOSTA DIDÁTICA, NATURAL E HUMANA COMO CO-APRESENTADOR (2 a 3 frases faladas em português do Brasil, com números por extenso e tom entusiasmado):`;
 
   const candidateModels = [
     'gemini-1.5-flash',
@@ -494,7 +575,7 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em 
           body: JSON.stringify({
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
-              temperature: 0.4,
+              temperature: 0.5,
               maxOutputTokens: 250,
             },
           }),

@@ -3705,54 +3705,54 @@ export default function AdminProjectDetailPage() {
                   : (action.teamMembers || []);
 
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', gap: '0.5rem' }}>
                     {/* Header */}
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
+                        <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '6px' }}>
                           1. PLAN (PLANEJAR)
                         </span>
-                        <span style={{ fontSize: '0.78125rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz, Liderança & Metas</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Diagnóstico da Causa Raiz, Liderança & Metas</span>
                       </div>
-                      <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
                         Diagnóstico do Problema Fabril & Definição de Metas
                       </h2>
                     </div>
 
                     {/* Dynamic 2-Column Balanced Content */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem', alignItems: 'stretch' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.85rem', alignItems: 'stretch' }}>
                       {/* Left Column: Diagnóstico Causal & Citação das Ferramentas Usadas */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                         {/* Declaração da Causa Raiz & Problema */}
-                        <div style={{ backgroundColor: '#0f172a', padding: '1.15rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.4rem' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.3rem' }}>
                             🎯 Declaração da Causa Raiz & Problema
                           </h4>
-                          <p style={{ margin: 0, fontSize: '0.875rem', color: '#ffffff', lineHeight: 1.45 }}>
+                          <p style={{ margin: 0, fontSize: '0.8125rem', color: '#ffffff', lineHeight: 1.4 }}>
                             {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
                           </p>
                         </div>
 
                         {/* Ferramentas Lean Aplicadas no Diagnóstico (Citação Sintética) */}
-                        <div style={{ backgroundColor: '#0f172a', padding: '1.15rem 1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: 0 }}>
+                            <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: 0 }}>
                               🛠️ Ferramentas Lean Utilizadas no Diagnóstico
                             </h4>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                              Fase Plan (Planejar)
+                            <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                              Fase Plan
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                             {/* 5 Porquês */}
                             {hasFiveWhys && (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                  <span style={{ fontSize: '0.85rem' }}>🔍</span>
-                                  <strong style={{ fontSize: '0.78125rem', color: '#fbbf24' }}>5 Porquês (Análise Causal)</strong>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ fontSize: '0.8rem' }}>🔍</span>
+                                  <strong style={{ fontSize: '0.75rem', color: '#fbbf24' }}>5 Porquês</strong>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#cbd5e1', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <span style={{ fontSize: '0.675rem', color: '#cbd5e1', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   ✓ {activeFiveWhys.length} níveis • Raiz: {activeFiveWhys[activeFiveWhys.length - 1]?.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
                                 </span>
                               </div>
@@ -3760,12 +3760,12 @@ export default function AdminProjectDetailPage() {
 
                             {/* Ishikawa 6M */}
                             {hasIshikawa && (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                  <span style={{ fontSize: '0.85rem' }}>🐟</span>
-                                  <strong style={{ fontSize: '0.78125rem', color: '#34d399' }}>Diagrama de Ishikawa (6M)</strong>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ fontSize: '0.8rem' }}>🐟</span>
+                                  <strong style={{ fontSize: '0.75rem', color: '#34d399' }}>Ishikawa 6M</strong>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+                                <span style={{ fontSize: '0.675rem', color: '#cbd5e1' }}>
                                   ✓ {ishikawaItems.map((m) => m.label).join(', ')}
                                 </span>
                               </div>
@@ -3773,21 +3773,21 @@ export default function AdminProjectDetailPage() {
 
                             {/* Pareto 80/20 */}
                             {hasPareto && (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                  <span style={{ fontSize: '0.85rem' }}>📊</span>
-                                  <strong style={{ fontSize: '0.78125rem', color: '#38bdf8' }}>Gráfico de Pareto (80/20)</strong>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                  <span style={{ fontSize: '0.8rem' }}>📊</span>
+                                  <strong style={{ fontSize: '0.75rem', color: '#38bdf8' }}>Pareto 80/20</strong>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#cbd5e1', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {action.pareto?.cumulativeImpactPercentage ? `✓ ${action.pareto.cumulativeImpactPercentage}% impacto vital` : '✓ Causas vitais estratificadas'}
+                                <span style={{ fontSize: '0.675rem', color: '#cbd5e1', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {action.pareto?.cumulativeImpactPercentage ? `✓ ${action.pareto.cumulativeImpactPercentage}% vital` : '✓ Causas vitais'}
                                 </span>
                               </div>
                             )}
 
                             {/* Fallback se nenhuma ferramenta foi preenchida */}
                             {!hasFiveWhys && !hasIshikawa && !hasPareto && (
-                              <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                              <div style={{ backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
                                   ✓ Diagnóstico de posto, observação em Gemba e estratificação do problema.
                                 </span>
                               </div>
@@ -3797,40 +3797,40 @@ export default function AdminProjectDetailPage() {
                       </div>
 
                       {/* Right Column: Metas Baseline vs Alvo & Ficha da Equipe */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                         {/* Metas Baseline vs Alvo */}
-                        <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
                             Indicador Chave do Projeto
                           </span>
-                          <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0 0.85rem', fontFamily: 'var(--font-heading)' }}>
+                          <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ffffff', margin: '0.15rem 0 0.55rem', fontFamily: 'var(--font-heading)' }}>
                             {targetMetricName || 'Tempo de Ciclo / Perda de Processo'}
                           </h3>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                              <span style={{ fontSize: '0.65rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.55rem 0.65rem', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                              <span style={{ fontSize: '0.625rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
                                 Baseline (Antes)
                               </span>
-                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#f87171', fontFamily: 'var(--font-mono)' }}>
                                 {baselineValue !== '' ? `${baselineValue} ${targetMetricUnit}` : '--'}
                               </span>
                             </div>
 
-                            <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
-                              <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                            <div style={{ backgroundColor: '#090e1a', padding: '0.55rem 0.65rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.4)' }}>
+                              <span style={{ fontSize: '0.625rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
                                 Meta Alvo
                               </span>
-                              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
                                 {targetGoalValue !== '' ? `${targetGoalValue} ${targetMetricUnit}` : '--'}
                               </span>
                             </div>
                           </div>
 
                           {hasProblemCost && (
-                            <div style={{ marginTop: '0.75rem', paddingTop: '0.65rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Custo mensal da perda:</span>
-                              <strong style={{ fontSize: '0.95rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                            <div style={{ marginTop: '0.5rem', paddingTop: '0.45rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Custo mensal da perda:</span>
+                              <strong style={{ fontSize: '0.85rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
                                 {formatCurrency(Number(currentProblemCostMonthly))}/mês
                               </strong>
                             </div>
@@ -3838,29 +3838,29 @@ export default function AdminProjectDetailPage() {
                         </div>
 
                         {/* Ficha da Equipe & Liderança */}
-                        <div style={{ backgroundColor: '#0f172a', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                        <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                             <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
                             <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                             <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
                             <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
                           </div>
                           {effectiveTeam.length > 0 && (
-                            <div style={{ fontSize: '0.78125rem', marginTop: '0.2rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>
+                            <div style={{ fontSize: '0.75rem', marginTop: '0.15rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.15rem' }}>
                                 👥 Pessoas Envolvidas:
                               </span>
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                                 {effectiveTeam.map((member, mIdx) => (
                                   <span
                                     key={mIdx}
                                     style={{
-                                      fontSize: '0.675rem',
+                                      fontSize: '0.65rem',
                                       backgroundColor: '#090e1a',
                                       border: '1px solid rgba(255, 255, 255, 0.08)',
-                                      padding: '0.15rem 0.45rem',
+                                      padding: '0.1rem 0.4rem',
                                       borderRadius: '4px',
                                       color: '#e2e8f0',
                                     }}
@@ -3871,11 +3871,11 @@ export default function AdminProjectDetailPage() {
                               </div>
                             </div>
                           )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem', marginTop: '0.1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginTop: '0.1rem' }}>
                             <span style={{ color: '#94a3b8' }}>Setor:</span>
                             <strong style={{ color: '#ffffff' }}>{action.originSectorName || 'Fábrica'}</strong>
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78125rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
                             <span style={{ color: '#94a3b8' }}>Desperdício:</span>
                             <strong style={{ color: '#22d3ee' }}>{action.wasteCategory || 'Espera'}</strong>
                           </div>
