@@ -6,11 +6,13 @@ import { LeanAction, ActionChecklistItem } from '@/lib/types';
 export const SENSEI_PROFILE = {
   name: 'Sensei',
   title: 'Mestre e Co-Apresentador Lean Manufacturing',
-  defaultVoice: 'Kore',
+  defaultVoice: 'pt-BR-Neural2-B',
   voices: [
-    { id: 'Kore', label: '🎙️ Voz Neural Google (Estúdio Natural — Padrão Sensei)' },
-    { id: 'Aoede', label: '🎙️ Aoede (Clara e articulada)' },
-    { id: 'Charon', label: '🎙️ Charon (Grave e autoritativa)' },
+    { id: 'pt-BR-Neural2-B', label: '🎙️ pt-BR-Neural2-B (Masculina Executiva — Ultra Natural)' },
+    { id: 'pt-BR-Neural2-A', label: '🎙️ pt-BR-Neural2-A (Feminina Executiva — Suave)' },
+    { id: 'pt-BR-Neural2-C', label: '🎙️ pt-BR-Neural2-C (Feminina Expressiva — Natural)' },
+    { id: 'pt-BR-Studio-B', label: '🎙️ pt-BR-Studio-B (Masculina Estúdio de Transmissão)' },
+    { id: 'pt-BR-Studio-C', label: '🎙️ pt-BR-Studio-C (Feminina Estúdio de Transmissão)' },
   ],
 } as const;
 
@@ -28,7 +30,7 @@ export interface SenseiVoiceResponse {
   audioBase64: string | null;
   mimeType: string | null;
   textFallback: string | null;
-  source: 'gemini_voice' | 'text_fallback' | 'no_key';
+  source: 'google_cloud_neural2' | 'text_fallback' | 'no_key';
   errorDetails?: string;
 }
 
@@ -73,163 +75,147 @@ export function saveVoicePreference(voice: string): void {
 }
 
 // =============================================================================
-// VALIDAÇÃO DA CHAVE GEMINI COM DESCOBERTA DINÂMICA DE MODELOS
+// VALIDAÇÃO DA CHAVE (GEMINI + GOOGLE CLOUD TEXT-TO-SPEECH)
 // =============================================================================
 export async function validateGeminiApiKey(
   key: string
-): Promise<{ valid: boolean; error?: string; availableModels?: string[] }> {
+): Promise<{
+  valid: boolean;
+  ttsEnabled: boolean;
+  error?: string;
+  ttsError?: string;
+}> {
   if (!key || !key.trim()) {
-    return { valid: false, error: 'Chave não informada.' };
+    return { valid: false, ttsEnabled: false, error: 'Chave não informada.' };
   }
 
   const cleanKey = key.trim();
 
+  // 1. Testa a inteligência do Gemini (generateContent)
+  let textValid = false;
+  let textError = '';
+
   try {
-    const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Ping' }] }],
+          generationConfig: { maxOutputTokens: 5 },
+        }),
+      }
     );
 
-    if (listRes.ok) {
-      const listData = await listRes.json();
-      const models = (listData.models || [])
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((m: any) =>
-          (m.supportedGenerationMethods || []).includes('generateContent')
-        )
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((m: any) => m.name.replace('models/', ''));
-
-      if (models.length > 0) {
-        const preferred =
-          models.find((m: string) => m.includes('1.5-flash')) ||
-          models.find((m: string) => m.includes('2.0-flash')) ||
-          models.find((m: string) => m.includes('flash')) ||
-          models[0];
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_WORKING_MODEL_KEY, preferred);
-        }
-
-        return { valid: true, availableModels: models };
-      }
+    if (res.ok) {
+      textValid = true;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      textError = errData?.error?.message || 'Chave não autorizada para o Gemini.';
     }
-
-    const testCandidateModels = [
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-2.0-flash',
-      'gemini-1.5-pro',
-      'gemini-pro',
-    ];
-
-    for (const model of testCandidateModels) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: 'Ping' }] }],
-              generationConfig: { maxOutputTokens: 5 },
-            }),
-          }
-        );
-
-        if (res.ok) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(STORAGE_WORKING_MODEL_KEY, model);
-          }
-          return { valid: true };
-        }
-      } catch {
-        // continua
-      }
-    }
-
-    const errData = await listRes.json().catch(() => ({}));
-    const message = errData?.error?.message || '';
-
-    if (message.includes('API_KEY_INVALID') || message.includes('not valid')) {
-      return {
-        valid: false,
-        error: 'Chave de API inválida. Certifique-se de copiar a chave completa gerada no Google AI Studio.',
-      };
-    }
-
-    return {
-      valid: false,
-      error: message || 'Esta chave não possui modelos Gemini habilitados. Crie uma nova chave gratuita em aistudio.google.com/apikey.',
-    };
-  } catch (err: any) {
-    return {
-      valid: false,
-      error: err?.message || 'Falha de conexão com a API do Google Gemini.',
-    };
+  } catch (e: any) {
+    textError = e?.message || 'Erro de conexão com o Gemini.';
   }
-}
 
-// =============================================================================
-// CONVERSOR PCM -> WAV
-// =============================================================================
-export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
+  // 2. Testa o Google Cloud Text-to-Speech (Neural2)
+  let ttsEnabled = false;
+  let ttsError = '';
+
   try {
-    const binaryString = atob(pcmBase64);
-    const len = binaryString.length;
-    const buffer = new ArrayBuffer(44 + len);
-    const view = new DataView(buffer);
+    const ttsRes = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${cleanKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: 'Olá' },
+          voice: { languageCode: 'pt-BR', name: 'pt-BR-Neural2-B' },
+          audioConfig: { audioEncoding: 'MP3' },
+        }),
+      }
+    );
 
-    view.setUint8(0, 'R'.charCodeAt(0));
-    view.setUint8(1, 'I'.charCodeAt(0));
-    view.setUint8(2, 'F'.charCodeAt(0));
-    view.setUint8(3, 'F'.charCodeAt(0));
-    view.setUint32(4, 36 + len, true);
-    view.setUint8(8, 'W'.charCodeAt(0));
-    view.setUint8(9, 'A'.charCodeAt(0));
-    view.setUint8(10, 'V'.charCodeAt(0));
-    view.setUint8(11, 'E'.charCodeAt(0));
+    if (ttsRes.ok) {
+      ttsEnabled = true;
+    } else {
+      const errData = await ttsRes.json().catch(() => ({}));
+      ttsError = errData?.error?.message || 'API Cloud Text-to-Speech precisa ser ativada.';
+    }
+  } catch (e: any) {
+    ttsError = e?.message || 'Erro de conexão com Text-to-Speech.';
+  }
 
-    view.setUint8(12, 'f'.charCodeAt(0));
-    view.setUint8(13, 'm'.charCodeAt(0));
-    view.setUint8(14, 't'.charCodeAt(0));
-    view.setUint8(15, ' '.charCodeAt(0));
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true);
-    view.setUint16(22, 1, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true);
-    view.setUint16(32, 2, true);
-    view.setUint16(34, 16, true);
+  return {
+    valid: textValid,
+    ttsEnabled,
+    error: textError,
+    ttsError,
+  };
+}
 
-    view.setUint8(36, 'd'.charCodeAt(0));
-    view.setUint8(37, 'a'.charCodeAt(0));
-    view.setUint8(38, 't'.charCodeAt(0));
-    view.setUint8(39, 'a'.charCodeAt(0));
-    view.setUint32(40, len, true);
+// =============================================================================
+// SÍNTESE OFICIAL DE VOZ GOOGLE CLOUD TEXT-TO-SPEECH (NEURAL2 / STUDIO)
+// =============================================================================
+export async function synthesizeSpeechGoogleCloud({
+  text,
+  apiKey,
+  voiceName,
+}: {
+  text: string;
+  apiKey: string;
+  voiceName?: string;
+}): Promise<{ audioBase64: string | null; error?: string }> {
+  try {
+    const cleanText = text
+      .replace(/[*_#`]/g, '')
+      .replace(/R\$\s*/g, 'R$ ')
+      .trim();
 
-    const pcmBytes = new Uint8Array(buffer, 44);
-    for (let i = 0; i < len; i++) {
-      pcmBytes[i] = binaryString.charCodeAt(i);
+    const selectedVoice = voiceName || getVoicePreference() || 'pt-BR-Neural2-B';
+
+    const res = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: { text: cleanText },
+          voice: {
+            languageCode: 'pt-BR',
+            name: selectedVoice,
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 1.03,
+            pitch: 0.0,
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      const errMessage =
+        errData?.error?.message ||
+        `Erro ${res.status}: Cloud Text-to-Speech API não respondeu.`;
+      console.warn('[Sensei TTS Error]:', errMessage);
+      return { audioBase64: null, error: errMessage };
     }
 
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode.apply(
-        null,
-        Array.from(bytes.subarray(i, i + chunkSize))
-      );
+    const data = await res.json();
+    if (data?.audioContent) {
+      return { audioBase64: data.audioContent };
     }
-    return btoa(binary);
-  } catch (e) {
-    console.error('[Sensei] Erro na conversão PCM para WAV:', e);
-    return pcmBase64;
+
+    return { audioBase64: null, error: 'Áudio não retornado pelo Google Cloud TTS.' };
+  } catch (err: any) {
+    return { audioBase64: null, error: err?.message || 'Falha de conexão com Cloud TTS.' };
   }
 }
 
 // =============================================================================
-// SYSTEM PROMPT DO SENSEI (HUMANO, DIDÁTICO, CALOROSO E ENVOLVENTE)
+// SYSTEM PROMPT DO SENSEI (DIDÁTICO, CALOROSO E ENVOLVENTE)
 // =============================================================================
 function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
@@ -402,7 +388,7 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
 }
 
 // =============================================================================
-// ETAPA 1: Gera a resposta textual do Sensei com Descoberta Dinâmica de Modelo
+// ETAPA 1: Gera a resposta textual do Sensei com Gemini
 // =============================================================================
 async function askSenseiText(
   question: string,
@@ -421,19 +407,13 @@ PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 
 SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em português do Brasil):`;
 
-  const savedModel =
-    typeof window !== 'undefined'
-      ? localStorage.getItem(STORAGE_WORKING_MODEL_KEY)
-      : null;
-
   const candidateModels = [
-    savedModel,
     'gemini-1.5-flash',
     'gemini-1.5-flash-latest',
     'gemini-2.0-flash',
     'gemini-1.5-pro',
     'gemini-pro',
-  ].filter(Boolean) as string[];
+  ];
 
   for (const model of candidateModels) {
     try {
@@ -466,79 +446,9 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em 
 }
 
 // =============================================================================
-// ETAPA 2: Síntese de Áudio Neural com Gemini
-// =============================================================================
-async function synthesizeWithGeminiAudio(
-  text: string,
-  apiKey: string,
-  voiceName: string
-): Promise<{ audioBase64: string; mimeType: string } | null> {
-  const cleanText = text
-    .replace(/[*_#`]/g, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-
-  const audioModels = ['gemini-2.0-flash', 'gemini-2.0-flash-exp'];
-
-  for (const model of audioModels) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: cleanText }] }],
-            generationConfig: {
-              responseModalities: ['AUDIO'],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: {
-                    voiceName: voiceName,
-                  },
-                },
-              },
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const audioPart = data?.candidates?.[0]?.content?.parts?.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (p: any) => p.inlineData && p.inlineData.data
-      );
-
-      if (audioPart?.inlineData?.data) {
-        const rawMime = audioPart.inlineData.mimeType || '';
-        const rawData = audioPart.inlineData.data;
-
-        if (rawMime.includes('pcm') || rawMime.includes('L16') || !rawMime.includes('wav')) {
-          const wavBase64 = pcmToWav(rawData, 24000);
-          return {
-            audioBase64: wavBase64,
-            mimeType: 'audio/wav',
-          };
-        }
-
-        return {
-          audioBase64: rawData,
-          mimeType: rawMime || 'audio/wav',
-        };
-      }
-    } catch {
-      // continua
-    }
-  }
-
-  return null;
-}
-
-// =============================================================================
 // FUNÇÃO PRINCIPAL: askSenseiWithVoice
+// 1. Gera o texto com o Gemini
+// 2. Sintetiza a voz com Google Cloud Text-to-Speech (Neural2)
 // =============================================================================
 export async function askSenseiWithVoice({
   question,
@@ -556,19 +466,23 @@ export async function askSenseiWithVoice({
     };
   }
 
-  // ETAPA 1: Gera a resposta textual do Sensei
+  // ETAPA 1: Gera a resposta textual com o Gemini
   const answerText = await askSenseiText(question, project, effectiveKey);
 
-  // ETAPA 2: Síntese de áudio
+  // ETAPA 2: Sintetiza a voz de estúdio com Google Cloud Text-to-Speech (Neural2)
   const voiceName = getVoicePreference();
-  const audioResult = await synthesizeWithGeminiAudio(answerText, effectiveKey, voiceName);
+  const ttsResult = await synthesizeSpeechGoogleCloud({
+    text: answerText,
+    apiKey: effectiveKey,
+    voiceName,
+  });
 
-  if (audioResult) {
+  if (ttsResult.audioBase64) {
     return {
-      audioBase64: audioResult.audioBase64,
-      mimeType: audioResult.mimeType,
+      audioBase64: ttsResult.audioBase64,
+      mimeType: 'audio/mp3',
       textFallback: answerText,
-      source: 'gemini_voice',
+      source: 'google_cloud_neural2',
     };
   }
 
@@ -577,5 +491,6 @@ export async function askSenseiWithVoice({
     mimeType: null,
     textFallback: answerText,
     source: 'text_fallback',
+    errorDetails: ttsResult.error,
   };
 }
