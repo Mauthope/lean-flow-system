@@ -6,13 +6,15 @@ import { LeanAction, ActionChecklistItem } from '@/lib/types';
 export const SENSEI_PROFILE = {
   name: 'Sensei',
   title: 'Mestre e Co-Apresentador Lean Manufacturing',
-  defaultVoice: 'pt-BR-Neural2-B',
+  defaultVoice: 'pt-BR-Studio-B',
   voices: [
-    { id: 'pt-BR-Neural2-B', label: '🎙️ pt-BR-Neural2-B (Masculina Executiva — Ultra Natural)' },
-    { id: 'pt-BR-Neural2-A', label: '🎙️ pt-BR-Neural2-A (Feminina Executiva — Suave)' },
-    { id: 'pt-BR-Neural2-C', label: '🎙️ pt-BR-Neural2-C (Feminina Expressiva — Natural)' },
-    { id: 'pt-BR-Studio-B', label: '🎙️ pt-BR-Studio-B (Masculina Estúdio de Transmissão)' },
-    { id: 'pt-BR-Studio-C', label: '🎙️ pt-BR-Studio-C (Feminina Estúdio de Transmissão)' },
+    { id: 'pt-BR-Studio-B', label: '🎙️ pt-BR-Studio-B (Masculina — Estúdio Topo de Linha / Podcast)' },
+    { id: 'pt-BR-Studio-C', label: '🎙️ pt-BR-Studio-C (Feminina — Estúdio Topo de Linha / Podcast)' },
+    { id: 'pt-BR-Neural2-B', label: '🎙️ pt-BR-Neural2-B (Masculina — Executiva / DeepMind)' },
+    { id: 'pt-BR-Neural2-A', label: '🎙️ pt-BR-Neural2-A (Feminina — Executiva Suave / DeepMind)' },
+    { id: 'pt-BR-Neural2-C', label: '🎙️ pt-BR-Neural2-C (Feminina — Expressiva / DeepMind)' },
+    { id: 'pt-BR-Wavenet-B', label: '🎙️ pt-BR-Wavenet-B (Masculina — WaveNet Clássica)' },
+    { id: 'pt-BR-Wavenet-A', label: '🎙️ pt-BR-Wavenet-A (Feminina — WaveNet Clássica)' },
   ],
 } as const;
 
@@ -32,6 +34,7 @@ export interface SenseiVoiceResponse {
   textFallback: string | null;
   source: 'google_cloud_neural2' | 'text_fallback' | 'no_key';
   errorDetails?: string;
+  voiceUsed?: string;
 }
 
 // =============================================================================
@@ -118,7 +121,7 @@ export async function validateGeminiApiKey(
     textError = e?.message || 'Erro de conexão com o Gemini.';
   }
 
-  // 2. Testa o Google Cloud Text-to-Speech (Neural2)
+  // 2. Testa o Google Cloud Text-to-Speech (Neural2/Studio)
   let ttsEnabled = false;
   let ttsError = '';
 
@@ -155,7 +158,32 @@ export async function validateGeminiApiKey(
 }
 
 // =============================================================================
-// SÍNTESE OFICIAL DE VOZ GOOGLE CLOUD TEXT-TO-SPEECH (NEURAL2 / STUDIO)
+// CONVERSOR SSML PARA PROSÓDIA E PAUSAS HUMANAS
+// =============================================================================
+function convertTextToSSML(text: string): string {
+  let clean = text
+    .replace(/[*_#`]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+  // Formata valores em reais para pronúncia fluida
+  clean = clean.replace(/R\$\s*([0-9.,]+)/g, '$1 reais');
+
+  // Adiciona micro-pausas naturais de 200ms após pontuações para respiração humana
+  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+  const ssmlBody = sentences
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(' <break time="200ms"/> ');
+
+  return `<speak><prosody rate="98%" pitch="0st">${ssmlBody || clean}</prosody></speak>`;
+}
+
+// =============================================================================
+// SÍNTESE OFICIAL DE VOZ GOOGLE CLOUD TEXT-TO-SPEECH (NEURAL2 / STUDIO HD)
 // =============================================================================
 export async function synthesizeSpeechGoogleCloud({
   text,
@@ -165,47 +193,77 @@ export async function synthesizeSpeechGoogleCloud({
   text: string;
   apiKey: string;
   voiceName?: string;
-}): Promise<{ audioBase64: string | null; error?: string }> {
+}): Promise<{ audioBase64: string | null; voiceUsed?: string; error?: string }> {
   try {
-    const cleanText = text
-      .replace(/[*_#`]/g, '')
-      .replace(/R\$\s*/g, 'R$ ')
-      .trim();
+    const selectedVoice = voiceName || getVoicePreference() || 'pt-BR-Studio-B';
+    const ssml = convertTextToSSML(text);
 
-    const selectedVoice = voiceName || getVoicePreference() || 'pt-BR-Neural2-B';
-
+    // Tenta primeiro com SSML e masterização de estúdio
     const res = await fetch(
       `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          input: { text: cleanText },
+          input: { ssml },
           voice: {
             languageCode: 'pt-BR',
             name: selectedVoice,
           },
           audioConfig: {
             audioEncoding: 'MP3',
-            speakingRate: 1.03,
+            speakingRate: 1.0,
             pitch: 0.0,
+            sampleRateHertz: 44100,
+            effectsProfileId: [
+              'headphone-class-device',
+              'large-home-entertainment-class-device',
+            ],
           },
         }),
       }
     );
 
     if (!res.ok) {
+      // Fallback para texto plano se SSML falhar
+      const plainText = text.replace(/[*_#`]/g, '').trim();
+      const fallbackRes = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text: plainText },
+            voice: {
+              languageCode: 'pt-BR',
+              name: selectedVoice,
+            },
+            audioConfig: {
+              audioEncoding: 'MP3',
+              speakingRate: 1.0,
+            },
+          }),
+        }
+      );
+
+      if (fallbackRes.ok) {
+        const data = await fallbackRes.json();
+        if (data?.audioContent) {
+          return { audioBase64: data.audioContent, voiceUsed: selectedVoice };
+        }
+      }
+
       const errData = await res.json().catch(() => ({}));
       const errMessage =
         errData?.error?.message ||
-        `Erro ${res.status}: Cloud Text-to-Speech API não respondeu.`;
+        `Erro ${res.status}: Cloud Text-to-Speech não autorizado para esta chave.`;
       console.warn('[Sensei TTS Error]:', errMessage);
       return { audioBase64: null, error: errMessage };
     }
 
     const data = await res.json();
     if (data?.audioContent) {
-      return { audioBase64: data.audioContent };
+      return { audioBase64: data.audioContent, voiceUsed: selectedVoice };
     }
 
     return { audioBase64: null, error: 'Áudio não retornado pelo Google Cloud TTS.' };
@@ -447,8 +505,6 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em 
 
 // =============================================================================
 // FUNÇÃO PRINCIPAL: askSenseiWithVoice
-// 1. Gera o texto com o Gemini
-// 2. Sintetiza a voz com Google Cloud Text-to-Speech (Neural2)
 // =============================================================================
 export async function askSenseiWithVoice({
   question,
@@ -469,7 +525,7 @@ export async function askSenseiWithVoice({
   // ETAPA 1: Gera a resposta textual com o Gemini
   const answerText = await askSenseiText(question, project, effectiveKey);
 
-  // ETAPA 2: Sintetiza a voz de estúdio com Google Cloud Text-to-Speech (Neural2)
+  // ETAPA 2: Sintetiza a voz de estúdio com Google Cloud Text-to-Speech (Neural2 / Studio)
   const voiceName = getVoicePreference();
   const ttsResult = await synthesizeSpeechGoogleCloud({
     text: answerText,
@@ -483,6 +539,7 @@ export async function askSenseiWithVoice({
       mimeType: 'audio/mp3',
       textFallback: answerText,
       source: 'google_cloud_neural2',
+      voiceUsed: ttsResult.voiceUsed,
     };
   }
 
