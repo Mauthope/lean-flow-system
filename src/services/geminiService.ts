@@ -14,6 +14,8 @@ export interface SenseiResponse {
 }
 
 const STORAGE_KEY = 'sensei_gemini_api_key';
+const STORAGE_TTS_KEY = 'sensei_google_tts_api_key';
+const STORAGE_VOICE_KEY = 'sensei_voice_preference';
 
 /**
  * Retorna a chave do Gemini configurada (localStorage ou Variável de Ambiente)
@@ -36,6 +38,118 @@ export function saveGeminiApiKey(key: string): void {
     } else {
       localStorage.setItem(STORAGE_KEY, key.trim());
     }
+  }
+}
+
+/**
+ * Retorna a chave do Google Cloud Text-to-Speech configurada
+ */
+export function getGoogleTtsApiKey(): string {
+  if (typeof window !== 'undefined') {
+    const localKey = localStorage.getItem(STORAGE_TTS_KEY);
+    if (localKey && localKey.trim()) return localKey.trim();
+  }
+  return (
+    process.env.NEXT_PUBLIC_GOOGLE_TTS_API_KEY ||
+    process.env.GOOGLE_TTS_API_KEY ||
+    getGeminiApiKey() ||
+    ''
+  );
+}
+
+/**
+ * Salva a chave do Google Cloud Text-to-Speech
+ */
+export function saveGoogleTtsApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    if (!key || !key.trim()) {
+      localStorage.removeItem(STORAGE_TTS_KEY);
+    } else {
+      localStorage.setItem(STORAGE_TTS_KEY, key.trim());
+    }
+  }
+}
+
+/**
+ * Retorna a preferência de voz (padrão: pt-BR-Neural2-B masculina natural)
+ */
+export function getVoicePreference(): string {
+  if (typeof window !== 'undefined') {
+    const v = localStorage.getItem(STORAGE_VOICE_KEY);
+    if (v) return v;
+  }
+  return 'pt-BR-Neural2-B'; // Voz executiva masculina com alta naturalidade
+}
+
+/**
+ * Salva a preferência de voz
+ */
+export function saveVoicePreference(voice: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_VOICE_KEY, voice);
+  }
+}
+
+/**
+ * Sintetiza voz ultra-natural via Google Cloud Text-to-Speech API
+ * Retorna o base64 do áudio MP3 ou null caso falhe/não configurado
+ */
+export async function synthesizeSpeechGoogleCloud({
+  text,
+  apiKey,
+  voiceName,
+}: {
+  text: string;
+  apiKey?: string;
+  voiceName?: string;
+}): Promise<string | null> {
+  const effectiveKey = apiKey || getGoogleTtsApiKey();
+  if (!effectiveKey) return null;
+
+  try {
+    const cleanText = text
+      .replace(/[*_#`]/g, '')
+      .replace(/R\$\s*/g, 'R$ ')
+      .trim();
+
+    const selectedVoice = voiceName || getVoicePreference();
+
+    const response = await fetch(
+      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${effectiveKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: { text: cleanText },
+          voice: {
+            languageCode: 'pt-BR',
+            name: selectedVoice,
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 1.05,
+            pitch: 0.0,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.warn('Erro ao chamar Google Cloud TTS, caindo para sintetizador nativo:', err);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data && data.audioContent) {
+      return data.audioContent; // Base64 MP3
+    }
+    return null;
+  } catch (error) {
+    console.error('Falha na síntese do Google Cloud TTS:', error);
+    return null;
   }
 }
 

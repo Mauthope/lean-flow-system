@@ -12,14 +12,19 @@ import {
   Send,
   Key,
   CheckCircle2,
-  AlertCircle,
-  HelpCircle,
+  Play,
+  Activity,
 } from 'lucide-react';
 import { LeanAction } from '@/lib/types';
 import {
   askSensei,
   getGeminiApiKey,
   saveGeminiApiKey,
+  getGoogleTtsApiKey,
+  saveGoogleTtsApiKey,
+  getVoicePreference,
+  saveVoicePreference,
+  synthesizeSpeechGoogleCloud,
   SenseiResponse,
 } from '@/services/geminiService';
 
@@ -60,26 +65,27 @@ export default function SenseiVoiceAssistant({
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
 
-  // Histórico da última interação
-  const [lastQuestion, setLastQuestion] = useState<string>('');
-  const [lastResponse, setLastResponse] = useState<SenseiResponse | null>(null);
-  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-
-  // Configuração da chave do Gemini
+  // Configuração da chave do Gemini e Google Cloud TTS
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [geminiKeyInput, setGeminiKeyInput] = useState<string>('');
+  const [ttsKeyInput, setTtsKeyInput] = useState<string>('');
+  const [selectedVoice, setSelectedVoice] = useState<string>('pt-BR-Neural2-B');
   const [savedKeySuccess, setSavedKeySuccess] = useState<boolean>(false);
+  const [testingVoice, setTestingVoice] = useState<boolean>(false);
 
   // Digitação manual de pergunta
   const [manualInput, setManualInput] = useState<string>('');
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const isListeningRef = useRef<boolean>(false);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Carrega chave salva
+  // Carrega chaves e preferências salvas
   useEffect(() => {
     setGeminiKeyInput(getGeminiApiKey());
+    setTtsKeyInput(getGoogleTtsApiKey());
+    setSelectedVoice(getVoicePreference());
   }, []);
 
   // Inicializa suporte a Web Speech API
@@ -106,7 +112,6 @@ export default function SenseiVoiceAssistant({
       };
 
       recognition.onend = () => {
-        // Reinicia se o usuário ainda quiser ouvir contínuo
         if (isListeningRef.current) {
           try {
             recognition.start();
@@ -150,6 +155,9 @@ export default function SenseiVoiceAssistant({
           // cleanup
         }
       }
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+      }
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -157,52 +165,94 @@ export default function SenseiVoiceAssistant({
   }, []);
 
   /**
-   * Fala a resposta em voz alta com Web Speech Synthesis
+   * Para qualquer áudio ou voz em reprodução
    */
-  const speakText = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    window.speechSynthesis.cancel();
-
-    // Limpa pontuações estranhas para fala fluida
-    const cleanSpeech = text
-      .replace(/[*_#`]/g, '')
-      .replace(/R\$\s*/g, 'R$ ')
-      .trim();
-
-    const utterance = new SpeechSynthesisUtterance(cleanSpeech);
-    utterance.lang = 'pt-BR';
-    utterance.rate = 1.03; // Velocidade agradável e natural
-    utterance.pitch = 1.0;
-
-    // Seleciona a melhor voz em Português disponível no sistema
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoices = voices.filter(
-      (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
-    );
-    const naturalVoice =
-      ptVoices.find((v) => v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Francisca') || v.name.includes('Antonio')) ||
-      ptVoices[0];
-
-    if (naturalVoice) {
-      utterance.voice = naturalVoice;
+  const stopSpeaking = useCallback(() => {
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
     }
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-    };
-
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-    };
-
-    currentUtteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
   }, []);
+
+  /**
+   * Fala a resposta em voz alta utilizando Google Cloud Text-to-Speech (Neural2)
+   * com fallback transparente para a voz nativa do navegador
+   */
+  const speakText = useCallback(
+    async (text: string) => {
+      stopSpeaking();
+
+      // 1. Tenta sintetizar com Google Cloud Text-to-Speech (Neural2 de estúdio)
+      try {
+        const audioBase64 = await synthesizeSpeechGoogleCloud({
+          text,
+          voiceName: selectedVoice,
+        });
+
+        if (audioBase64) {
+          const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
+          activeAudioRef.current = audio;
+
+          audio.onplay = () => setIsSpeaking(true);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            activeAudioRef.current = null;
+          };
+          audio.onerror = () => {
+            setIsSpeaking(false);
+            activeAudioRef.current = null;
+          };
+
+          await audio.play();
+          return;
+        }
+      } catch (err) {
+        console.warn('Falha no Google Cloud TTS, usando sintetizador nativo:', err);
+      }
+
+      // 2. Fallback para sintetizador nativo caso a chave do Google Cloud não esteja configurada
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const cleanSpeech = text
+          .replace(/[*_#`]/g, '')
+          .replace(/R\$\s*/g, 'R$ ')
+          .trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.03;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoices = voices.filter(
+          (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
+        );
+        const naturalVoice =
+          ptVoices.find(
+            (v) =>
+              v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Francisca') ||
+              v.name.includes('Antonio')
+          ) || ptVoices[0];
+
+        if (naturalVoice) {
+          utterance.voice = naturalVoice;
+        }
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        currentUtteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+      }
+    },
+    [selectedVoice, stopSpeaking]
+  );
 
   /**
    * Processa a pergunta com o motor Gemini / Inteligência Sensei
@@ -212,21 +262,18 @@ export default function SenseiVoiceAssistant({
       if (!questionText.trim()) return;
 
       setIsThinking(true);
-      setLastQuestion(questionText);
-      setDialogOpen(true);
 
       try {
-        const response = await askSensei({
+        const response: SenseiResponse = await askSensei({
           question: questionText,
           project,
           currentSlideIndex: currentSlide,
         });
 
-        setLastResponse(response);
         setIsThinking(false);
 
-        // Reproduz a resposta em áudio na sala
-        speakText(response.answer);
+        // Reproduz a resposta puramente em áudio de alta fidelidade
+        await speakText(response.answer);
       } catch (err) {
         console.error('Erro ao consultar Sensei:', err);
         setIsThinking(false);
@@ -236,7 +283,7 @@ export default function SenseiVoiceAssistant({
   );
 
   /**
-   * Trata o áudio capturado pela escuta contínua
+   * Trata o áudio capturado pela escuta contínua com wake word "Sensei"
    */
   const handleDetectedSpeech = useCallback(
     (transcript: string) => {
@@ -244,7 +291,6 @@ export default function SenseiVoiceAssistant({
 
       // Verifica se chamou a Wake Word "Sensei"
       if (lower.includes('sensei')) {
-        // Extrai a pergunta após a palavra Sensei
         const parts = transcript.split(/sensei/i);
         const rawQuestion = parts[parts.length - 1]?.replace(/^[,.:\s\-]+/, '').trim();
         const effectiveQuestion = rawQuestion || transcript;
@@ -288,25 +334,26 @@ export default function SenseiVoiceAssistant({
   };
 
   /**
-   * Para a voz da IA imediatamente
+   * Salva as configurações de chave e voz
    */
-  const stopSpeaking = () => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  };
-
-  /**
-   * Salva o Token do Gemini configurado pelo usuário
-   */
-  const handleSaveKey = () => {
+  const handleSaveSettings = () => {
     saveGeminiApiKey(geminiKeyInput);
+    saveGoogleTtsApiKey(ttsKeyInput);
+    saveVoicePreference(selectedVoice);
     setSavedKeySuccess(true);
     setTimeout(() => {
       setSavedKeySuccess(false);
       setSettingsOpen(false);
-    }, 1200);
+    }, 1000);
+  };
+
+  /**
+   * Teste de áudio imediato com a voz selecionada
+   */
+  const handleTestVoice = async () => {
+    setTestingVoice(true);
+    await speakText('Olá! Eu sou o Sensei, seu assistente de inteligência artificial na apresentação.');
+    setTestingVoice(false);
   };
 
   /**
@@ -317,106 +364,152 @@ export default function SenseiVoiceAssistant({
     if (!manualInput.trim()) return;
     const q = manualInput;
     setManualInput('');
+    setSettingsOpen(false);
     processQuestion(q);
   };
 
   return (
     <>
       {/* =================================================================== */}
-      {/* SENSEI HUD BAR - BOTÃO NO TOPO DA APRESENTAÇÃO                      */}
+      {/* SENSEI HUD BAR - COM ANIMAÇÃO DINÂMICA DE ONDAS DE VOZ              */}
       {/* =================================================================== */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-        {/* Botão Principal do Sensei */}
-        <button
-          type="button"
-          onClick={toggleListening}
-          className="btn btn-sm"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            padding: '0.35rem 0.75rem',
-            borderRadius: '999px',
-            fontSize: '0.75rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            backgroundColor: isListening
-              ? 'rgba(16, 185, 129, 0.2)'
-              : isThinking
-              ? 'rgba(139, 92, 246, 0.25)'
-              : 'rgba(255, 255, 255, 0.06)',
-            border: isListening
-              ? '1.5px solid #10b981'
-              : isThinking
-              ? '1.5px solid #a855f7'
-              : '1px solid rgba(255, 255, 255, 0.15)',
-            color: isListening ? '#34d399' : isThinking ? '#c084fc' : '#cbd5e1',
-            boxShadow: isListening
-              ? '0 0 15px rgba(16, 185, 129, 0.4)'
-              : isThinking
-              ? '0 0 15px rgba(168, 85, 247, 0.4)'
-              : 'none',
-          }}
-          title={
-            isListening
-              ? 'Sensei está ouvindo a sala! Fale "Sensei..." ou faça uma pergunta'
-              : 'Clique para ativar o Sensei (Assistente de Voz ao Vivo)'
-          }
-        >
-          {isThinking ? (
-            <>
-              <Sparkles size={14} className="animate-spin" color="#c084fc" />
-              <span>Sensei pensando...</span>
-            </>
-          ) : isListening ? (
-            <>
-              <div
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10b981',
-                  animation: 'pulse 1.5s infinite',
-                }}
-              />
-              <Mic size={14} color="#34d399" />
-              <span>Sensei Ouvindo</span>
-              <span style={{ fontSize: '0.65rem', opacity: 0.8, color: '#6ee7b7' }}>(Diga &quot;Sensei...&quot;)</span>
-            </>
-          ) : (
-            <>
-              <MicOff size={14} color="#94a3b8" />
-              <span>Ativar Sensei (Voz)</span>
-            </>
-          )}
-        </button>
-
-        {/* Botão de Silenciar Voz da IA (se estiver falando) */}
-        {isSpeaking && (
-          <button
-            type="button"
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+        {/* Animação Visual de Onda Sonora quando o Sensei está FALANDO */}
+        {isSpeaking ? (
+          <div
             onClick={stopSpeaking}
-            className="btn btn-sm"
             style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              color: '#f87171',
-              fontSize: '0.7rem',
-              padding: '0.35rem 0.6rem',
-              borderRadius: '999px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.3rem',
-              animation: 'pulse 1s infinite',
+              gap: '0.5rem',
+              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+              border: '1.5px solid #22d3ee',
+              borderRadius: '999px',
+              padding: '0.35rem 0.85rem',
+              cursor: 'pointer',
+              boxShadow: '0 0 20px rgba(6, 182, 212, 0.5)',
+              animation: 'pulse 1.5s infinite',
             }}
-            title="Pausar fala do Sensei"
+            title="Sensei falando... Clique para pausar áudio"
           >
-            <VolumeX size={13} /> Silenciar
+            {/* Ícone de Som */}
+            <Volume2 size={15} color="#22d3ee" />
+
+            {/* 4 Barras de Onda Sonora Animada (Waveform) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2.5px', height: '14px' }}>
+              <span
+                style={{
+                  width: '3px',
+                  height: '14px',
+                  backgroundColor: '#22d3ee',
+                  borderRadius: '2px',
+                  animation: 'soundWave 0.8s ease-in-out infinite alternate',
+                }}
+              />
+              <span
+                style={{
+                  width: '3px',
+                  height: '8px',
+                  backgroundColor: '#38bdf8',
+                  borderRadius: '2px',
+                  animation: 'soundWave 0.6s ease-in-out 0.2s infinite alternate',
+                }}
+              />
+              <span
+                style={{
+                  width: '3px',
+                  height: '16px',
+                  backgroundColor: '#22d3ee',
+                  borderRadius: '2px',
+                  animation: 'soundWave 0.7s ease-in-out 0.4s infinite alternate',
+                }}
+              />
+              <span
+                style={{
+                  width: '3px',
+                  height: '10px',
+                  backgroundColor: '#38bdf8',
+                  borderRadius: '2px',
+                  animation: 'soundWave 0.5s ease-in-out 0.1s infinite alternate',
+                }}
+              />
+            </div>
+
+            <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#22d3ee', letterSpacing: '0.02em' }}>
+              Sensei Falando
+            </span>
+
+            <VolumeX size={12} color="#f87171" style={{ marginLeft: '0.2rem', opacity: 0.8 }} />
+          </div>
+        ) : (
+          /* Botão Padrão do Sensei (Ouvindo / Standby / Pensando) */
+          <button
+            type="button"
+            onClick={toggleListening}
+            className="btn btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '999px',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              backgroundColor: isListening
+                ? 'rgba(16, 185, 129, 0.2)'
+                : isThinking
+                ? 'rgba(139, 92, 246, 0.25)'
+                : 'rgba(255, 255, 255, 0.06)',
+              border: isListening
+                ? '1.5px solid #10b981'
+                : isThinking
+                ? '1.5px solid #a855f7'
+                : '1px solid rgba(255, 255, 255, 0.15)',
+              color: isListening ? '#34d399' : isThinking ? '#c084fc' : '#cbd5e1',
+              boxShadow: isListening
+                ? '0 0 15px rgba(16, 185, 129, 0.4)'
+                : isThinking
+                ? '0 0 15px rgba(168, 85, 247, 0.4)'
+                : 'none',
+            }}
+            title={
+              isListening
+                ? 'Sensei está ouvindo a sala! Fale "Sensei..." ou faça uma pergunta'
+                : 'Clique para ativar o Sensei (Assistente de Voz ao Vivo)'
+            }
+          >
+            {isThinking ? (
+              <>
+                <Sparkles size={14} className="animate-spin" color="#c084fc" />
+                <span>Sensei pensando...</span>
+              </>
+            ) : isListening ? (
+              <>
+                <div
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    animation: 'pulse 1.5s infinite',
+                  }}
+                />
+                <Mic size={14} color="#34d399" />
+                <span>Sensei Ouvindo</span>
+                <span style={{ fontSize: '0.65rem', opacity: 0.8, color: '#6ee7b7' }}>(Diga &quot;Sensei...&quot;)</span>
+              </>
+            ) : (
+              <>
+                <MicOff size={14} color="#94a3b8" />
+                <span>Ativar Sensei (Voz)</span>
+              </>
+            )}
           </button>
         )}
 
-        {/* Botão de Configurações do Token Gemini / Ajuda */}
+        {/* Botão de Configurações do Token / Voz / Testes */}
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
@@ -431,122 +524,22 @@ export default function SenseiVoiceAssistant({
             display: 'flex',
             alignItems: 'center',
           }}
-          title="Configurar Chave do Gemini ou Enviar Pergunta por Texto"
+          title="Configurar Vozes do Google Cloud, Chaves ou Enviar Pergunta por Texto"
         >
           <Settings size={13} />
         </button>
       </div>
 
       {/* =================================================================== */}
-      {/* MODAL / LEGENDA FLUTUANTE DA RESPOSTA DO SENSEI                     */}
-      {/* =================================================================== */}
-      {dialogOpen && (lastResponse || isThinking) && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '68px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '90%',
-            maxWidth: '780px',
-            backgroundColor: 'rgba(9, 14, 26, 0.95)',
-            backdropFilter: 'blur(16px)',
-            border: '1.5px solid rgba(6, 182, 212, 0.4)',
-            borderRadius: '16px',
-            padding: '1rem 1.25rem',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.2)',
-            zIndex: 100,
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          {/* Header da Legenda */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                  border: '1px solid rgba(6, 182, 212, 0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.75rem',
-                }}
-              >
-                🥋
-              </div>
-              <span style={{ fontSize: '0.78125rem', fontWeight: 900, color: '#22d3ee', letterSpacing: '0.02em' }}>
-                SENSEI LEAN AI
-              </span>
-              {lastResponse?.source === 'gemini' ? (
-                <span style={{ fontSize: '0.625rem', color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                  ✦ Google Gemini
-                </span>
-              ) : (
-                <span style={{ fontSize: '0.625rem', color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
-                  ⚡ Motor Lean Rápido
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {isSpeaking && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#34d399', fontSize: '0.7rem', fontWeight: 700 }}>
-                  <Volume2 size={14} className="animate-pulse" /> Falando...
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  stopSpeaking();
-                  setDialogOpen(false);
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  padding: '0.2rem',
-                }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Pergunta detectada */}
-          {lastQuestion && (
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.4rem', fontStyle: 'italic' }}>
-              &ldquo;{lastQuestion}&rdquo;
-            </div>
-          )}
-
-          {/* Resposta do Sensei */}
-          {isThinking ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#c084fc', fontSize: '0.84375rem', padding: '0.4rem 0' }}>
-              <Sparkles size={16} className="animate-spin" />
-              <span>Analisando o projeto e formulando resposta...</span>
-            </div>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.9rem', color: '#ffffff', lineHeight: 1.5, fontWeight: 500 }}>
-              {lastResponse?.answer}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* =================================================================== */}
-      {/* MODAL DE CONFIGURAÇÃO DO TOKEN GEMINI / CHAT MANUAL                 */}
+      {/* MODAL DE CONFIGURAÇÃO DE VOZ GOOGLE CLOUD TTS & CHAVES              */}
       {/* =================================================================== */}
       {settingsOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.82)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -561,20 +554,20 @@ export default function SenseiVoiceAssistant({
               borderRadius: '20px',
               padding: '1.5rem',
               width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              maxWidth: '540px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
             }}
           >
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>🥋</span>
+                <span style={{ fontSize: '1.3rem' }}>🥋</span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                     Configurar Sensei AI
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Assistente de Apresentação por Voz & Inteligência Gemini
+                    Google Cloud Text-to-Speech (Neural2) & Motor Gemini
                   </span>
                 </div>
               </div>
@@ -588,28 +581,69 @@ export default function SenseiVoiceAssistant({
               </button>
             </div>
 
-            {/* Como funciona o Sensei */}
-            <div style={{ backgroundColor: '#040711', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '1.25rem', fontSize: '0.78125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-              <strong style={{ color: '#22d3ee', display: 'block', marginBottom: '0.25rem' }}>
-                🎙️ Como interagir por voz durante os slides:
-              </strong>
-              1. Deixe o microfone ativado no topo da tela.<br />
-              2. Quando alguém fizer uma pergunta, basta iniciar dizendo: <strong style={{ color: '#34d399' }}>&ldquo;Sensei, [sua pergunta]&rdquo;</strong>.<br />
-              3. O Sensei consultará todos os dados do projeto e responderá em voz alta!
+            {/* Seleção de Voz do Google Cloud TTS */}
+            <div style={{ marginBottom: '1.15rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Volume2 size={13} color="#22d3ee" />
+                  Voz do Sensei (Google Cloud Neural2):
+                </label>
+                <button
+                  type="button"
+                  onClick={handleTestVoice}
+                  disabled={testingVoice}
+                  className="btn btn-sm"
+                  style={{
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.4)',
+                    color: '#22d3ee',
+                    fontSize: '0.675rem',
+                    padding: '0.15rem 0.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                >
+                  <Play size={10} /> Testar Voz
+                </button>
+              </div>
+
+              <select
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className="input input-sm"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#040711',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  fontSize: '0.78125rem',
+                  padding: '0.45rem 0.75rem',
+                  borderRadius: '8px',
+                }}
+              >
+                <option value="pt-BR-Neural2-B">🎙️ pt-BR-Neural2-B (Masculina Executiva - Estúdio / Natural)</option>
+                <option value="pt-BR-Neural2-A">🎙️ pt-BR-Neural2-A (Feminina Executiva - Clara / Natural)</option>
+                <option value="pt-BR-Neural2-C">🎙️ pt-BR-Neural2-C (Feminina Suave - Natural)</option>
+                <option value="pt-BR-Wavenet-B">🎙️ pt-BR-Wavenet-B (Masculina WaveNet)</option>
+              </select>
             </div>
 
-            {/* Campo para Inserir Chave da API do Google Gemini */}
+            {/* Campo da Chave de API Google (Gemini & Cloud TTS) */}
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
                 <Key size={13} color="#fbbf24" />
-                Sua Chave de API Google Gemini (Token Particular):
+                Sua Chave de API Google (Token Particular):
               </label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
                   type="password"
                   value={geminiKeyInput}
-                  onChange={(e) => setGeminiKeyInput(e.target.value)}
-                  placeholder="Cole aqui sua API Key do Google AI Studio..."
+                  onChange={(e) => {
+                    setGeminiKeyInput(e.target.value);
+                    setTtsKeyInput(e.target.value);
+                  }}
+                  placeholder="Cole aqui sua API Key do Google..."
                   className="input input-sm"
                   style={{
                     flex: 1,
@@ -623,19 +657,19 @@ export default function SenseiVoiceAssistant({
                 />
                 <button
                   type="button"
-                  onClick={handleSaveKey}
+                  onClick={handleSaveSettings}
                   className="btn btn-primary btn-sm"
                   style={{ fontSize: '0.75rem', padding: '0.45rem 0.85rem', fontWeight: 800 }}
                 >
-                  Salvar Chave
+                  Salvar
                 </button>
               </div>
               <span style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.35rem', display: 'block' }}>
-                💡 Gratuita em <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>aistudio.google.com</a>. Caso vazia, o Sensei usará o motor local inteligente.
+                💡 A chave é salva de forma segura e privada diretamente no seu navegador.
               </span>
               {savedKeySuccess && (
                 <div style={{ marginTop: '0.4rem', color: '#34d399', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <CheckCircle2 size={13} /> Chave salva com sucesso no navegador!
+                  <CheckCircle2 size={13} /> Configurações e voz salvas com sucesso!
                 </div>
               )}
             </div>
@@ -643,7 +677,7 @@ export default function SenseiVoiceAssistant({
             {/* Teste manual por digitação */}
             <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.4rem' }}>
-                💬 Testar pergunta por texto:
+                💬 Testar pergunta manualmente (o Sensei responderá por áudio):
               </label>
               <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
                 <input
@@ -675,6 +709,18 @@ export default function SenseiVoiceAssistant({
           </div>
         </div>
       )}
+
+      {/* CSS Keyframes inline para animações sutis de som */}
+      <style jsx global>{`
+        @keyframes soundWave {
+          0% {
+            height: 4px;
+          }
+          100% {
+            height: 15px;
+          }
+        }
+      `}</style>
     </>
   );
 }
