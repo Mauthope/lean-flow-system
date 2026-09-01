@@ -203,14 +203,17 @@ export default function SenseiVoiceAssistant({
   );
 
   // ===================================================================
-  // PROCESSA A PERGUNTA — GEMINI GERA ÁUDIO DIRETAMENTE
+  // PROCESSA A PERGUNTA — GEMINI GERA TEXTO + ÁUDIO
   // ===================================================================
+  const [audioUnavailable, setAudioUnavailable] = useState(false);
+
   const processQuestion = useCallback(
     async (questionText: string) => {
       if (!questionText.trim()) return;
 
       setIsThinking(true);
       setNeedsApiKey(false);
+      setAudioUnavailable(false);
 
       try {
         const response: SenseiVoiceResponse = await askSenseiWithVoice({
@@ -222,16 +225,17 @@ export default function SenseiVoiceAssistant({
         setIsThinking(false);
 
         if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
-          // Áudio de alta qualidade gerado pelo Gemini — reproduz diretamente
+          // ✅ Áudio de alta qualidade gerado pelo Gemini — reproduz diretamente
           await playAudioBase64(response.audioBase64, response.mimeType);
         } else if (response.source === 'no_key') {
-          // Sem chave configurada — abre o painel de configuração
+          // ❌ Sem chave configurada — abre o painel
           setNeedsApiKey(true);
           setSettingsOpen(true);
         } else {
-          // Fallback textual — não reproduz voz robótica, apenas exibe alerta
-          console.warn('[Sensei] Resposta em texto (sem áudio):', response.textFallback);
-          setNeedsApiKey(true);
+          // ⚠️ Chave funciona mas áudio não foi gerado — exibe aviso temporário
+          console.warn('[Sensei] Resposta em texto (áudio indisponível):', response.textFallback);
+          setAudioUnavailable(true);
+          setTimeout(() => setAudioUnavailable(false), 5000);
         }
       } catch (err) {
         console.error('[Sensei] Erro ao consultar:', err);
@@ -408,6 +412,8 @@ export default function SenseiVoiceAssistant({
                 ? 'rgba(139, 92, 246, 0.25)'
                 : needsApiKey
                 ? 'rgba(251, 191, 36, 0.15)'
+                : audioUnavailable
+                ? 'rgba(249, 115, 22, 0.15)'
                 : 'rgba(255, 255, 255, 0.06)',
               border: isListening
                 ? '1.5px solid #10b981'
@@ -415,6 +421,8 @@ export default function SenseiVoiceAssistant({
                 ? '1.5px solid #a855f7'
                 : needsApiKey
                 ? '1.5px solid #fbbf24'
+                : audioUnavailable
+                ? '1.5px solid #f97316'
                 : '1px solid rgba(255, 255, 255, 0.15)',
               color: isListening
                 ? '#34d399'
@@ -422,6 +430,8 @@ export default function SenseiVoiceAssistant({
                 ? '#c084fc'
                 : needsApiKey
                 ? '#fbbf24'
+                : audioUnavailable
+                ? '#fb923c'
                 : '#cbd5e1',
               boxShadow: isListening
                 ? '0 0 15px rgba(16, 185, 129, 0.4)'
@@ -434,6 +444,8 @@ export default function SenseiVoiceAssistant({
                 ? 'Sensei está ouvindo! Fale "Sensei..."'
                 : needsApiKey
                 ? 'Configure sua chave do Gemini para ativar o Sensei'
+                : audioUnavailable
+                ? 'Áudio TTS não disponível — verifique o console do navegador (F12)'
                 : 'Ativar Sensei (Assistente de Voz ao Vivo)'
             }
           >
@@ -446,6 +458,12 @@ export default function SenseiVoiceAssistant({
               <>
                 <AlertTriangle size={14} color="#fbbf24" />
                 <span>Configurar Chave</span>
+              </>
+            ) : audioUnavailable && !isListening ? (
+              <>
+                <AlertTriangle size={14} color="#fb923c" />
+                <span>TTS indisponível</span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>(verifique F12)</span>
               </>
             ) : isListening ? (
               <>

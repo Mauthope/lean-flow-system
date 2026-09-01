@@ -261,9 +261,147 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
 }
 
 // =============================================================================
+// MODELOS DE ÁUDIO PARA TENTATIVA (em ordem de preferência)
+// =============================================================================
+const AUDIO_MODELS = [
+  'gemini-2.5-flash-preview-tts',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+];
+
+const TEXT_MODEL = 'gemini-2.5-flash';
+
+// =============================================================================
+// ETAPA 1: Gera a resposta textual do Sensei (modelo comprovado)
+// =============================================================================
+async function askSenseiText(
+  question: string,
+  project: LeanAction,
+  apiKey: string,
+): Promise<string> {
+  const projectContext = buildProjectContext(project);
+  const systemPrompt = getSenseiSystemPrompt();
+
+  const promptText = `${systemPrompt}
+
+${projectContext}
+
+PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
+"${question}"
+
+SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em português do Brasil):`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            temperature: 0.35,
+            maxOutputTokens: 250,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('[Sensei] Erro na geração de texto:', await response.text());
+      return getLocalFallbackAnswer(question, project);
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    return text || getLocalFallbackAnswer(question, project);
+  } catch (err) {
+    console.error('[Sensei] Falha na etapa de texto:', err);
+    return getLocalFallbackAnswer(question, project);
+  }
+}
+
+// =============================================================================
+// ETAPA 2: Sintetiza o texto em áudio de alta qualidade via Gemini TTS
+// Tenta múltiplos modelos em sequência até obter áudio
+// =============================================================================
+async function synthesizeWithGeminiTTS(
+  text: string,
+  apiKey: string,
+  voiceName: string,
+): Promise<{ audioBase64: string; mimeType: string } | null> {
+  const cleanText = text
+    .replace(/[*_#`]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+
+  for (const model of AUDIO_MODELS) {
+    try {
+      console.log(`[Sensei] Tentando síntese de áudio com modelo: ${model}`);
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [{ text: cleanText }],
+              },
+            ],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: voiceName,
+                  },
+                },
+              },
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`[Sensei] Modelo ${model} retornou erro:`, errText);
+        continue; // Tenta o próximo modelo
+      }
+
+      const data = await response.json();
+
+      // Busca a parte de áudio inline na resposta
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const audioPart = data?.candidates?.[0]?.content?.parts?.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p: any) => p.inlineData && p.inlineData.data
+      );
+
+      if (audioPart?.inlineData) {
+        console.log(`[Sensei] ✅ Áudio gerado com sucesso pelo modelo: ${model}`);
+        return {
+          audioBase64: audioPart.inlineData.data,
+          mimeType: audioPart.inlineData.mimeType || 'audio/L16;rate=24000',
+        };
+      }
+
+      console.warn(`[Sensei] Modelo ${model} não retornou áudio, tentando próximo...`);
+    } catch (err) {
+      console.warn(`[Sensei] Erro com modelo ${model}:`, err);
+      continue; // Tenta o próximo modelo
+    }
+  }
+
+  console.warn('[Sensei] Nenhum modelo de áudio funcionou.');
+  return null;
+}
+
+// =============================================================================
 // FUNÇÃO PRINCIPAL: askSenseiWithVoice
-// Gera a resposta falada do Sensei em uma única chamada ao Gemini 2.5 Flash
-// O modelo pensa, formula a resposta e fala tudo de uma vez — voz ultra-natural
+// Etapa 1: Gera a resposta textual inteligente (modelo comprovado)
+// Etapa 2: Sintetiza essa resposta em voz ultra-natural (tentando múltiplos modelos TTS)
 // =============================================================================
 export async function askSenseiWithVoice({
   question,
@@ -272,7 +410,6 @@ export async function askSenseiWithVoice({
 }: SenseiAskParams): Promise<SenseiVoiceResponse> {
   const effectiveKey = apiKey || getGeminiApiKey();
 
-  // Sem chave → retorna texto de fallback (sem áudio)
   if (!effectiveKey) {
     return {
       audioBase64: null,
@@ -282,89 +419,28 @@ export async function askSenseiWithVoice({
     };
   }
 
-  try {
-    const projectContext = buildProjectContext(project);
-    const systemPrompt = getSenseiSystemPrompt();
-    const voiceName = getVoicePreference();
+  // ETAPA 1: Gera a resposta textual do Sensei
+  const answerText = await askSenseiText(question, project, effectiveKey);
 
-    const promptText = `${systemPrompt}
+  // ETAPA 2: Sintetiza o áudio da resposta
+  const voiceName = getVoicePreference();
+  const audioResult = await synthesizeWithGeminiTTS(answerText, effectiveKey, voiceName);
 
-${projectContext}
-
-PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
-"${question}"
-
-Responda como o Sensei de forma didática e envolvente (2 a 4 frases faladas em português do Brasil):`;
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${SENSEI_PROFILE.model}:generateContent?key=${effectiveKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: promptText }],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: voiceName,
-                },
-              },
-            },
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.warn('[Sensei] Erro na geração de áudio Gemini:', errText);
-      return {
-        audioBase64: null,
-        mimeType: null,
-        textFallback: getLocalFallbackAnswer(question, project),
-        source: 'text_fallback',
-      };
-    }
-
-    const data = await response.json();
-
-    // Busca a parte de áudio inline na resposta do Gemini
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const audioPart = data?.candidates?.[0]?.content?.parts?.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (p: any) => p.inlineData && p.inlineData.mimeType?.startsWith('audio/')
-    );
-
-    if (audioPart?.inlineData) {
-      return {
-        audioBase64: audioPart.inlineData.data,
-        mimeType: audioPart.inlineData.mimeType || 'audio/wav',
-        textFallback: null,
-        source: 'gemini_voice',
-      };
-    }
-
-    // Se o modelo retornou texto em vez de áudio, usa como fallback
-    const textPart = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if (audioResult) {
     return {
-      audioBase64: null,
-      mimeType: null,
-      textFallback: textPart || getLocalFallbackAnswer(question, project),
-      source: 'text_fallback',
-    };
-  } catch (error) {
-    console.error('[Sensei] Falha ao comunicar com o Gemini:', error);
-    return {
-      audioBase64: null,
-      mimeType: null,
-      textFallback: getLocalFallbackAnswer(question, project),
-      source: 'text_fallback',
+      audioBase64: audioResult.audioBase64,
+      mimeType: audioResult.mimeType,
+      textFallback: answerText,
+      source: 'gemini_voice',
     };
   }
+
+  // Se nenhum modelo de áudio funcionou, retorna o texto como fallback
+  return {
+    audioBase64: null,
+    mimeType: null,
+    textFallback: answerText,
+    source: 'text_fallback',
+  };
 }
+
