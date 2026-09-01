@@ -8,11 +8,9 @@ export const SENSEI_PROFILE = {
   title: 'Mestre e Co-Apresentador Lean Manufacturing',
   defaultVoice: 'Kore',
   voices: [
-    { id: 'Kore', label: '🎙️ Kore (Profissional, quente e natural — Padrão Sensei)' },
+    { id: 'Kore', label: '🎙️ Voz Neural Google (Estúdio Natural — Padrão Sensei)' },
     { id: 'Aoede', label: '🎙️ Aoede (Clara e articulada)' },
     { id: 'Charon', label: '🎙️ Charon (Grave e autoritativa)' },
-    { id: 'Puck', label: '🎙️ Puck (Energética e dinâmica)' },
-    { id: 'Fenrir', label: '🎙️ Fenrir (Forte e confiante)' },
   ],
 } as const;
 
@@ -87,7 +85,6 @@ export async function validateGeminiApiKey(
   const cleanKey = key.trim();
 
   try {
-    // 1. Tenta listar os modelos habilitados para esta chave específica (ListModels)
     const listRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`
     );
@@ -103,7 +100,6 @@ export async function validateGeminiApiKey(
         .map((m: any) => m.name.replace('models/', ''));
 
       if (models.length > 0) {
-        // Encontrou modelos disponíveis! Escolhe o melhor (ex: gemini-1.5-flash ou gemini-2.0-flash)
         const preferred =
           models.find((m: string) => m.includes('1.5-flash')) ||
           models.find((m: string) => m.includes('2.0-flash')) ||
@@ -118,7 +114,6 @@ export async function validateGeminiApiKey(
       }
     }
 
-    // 2. Teste direto em múltiplos modelos padrão
     const testCandidateModels = [
       'gemini-1.5-flash',
       'gemini-1.5-flash-latest',
@@ -148,11 +143,10 @@ export async function validateGeminiApiKey(
           return { valid: true };
         }
       } catch {
-        // Tenta o próximo
+        // continua
       }
     }
 
-    // Se nenhum modelo respondeu, analisa a mensagem de erro do Google
     const errData = await listRes.json().catch(() => ({}));
     const message = errData?.error?.message || '';
 
@@ -160,13 +154,6 @@ export async function validateGeminiApiKey(
       return {
         valid: false,
         error: 'Chave de API inválida. Certifique-se de copiar a chave completa gerada no Google AI Studio.',
-      };
-    }
-
-    if (message.includes('Generative Language API has not been used') || message.includes('disabled')) {
-      return {
-        valid: false,
-        error: 'A API Generative Language não está ativada neste projeto do Google Cloud. Crie uma chave nova e gratuita diretamente em aistudio.google.com/apikey (clique em "Create API Key" -> "Create in new project").',
       };
     }
 
@@ -183,7 +170,7 @@ export async function validateGeminiApiKey(
 }
 
 // =============================================================================
-// CONVERSOR PCM -> WAV (Compatibilidade universal com navegadores)
+// CONVERSOR PCM -> WAV
 // =============================================================================
 export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
   try {
@@ -192,44 +179,39 @@ export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
     const buffer = new ArrayBuffer(44 + len);
     const view = new DataView(buffer);
 
-    // RIFF header
     view.setUint8(0, 'R'.charCodeAt(0));
     view.setUint8(1, 'I'.charCodeAt(0));
     view.setUint8(2, 'F'.charCodeAt(0));
     view.setUint8(3, 'F'.charCodeAt(0));
-    view.setUint32(4, 36 + len, true); // file size - 8
+    view.setUint32(4, 36 + len, true);
     view.setUint8(8, 'W'.charCodeAt(0));
     view.setUint8(9, 'A'.charCodeAt(0));
     view.setUint8(10, 'V'.charCodeAt(0));
     view.setUint8(11, 'E'.charCodeAt(0));
 
-    // fmt sub-chunk
     view.setUint8(12, 'f'.charCodeAt(0));
     view.setUint8(13, 'm'.charCodeAt(0));
     view.setUint8(14, 't'.charCodeAt(0));
     view.setUint8(15, ' '.charCodeAt(0));
-    view.setUint32(16, 16, true); // Subchunk1Size
-    view.setUint16(20, 1, true); // AudioFormat (PCM)
-    view.setUint16(22, 1, true); // NumChannels (mono)
-    view.setUint32(24, sampleRate, true); // SampleRate
-    view.setUint32(28, sampleRate * 2, true); // ByteRate
-    view.setUint16(32, 2, true); // BlockAlign
-    view.setUint16(34, 16, true); // BitsPerSample
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
 
-    // data sub-chunk
     view.setUint8(36, 'd'.charCodeAt(0));
     view.setUint8(37, 'a'.charCodeAt(0));
     view.setUint8(38, 't'.charCodeAt(0));
     view.setUint8(39, 'a'.charCodeAt(0));
-    view.setUint32(40, len, true); // data size
+    view.setUint32(40, len, true);
 
-    // Copy PCM bytes
     const pcmBytes = new Uint8Array(buffer, 44);
     for (let i = 0; i < len; i++) {
       pcmBytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Convert buffer to base64
     let binary = '';
     const bytes = new Uint8Array(buffer);
     const chunkSize = 8192;
@@ -247,18 +229,18 @@ export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
 }
 
 // =============================================================================
-// SYSTEM PROMPT DO SENSEI
+// SYSTEM PROMPT DO SENSEI (HUMANO, DIDÁTICO, CALOROSO E ENVOLVENTE)
 // =============================================================================
 function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
 Você está co-apresentando esta reunião ao vivo lado a lado com o apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
 
-SEU PAPEL E PERSONALIDADE (DIDÁTICO, ELEGANTE E ENVOLVENTE):
-- Você NÃO é um robô de respostas secas. Você é um co-apresentador experiente, didático, entusiasmado, cortês e acolhedor.
-- Explique o "porquê" e o impacto dos resultados com clareza pedagógica, conectando a teoria Lean com a prática do projeto em tela.
-- Use linguagem falada natural, elegante e cativante em Português do Brasil.
-- Mantenha respostas faladas de tamanho ideal para reuniões: 2 a 4 frases ricas e objetivas (cerca de 50 a 80 palavras).
-- NÃO use markdown, asteriscos, listas numeradas ou formatação de texto. Sua resposta será FALADA em voz alta.
+SEU PAPEL E PERSONALIDADE (DIDÁTICO, HUMANO, CALOROSO E ENVOLVENTE):
+- Você NÃO é um robô de respostas secas. Você fala com entusiasmo profissional, clareza pedagógica e simpatia natural.
+- Inicie sua resposta com naturalidade humana acolhedora (ex: "Excelente ponto!", "Com certeza! Investigando o posto piloto...", "No diagnóstico desse projeto...", "Analisando os resultados da fábrica...").
+- Explique o "porquê", as causas e os ganhos com ritmo agradável, usando pontuação fluida com vírgulas e pausas naturais para fala.
+- Mantenha respostas faladas de tamanho perfeito para apresentações executivas: 2 a 3 frases ricas, envolventes e objetivas (cerca de 40 a 70 palavras).
+- NÃO use asteriscos, negritos, tópicos em traços ou formatação markdown, pois o texto será FALADO em voz alta.
 
 SEU ESCOPO DE CONHECIMENTO (TEORIA & PRÁTICA LEAN):
 1. O Projeto em tela (Diagnóstico, 5 Porquês, Ishikawa, 5W2H, DRE Financeiro, ROI, Payback, Padronização POP, Yokoten e Fotos).
@@ -268,7 +250,7 @@ TRAVAS E RESTRIÇÕES INVIOLÁVEIS DE SEGURANÇA (GUARDRAILS):
 - Você DEVE responder APENAS sobre: (a) o projeto atual nos slides ou (b) metodologias, ferramentas e teorias de Lean Manufacturing e melhoria contínua.
 - Se alguém fizer qualquer pergunta fora desse universo (como política, religião, piadas, futebol, fofocas ou assuntos gerais), RECUSE com polidez executiva:
   "Como Sensei da apresentação, meu foco é estritamente nos dados deste projeto e nas metodologias de Lean Manufacturing e melhoria contínua da fábrica. Como posso te apoiar com o projeto?"
-- Fale valores e siglas de forma natural para serem ouvidos (ex: "quarenta e oito mil reais", "tempo de ciclo").`;
+- Fale valores e siglas de forma natural para serem ouvidos (ex: "quarenta e oito mil reais por ano", "tempo de ciclo", "oê-ê", "érre-ó-í").`;
 }
 
 // =============================================================================
@@ -369,69 +351,54 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const netSavings = project.netSavings !== undefined ? project.netSavings : grossSavings - investment;
 
   if (q.includes('o que é lean') || q.includes('o que e lean') || q.includes('filosofia lean')) {
-    return 'O Lean Manufacturing é uma filosofia de gestão originada no Sistema Toyota de Produção, focada na eliminação contínua de desperdícios e maximização de valor para o cliente através do engajamento das pessoas no Gemba.';
+    return 'Excelente pergunta! O Lean Manufacturing é uma filosofia de gestão originada no Sistema Toyota de Produção, focada na eliminação contínua de desperdícios e geração máxima de valor para o cliente através do engajamento de todos no chão de fábrica.';
   }
   if (q.includes('o que é kaizen') || q.includes('o que e kaizen') || q.includes('conceito kaizen')) {
-    return 'Kaizen é a prática japonesa de melhoria contínua gradual envolvendo todos na fábrica, do operador à diretoria. O princípio fundamental é que hoje deve ser melhor que ontem, e amanhã melhor que hoje.';
+    return 'Com certeza! Kaizen é a prática japonesa de melhoria contínua gradual envolvendo todos na empresa, do operador à diretoria. O princípio fundamental é que hoje deve ser melhor que ontem, e amanhã melhor que hoje.';
   }
   if (q.includes('smed') || q.includes('troca rápida') || q.includes('setup rápido')) {
-    return 'O SMED, ou Troca Rápida de Ferramentas, é a metodologia Lean criada por Shigeo Shingo para reduzir o tempo de setup para menos de dez minutos, convertendo atividades internas em externas e padronizando ajustes.';
+    return 'Muito bem lembrado! O SMED, ou Troca Rápida de Ferramentas, é a metodologia criada por Shigeo Shingo para reduzir o tempo de setup para menos de dez minutos, convertendo atividades internas em externas e padronizando ajustes operacionais.';
   }
   if (q.includes('oee') || q.includes('eficiência global')) {
-    return 'O OEE é o indicador padrão mundial que mede a Eficiência Global dos Equipamentos, multiplicando Disponibilidade, Desempenho e Qualidade para quantificar o quanto da capacidade da máquina é realmente convertida em valor.';
-  }
-  if (q.includes('vsm') || q.includes('fluxo de valor') || q.includes('mapa de fluxo')) {
-    return 'O VSM, ou Mapeamento do Fluxo de Valor, é a ferramenta visual que mapeia todos os passos de material e informação necessários para levar um produto do fornecedor ao cliente, identificando gargalos e desperdícios.';
-  }
-  if (q.includes('poka yoke') || q.includes('poka-yoke') || q.includes('a prova de erros')) {
-    return 'Poka-Yoke é um dispositivo ou mecanismo físico a prova de erros projetado para prevenir ou detectar instantaneamente falhas operacionais antes que elas se transformem em refugos ou retrabalhos.';
-  }
-  if (q.includes('5s') || q.includes('cinco s')) {
-    return 'O 5S é a base disciplinar da manufatura enxuta, composto pelos cinco sensos: Utilização, Organização, Limpeza, Padronização e Autodisciplina.';
+    return 'O OEE é o indicador padrão mundial que mede a Eficiência Global dos Equipamentos, multiplicando Disponibilidade, Desempenho e Qualidade para quantificar o quanto da capacidade da máquina é realmente convertida em produção perfeita.';
   }
   if (q.includes('payback') || q.includes('tempo de retorno')) {
     if (project.paybackMonths && project.paybackMonths > 0) {
-      return `Este projeto apresentou um payback de ${project.paybackMonths} meses, garantindo lucro líquido de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano.`;
+      return `Com base na nossa engenharia financeira, este projeto apresentou um payback excelente de ${project.paybackMonths} meses, garantindo lucro líquido de ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano após amortizar integralmente o investimento.`;
     }
-    return `O payback foi imediato, gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} de economia anual direta.`;
+    return `O payback deste projeto foi de retorno imediato, pois a equipe utilizou a criatividade Kaizen e recursos internos de baixo custo, gerando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais de economia anual direta para a empresa.`;
   }
   if (q.includes('roi') || q.includes('retorno')) {
     if (investment > 0) {
       const roi = Math.round((netSavings / investment) * 100);
-      return `O ROI deste projeto foi de ${roi}%, com lucro líquido anual de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`;
+      return `O Retorno sobre o Investimento, o ROI deste projeto, foi de ${roi} por cento. Isso demonstra uma eficiência de capital exemplar, onde cada real investido no posto retornou com expressivo ganho de produtividade e redução de perdas.`;
     }
-    return `O projeto obteve ROI de retorno total imediato, gerando R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano.`;
+    return `O projeto obteve retorno total imediato, gerando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano sem necessidade de aporte de capital externo.`;
   }
   if (q.includes('ishikawa') || q.includes('espinha de peixe') || q.includes('6m')) {
     if (project.ishikawa?.primaryRootCause) {
-      return `No Ishikawa 6M, a causa raiz prioritária foi: ${project.ishikawa.primaryRootCause}.`;
+      return `Na análise com o Diagrama de Ishikawa 6M, a equipe mapeou as variáveis do processo e diagnosticou que a causa raiz prioritária foi: ${project.ishikawa.primaryRootCause}, permitindo focar a ação exatamente onde havia a maior perda.`;
     }
-    return `O Diagrama de Ishikawa 6M mapeou sistemicamente Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente.`;
+    return `O Diagrama de Ishikawa 6M permitiu à equipe analisar sistemicamente Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente, assegurando que nenhuma causa passasse despercebida.`;
   }
   if (q.includes('porquê') || q.includes('porque') || q.includes('causa raiz') || q.includes('problema')) {
     const whys = (project.fiveWhys || []).filter(Boolean);
     if (whys.length > 0) {
       const lastWhy = whys[whys.length - 1];
-      return `A causa raiz fundamental identificada pelos 5 Porquês foi: ${lastWhy.replace(/^[0-9]+[\.\)\-]?\s*/, '')}.`;
+      return `Aplicando a técnica dos 5 Porquês no Gemba, a equipe aprofundou a investigação até identificar que a causa raiz fundamental foi: ${lastWhy.replace(/^[0-9]+[\.\)\-]?\s*/, '')}, eliminando o problema na sua origem.`;
     }
-    return `A causa raiz comprovada no posto foi: ${project.problemStatement || project.description || 'instabilidade no fluxo de trabalho'}.`;
+    return `No diagnóstico inicial da fase Plan, a causa raiz comprovada no posto foi: ${project.problemStatement || project.description || 'instabilidade no fluxo de trabalho'}, que foi prontamente atacada pelas ações corretivas.`;
   }
   if (q.includes('quanto economizou') || q.includes('economia') || q.includes('financeiro') || q.includes('custo') || q.includes('ganho')) {
-    return `Ganho bruto homologado de R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano, com lucro líquido de R$ ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} e ${project.hoursSaved || 0} horas produtivas recuperadas.`;
+    return `Em termos financeiros, este projeto alcançou um ganho bruto homologado de ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano, com lucro líquido de ${netSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais e uma recuperação de ${project.hoursSaved || 0} horas produtivas para a operação.`;
   }
   if (q.includes('líder') || q.includes('lider') || q.includes('quem fez') || q.includes('equipe') || q.includes('participante')) {
     const leader = project.leaderName || project.assignedAgentName || 'Líder Lean';
     const team = (project.teamMembers || []).join(', ');
-    return `Liderado por ${leader}${team ? `, com participação de ${team}` : ''}, no setor de ${project.originSectorName || 'Fábrica'}.`;
-  }
-  if (q.includes('pop') || q.includes('padronização') || q.includes('padronizacao') || q.includes('sop') || q.includes('procedimento')) {
-    return `O POP foi atualizado sob a referência ${project.standardWorkDocRef || 'POP oficial'}, com treinamento concluído com os operadores.`;
-  }
-  if (q.includes('yokoten') || q.includes('replicar') || q.includes('outras áreas')) {
-    return `Para Yokoten, ${project.yokotenReplication || 'este padrão deve ser replicado para todos os postos de mesmo perfil na planta'}.`;
+    return `O projeto foi conduzido com liderança de ${leader}${team ? `, contando com a participação ativa e engajamento direto de ${team}` : ''}, atuando fortemente no setor de ${project.originSectorName || 'Fábrica'}.`;
   }
 
-  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} atingiu ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e gerou R$ ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} ao ano em ganhos sustentáveis.`;
+  return `O projeto "${project.title}" no setor de ${project.originSectorName || 'Fábrica'} alcançou plenamente os objetivos traçados, atingindo ${project.achievedValue ?? project.targetGoalValue ?? '--'} ${project.targetMetricUnit || ''} e assegurando ${grossSavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} reais ao ano em ganhos sustentáveis.`;
 }
 
 // =============================================================================
@@ -452,9 +419,8 @@ ${projectContext}
 PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 "${question}"
 
-SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em português do Brasil):`;
+SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 3 frases faladas em português do Brasil):`;
 
-  // Tenta primeiro o modelo salvo da validação, depois os candidatos
   const savedModel =
     typeof window !== 'undefined'
       ? localStorage.getItem(STORAGE_WORKING_MODEL_KEY)
@@ -479,7 +445,7 @@ SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em 
           body: JSON.stringify({
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
-              temperature: 0.35,
+              temperature: 0.4,
               maxOutputTokens: 250,
             },
           }),
@@ -537,9 +503,7 @@ async function synthesizeWithGeminiAudio(
         }
       );
 
-      if (!response.ok) {
-        continue;
-      }
+      if (!response.ok) continue;
 
       const data = await response.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -552,7 +516,6 @@ async function synthesizeWithGeminiAudio(
         const rawMime = audioPart.inlineData.mimeType || '';
         const rawData = audioPart.inlineData.data;
 
-        // Se for PCM bruto, converte para WAV para tocar nativamente
         if (rawMime.includes('pcm') || rawMime.includes('L16') || !rawMime.includes('wav')) {
           const wavBase64 = pcmToWav(rawData, 24000);
           return {
@@ -567,7 +530,7 @@ async function synthesizeWithGeminiAudio(
         };
       }
     } catch {
-      // Tenta próximo
+      // continua
     }
   }
 
@@ -596,7 +559,7 @@ export async function askSenseiWithVoice({
   // ETAPA 1: Gera a resposta textual do Sensei
   const answerText = await askSenseiText(question, project, effectiveKey);
 
-  // ETAPA 2: Sintetiza em voz de estúdio
+  // ETAPA 2: Síntese de áudio
   const voiceName = getVoicePreference();
   const audioResult = await synthesizeWithGeminiAudio(answerText, effectiveKey, voiceName);
 

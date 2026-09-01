@@ -70,6 +70,7 @@ export default function SenseiVoiceAssistant({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [hasApiKey, setHasApiKey] = useState(true);
+  const [liveTranscript, setLiveTranscript] = useState<string>('');
 
   // Configuração
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -87,6 +88,7 @@ export default function SenseiVoiceAssistant({
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const isListeningRef = useRef(false);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Carrega chave e preferências salvas na montagem
   useEffect(() => {
@@ -94,18 +96,234 @@ export default function SenseiVoiceAssistant({
     setGeminiKeyInput(key);
     setHasApiKey(Boolean(key && key.trim().length > 10));
     setSelectedVoice(getVoicePreference());
+  }, []);
 
-    // Pré-carrega vozes do navegador
+  // ===================================================================
+  // PARA QUALQUER ÁUDIO EM REPRODUÇÃO
+  // ===================================================================
+  const stopSpeaking = useCallback(() => {
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
+      activeAudioRef.current = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  }, []);
+
+  // ===================================================================
+  // REPRODUÇÃO DE ÁUDIO NEURAL DE ESTÚDIO (GOOGLE NEURAL STUDIO TTS)
+  // Divide em frases naturais e toca áudio MP3 cristalino
+  // ===================================================================
+  const playStudioNeuralVoice = useCallback(
+    async (text: string): Promise<boolean> => {
+      stopSpeaking();
+
+      try {
+        const cleanText = text
+          .replace(/[*_#`]/g, '')
+          .replace(/R\$\s*/g, 'R$ ')
+          .trim();
+
+        // Quebra em frases naturais para áudio de alta qualidade e ritmo humano
+        const sentences = cleanText.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [cleanText];
+
+        for (const sentence of sentences) {
+          const trimmed = sentence.trim();
+          if (!trimmed) continue;
+
+          const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=pt-BR&client=tw-ob&q=${encodeURIComponent(trimmed)}`;
+
+          await new Promise<void>((resolve, reject) => {
+            const audio = new Audio(url);
+            activeAudioRef.current = audio;
+
+            audio.onplay = () => setIsSpeaking(true);
+            audio.onended = () => resolve();
+            audio.onerror = (e) => reject(e);
+
+            audio.play().catch(reject);
+          });
+        }
+
+        setIsSpeaking(false);
+        return true;
+      } catch (err) {
+        console.warn('[Sensei] Usando sintetizador alternativo:', err);
+        return false;
+      }
+    },
+    [stopSpeaking]
+  );
+
+  // ===================================================================
+  // REPRODUÇÃO INTELIGENTE DE VOZ (Estúdio MP3 -> Fallback Nativo)
+  // ===================================================================
+  const speakText = useCallback(
+    async (text: string, audioBase64?: string | null, mimeType?: string | null) => {
+      stopSpeaking();
+
+      // 1. Se veio áudio direto do Gemini, reproduz
+      if (audioBase64 && mimeType) {
+        try {
+          const audio = new Audio(`data:${mimeType};base64,${audioBase64}`);
+          activeAudioRef.current = audio;
+          audio.onplay = () => setIsSpeaking(true);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            activeAudioRef.current = null;
+          };
+          await audio.play();
+          return;
+        } catch {
+          // continua para o player de estúdio
+        }
+      }
+
+      // 2. Toca via Google Neural Studio Audio (Voz humana fluida de estúdio)
+      const played = await playStudioNeuralVoice(text);
+      if (played) return;
+
+      // 3. Fallback para voz nativa caso sem conexão externa
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const cleanSpeech = text
+          .replace(/[*_#`]/g, '')
+          .replace(/R\$\s*/g, 'R$ ')
+          .trim();
+
+        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoices = voices.filter(
+          (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
+        );
+
+        const naturalVoice =
+          ptVoices.find(
+            (v) =>
+              v.name.includes('Francisca') ||
+              v.name.includes('Natural') ||
+              v.name.includes('Google') ||
+              v.name.includes('Maria') ||
+              v.name.includes('Luciana')
+          ) || ptVoices[0];
+
+        if (naturalVoice) utterance.voice = naturalVoice;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        window.speechSynthesis.speak(utterance);
+      }
+    },
+    [playStudioNeuralVoice, stopSpeaking]
+  );
+
+  // ===================================================================
+  // PROCESSA A PERGUNTA COM O MOTOR GEMINI
+  // ===================================================================
+  const processQuestion = useCallback(
+    async (questionText: string) => {
+      if (!questionText.trim()) return;
+
+      const key = getGeminiApiKey();
+      if (!key) {
+        setHasApiKey(false);
+        setSettingsOpen(true);
+        return;
+      }
+
+      setIsThinking(true);
+      setLiveTranscript('');
+
+      try {
+        const response: SenseiVoiceResponse = await askSenseiWithVoice({
+          question: questionText,
+          project,
+          currentSlideIndex: currentSlide,
+        });
+
+        setIsThinking(false);
+
+        if (response.source === 'no_key') {
+          setHasApiKey(false);
+          setSettingsOpen(true);
+          return;
+        }
+
+        const textToSpeak =
+          response.textFallback ||
+          'Este projeto foi executado com sucesso e alcançou os objetivos estabelecidos.';
+        await speakText(textToSpeak, response.audioBase64, response.mimeType);
+      } catch (err) {
+        console.error('[Sensei] Erro ao consultar Gemini:', err);
+        setIsThinking(false);
+      }
+    },
+    [project, currentSlide, speakText]
+  );
+
+  // Ref dinâmico para evitar closures desatualizadas no evento onresult
+  const processQuestionRef = useRef(processQuestion);
+  useEffect(() => {
+    processQuestionRef.current = processQuestion;
+  }, [processQuestion]);
+
+  // ===================================================================
+  // TRATAMENTO DA FALA CAPTURADA (WAKE WORD "SENSEI" E PERGUNTAS DIRETAS)
+  // ===================================================================
+  const handleDetectedSpeech = useCallback((transcript: string) => {
+    const raw = transcript.trim();
+    if (!raw) return;
+
+    setLiveTranscript(raw);
+
+    const lower = raw.toLowerCase();
+
+    // Variações fonéticas de "Sensei"
+    const wakeWords = [
+      'sensei',
+      'sencei',
+      'sansei',
+      'sensi',
+      'censei',
+      'sem sei',
+      'sem-sei',
+      'sem sem',
+      'mestre',
+      'assistente',
+    ];
+
+    const hasWakeWord = wakeWords.some((w) => lower.includes(w));
+
+    if (hasWakeWord) {
+      let cleaned = raw;
+      for (const w of wakeWords) {
+        cleaned = cleaned.replace(new RegExp(w, 'gi'), '');
+      }
+      cleaned = cleaned.replace(/^[,.:\s\-]+/, '').trim();
+      const question = cleaned || raw;
+
+      console.log('[Sensei Ativado por Wake Word]:', question);
+      processQuestionRef.current(question);
+    } else if (raw.split(' ').length >= 3) {
+      // Se o usuário falou uma pergunta de 3 ou mais palavras com o microfone ligado, processa
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        console.log('[Sensei Pergunta Direta]:', raw);
+        processQuestionRef.current(raw);
+      }, 1400);
     }
   }, []);
 
   // ===================================================================
-  // INICIALIZAÇÃO DO WEB SPEECH RECOGNITION (apenas escuta do microfone)
+  // INICIALIZAÇÃO DO RECONHECIMENTO DE VOZ (MICROFONE)
   // ===================================================================
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -121,7 +339,7 @@ export default function SenseiVoiceAssistant({
     try {
       const recognition: SpeechRecognitionInstance = new SpeechRecognition();
       recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.lang = 'pt-BR';
 
       recognition.onstart = () => {
@@ -134,31 +352,40 @@ export default function SenseiVoiceAssistant({
           try {
             recognition.start();
           } catch {
-            // Ignora reinicialização rápida
+            // ignora
           }
         } else {
           setIsListening(false);
+          setLiveTranscript('');
         }
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         if (event.error === 'no-speech' || event.error === 'network') return;
-        console.warn('[Sensei] Reconhecimento de voz erro:', event.error);
+        console.warn('[Sensei] Microfone aviso:', event.error);
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const lastResult = event.results[event.results.length - 1];
-        if (!lastResult || !lastResult.isFinal) return;
+        let finalTranscript = '';
+        let interimTranscript = '';
 
-        const transcript = lastResult[0].transcript.trim();
-        if (!transcript) return;
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
 
-        handleDetectedSpeech(transcript);
+        const effective = finalTranscript.trim() || interimTranscript.trim();
+        if (effective) {
+          handleDetectedSpeech(effective);
+        }
       };
 
       recognitionRef.current = recognition;
     } catch (e) {
-      console.warn('[Sensei] Erro ao instanciar SpeechRecognition:', e);
+      console.warn('[Sensei] Erro SpeechRecognition:', e);
       setSpeechSupported(false);
     }
 
@@ -178,182 +405,7 @@ export default function SenseiVoiceAssistant({
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
-
-  // ===================================================================
-  // PARA QUALQUER ÁUDIO OU SÍNTESE EM REPRODUÇÃO
-  // ===================================================================
-  const stopSpeaking = useCallback(() => {
-    if (activeAudioRef.current) {
-      activeAudioRef.current.pause();
-      activeAudioRef.current.currentTime = 0;
-      activeAudioRef.current = null;
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-  }, []);
-
-  // ===================================================================
-  // REPRODUZ ÁUDIO GERADO PELO GEMINI
-  // ===================================================================
-  const playAudioBase64 = useCallback(
-    (base64: string, mimeType: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        stopSpeaking();
-
-        try {
-          const audio = new Audio(`data:${mimeType};base64,${base64}`);
-          activeAudioRef.current = audio;
-
-          audio.onplay = () => setIsSpeaking(true);
-          audio.onended = () => {
-            setIsSpeaking(false);
-            activeAudioRef.current = null;
-            resolve();
-          };
-          audio.onerror = (err) => {
-            console.error('[Sensei] Erro ao decodificar áudio:', err);
-            setIsSpeaking(false);
-            activeAudioRef.current = null;
-            reject(err);
-          };
-
-          audio.play().catch((err) => {
-            console.error('[Sensei] Erro ao iniciar reprodução:', err);
-            setIsSpeaking(false);
-            reject(err);
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    },
-    [stopSpeaking]
-  );
-
-  // ===================================================================
-  // REPRODUÇÃO DE VOZ INTELIGENTE E NATURAL (Áudio Gemini + Voz Natural)
-  // ===================================================================
-  const speakText = useCallback(
-    async (text: string, audioBase64?: string | null, mimeType?: string | null) => {
-      stopSpeaking();
-
-      // 1. Se houver áudio direto do Gemini, reproduz
-      if (audioBase64 && mimeType) {
-        try {
-          await playAudioBase64(audioBase64, mimeType);
-          return;
-        } catch (e) {
-          console.warn('[Sensei] Fallback para sintetizador de voz natural:', e);
-        }
-      }
-
-      // 2. Reproduz com a voz mais natural do sistema (Francisca / Natural / Google)
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        const cleanSpeech = text
-          .replace(/[*_#`]/g, '')
-          .replace(/R\$\s*/g, 'R$ ')
-          .trim();
-
-        const utterance = new SpeechSynthesisUtterance(cleanSpeech);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 1.02;
-        utterance.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        const ptVoices = voices.filter(
-          (v) => v.lang.includes('pt') || v.lang.includes('PT') || v.lang.includes('pt-BR')
-        );
-
-        // Seleciona a voz com melhor qualidade e naturalidade de estúdio
-        const naturalVoice =
-          ptVoices.find(
-            (v) =>
-              v.name.includes('Francisca') ||
-              v.name.includes('Natural') ||
-              v.name.includes('Google') ||
-              v.name.includes('Maria') ||
-              v.name.includes('Luciana')
-          ) ||
-          ptVoices.find((v) => !v.name.includes('Desktop')) ||
-          ptVoices[0];
-
-        if (naturalVoice) {
-          utterance.voice = naturalVoice;
-        }
-
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
-      }
-    },
-    [playAudioBase64, stopSpeaking]
-  );
-
-  // ===================================================================
-  // PROCESSA A PERGUNTA COM GEMINI
-  // ===================================================================
-  const processQuestion = useCallback(
-    async (questionText: string) => {
-      if (!questionText.trim()) return;
-
-      const key = getGeminiApiKey();
-      if (!key) {
-        setHasApiKey(false);
-        setSettingsOpen(true);
-        return;
-      }
-
-      setIsThinking(true);
-
-      try {
-        const response: SenseiVoiceResponse = await askSenseiWithVoice({
-          question: questionText,
-          project,
-          currentSlideIndex: currentSlide,
-        });
-
-        setIsThinking(false);
-
-        if (response.source === 'no_key') {
-          setHasApiKey(false);
-          setSettingsOpen(true);
-          return;
-        }
-
-        // Fala a resposta gerada pelo Gemini
-        const textToSpeak =
-          response.textFallback ||
-          'Este projeto foi executado com sucesso e alcançou os objetivos estabelecidos.';
-        await speakText(textToSpeak, response.audioBase64, response.mimeType);
-      } catch (err) {
-        console.error('[Sensei] Erro ao consultar Gemini:', err);
-        setIsThinking(false);
-      }
-    },
-    [project, currentSlide, speakText]
-  );
-
-  // ===================================================================
-  // DETECÇÃO DE WAKE WORD "SENSEI"
-  // ===================================================================
-  const handleDetectedSpeech = useCallback(
-    (transcript: string) => {
-      const lower = transcript.toLowerCase();
-
-      if (lower.includes('sensei')) {
-        const parts = transcript.split(/sensei/i);
-        const rawQuestion = parts[parts.length - 1]?.replace(/^[,.:\s\-]+/, '').trim();
-        const effectiveQuestion = rawQuestion || transcript;
-        processQuestion(effectiveQuestion);
-      }
-    },
-    [processQuestion]
-  );
+  }, [handleDetectedSpeech]);
 
   // ===================================================================
   // TOGGLE ESCUTA DO MICROFONE
@@ -374,14 +426,21 @@ export default function SenseiVoiceAssistant({
     if (isListening) {
       isListeningRef.current = false;
       setIsListening(false);
+      setLiveTranscript('');
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch { /* ignore */ }
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
       }
     } else {
       isListeningRef.current = true;
       setIsListening(true);
       if (recognitionRef.current) {
-        try { recognitionRef.current.start(); } catch (e) {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {
           console.warn('[Sensei] Falha ao iniciar microfone:', e);
         }
       }
@@ -417,7 +476,10 @@ export default function SenseiVoiceAssistant({
         setKeyValidationStatus(null);
       }, 1200);
     } else {
-      setKeyValidationStatus({ valid: false, message: check.error || 'Chave inválida. Verifique sua chave no Google AI Studio.' });
+      setKeyValidationStatus({
+        valid: false,
+        message: check.error || 'Chave inválida. Verifique sua chave no Google AI Studio.',
+      });
     }
   };
 
@@ -437,11 +499,11 @@ export default function SenseiVoiceAssistant({
     setHasApiKey(true);
 
     setIsThinking(true);
-    setKeyValidationStatus({ valid: true, message: 'Sensei gerando resposta com Gemini...' });
+    setKeyValidationStatus({ valid: true, message: 'Sensei gerando fala com Gemini...' });
 
     try {
       const response = await askSenseiWithVoice({
-        question: 'Apresente-se brevemente como o Sensei, co-apresentador desta reunião.',
+        question: 'Apresente-se brevemente como o Sensei, co-apresentador desta reunião de projetos Lean.',
         project,
         apiKey: key,
       });
@@ -451,7 +513,7 @@ export default function SenseiVoiceAssistant({
         response.textFallback ||
         'Olá! Eu sou o Sensei, seu co-apresentador de inteligência artificial para este projeto Lean.';
 
-      setKeyValidationStatus({ valid: true, message: 'Reproduzindo voz do Sensei!' });
+      setKeyValidationStatus({ valid: true, message: 'Reproduzindo voz neural do Sensei!' });
       await speakText(textToSpeak, response.audioBase64, response.mimeType);
     } catch (e: any) {
       setIsThinking(false);
@@ -495,7 +557,7 @@ export default function SenseiVoiceAssistant({
               boxShadow: '0 0 20px rgba(6, 182, 212, 0.5)',
               animation: 'pulse 1.5s infinite',
             }}
-            title="Sensei falando... Clique para silenciar"
+            title="Sensei falando... Clique para pausar/silenciar áudio"
           >
             <Volume2 size={15} color="#22d3ee" />
 
@@ -567,7 +629,7 @@ export default function SenseiVoiceAssistant({
             }}
             title={
               isListening
-                ? 'Sensei está ouvindo! Fale "Sensei..."'
+                ? 'Sensei está ouvindo! Fale "Sensei..." ou pergunte algo'
                 : !hasApiKey
                 ? 'Clique para configurar sua chave do Gemini'
                 : 'Ativar Sensei (Assistente de Voz ao Vivo)'
@@ -605,6 +667,27 @@ export default function SenseiVoiceAssistant({
               </>
             )}
           </button>
+        )}
+
+        {/* Indicador de fala em tempo real quando o microfone está escutando */}
+        {isListening && liveTranscript && !isThinking && !isSpeaking && (
+          <div
+            style={{
+              fontSize: '0.7rem',
+              color: '#34d399',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '999px',
+              padding: '0.2rem 0.6rem',
+              maxWidth: '220px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+            title={`Ouvindo: "${liveTranscript}"`}
+          >
+            🎙️ &quot;{liveTranscript}&quot;
+          </div>
         )}
 
         {/* Botão de Configurações */}
@@ -668,7 +751,7 @@ export default function SenseiVoiceAssistant({
                     Perfil do Sensei
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Google Gemini AI + Voz Natural de Estúdio
+                    Google Gemini AI + Voz Neural Studio de Alta Fidelidade
                   </span>
                 </div>
               </div>
