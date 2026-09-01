@@ -1483,11 +1483,13 @@ export const dataService = {
     const timeSpent = telemetry?.timeSpentSeconds ?? 45;
     const scrolled = telemetry?.scrolledToBottom ?? true;
     const interactions = telemetry?.interactionsCount ?? 3;
-    // Regra do Master: rolagem confirmada, tempo >= 30s e tempo <= 15min (900s)
+    const targetArticle = LEAN_ARTICLES.find((a) => a.id === articleId);
+    const minRequired = targetArticle?.minReadTimeSeconds || 120;
+    // Regra do Master: rolagem confirmada, tempo >= minRequired (tempo personalizado) e tempo <= 15min (900s)
     const isValidated =
       telemetry?.isValidated !== undefined
         ? telemetry.isValidated
-        : scrolled && timeSpent >= 30 && timeSpent <= 900;
+        : scrolled && timeSpent >= minRequired && timeSpent <= 900;
 
     const entry: AgentArticleProgress = {
       agentId,

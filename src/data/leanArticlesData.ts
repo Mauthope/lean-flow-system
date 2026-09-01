@@ -3,6 +3,7 @@ export interface LeanArticle {
   title: string;
   category: 'Fundamentos' | 'Qualidade' | 'Produtividade' | 'Métodos' | 'Manutenção';
   readTimeMinutes: number;
+  minReadTimeSeconds: number; // Tempo mínimo realista de leitura ativa (em segundos)
   icon: string;
   summary: string;
   badge?: string;
@@ -23,6 +24,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Os 8 Grandes Desperdícios da Produção (Muda)',
     category: 'Fundamentos',
     readTimeMinutes: 6,
+    minReadTimeSeconds: 150, // 2 min e 30s mínimo
     icon: '🗑️',
     badge: 'Essencial',
     isNew: true,
@@ -94,6 +96,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Metodologia 5S: O Alicerce da Estabilidade Fabril',
     category: 'Qualidade',
     readTimeMinutes: 5,
+    minReadTimeSeconds: 120, // 2 min mínimo
     icon: '✨',
     badge: 'Fundamento',
     isNew: false,
@@ -149,6 +152,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Poka-Yoke: Qualidade Assegurada na Fonte',
     category: 'Qualidade',
     readTimeMinutes: 5,
+    minReadTimeSeconds: 120, // 2 min mínimo
     icon: '🛡️',
     badge: 'Zero Defeitos',
     isNew: true,
@@ -199,6 +203,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'SMED: Troca Rápida de Ferramentas em Menos de 10 Minutos',
     category: 'Produtividade',
     readTimeMinutes: 7,
+    minReadTimeSeconds: 180, // 3 min mínimo
     icon: '⚡',
     badge: 'Alta Performance',
     isNew: false,
@@ -250,6 +255,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Mapeamento do Fluxo de Valor (VSM): Enxergando o Todo',
     category: 'Métodos',
     readTimeMinutes: 6,
+    minReadTimeSeconds: 150, // 2 min e 30s mínimo
     icon: '🗺️',
     badge: 'Estratégico',
     isNew: false,
@@ -300,6 +306,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Manutenção Produtiva Total (TPM) e Cálculo do OEE',
     category: 'Manutenção',
     readTimeMinutes: 7,
+    minReadTimeSeconds: 180, // 3 min mínimo
     icon: '⚙️',
     badge: 'Disponibilidade',
     isNew: false,
@@ -354,6 +361,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Trabalho Padronizado (POP): A Base da Repetibilidade',
     category: 'Fundamentos',
     readTimeMinutes: 5,
+    minReadTimeSeconds: 120, // 2 min mínimo
     icon: '📋',
     badge: 'Essencial',
     isNew: false,
@@ -404,6 +412,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     title: 'Ciclo PDCA & Análise Causal: 5 Porquês e Ishikawa 6M',
     category: 'Métodos',
     readTimeMinutes: 6,
+    minReadTimeSeconds: 150, // 2 min e 30s mínimo
     icon: '🔄',
     badge: 'Metodologia',
     isNew: false,

@@ -963,3 +963,119 @@ SEU COMPORTAMENTO COMO CONSULTOR LEAN:
   }
   return `Analisando seu projeto "${project.title}", recomendo focar fortemente na padronização do posto piloto e no acompanhamento dos primeiros 90 dias após a implantação das ações para consolidar os ganhos e facilitar o Yokoten para os demais setores!`;
 }
+
+// =============================================================================
+// TUTORIA EM ARTIGOS DA ACADEMIA LEAN COM O SENSEI
+// =============================================================================
+export async function chatWithSenseiAboutArticle({
+  article,
+  history = [],
+  message,
+  apiKey,
+}: {
+  article: {
+    id: string;
+    title: string;
+    category: string;
+    summary: string;
+    content: {
+      introduction: string;
+      keyConcepts: { title: string; description: string }[];
+      howToApply: string[];
+      factoryExample: string;
+      bestPractices: string[];
+      quizHint: string;
+    };
+  };
+  history?: { role: 'user' | 'model'; parts: { text: string }[] }[];
+  message: string;
+  apiKey?: string;
+}): Promise<string> {
+  const effectiveKey = apiKey || getGeminiApiKey();
+
+  const articleContext = `
+TÍTULO DO ARTIGO: ${article.title}
+CATEGORIA: ${article.category}
+RESUMO: ${article.summary}
+
+INTRODUÇÃO:
+${article.content.introduction}
+
+CONCEITOS CHAVE:
+${article.content.keyConcepts.map((k) => `- ${k.title}: ${k.description}`).join('\n')}
+
+COMO APLICAR NO GEMBA:
+${article.content.howToApply.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+
+CASO PRÁTICO REAL:
+${article.content.factoryExample}
+
+BOAS PRÁTICAS:
+${article.content.bestPractices.map((b) => `• ${b}`).join('\n')}
+
+DICA PARA A PROVA DE CERTIFICAÇÃO:
+${article.content.quizHint}
+`;
+
+  const systemInstruction = `Você é o "Sensei", o Mestre e Tutor Oficial da Academia Lean Manufacturing.
+O aluno (agente ou líder) está lendo o artigo "${article.title}" e abriu este chat para tirar dúvidas, pedir exemplos práticos, aprofundar conceitos ou se preparar para a Prova Oficial de Certificação.
+
+CONTEÚDO DO ARTIGO QUE O ALUNO ESTÁ ESTUDANDO:
+${articleContext}
+
+BASE DE CONHECIMENTO COMPLEMENTAR DO SENSEI:
+${SENSEI_KNOWLEDGE_BASE}
+
+DIRETRIZES DA SUA TUTORIA:
+1. Seja encorajador, didático, rigoroso nos conceitos do Lean e altamente prático (focado no chão de fábrica).
+2. Explique com analogias industriais claras se o aluno perguntar como aplicar no posto dele.
+3. Fale 100% em português brasileiro fluente, sem misturar com termos confusos em inglês.
+4. Se o aluno pedir simulação de questão de prova sobre o artigo, formule uma pergunta estilo especialista com 5 alternativas e dê o gabarito comentado.
+5. Mantenha respostas concisas, ricas e bem pontuadas (2 a 4 parágrafos).`;
+
+  if (effectiveKey) {
+    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                { role: 'user', parts: [{ text: systemInstruction }] },
+                { role: 'model', parts: [{ text: `Olá! Sou o Sensei. Estou aqui para te ajudar a dominar tudo sobre "${article.title}". Qual é a sua dúvida ou o que gostaria de aprofundar agora?` }] },
+                ...history,
+                { role: 'user', parts: [{ text: message }] },
+              ],
+              generationConfig: {
+                temperature: 0.6,
+                maxOutputTokens: 800,
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (reply) return reply;
+        }
+      } catch (err) {
+        console.warn(`[Sensei Article Chat] Falha com modelo ${model}:`, err);
+      }
+    }
+  }
+
+  // Fallback Local de Tutoria do Artigo
+  const lower = message.toLowerCase();
+  if (lower.includes('prova') || lower.includes('pegadinha') || lower.includes('questão') || lower.includes('questao')) {
+    return `Para a Prova de Certificação sobre "${article.title}": preste muita atenção na seguinte dica de ouro: ${article.content.quizHint}. Questões de nível especialista adoram testar a diferença entre a causa raiz sistêmica e os sintomas superficiais!`;
+  }
+  if (lower.includes('gemba') || lower.includes('como aplicar') || lower.includes('fábrica') || lower.includes('fabrica') || lower.includes('prática') || lower.includes('pratica')) {
+    return `Para aplicar "${article.title}" no seu posto de trabalho: comece reunindo os operadores para observar o processo real sem julgamentos. Siga o passo a passo: ${article.content.howToApply[0]} e ${article.content.howToApply[1] || 'padronize as melhorias no POP'}. Pequenos passos diários geram resultados gigantescos!`;
+  }
+  return `Excelente pergunta sobre "${article.title}"! Lembre-se sempre de que o objetivo central é eliminar o desperdício sem sobrecarregar as pessoas (respeito aos colaboradores). Como exemplo prático: ${article.content.factoryExample}. O que mais você gostaria de saber?`;
+}
+
