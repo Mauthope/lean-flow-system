@@ -55,6 +55,28 @@ export const dataService = {
     setStoredData(STORAGE_KEYS.CURRENT_TENANT, tenant);
   },
 
+  saveTenantAiSettings(aiSettings: {
+    geminiApiKey?: string;
+    preferredVoice?: string;
+    model?: string;
+  }): Tenant {
+    const currentTenant = this.getCurrentTenant();
+    const updatedTenant: Tenant = {
+      ...currentTenant,
+      aiSettings: {
+        ...currentTenant.aiSettings,
+        ...aiSettings,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    this.setCurrentTenant(updatedTenant);
+    const tenants = this.getTenants().map((t) =>
+      t.id === updatedTenant.id ? updatedTenant : t
+    );
+    setStoredData(STORAGE_KEYS.TENANTS, tenants);
+    return updatedTenant;
+  },
+
   createTenant(tenant: Omit<Tenant, 'id' | 'createdAt'>): Tenant {
     const tenants = this.getTenants();
     const newTenant: Tenant = {

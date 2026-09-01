@@ -30,6 +30,7 @@ import {
   Lightbulb,
   Sparkles,
   Layers,
+  Bot,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -73,6 +74,7 @@ export const Sidebar: React.FC = () => {
       label: 'Inteligência & Métodos',
       items: [
         { href: '/admin/historico-kaizen', label: 'Histórico Kaizen', icon: Sparkles, badge: 'IA' },
+        { href: '/admin/integracoes-ia', label: 'Integrações de IA', icon: Bot, badge: 'Sensei' },
         { href: '/admin/relatorios', label: 'Custo Evitado & ROI', icon: TrendingUp },
         { href: '/agente/ferramentas', label: 'Ferramentas Lean', icon: Wrench },
         { href: '/agente/ferramentas/cronoanalise', label: 'Estudo de Tempos', icon: Timer, badge: 'Novo' },

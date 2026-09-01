@@ -61,6 +61,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SenseiVoiceAssistant from '@/components/presentation/SenseiVoiceAssistant';
+import SenseiCopilotModal from '@/components/presentation/SenseiCopilotModal';
+import { SenseiProjectRefinement } from '@/services/geminiService';
 
 export default function AdminProjectDetailPage() {
   const params = useParams();
@@ -82,6 +84,7 @@ export default function AdminProjectDetailPage() {
   const [presentationOpen, setPresentationOpen] = useState(false);
   const [presentationSlide, setPresentationSlide] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [paretoZoomOpen, setParetoZoomOpen] = useState(false);
+  const [showSenseiCopilot, setShowSenseiCopilot] = useState(false);
 
   // Form State for PDCA Fields
   const [targetMetricName, setTargetMetricName] = useState('');
@@ -963,6 +966,50 @@ export default function AdminProjectDetailPage() {
     router.push(a3Url);
   };
 
+  const handleApplySenseiRefinement = (refinement: SenseiProjectRefinement) => {
+    if (refinement.formalProblemStatement) {
+      setProblemStatement(refinement.formalProblemStatement);
+    }
+    if (refinement.refinedFiveWhys && refinement.refinedFiveWhys.length > 0) {
+      setFiveWhys(refinement.refinedFiveWhys);
+      setSelectedDiagnosticTools((prev) => (prev.includes('fiveWhys') ? prev : [...prev, 'fiveWhys']));
+    }
+    if (refinement.refinedIshikawa) {
+      if (refinement.refinedIshikawa.method) setIshikawaMethod(refinement.refinedIshikawa.method);
+      if (refinement.refinedIshikawa.machine) setIshikawaMachine(refinement.refinedIshikawa.machine);
+      if (refinement.refinedIshikawa.material) setIshikawaMaterial(refinement.refinedIshikawa.material);
+      if (refinement.refinedIshikawa.manpower) setIshikawaManpower(refinement.refinedIshikawa.manpower);
+      if (refinement.refinedIshikawa.measurement) setIshikawaMeasurement(refinement.refinedIshikawa.measurement);
+      if (refinement.refinedIshikawa.environment) setIshikawaEnvironment(refinement.refinedIshikawa.environment);
+      if (refinement.refinedIshikawa.primaryRootCause) setIshikawaRootCause(refinement.refinedIshikawa.primaryRootCause);
+      setSelectedDiagnosticTools((prev) => (prev.includes('ishikawa') ? prev : [...prev, 'ishikawa']));
+    }
+    if (refinement.suggestedActions && refinement.suggestedActions.length > 0) {
+      setChecklistItems((prev) => [
+        ...prev,
+        ...refinement.suggestedActions.map((act) => ({
+          id: 'item-' + Math.random().toString(36).substring(2, 9),
+          label: act.label,
+          completed: false,
+          what: act.what || act.label,
+          why: act.why || 'Ação estruturada pelo Sensei',
+          how: act.how || '',
+          responsibleName: act.responsibleName || action?.assignedAgentName || 'Líder Kaizen',
+        })),
+      ]);
+    }
+    if (refinement.suggestedSop?.docRef) {
+      setStandardWorkDocRef(refinement.suggestedSop.docRef);
+    }
+    if (refinement.lessonsLearned) {
+      setLessonsLearned(refinement.lessonsLearned);
+    }
+    if (refinement.yokotenOpportunity) {
+      setYokotenReplication(refinement.yokotenOpportunity);
+    }
+    setSaveStatus('unsaved');
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#94a3b8' }}>
@@ -1093,6 +1140,28 @@ export default function AdminProjectDetailPage() {
             title="Visualizar e Imprimir Relatório A3 Paisagem (4 Quadrantes PDCA)"
           >
             <Printer size={14} /> Relatório A3 (Paisagem)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSenseiCopilot(true)}
+            className="btn btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'rgba(6, 182, 212, 0.16)',
+              border: '1px solid #22d3ee',
+              color: '#22d3ee',
+              fontWeight: 800,
+              boxShadow: '0 0 14px rgba(6, 182, 212, 0.25)',
+              padding: '0.4rem 0.85rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+            title="Pedir ajuda ao Sensei para auditar, refinar os campos e sugerir melhorias no projeto com Lean"
+          >
+            <Sparkles size={14} /> Ajuda do Sensei
           </button>
         </div>
       </div>
@@ -4672,6 +4741,40 @@ export default function AdminProjectDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Sensei Copilot Modal (Auditoria, Refinamento & Chat) */}
+      {action && (
+        <SenseiCopilotModal
+          isOpen={showSenseiCopilot}
+          onClose={() => setShowSenseiCopilot(false)}
+          project={{
+            ...action,
+            problemStatement,
+            fiveWhys: fiveWhys.filter(Boolean),
+            ishikawa: {
+              method: ishikawaMethod,
+              machine: ishikawaMachine,
+              material: ishikawaMaterial,
+              manpower: ishikawaManpower,
+              measurement: ishikawaMeasurement,
+              environment: ishikawaEnvironment,
+              primaryRootCause: ishikawaRootCause,
+            },
+            checklist: checklistItems,
+            targetMetricName,
+            targetMetricUnit,
+            baselineValue: typeof baselineValue === 'number' ? baselineValue : 0,
+            targetGoalValue: typeof targetGoalValue === 'number' ? targetGoalValue : 0,
+            achievedValue: typeof achievedValue === 'number' ? achievedValue : 0,
+            hoursSaved: Number(action.hoursSaved) || 0,
+            actualCostAvoided: Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0,
+            standardWorkDocRef,
+            lessonsLearned,
+            yokotenReplication,
+          }}
+          onApplyRefinement={handleApplySenseiRefinement}
+        />
       )}
 
       {/* Printable / Report Footer */}

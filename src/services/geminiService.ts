@@ -1,4 +1,6 @@
 import { LeanAction, ActionChecklistItem } from '@/lib/types';
+import { SENSEI_KNOWLEDGE_BASE } from '@/data/senseiKnowledgeBase';
+import { dataService } from '@/services/dataService';
 
 // =============================================================================
 // PERFIL DO SENSEI - Vozes Oficiais Google Neural2 (Compatíveis com API Key)
@@ -35,8 +37,37 @@ export interface SenseiVoiceResponse {
   voiceUsed?: string;
 }
 
+export interface SenseiProjectRefinement {
+  formalProblemStatement: string;
+  refinedFiveWhys: string[];
+  refinedIshikawa: {
+    method?: string;
+    machine?: string;
+    material?: string;
+    manpower?: string;
+    measurement?: string;
+    environment?: string;
+    primaryRootCause?: string;
+  };
+  suggestedActions: {
+    label: string;
+    what?: string;
+    why?: string;
+    how?: string;
+    responsibleName?: string;
+  }[];
+  suggestedSop: {
+    docRef: string;
+    title: string;
+    summary: string;
+  };
+  lessonsLearned: string;
+  yokotenOpportunity: string;
+  executiveDiagnosis: string;
+}
+
 // =============================================================================
-// ARMAZENAMENTO LOCAL - Chave, preferências e modelos descobertos
+// ARMAZENAMENTO - Chave, preferências no nível de Entidade e Local
 // =============================================================================
 const STORAGE_KEY = 'sensei_gemini_api_key';
 const STORAGE_VOICE_KEY = 'sensei_voice_preference';
@@ -44,6 +75,17 @@ const STORAGE_WORKING_MODEL_KEY = 'sensei_working_gemini_model';
 
 export function getGeminiApiKey(): string {
   if (typeof window !== 'undefined') {
+    // 1. Tenta chave da Entidade atual (salva no dataService)
+    try {
+      const tenant = dataService.getCurrentTenant();
+      if (tenant?.aiSettings?.geminiApiKey && tenant.aiSettings.geminiApiKey.trim()) {
+        return tenant.aiSettings.geminiApiKey.trim();
+      }
+    } catch {
+      // continua
+    }
+
+    // 2. Tenta override local
     const localKey = localStorage.getItem(STORAGE_KEY);
     if (localKey && localKey.trim()) return localKey.trim();
   }
@@ -57,12 +99,26 @@ export function saveGeminiApiKey(key: string): void {
       localStorage.removeItem(STORAGE_WORKING_MODEL_KEY);
     } else {
       localStorage.setItem(STORAGE_KEY, key.trim());
+      try {
+        dataService.saveTenantAiSettings({ geminiApiKey: key.trim() });
+      } catch {
+        // continua
+      }
     }
   }
 }
 
 export function getVoicePreference(): string {
   if (typeof window !== 'undefined') {
+    try {
+      const tenant = dataService.getCurrentTenant();
+      if (tenant?.aiSettings?.preferredVoice) {
+        return tenant.aiSettings.preferredVoice;
+      }
+    } catch {
+      // continua
+    }
+
     const v = localStorage.getItem(STORAGE_VOICE_KEY);
     if (v && !v.includes('Studio') && SENSEI_PROFILE.voices.some((voice) => voice.id === v)) {
       return v;
@@ -74,6 +130,11 @@ export function getVoicePreference(): string {
 export function saveVoicePreference(voice: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_VOICE_KEY, voice);
+    try {
+      dataService.saveTenantAiSettings({ preferredVoice: voice });
+    } catch {
+      // continua
+    }
   }
 }
 
@@ -399,6 +460,8 @@ function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
 Você está no palco co-apresentando esta reunião AO VIVO ao lado do apresentador para a diretoria, gerência e equipe de engenharia da fábrica.
 
+${SENSEI_KNOWLEDGE_BASE}
+
 REGRA ABSOLUTA DE IDIOMA E NÚMEROS (100% PORTUGUÊS DO BRASIL - ZERO PALAVRAS OU PRONÚNCIAS EM INGLÊS):
 - Você NUNCA deve falar termos em inglês ou misturar pronúncias em inglês (como falar "one point five" para 1,5).
 - Todos os números decimais e frações DEVEM ser expressos por extenso em português:
@@ -417,10 +480,6 @@ SEU PAPEL E PERSONALIDADE (HUMANO, VIBRANTE, DIDÁTICO, CALOROSO E INTERATIVO):
 - Escreva valores em reais de forma falada e natural por extenso (ex: "quarenta e oito mil reais por ano", "três meses de retorno", "duzentas horas economizadas").
 - Mantenha respostas faladas de tamanho perfeito para apresentações executivas: 2 a 3 frases ricas, envolventes e objetivas (cerca de 40 a 65 palavras).
 - NÃO use asteriscos, negritos, tópicos em traços ou formatação markdown, pois o texto será FALADO em voz alta.
-
-SEU ESCOPO DE CONHECIMENTO (TEORIA & PRÁTICA LEAN):
-1. O Projeto em tela (Diagnóstico, 5 Porquês, Ishikawa, 5W2H, DRE Financeiro, ROI, Payback, Padronização POP, Yokoten e Fotos).
-2. Toda a Teoria e Ferramentas do Lean Manufacturing e Engenharia de Produção: 8 Desperdícios (Muda, Mura, Muri), 5S, VSM (Mapeamento do Fluxo de Valor), SMED (Troca Rápida de Ferramentas), TPM (Manutenção Produtiva Total), OEE, Kanban, Poka-Yoke, Heijunka, Jidoka, Takt Time, Ciclo PDCA, Matriz GUT, Gemba Walk, Trabalho Padronizado e DRE de Custos Industriais.
 
 TRAVAS E RESTRIÇÕES INVIOLÁVEIS DE SEGURANÇA (GUARDRAILS):
 - Você DEVE responder APENAS sobre: (a) o projeto atual nos slides ou (b) metodologias, ferramentas e teorias de Lean Manufacturing e melhoria contínua.
@@ -684,4 +743,223 @@ export async function askSenseiWithVoice({
     source: 'text_fallback',
     errorDetails: ttsResult.error,
   };
+}
+
+// =============================================================================
+// SENSEI COPILOT: AUDITORIA & REFINAMENTO AUTOMÁTICO DE CAMPOS DO PROJETO
+// =============================================================================
+export async function auditAndRefineProjectWithSensei(
+  project: LeanAction,
+  apiKey?: string
+): Promise<SenseiProjectRefinement> {
+  const effectiveKey = apiKey || getGeminiApiKey();
+  const projectContext = buildProjectContext(project);
+
+  const prompt = `Você é o "Sensei", o Mestre e Auditor Sênior de Projetos de Lean Manufacturing e Kaizen.
+
+${SENSEI_KNOWLEDGE_BASE}
+
+Sua missão é auditar o projeto preenchido pelo usuário e refiná-lo, elevando anotações coloquiais para redação técnica industrial profissional, rigorosa e alinhada ao PDCA da Toyota.
+
+DADOS ATUAIS DO PROJETO:
+${projectContext}
+
+INSTRUÇÕES DE REFINAMENTO:
+1. Declaração Formal do Problema (formalProblemStatement): Reestruture em padrão formal (O que ocorre, onde, quando e qual é o desvio/impacto atual) com foco em desperdício (Muda).
+2. 5 Porquês (refinedFiveWhys): Gere ou aprimore a sequência de 5 porquês, garantindo nexo de causa e efeito que culmine em falha de método/sistema e NÃO em culpa de pessoas.
+3. Ishikawa 6M (refinedIshikawa): Estratifique as causas por Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente, indicando a primaryRootCause.
+4. Ações 5W2H (suggestedActions): Sugira de 3 a 5 ações concretas e corretivas/preventivas com verbos de ação e foco em trabalho padronizado ou Poka-Yoke.
+5. Procedimento POP (suggestedSop): Sugira código de referência, título e resumo técnico de padronização.
+6. Lições Aprendidas (lessonsLearned) e Replicação Lateral (yokotenOpportunity).
+7. Diagnóstico Executivo (executiveDiagnosis): 2 a 3 parágrafos acolhedores e pedagógicos explicando o que foi melhorado no projeto.
+
+RESPONDA ESTRITAMENTE EM JSON VÁLIDO COM A SEGUINTE ESTRUTURA:
+{
+  "formalProblemStatement": "texto...",
+  "refinedFiveWhys": ["1º Porquê...", "2º Porquê...", "3º Porquê...", "4º Porquê...", "5º Porquê (Causa Raiz Sistêmica)..."],
+  "refinedIshikawa": {
+    "method": "texto...",
+    "machine": "texto...",
+    "material": "texto...",
+    "manpower": "texto...",
+    "measurement": "texto...",
+    "environment": "texto...",
+    "primaryRootCause": "texto..."
+  },
+  "suggestedActions": [
+    { "label": "Título da Ação", "what": "O que fazer", "why": "Por que fazer", "how": "Como executar", "responsibleName": "Responsável Sugerido" }
+  ],
+  "suggestedSop": {
+    "docRef": "POP-LEAN-01",
+    "title": "Trabalho Padronizado do Posto",
+    "summary": "Resumo dos passos operacionais padrão e pontos de checagem de qualidade..."
+  },
+  "lessonsLearned": "texto...",
+  "yokotenOpportunity": "texto...",
+  "executiveDiagnosis": "texto explicativo e encorajador do Sensei..."
+}`;
+
+  if (effectiveKey) {
+    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 1800,
+                responseMimeType: 'application/json',
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (rawText) {
+            const parsed = JSON.parse(rawText);
+            return parsed;
+          }
+        }
+      } catch (err) {
+        console.warn(`[Sensei Copilot] Falha com modelo ${model}:`, err);
+      }
+    }
+  }
+
+  // Fallback Inteligente Local caso não haja internet/chave
+  return {
+    formalProblemStatement: `Ocorrência recorrente de instabilidade operacional no setor de ${project.originSectorName || 'Produção'}, caracterizada por desperdício de ${project.wasteCategory || 'Espera e Movimentação'}, impactando negativamente o indicador de ${project.targetMetricName || 'eficiência do posto'}.`,
+    refinedFiveWhys: [
+      '1. Por que ocorre o desvio no posto? Porque o ciclo operacional apresenta variações frequentes.',
+      '2. Por que há variação no ciclo? Porque as ferramentas e insumos não estão dispostos conforme a sequência de montagem.',
+      '3. Por que não estão dispostos na sequência? Porque não há suporte dedicado e demarcado no posto de trabalho.',
+      '4. Por que não há suporte demarcado? Porque o layout piloto não foi estruturado com princípios de 5S e ergonomia.',
+      '5. Por que não foi estruturado com 5S? Causa Raiz: Ausência de procedimento de Trabalho Padronizado (POP) homologado para o posto.',
+    ],
+    refinedIshikawa: {
+      method: 'Ausência de método padronizado de preparação e fluxo contínuo.',
+      machine: 'Inexistência de gabaritos rápidos e fixações com tempo de setup reduzido.',
+      material: 'Acondicionamento de matéria-prima fora do ponto de uso do operador.',
+      manpower: 'Necessidade de nivelamento de treinamento operacional no posto.',
+      measurement: 'Aferição do tempo de ciclo realizada de forma pontual sem controle estatístico.',
+      environment: 'Layout com cruzamento de fluxos e iluminação aprimorável.',
+      primaryRootCause: 'Falta de Trabalho Padronizado (POP) e controle visual no Gemba.',
+    },
+    suggestedActions: [
+      {
+        label: 'Implantar quadro visual e suportes dedicados de ferramentas (5S)',
+        what: 'Demarcar e posicionar ferramentas no ponto de uso',
+        why: 'Eliminar o desperdício de movimentação e busca',
+        how: 'Construir painel sombra com identificação rápida',
+        responsibleName: project.assignedAgentName || 'Líder Lean',
+      },
+      {
+        label: 'Elaborar e homologar Procedimento Operacional Padrão (POP)',
+        what: 'Documentar a melhor sequência de trabalho validada com operadores',
+        why: 'Garantir repetibilidade do tempo de ciclo e qualidade assegurada',
+        how: 'Conduzir workshop no posto e treinar todos os turnos',
+        responsibleName: project.leaderName || 'Engenharia de Processos',
+      },
+      {
+        label: 'Dispositivo Poka-Yoke para prevenção de montagem incorreta',
+        what: 'Instalar guia mecânico ou sensor de posicionamento',
+        why: 'Tornar impossível o desvio operacional no posto',
+        how: 'Desenvolver dispositivo Kaizen de baixo custo',
+        responsibleName: 'Manutenção / Melhoria Contínua',
+      },
+    ],
+    suggestedSop: {
+      docRef: 'POP-LEAN-' + (project.protocol?.replace(/[^0-9]/g, '') || '01'),
+      title: `Trabalho Padronizado: Operação Estável no Posto ${project.pilotArea || 'Piloto'}`,
+      summary: 'Define a sequência de movimentos padrão, pontos críticos de segurança, itens de checagem da qualidade e tempo takt estipulado para a atividade.',
+    },
+    lessonsLearned: 'O envolvimento direto dos operadores na análise causal e a aplicação de controle visual garantem a sustentabilidade das melhorias a longo prazo.',
+    yokotenOpportunity: `Recomendado replicar este modelo de padronização e painel 5S para as demais células do setor de ${project.originSectorName || 'Produção'}.`,
+    executiveDiagnosis: 'O Sensei estruturou seu projeto aplicando rigorosamente a metodologia PDCA. Os 5 Porquês agora conduzem a uma causa raiz sistêmica de processo, e as ações propostas atacam a causa na origem com eliminação definitiva de desperdícios!',
+  };
+}
+
+// =============================================================================
+// SENSEI COPILOT: CHAT DE CONSULTORIA LEAN AO VIVO
+// =============================================================================
+export async function chatWithSensei({
+  history,
+  project,
+  message,
+  apiKey,
+}: {
+  history: { role: 'user' | 'model'; parts: { text: string }[] }[];
+  project: LeanAction;
+  message: string;
+  apiKey?: string;
+}): Promise<string> {
+  const effectiveKey = apiKey || getGeminiApiKey();
+  const projectContext = buildProjectContext(project);
+
+  const systemInstruction = `Você é o "Sensei", o Mestre e Consultor Especialista Sênior em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
+Você está conversando DIRETAMENTE com o líder ou agente Lean que está elaborando este projeto na fábrica.
+
+${SENSEI_KNOWLEDGE_BASE}
+
+DADOS DO PROJETO EM ANÁLISE:
+${projectContext}
+
+SEU COMPORTAMENTO COMO CONSULTOR LEAN:
+- Seja extremamente prático, encorajador, didático e focado no chão de fábrica (Gemba).
+- Dê sugestões concretas de ferramentas Lean (5S, SMED, Poka-Yoke, Kanban, VSM, Trabalho Padronizado POP, Ishikawa 6M, 5 Porquês, Matriz GUT, Cálculos de ROI e Payback).
+- Fale 100% em português do Brasil nativo e fluente.
+- Quando sugerir fórmulas ou cálculos, explique o significado prático para a fábrica.
+- Seja conciso e direto ao ponto (respostas ricas em 2 a 4 parágrafos bem estruturados).`;
+
+  if (effectiveKey) {
+    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                { role: 'user', parts: [{ text: systemInstruction }] },
+                { role: 'model', parts: [{ text: 'Entendido! Sou o Sensei, seu copiloto de Lean Manufacturing. Como posso te apoiar com este projeto hoje?' }] },
+                ...history,
+                { role: 'user', parts: [{ text: message }] },
+              ],
+              generationConfig: {
+                temperature: 0.6,
+                maxOutputTokens: 800,
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (reply) return reply;
+        }
+      } catch (err) {
+        console.warn(`[Sensei Chat] Falha com modelo ${model}:`, err);
+      }
+    }
+  }
+
+  // Fallback Local de Chat
+  const lower = message.toLowerCase();
+  if (lower.includes('roi') || lower.includes('retorno')) {
+    return 'Para defender o ROI deste projeto com maestria: apresente primeiro a redução do tempo de ciclo no Gemba, conecte isso às horas economizadas anualmente e demonstre que cada real investido no posto piloto já está gerando lucro líquido real para a empresa desde os primeiros meses!';
+  }
+  if (lower.includes('porquê') || lower.includes('porque') || lower.includes('causa raiz')) {
+    return 'Uma dica de ouro do Sensei: no método dos 5 Porquês, certifique-se de que cada porquê seja uma consequência física comprovável no chão de fábrica. O 5º porquê deve sempre revelar uma oportunidade no sistema de gestão ou no padrão operacional, e nunca culpar operadores.';
+  }
+  return `Analisando seu projeto "${project.title}", recomendo focar fortemente na padronização do posto piloto e no acompanhamento dos primeiros 90 dias após a implantação das ações para consolidar os ganhos e facilitar o Yokoten para os demais setores!`;
 }

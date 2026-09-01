@@ -24,6 +24,12 @@ export interface Tenant {
   logoUrl?: string;
   plan: 'standard' | 'enterprise';
   createdAt: string;
+  aiSettings?: {
+    geminiApiKey?: string;
+    preferredVoice?: string;
+    model?: string;
+    updatedAt?: string;
+  };
 }
 
 export interface Sector {
