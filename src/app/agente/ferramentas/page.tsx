@@ -29,12 +29,19 @@ import {
   Activity,
   ShieldCheck,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { LEAN_ARTICLES, LeanArticle } from '@/data/leanArticlesData';
-import LeanArticleModal, { ArticleReadingTelemetry } from '@/components/academy/LeanArticleModal';
-import LeanExamModal from '@/components/academy/LeanExamModal';
+import { ArticleReadingTelemetry } from '@/components/academy/LeanArticleModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { AgentExamResult, AgentLearningRanking } from '@/lib/types';
+
+const LeanArticleModal = dynamic(() => import('@/components/academy/LeanArticleModal'), {
+  ssr: false,
+});
+const LeanExamModal = dynamic(() => import('@/components/academy/LeanExamModal'), {
+  ssr: false,
+});
 
 interface ToolCardItem {
   id: string;

@@ -17,7 +17,6 @@ import {
   Lock,
   BookOpen,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { LEAN_EXAM_QUESTIONS } from '@/data/leanExamQuestions';
 import { dataService } from '@/services/dataService';
 import { AgentExamResult } from '@/lib/types';
@@ -116,13 +115,18 @@ export default function LeanExamModal({
     setIsSubmitted(true);
     onExamCompleted(result);
 
-    if (result.passed) {
-      confetti({
-        particleCount: 150,
-        spread: 90,
-        origin: { y: 0.6 },
-        colors: ['#22d3ee', '#10b981', '#fbbf24', '#a855f7'],
-      });
+    if (result.passed && typeof window !== 'undefined') {
+      import('canvas-confetti')
+        .then((module) => {
+          const confettiFn = module.default || module;
+          confettiFn({
+            particleCount: 150,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#22d3ee', '#10b981', '#fbbf24', '#a855f7'],
+          });
+        })
+        .catch(() => {});
     }
   };
 

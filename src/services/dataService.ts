@@ -19,7 +19,6 @@ import {
   AgentExamResult,
   AgentLearningRanking,
 } from '../lib/types';
-import { LEAN_ARTICLES } from '../data/leanArticlesData';
 import {
   STORAGE_KEYS,
   getStoredData,
@@ -1480,11 +1479,21 @@ export const dataService = {
     const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
     const existingIndex = progressList.findIndex((p) => p.agentId === agentId && p.articleId === articleId);
 
+    const articleMinTimes: Record<string, number> = {
+      '8-desperdicios': 150,
+      '5s-metodologia': 120,
+      'poka-yoke': 120,
+      'smed-troca-rapida': 180,
+      'vsm-fluxo-valor': 150,
+      'tpm-oee': 180,
+      'trabalho-padronizado-pop': 120,
+      'pdca-analise-causal': 150,
+    };
+
     const timeSpent = telemetry?.timeSpentSeconds ?? 45;
     const scrolled = telemetry?.scrolledToBottom ?? true;
     const interactions = telemetry?.interactionsCount ?? 3;
-    const targetArticle = LEAN_ARTICLES.find((a) => a.id === articleId);
-    const minRequired = targetArticle?.minReadTimeSeconds || 120;
+    const minRequired = articleMinTimes[articleId] || 120;
     // Regra do Master: rolagem confirmada, tempo >= minRequired (tempo personalizado) e tempo <= 15min (900s)
     const isValidated =
       telemetry?.isValidated !== undefined
@@ -1519,7 +1528,7 @@ export const dataService = {
     requiredPercent: number;
     missingCount: number;
   } {
-    const total = LEAN_ARTICLES.length;
+    const total = 8;
     const validated = this.getAgentValidatedArticles(agentId).length;
     const reads = this.getAgentReadArticles(agentId).length;
 
@@ -1549,7 +1558,12 @@ export const dataService = {
   },
 
   getAgentLatestExam(agentId: string): AgentExamResult | undefined {
-    return this.getAgentExams(agentId)[0];
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const agentExams = exams.filter((e) => e.agentId === agentId);
+    if (agentExams.length === 0) return undefined;
+    return agentExams.sort(
+      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    )[0];
   },
 
   saveAgentExamResult(params: {
@@ -1558,33 +1572,38 @@ export const dataService = {
     totalQuestions: number;
     answers: Record<number, number>;
     durationSeconds?: number;
+    score?: number;
+    passed?: boolean;
   }): AgentExamResult {
     const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
-    const score = Number(((params.correctCount / params.totalQuestions) * 10).toFixed(1));
-    const passed = score >= 8.0;
+    const calculatedScore =
+      params.score !== undefined
+        ? params.score
+        : Number(((params.correctCount / params.totalQuestions) * 10).toFixed(1));
+    const isPassed = params.passed !== undefined ? params.passed : calculatedScore >= 8.0;
 
-    const newExam: AgentExamResult = {
+    const newEntry: AgentExamResult = {
       id: generateId('exam'),
       agentId: params.agentId,
-      score,
+      completedAt: new Date().toISOString(),
       correctCount: params.correctCount,
       totalQuestions: params.totalQuestions,
-      passed,
-      answers: params.answers,
-      completedAt: new Date().toISOString(),
+      score: calculatedScore,
+      passed: isPassed,
       durationSeconds: params.durationSeconds,
+      answers: params.answers,
       rewardClaimed: false,
     };
 
-    exams.push(newExam);
+    exams.push(newEntry);
     setStoredData(STORAGE_KEYS.AGENT_EXAMS, exams);
-    return newExam;
+    return newEntry;
   },
 
-  toggleExamRewardClaimed(agentId: string, claimed: boolean): void {
+  toggleExamRewardClaimed(examId: string, claimed: boolean): void {
     const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
     const updated = exams.map((e) =>
-      e.agentId === agentId
+      e.id === examId
         ? { ...e, rewardClaimed: claimed, rewardClaimedAt: claimed ? new Date().toISOString() : undefined }
         : e
     );
@@ -1593,7 +1612,7 @@ export const dataService = {
 
   getAllAgentsLearningRanking(tenantId?: string): AgentLearningRanking[] {
     const users = this.getUsers(tenantId).filter((u) => u.role === 'agent');
-    const totalArticles = LEAN_ARTICLES.length;
+    const totalArticles = 8;
 
     return users.map((agent) => {
       const readArticles = this.getAgentReadArticles(agent.id);
@@ -1613,9 +1632,9 @@ export const dataService = {
         agentAvatar: agent.avatarUrl,
         articlesReadCount: readArticles.length,
         validatedArticlesReadCount: validatedArticles.length,
-        totalArticlesCount: totalArticles,
         articlesReadPercent,
         validatedArticlesReadPercent,
+        totalArticlesCount: totalArticles,
         canTakeExam,
         latestExam,
         passedExam,
