@@ -14,12 +14,14 @@ import {
   CheckCircle2,
   Play,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { LeanAction } from '@/lib/types';
 import {
   askSenseiWithVoice,
   getGeminiApiKey,
   saveGeminiApiKey,
+  validateGeminiApiKey,
   getVoicePreference,
   saveVoicePreference,
   SENSEI_PROFILE,
@@ -67,29 +69,36 @@ export default function SenseiVoiceAssistant({
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
-  const [needsApiKey, setNeedsApiKey] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true); // default true to not flash warning
 
   // Configuração
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [geminiKeyInput, setGeminiKeyInput] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string>(SENSEI_PROFILE.defaultVoice);
-  const [savedKeySuccess, setSavedKeySuccess] = useState(false);
+  const [isValidatingKey, setIsValidatingKey] = useState(false);
+  const [keyValidationStatus, setKeyValidationStatus] = useState<{
+    valid?: boolean;
+    message?: string;
+  } | null>(null);
 
   // Digitação manual de pergunta
   const [manualInput, setManualInput] = useState('');
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const isListeningRef = useRef(false);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Carrega chave e preferências salvas
+  // Carrega chave e preferências salvas na montagem
   useEffect(() => {
-    setGeminiKeyInput(getGeminiApiKey());
+    const key = getGeminiApiKey();
+    setGeminiKeyInput(key);
+    setHasApiKey(Boolean(key && key.trim().length > 10));
     setSelectedVoice(getVoicePreference());
   }, []);
 
   // ===================================================================
-  // INICIALIZAÇÃO DO WEB SPEECH RECOGNITION (apenas escuta, NÃO fala)
+  // INICIALIZAÇÃO DO WEB SPEECH RECOGNITION (apenas escuta do microfone)
   // ===================================================================
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -118,7 +127,7 @@ export default function SenseiVoiceAssistant({
           try {
             recognition.start();
           } catch {
-            // Ignora erro de reinicialização
+            // Ignora reinicialização rápida
           }
         } else {
           setIsListening(false);
@@ -127,7 +136,7 @@ export default function SenseiVoiceAssistant({
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         if (event.error === 'no-speech' || event.error === 'network') return;
-        console.warn('[Sensei] SpeechRecognition erro:', event.error);
+        console.warn('[Sensei] Reconhecimento de voz erro:', event.error);
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -174,46 +183,59 @@ export default function SenseiVoiceAssistant({
   }, []);
 
   // ===================================================================
-  // REPRODUZ ÁUDIO BASE64 GERADO PELO GEMINI
+  // REPRODUZ ÁUDIO GERADO PELO GEMINI
   // ===================================================================
   const playAudioBase64 = useCallback(
     (base64: string, mimeType: string): Promise<void> => {
       return new Promise((resolve, reject) => {
         stopSpeaking();
 
-        const audio = new Audio(`data:${mimeType};base64,${base64}`);
-        activeAudioRef.current = audio;
+        try {
+          const audio = new Audio(`data:${mimeType};base64,${base64}`);
+          activeAudioRef.current = audio;
 
-        audio.onplay = () => setIsSpeaking(true);
-        audio.onended = () => {
-          setIsSpeaking(false);
-          activeAudioRef.current = null;
-          resolve();
-        };
-        audio.onerror = (err) => {
-          setIsSpeaking(false);
-          activeAudioRef.current = null;
-          reject(err);
-        };
+          audio.onplay = () => setIsSpeaking(true);
+          audio.onended = () => {
+            setIsSpeaking(false);
+            activeAudioRef.current = null;
+            resolve();
+          };
+          audio.onerror = (err) => {
+            console.error('[Sensei] Erro ao decodificar áudio:', err);
+            setIsSpeaking(false);
+            activeAudioRef.current = null;
+            reject(err);
+          };
 
-        audio.play().catch(reject);
+          audio.play().catch((err) => {
+            console.error('[Sensei] Erro ao iniciar reprodução:', err);
+            setIsSpeaking(false);
+            reject(err);
+          });
+        } catch (e) {
+          reject(e);
+        }
       });
     },
     [stopSpeaking]
   );
 
   // ===================================================================
-  // PROCESSA A PERGUNTA — GEMINI GERA TEXTO + ÁUDIO
+  // PROCESSA A PERGUNTA
   // ===================================================================
-  const [audioUnavailable, setAudioUnavailable] = useState(false);
-
   const processQuestion = useCallback(
     async (questionText: string) => {
       if (!questionText.trim()) return;
 
+      const key = getGeminiApiKey();
+      if (!key) {
+        setHasApiKey(false);
+        setSettingsOpen(true);
+        return;
+      }
+
       setIsThinking(true);
-      setNeedsApiKey(false);
-      setAudioUnavailable(false);
+      setStatusMessage(null);
 
       try {
         const response: SenseiVoiceResponse = await askSenseiWithVoice({
@@ -225,17 +247,15 @@ export default function SenseiVoiceAssistant({
         setIsThinking(false);
 
         if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
-          // ✅ Áudio de alta qualidade gerado pelo Gemini — reproduz diretamente
+          // ✅ Áudio gerado pelo Gemini com sucesso
           await playAudioBase64(response.audioBase64, response.mimeType);
         } else if (response.source === 'no_key') {
-          // ❌ Sem chave configurada — abre o painel
-          setNeedsApiKey(true);
+          setHasApiKey(false);
           setSettingsOpen(true);
         } else {
-          // ⚠️ Chave funciona mas áudio não foi gerado — exibe aviso temporário
-          console.warn('[Sensei] Resposta em texto (áudio indisponível):', response.textFallback);
-          setAudioUnavailable(true);
-          setTimeout(() => setAudioUnavailable(false), 5000);
+          // Retornou texto mas áudio não pode ser gerado
+          setStatusMessage('Resposta gerada pelo Gemini.');
+          setTimeout(() => setStatusMessage(null), 4000);
         }
       } catch (err) {
         console.error('[Sensei] Erro ao consultar:', err);
@@ -266,6 +286,13 @@ export default function SenseiVoiceAssistant({
   // TOGGLE ESCUTA DO MICROFONE
   // ===================================================================
   const toggleListening = () => {
+    const key = getGeminiApiKey();
+    if (!key) {
+      setHasApiKey(false);
+      setSettingsOpen(true);
+      return;
+    }
+
     if (!speechSupported) {
       setSettingsOpen(true);
       return;
@@ -282,48 +309,83 @@ export default function SenseiVoiceAssistant({
       setIsListening(true);
       if (recognitionRef.current) {
         try { recognitionRef.current.start(); } catch (e) {
-          console.warn('[Sensei] Falha ao iniciar reconhecimento:', e);
+          console.warn('[Sensei] Falha ao iniciar microfone:', e);
         }
       }
     }
   };
 
   // ===================================================================
-  // SALVAR CONFIGURAÇÕES
+  // VALIDAR E SALVAR CONFIGURAÇÕES
   // ===================================================================
-  const handleSaveSettings = () => {
-    saveGeminiApiKey(geminiKeyInput);
-    saveVoicePreference(selectedVoice);
-    setSavedKeySuccess(true);
-    setNeedsApiKey(false);
-    setTimeout(() => {
-      setSavedKeySuccess(false);
-      setSettingsOpen(false);
-    }, 1000);
+  const handleSaveSettings = async () => {
+    const trimmedKey = geminiKeyInput.trim();
+    if (!trimmedKey) {
+      saveGeminiApiKey('');
+      saveVoicePreference(selectedVoice);
+      setHasApiKey(false);
+      setKeyValidationStatus({ valid: false, message: 'Chave removida.' });
+      return;
+    }
+
+    setIsValidatingKey(true);
+    setKeyValidationStatus(null);
+
+    const check = await validateGeminiApiKey(trimmedKey);
+    setIsValidatingKey(false);
+
+    if (check.valid) {
+      saveGeminiApiKey(trimmedKey);
+      saveVoicePreference(selectedVoice);
+      setHasApiKey(true);
+      setKeyValidationStatus({ valid: true, message: 'Chave do Gemini validada e conectada com sucesso!' });
+      setTimeout(() => {
+        setSettingsOpen(false);
+        setKeyValidationStatus(null);
+      }, 1200);
+    } else {
+      setKeyValidationStatus({ valid: false, message: check.error || 'Chave inválida. Verifique sua chave no Google AI Studio.' });
+    }
   };
 
   // ===================================================================
   // TESTE RÁPIDO DE VOZ COM GEMINI
   // ===================================================================
   const handleTestVoice = async () => {
-    const key = geminiKeyInput || getGeminiApiKey();
+    const key = geminiKeyInput.trim() || getGeminiApiKey();
     if (!key) {
-      setNeedsApiKey(true);
+      setHasApiKey(false);
+      setKeyValidationStatus({ valid: false, message: 'Por favor, cole sua chave do Gemini primeiro.' });
       return;
     }
 
-    setIsThinking(true);
-    const response = await askSenseiWithVoice({
-      question: 'Apresente-se brevemente como o Sensei, co-apresentador desta reunião.',
-      project,
-      apiKey: key,
-    });
-    setIsThinking(false);
+    saveGeminiApiKey(key);
+    saveVoicePreference(selectedVoice);
+    setHasApiKey(true);
 
-    if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
-      await playAudioBase64(response.audioBase64, response.mimeType);
-    } else {
-      setNeedsApiKey(true);
+    setIsThinking(true);
+    setKeyValidationStatus({ valid: true, message: 'Gerando áudio de teste com o Gemini...' });
+
+    try {
+      const response = await askSenseiWithVoice({
+        question: 'Apresente-se brevemente como o Sensei, co-apresentador desta reunião.',
+        project,
+        apiKey: key,
+      });
+      setIsThinking(false);
+
+      if (response.source === 'gemini_voice' && response.audioBase64 && response.mimeType) {
+        setKeyValidationStatus({ valid: true, message: 'Reproduzindo voz neural do Sensei!' });
+        await playAudioBase64(response.audioBase64, response.mimeType);
+      } else {
+        setKeyValidationStatus({
+          valid: false,
+          message: 'Chave aceita para texto, mas o modelo de voz ainda está carregando no Gemini.',
+        });
+      }
+    } catch (e: any) {
+      setIsThinking(false);
+      setKeyValidationStatus({ valid: false, message: e?.message || 'Erro ao gerar teste de voz.' });
     }
   };
 
@@ -410,28 +472,22 @@ export default function SenseiVoiceAssistant({
                 ? 'rgba(16, 185, 129, 0.2)'
                 : isThinking
                 ? 'rgba(139, 92, 246, 0.25)'
-                : needsApiKey
+                : !hasApiKey
                 ? 'rgba(251, 191, 36, 0.15)'
-                : audioUnavailable
-                ? 'rgba(249, 115, 22, 0.15)'
                 : 'rgba(255, 255, 255, 0.06)',
               border: isListening
                 ? '1.5px solid #10b981'
                 : isThinking
                 ? '1.5px solid #a855f7'
-                : needsApiKey
+                : !hasApiKey
                 ? '1.5px solid #fbbf24'
-                : audioUnavailable
-                ? '1.5px solid #f97316'
                 : '1px solid rgba(255, 255, 255, 0.15)',
               color: isListening
                 ? '#34d399'
                 : isThinking
                 ? '#c084fc'
-                : needsApiKey
+                : !hasApiKey
                 ? '#fbbf24'
-                : audioUnavailable
-                ? '#fb923c'
                 : '#cbd5e1',
               boxShadow: isListening
                 ? '0 0 15px rgba(16, 185, 129, 0.4)'
@@ -442,10 +498,8 @@ export default function SenseiVoiceAssistant({
             title={
               isListening
                 ? 'Sensei está ouvindo! Fale "Sensei..."'
-                : needsApiKey
-                ? 'Configure sua chave do Gemini para ativar o Sensei'
-                : audioUnavailable
-                ? 'Áudio TTS não disponível — verifique o console do navegador (F12)'
+                : !hasApiKey
+                ? 'Clique para configurar sua chave do Gemini'
                 : 'Ativar Sensei (Assistente de Voz ao Vivo)'
             }
           >
@@ -454,16 +508,10 @@ export default function SenseiVoiceAssistant({
                 <Sparkles size={14} className="animate-spin" color="#c084fc" />
                 <span>Sensei pensando...</span>
               </>
-            ) : needsApiKey && !isListening ? (
+            ) : !hasApiKey && !isListening ? (
               <>
                 <AlertTriangle size={14} color="#fbbf24" />
                 <span>Configurar Chave</span>
-              </>
-            ) : audioUnavailable && !isListening ? (
-              <>
-                <AlertTriangle size={14} color="#fb923c" />
-                <span>TTS indisponível</span>
-                <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>(verifique F12)</span>
               </>
             ) : isListening ? (
               <>
@@ -489,10 +537,20 @@ export default function SenseiVoiceAssistant({
           </button>
         )}
 
+        {/* Mensagem de status sutil */}
+        {statusMessage && (
+          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontStyle: 'italic' }}>
+            {statusMessage}
+          </span>
+        )}
+
         {/* Botão de Configurações */}
         <button
           type="button"
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => {
+            setKeyValidationStatus(null);
+            setSettingsOpen(true);
+          }}
           className="btn btn-sm"
           style={{
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -547,7 +605,7 @@ export default function SenseiVoiceAssistant({
                     Perfil do Sensei
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    Voz gerada nativamente pelo Gemini 2.5 Flash (Ultra Natural)
+                    Google Gemini Multimodal Audio (Voz Neural de Estúdio)
                   </span>
                 </div>
               </div>
@@ -561,39 +619,90 @@ export default function SenseiVoiceAssistant({
               </button>
             </div>
 
-            {/* Alerta se falta chave */}
-            {needsApiKey && (
-              <div
-                style={{
-                  backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                  border: '1px solid rgba(251, 191, 36, 0.35)',
-                  borderRadius: '10px',
-                  padding: '0.75rem',
-                  marginBottom: '1rem',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.5rem',
-                }}
-              >
-                <AlertTriangle size={16} color="#fbbf24" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div style={{ fontSize: '0.75rem', color: '#fde68a' }}>
-                  <strong>Chave de API necessária.</strong> O Sensei precisa de uma chave do Google Gemini para gerar voz de alta qualidade.
-                  Crie gratuitamente em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>aistudio.google.com</a>
-                </div>
+            {/* Chave de API do Gemini */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
+                <Key size={13} color="#fbbf24" />
+                Sua Chave de API do Google Gemini:
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="password"
+                  value={geminiKeyInput}
+                  onChange={(e) => {
+                    setGeminiKeyInput(e.target.value);
+                    setKeyValidationStatus(null);
+                  }}
+                  placeholder="Cole sua chave gerada no Google AI Studio (AIzaSy...)"
+                  className="input input-sm"
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#040711',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#ffffff',
+                    fontSize: '0.78125rem',
+                    padding: '0.45rem 0.75rem',
+                    borderRadius: '8px',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveSettings}
+                  disabled={isValidatingKey}
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: '0.75rem', padding: '0.45rem 0.85rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                >
+                  {isValidatingKey ? (
+                    <><Loader2 size={12} className="animate-spin" /> Validando...</>
+                  ) : (
+                    'Salvar'
+                  )}
+                </button>
               </div>
-            )}
+
+              {/* Status de validação da chave */}
+              {keyValidationStatus && (
+                <div
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.45rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.725rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    backgroundColor: keyValidationStatus.valid
+                      ? 'rgba(16, 185, 129, 0.15)'
+                      : 'rgba(239, 68, 68, 0.15)',
+                    border: `1px solid ${keyValidationStatus.valid ? '#10b981' : '#ef4444'}`,
+                    color: keyValidationStatus.valid ? '#34d399' : '#f87171',
+                  }}
+                >
+                  {keyValidationStatus.valid ? (
+                    <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+                  ) : (
+                    <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                  )}
+                  <span>{keyValidationStatus.message}</span>
+                </div>
+              )}
+
+              <span style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.35rem', display: 'block' }}>
+                💡 Obtenha gratuitamente em <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>aistudio.google.com/apikey</a>. Salva privativamente no navegador.
+              </span>
+            </div>
 
             {/* Seleção de Voz do Gemini */}
-            <div style={{ marginBottom: '1.15rem' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                 <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Volume2 size={13} color="#22d3ee" />
-                  Voz do Sensei (Gemini Neural Nativo):
+                  Voz do Sensei:
                 </label>
                 <button
                   type="button"
                   onClick={handleTestVoice}
-                  disabled={isThinking || isSpeaking}
+                  disabled={isThinking || isSpeaking || isValidatingKey}
                   className="btn btn-sm"
                   style={{
                     backgroundColor: 'rgba(6, 182, 212, 0.15)',
@@ -608,7 +717,7 @@ export default function SenseiVoiceAssistant({
                   }}
                 >
                   {isThinking ? (
-                    <><Sparkles size={10} className="animate-spin" /> Gerando...</>
+                    <><Sparkles size={10} className="animate-spin" /> Gerando Áudio...</>
                   ) : (
                     <><Play size={10} /> Testar Voz</>
                   )}
@@ -637,52 +746,10 @@ export default function SenseiVoiceAssistant({
               </select>
             </div>
 
-            {/* Chave de API do Gemini */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
-                <Key size={13} color="#fbbf24" />
-                Sua Chave de API do Gemini (Token Particular):
-              </label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="password"
-                  value={geminiKeyInput}
-                  onChange={(e) => setGeminiKeyInput(e.target.value)}
-                  placeholder="Cole aqui sua API Key do Google AI Studio..."
-                  className="input input-sm"
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#040711',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#ffffff',
-                    fontSize: '0.78125rem',
-                    padding: '0.45rem 0.75rem',
-                    borderRadius: '8px',
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveSettings}
-                  className="btn btn-primary btn-sm"
-                  style={{ fontSize: '0.75rem', padding: '0.45rem 0.85rem', fontWeight: 800 }}
-                >
-                  Salvar
-                </button>
-              </div>
-              <span style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.35rem', display: 'block' }}>
-                💡 A mesma chave do Gemini gera inteligência e voz. Salva privativamente no seu navegador.
-              </span>
-              {savedKeySuccess && (
-                <div style={{ marginTop: '0.4rem', color: '#34d399', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <CheckCircle2 size={13} /> Perfil do Sensei salvo com sucesso!
-                </div>
-              )}
-            </div>
-
             {/* Teste manual por digitação */}
             <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.4rem' }}>
-                💬 Testar pergunta manualmente (o Sensei responderá por áudio):
+                💬 Fazer pergunta digitando:
               </label>
               <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
                 <input

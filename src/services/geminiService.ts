@@ -6,7 +6,6 @@ import { LeanAction, ActionChecklistItem } from '@/lib/types';
 export const SENSEI_PROFILE = {
   name: 'Sensei',
   title: 'Mestre e Co-Apresentador Lean Manufacturing',
-  model: 'gemini-2.5-flash',
   defaultVoice: 'Kore',
   voices: [
     { id: 'Kore', label: '🎙️ Kore (Profissional, quente e natural — Padrão Sensei)' },
@@ -32,6 +31,7 @@ export interface SenseiVoiceResponse {
   mimeType: string | null;
   textFallback: string | null;
   source: 'gemini_voice' | 'text_fallback' | 'no_key';
+  errorDetails?: string;
 }
 
 // =============================================================================
@@ -73,7 +73,114 @@ export function saveVoicePreference(voice: string): void {
 }
 
 // =============================================================================
-// SYSTEM PROMPT DO SENSEI (usado tanto para áudio quanto para texto)
+// VALIDAÇÃO DA CHAVE GEMINI
+// Testa a chave do usuário contra a API oficial do Google
+// =============================================================================
+export async function validateGeminiApiKey(
+  key: string
+): Promise<{ valid: boolean; error?: string }> {
+  if (!key || !key.trim()) {
+    return { valid: false, error: 'Chave não informada.' };
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key.trim()}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: 'Ping' }] }],
+          generationConfig: { maxOutputTokens: 5 },
+        }),
+      }
+    );
+
+    if (res.ok) {
+      return { valid: true };
+    }
+
+    const errData = await res.json().catch(() => ({}));
+    const message =
+      errData?.error?.message ||
+      `Erro ${res.status}: Verifique se a chave de API do Google AI Studio está correta.`;
+    return { valid: false, error: message };
+  } catch (err: any) {
+    return {
+      valid: false,
+      error: err?.message || 'Falha de conexão com a API do Google Gemini.',
+    };
+  }
+}
+
+// =============================================================================
+// CONVERSOR PCM -> WAV (Compatibilidade universal com navegadores)
+// Gemini 2.0 retorna áudio bruto em PCM 16-bit 24kHz.
+// Esta função adiciona o cabeçalho RIFF WAV de 44 bytes para tocar nativamente.
+// =============================================================================
+export function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
+  try {
+    const binaryString = atob(pcmBase64);
+    const len = binaryString.length;
+    const buffer = new ArrayBuffer(44 + len);
+    const view = new DataView(buffer);
+
+    // RIFF header
+    view.setUint8(0, 'R'.charCodeAt(0));
+    view.setUint8(1, 'I'.charCodeAt(0));
+    view.setUint8(2, 'F'.charCodeAt(0));
+    view.setUint8(3, 'F'.charCodeAt(0));
+    view.setUint32(4, 36 + len, true); // file size - 8
+    view.setUint8(8, 'W'.charCodeAt(0));
+    view.setUint8(9, 'A'.charCodeAt(0));
+    view.setUint8(10, 'V'.charCodeAt(0));
+    view.setUint8(11, 'E'.charCodeAt(0));
+
+    // fmt sub-chunk
+    view.setUint8(12, 'f'.charCodeAt(0));
+    view.setUint8(13, 'm'.charCodeAt(0));
+    view.setUint8(14, 't'.charCodeAt(0));
+    view.setUint8(15, ' '.charCodeAt(0));
+    view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+    view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
+    view.setUint16(22, 1, true); // NumChannels (1 = mono)
+    view.setUint32(24, sampleRate, true); // SampleRate
+    view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * 1 * 2)
+    view.setUint16(32, 2, true); // BlockAlign (1 * 2)
+    view.setUint16(34, 16, true); // BitsPerSample (16)
+
+    // data sub-chunk
+    view.setUint8(36, 'd'.charCodeAt(0));
+    view.setUint8(37, 'a'.charCodeAt(0));
+    view.setUint8(38, 't'.charCodeAt(0));
+    view.setUint8(39, 'a'.charCodeAt(0));
+    view.setUint32(40, len, true); // data size
+
+    // Copy PCM bytes
+    const pcmBytes = new Uint8Array(buffer, 44);
+    for (let i = 0; i < len; i++) {
+      pcmBytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Convert buffer to base64
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(
+        null,
+        Array.from(bytes.subarray(i, i + chunkSize))
+      );
+    }
+    return btoa(binary);
+  } catch (e) {
+    console.error('[Sensei] Erro na conversão PCM para WAV:', e);
+    return pcmBase64;
+  }
+}
+
+// =============================================================================
+// SYSTEM PROMPT DO SENSEI
 // =============================================================================
 function getSenseiSystemPrompt(): string {
   return `Você é o "Sensei", o Mestre e Co-Apresentador de Inteligência Artificial especialista em Lean Manufacturing, Kaizen, Sistema Toyota de Produção (TPS) e Metodologia PDCA.
@@ -98,7 +205,7 @@ TRAVAS E RESTRIÇÕES INVIOLÁVEIS DE SEGURANÇA (GUARDRAILS):
 }
 
 // =============================================================================
-// CONTEXTO DO PROJETO (dossiê para o Gemini)
+// CONTEXTO DO PROJETO
 // =============================================================================
 function buildProjectContext(project: LeanAction): string {
   const ishikawaCauses = project.ishikawa
@@ -176,7 +283,7 @@ ${actionsList || 'Ações de melhoria implantadas no posto.'}
 }
 
 // =============================================================================
-// FALLBACK LOCAL (usado apenas quando NÃO há chave Gemini configurada)
+// FALLBACK LOCAL
 // =============================================================================
 function getLocalFallbackAnswer(question: string, project: LeanAction): string {
   const q = question.toLowerCase();
@@ -261,23 +368,12 @@ function getLocalFallbackAnswer(question: string, project: LeanAction): string {
 }
 
 // =============================================================================
-// MODELOS DE ÁUDIO PARA TENTATIVA (em ordem de preferência)
-// =============================================================================
-const AUDIO_MODELS = [
-  'gemini-2.5-flash-preview-tts',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-];
-
-const TEXT_MODEL = 'gemini-2.5-flash';
-
-// =============================================================================
-// ETAPA 1: Gera a resposta textual do Sensei (modelo comprovado)
+// ETAPA 1: Gera a resposta textual do Sensei com Gemini 1.5 Flash / 2.0 Flash
 // =============================================================================
 async function askSenseiText(
   question: string,
   project: LeanAction,
-  apiKey: string,
+  apiKey: string
 ): Promise<string> {
   const projectContext = buildProjectContext(project);
   const systemPrompt = getSenseiSystemPrompt();
@@ -291,65 +387,62 @@ PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 
 SUA RESPOSTA DIDÁTICA E ELEGANTE COMO CO-APRESENTADOR (2 a 4 frases faladas em português do Brasil):`;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }],
-          generationConfig: {
-            temperature: 0.35,
-            maxOutputTokens: 250,
-          },
-        }),
-      }
-    );
+  const textModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
-    if (!response.ok) {
-      console.warn('[Sensei] Erro na geração de texto:', await response.text());
-      return getLocalFallbackAnswer(question, project);
-    }
-
-    const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    return text || getLocalFallbackAnswer(question, project);
-  } catch (err) {
-    console.error('[Sensei] Falha na etapa de texto:', err);
-    return getLocalFallbackAnswer(question, project);
-  }
-}
-
-// =============================================================================
-// ETAPA 2: Sintetiza o texto em áudio de alta qualidade via Gemini TTS
-// Tenta múltiplos modelos em sequência até obter áudio
-// =============================================================================
-async function synthesizeWithGeminiTTS(
-  text: string,
-  apiKey: string,
-  voiceName: string,
-): Promise<{ audioBase64: string; mimeType: string } | null> {
-  const cleanText = text
-    .replace(/[*_#`]/g, '')
-    .replace(/\n+/g, ' ')
-    .trim();
-
-  for (const model of AUDIO_MODELS) {
+  for (const model of textModels) {
     try {
-      console.log(`[Sensei] Tentando síntese de áudio com modelo: ${model}`);
-
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: cleanText }],
-              },
-            ],
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: {
+              temperature: 0.35,
+              maxOutputTokens: 250,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) return text;
+      }
+    } catch (err) {
+      console.warn(`[Sensei] Falha com modelo de texto ${model}:`, err);
+    }
+  }
+
+  return getLocalFallbackAnswer(question, project);
+}
+
+// =============================================================================
+// ETAPA 2: Síntese de Áudio Neural com Gemini 2.0 Flash
+// =============================================================================
+async function synthesizeWithGeminiAudio(
+  text: string,
+  apiKey: string,
+  voiceName: string
+): Promise<{ audioBase64: string; mimeType: string } | null> {
+  const cleanText = text
+    .replace(/[*_#`]/g, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+
+  const audioModels = ['gemini-2.0-flash', 'gemini-2.0-flash-exp'];
+
+  for (const model of audioModels) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: cleanText }] }],
             generationConfig: {
               responseModalities: ['AUDIO'],
               speechConfig: {
@@ -365,43 +458,47 @@ async function synthesizeWithGeminiTTS(
       );
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.warn(`[Sensei] Modelo ${model} retornou erro:`, errText);
-        continue; // Tenta o próximo modelo
+        const err = await response.text();
+        console.warn(`[Sensei] Modelo de áudio ${model} retornou:`, err);
+        continue;
       }
 
       const data = await response.json();
-
-      // Busca a parte de áudio inline na resposta
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const audioPart = data?.candidates?.[0]?.content?.parts?.find(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p: any) => p.inlineData && p.inlineData.data
       );
 
-      if (audioPart?.inlineData) {
-        console.log(`[Sensei] ✅ Áudio gerado com sucesso pelo modelo: ${model}`);
+      if (audioPart?.inlineData?.data) {
+        const rawMime = audioPart.inlineData.mimeType || '';
+        const rawData = audioPart.inlineData.data;
+
+        // Se for PCM bruto, converte para WAV para tocar em qualquer navegador
+        if (rawMime.includes('pcm') || rawMime.includes('L16') || !rawMime.includes('wav')) {
+          const sampleRate = rawMime.includes('24000') ? 24000 : 24000;
+          const wavBase64 = pcmToWav(rawData, sampleRate);
+          return {
+            audioBase64: wavBase64,
+            mimeType: 'audio/wav',
+          };
+        }
+
         return {
-          audioBase64: audioPart.inlineData.data,
-          mimeType: audioPart.inlineData.mimeType || 'audio/L16;rate=24000',
+          audioBase64: rawData,
+          mimeType: rawMime || 'audio/wav',
         };
       }
-
-      console.warn(`[Sensei] Modelo ${model} não retornou áudio, tentando próximo...`);
     } catch (err) {
-      console.warn(`[Sensei] Erro com modelo ${model}:`, err);
-      continue; // Tenta o próximo modelo
+      console.warn(`[Sensei] Erro no modelo de áudio ${model}:`, err);
     }
   }
 
-  console.warn('[Sensei] Nenhum modelo de áudio funcionou.');
   return null;
 }
 
 // =============================================================================
 // FUNÇÃO PRINCIPAL: askSenseiWithVoice
-// Etapa 1: Gera a resposta textual inteligente (modelo comprovado)
-// Etapa 2: Sintetiza essa resposta em voz ultra-natural (tentando múltiplos modelos TTS)
 // =============================================================================
 export async function askSenseiWithVoice({
   question,
@@ -422,9 +519,9 @@ export async function askSenseiWithVoice({
   // ETAPA 1: Gera a resposta textual do Sensei
   const answerText = await askSenseiText(question, project, effectiveKey);
 
-  // ETAPA 2: Sintetiza o áudio da resposta
+  // ETAPA 2: Sintetiza em voz de estúdio
   const voiceName = getVoicePreference();
-  const audioResult = await synthesizeWithGeminiTTS(answerText, effectiveKey, voiceName);
+  const audioResult = await synthesizeWithGeminiAudio(answerText, effectiveKey, voiceName);
 
   if (audioResult) {
     return {
@@ -435,7 +532,6 @@ export async function askSenseiWithVoice({
     };
   }
 
-  // Se nenhum modelo de áudio funcionou, retorna o texto como fallback
   return {
     audioBase64: null,
     mimeType: null,
@@ -443,4 +539,3 @@ export async function askSenseiWithVoice({
     source: 'text_fallback',
   };
 }
-
