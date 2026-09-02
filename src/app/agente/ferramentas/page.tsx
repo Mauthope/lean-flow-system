@@ -359,7 +359,7 @@ export default function LeanToolsIndexPage() {
               {latestExam?.passed
                 ? 'Agente Qualificado 🏆'
                 : canTakeExam
-                ? 'Iniciar Prova (10 Questões • 12 min)'
+                ? 'Iniciar Prova (50 Questões • 50 min)'
                 : 'Prova Bloqueada (Requer 95% lidos)'}
             </button>
           )}
@@ -626,7 +626,7 @@ export default function LeanToolsIndexPage() {
                     </h3>
                     <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                       {canTakeExam
-                        ? '🔓 Requisito atingido (≥95%)! Prova de 10 questões liberada com regra anti-chute.'
+                        ? '🔓 Requisito atingido (≥95%)! Prova de 50 questões dinâmicas liberada com regra anti-chute.'
                         : `🔒 Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
                     </span>
                   </div>

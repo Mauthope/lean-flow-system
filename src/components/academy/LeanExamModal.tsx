@@ -33,7 +33,7 @@ interface LeanExamModalProps {
   onNavigateToArticles?: () => void;
 }
 
-const EXAM_MAX_DURATION_SECONDS = 720; // 12 minutos cravados
+const EXAM_MAX_DURATION_SECONDS = 3000; // 50 minutos para 50 questões
 
 export default function LeanExamModal({
   isOpen,
@@ -52,7 +52,7 @@ export default function LeanExamModal({
   const [examResult, setExamResult] = useState<AgentExamResult | null>(null);
   const [showReview, setShowReview] = useState(false);
 
-  // Countdown Timer: 12 minutos
+  // Countdown Timer: 50 minutos
   const [timeLeft, setTimeLeft] = useState(EXAM_MAX_DURATION_SECONDS);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -86,7 +86,7 @@ export default function LeanExamModal({
 
     // Se é uma nova tentativa de prova por um agente elegível
     if (eligibility.canTake && !isSubmitted) {
-      const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 10);
+      const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 50);
       setQuestions(generatedQuestions);
       setAnswers({});
       setIsSubmitted(false);
@@ -177,7 +177,7 @@ export default function LeanExamModal({
   };
 
   const handleRestart = () => {
-    const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 10);
+    const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 50);
     setQuestions(generatedQuestions);
     setAnswers({});
     setIsSubmitted(false);
@@ -415,7 +415,7 @@ export default function LeanExamModal({
                     borderRadius: '999px',
                   }}
                 >
-                  10 Questões • Regra Anti-Chute • Nota Mínima: 8.0
+                  50 Questões Dinâmicas Sensei • Regra Anti-Chute • Nota Mínima: 8.0
                 </span>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -440,7 +440,7 @@ export default function LeanExamModal({
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 800,
                 }}
-                title="Tempo Restante (Limite máximo: 12 minutos)"
+                title="Tempo Restante (Limite máximo: 50 minutos)"
               >
                 <Clock size={15} />
                 <span>{formatTimer(timeLeft)}</span>

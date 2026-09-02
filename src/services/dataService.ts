@@ -1558,114 +1558,201 @@ export const dataService = {
   },
 
   // =========================================================================
-  // ACADEMIA LEAN: GERADOR RANDÔMICO BALANCEADO (50% MENOS LIDOS / 50% MAIS LIDOS)
+  // ACADEMIA LEAN: GERADOR DINÂMICO SENSEI DE 50 QUESTÕES BASEADAS NOS ARTIGOS
+  // (50% DO GRUPO MENOR TEMPO / MENOS LIDOS + 50% DO GRUPO MAIOR TEMPO / MAIS LIDOS)
   // =========================================================================
-  generateRandomBalancedExam(agentId: string, questionCount = 10): ExamQuestionSnapshot[] {
+  generateRandomBalancedExam(agentId: string, questionCount = 50): ExamQuestionSnapshot[] {
     const articles = this.getArticles();
     const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
     const agentProgress = progressList.filter((p) => p.agentId === agentId);
 
-    // Mapeamento de tópicos de questões para IDs de artigos
-    const topicToArticleMap: Record<string, string[]> = {
-      'Fundamentos TPS & Lean': ['8-desperdicios', 'trabalho-padronizado-pop'],
-      '8 Desperdícios & Gemba': ['8-desperdicios'],
-      '5S & Padronização Avançada': ['5s-metodologia', 'trabalho-padronizado-pop'],
-      'Poka-Yoke & Jidoka': ['poka-yoke'],
-      'SMED & Engenharia de Setup': ['smed-troca-rapida'],
-      'VSM & Fluxo Contínuo': ['vsm-fluxo-valor'],
-      'TPM, Confiabilidade & OEE': ['tpm-oee'],
-      'PDCA & Causalidade Científica': ['pdca-analise-causal'],
-      'Engenharia Financeira & ROI Lean': ['vsm-fluxo-valor', '8-desperdicios'],
-      'Kanban, Supermercados & Heijunka': ['vsm-fluxo-valor', 'trabalho-padronizado-pop'],
-    };
-
-    // Calcular score de domínio (mastery) para cada artigo
+    // 1. Calcular score de domínio (mastery) para cada artigo na plataforma
     const scoredArticles = articles.map((art) => {
       const prog = agentProgress.find((p) => p.articleId === art.id);
       const isVal = prog?.isValidated ? 50 : 0;
       const timeRatio = Math.min(50, ((prog?.timeSpentSeconds || 0) / (art.minReadTimeSeconds || 120)) * 50);
-      const score = isVal + timeRatio; // 0 a 100
+      const interactions = Math.min(10, (prog?.interactionsCount || 0) * 2);
+      const score = isVal + timeRatio + interactions; // 0 a 110
       return { article: art, score };
     });
 
-    // Ordenar do menor score (menos lidos/menor tempo) para o maior (mais lidos)
+    // 2. Ordenar do menor score (menos lidos/menor tempo) para o maior (mais lidos)
     scoredArticles.sort((a, b) => a.score - b.score);
 
     const midIndex = Math.max(1, Math.floor(scoredArticles.length / 2));
     const lowMasteryArticles = scoredArticles.slice(0, midIndex).map((s) => s.article);
     const highMasteryArticles = scoredArticles.slice(midIndex).map((s) => s.article);
 
-    const lowArticleIds = new Set(lowMasteryArticles.map((a) => a.id));
-    const highArticleIds = new Set(highMasteryArticles.map((a) => a.id));
+    const targetLowCount = Math.floor(questionCount / 2); // 25 questões (50%)
+    const targetHighCount = questionCount - targetLowCount; // 25 questões (50%)
 
-    // Separar o banco de questões (50 questões) nos dois grupos
-    const allQuestions = [...LEAN_EXAM_QUESTIONS];
-    const lowQuestions: ExamQuestion[] = [];
-    const highQuestions: ExamQuestion[] = [];
-    const neutralQuestions: ExamQuestion[] = [];
+    // 3. Função do Sensei para sintetizar questões dinâmicas a partir do conteúdo do artigo
+    const generateQuestionsFromArticle = (art: LeanArticleItem, countNeeded: number): ExamQuestionSnapshot[] => {
+      const generated: ExamQuestionSnapshot[] = [];
+      const content = art.content || ({} as any);
+      const concepts = content.keyConcepts || [];
+      const practices = content.bestPractices || [];
+      const howTo = content.howToApply || [];
+      const factoryEx = content.factoryExample || '';
+      const intro = content.introduction || art.summary || '';
+      const hint = content.quizHint || '';
 
-    allQuestions.forEach((q) => {
-      const matchedArticles = topicToArticleMap[q.category] || [];
-      const inLow = matchedArticles.some((id) => lowArticleIds.has(id));
-      const inHigh = matchedArticles.some((id) => highArticleIds.has(id));
+      let seedIndex = 1;
 
-      if (inLow && !inHigh) {
-        lowQuestions.push(q);
-      } else if (inHigh && !inLow) {
-        highQuestions.push(q);
-      } else {
-        neutralQuestions.push(q);
+      // Tipo A: Questões baseadas em Conceitos-Chave do Artigo
+      concepts.forEach((concept: any, cIdx: number) => {
+        if (generated.length >= countNeeded * 2) return;
+
+        // Distratores dinâmicos plausíveis
+        const wrongOpts = [
+          'Apenas uma exigência burocrática para atender à auditoria ISO sem impacto na produtividade.',
+          'Uma técnica que deve ser aplicada exclusivamente por consultores externos sem o operador.',
+          'Um procedimento corretivo emergencial acionado apenas quando a linha de produção colapsa.',
+          'Um método tradicional focado em aumentar estoques pulmão para compensar quebras de máquina.',
+          'Uma diretriz contábil que não requer presença ou observação física no Gemba.',
+        ];
+
+        const correctOpt = `${concept.description}`;
+        const allOpts = [correctOpt, ...wrongOpts.slice(0, 4)].sort(() => 0.5 - Math.random());
+        const correctIdx = allOpts.indexOf(correctOpt);
+
+        generated.push({
+          id: seedIndex++,
+          question: `De acordo com o artigo "${art.title}", qual é a definição e impacto prático de "${concept.title}" no chão de fábrica?`,
+          category: art.category,
+          articleId: art.id,
+          articleTitle: art.title,
+          options: allOpts as [string, string, string, string, string],
+          correctOptionIndex: correctIdx,
+          explanation: `Conforme ensinado no artigo "${art.title}": ${concept.title} é caracterizado por "${concept.description}".`,
+        });
+      });
+
+      // Tipo B: Questões baseadas no Caso Prático de Fábrica (Factory Example)
+      if (factoryEx && generated.length < countNeeded * 2) {
+        const correctOpt = `Aplicar a melhoria no ponto de uso (Gemba) eliminando o desperdício na causa raiz, conforme exemplificado no artigo.`;
+        const wrongOpts = [
+          'Substituir toda a equipe de operadores por um turno extra remunerado.',
+          'Comprar máquinas importadas de alto custo sem antes padronizar o método manual.',
+          'Aumentar o estoque intermediário (WIP) para disfarçar a movimentação excessiva.',
+          'Parar o processo e esperar uma decisão da alta diretoria antes de qualquer ação simples.',
+        ];
+        const allOpts = [correctOpt, ...wrongOpts].sort(() => 0.5 - Math.random());
+        const correctIdx = allOpts.indexOf(correctOpt);
+
+        generated.push({
+          id: seedIndex++,
+          question: `No caso prático de fábrica apresentado em "${art.title}", qual foi a diretriz Lean fundamental aplicada para gerar os resultados operacionais?`,
+          category: art.category,
+          articleId: art.id,
+          articleTitle: art.title,
+          options: allOpts as [string, string, string, string, string],
+          correctOptionIndex: correctIdx,
+          explanation: `No caso real citado no artigo: "${factoryEx}" demonstrando que pequenas melhorias de baixo custo no posto geram grande retorno financeiro.`,
+        });
       }
-    });
 
-    // Completar se um dos grupos tiver poucas questões
-    if (lowQuestions.length < Math.floor(questionCount / 2)) {
-      neutralQuestions.forEach((q) => {
-        if (lowQuestions.length < Math.floor(questionCount / 2)) lowQuestions.push(q);
-      });
-    }
-    if (highQuestions.length < Math.ceil(questionCount / 2)) {
-      neutralQuestions.forEach((q) => {
-        if (!lowQuestions.includes(q) && highQuestions.length < Math.ceil(questionCount / 2)) highQuestions.push(q);
-      });
-    }
+      // Tipo C: Questões baseadas em Melhores Práticas & Métodos de Aplicação
+      practices.forEach((practice: string, pIdx: number) => {
+        if (generated.length >= countNeeded * 2) return;
 
-    // Função para sortear N itens aleatórios de um array sem repetição
-    const pickRandom = (arr: ExamQuestion[], n: number): ExamQuestion[] => {
-      const shuffled = [...arr].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, n);
+        const correctOpt = practice;
+        const wrongOpts = [
+          'Apontar culpados individuais sempre que uma não conformidade ou atraso ocorrer.',
+          'Ignorar as sugestões dos operadores e impor padrões decididos apenas em salas de reunião.',
+          'Acelerar a velocidade das máquinas acima da capacidade de projeto para compensar paradas.',
+          'Manter áreas de trabalho desorganizadas até o dia anterior à auditoria oficial.',
+        ];
+        const allOpts = [correctOpt, ...wrongOpts].sort(() => 0.5 - Math.random());
+        const correctIdx = allOpts.indexOf(correctOpt);
+
+        generated.push({
+          id: seedIndex++,
+          question: `Ao implementar as diretrizes de "${art.title}", qual destas ações representa uma Boa Prática Mandatória recomendada pelo Sensei?`,
+          category: art.category,
+          articleId: art.id,
+          articleTitle: art.title,
+          options: allOpts as [string, string, string, string, string],
+          correctOptionIndex: correctIdx,
+          explanation: `A boa prática oficial descrita no artigo estabelece que: "${practice}".`,
+        });
+      });
+
+      // Tipo D: Questões baseadas nas Dicas do Quiz e Introdução Filosófica
+      if (hint && generated.length < countNeeded * 2) {
+        const correctOpt = hint;
+        const wrongOpts = [
+          'O foco do Lean é exclusivamente reduzir custos através de demissões.',
+          'Qualidade é responsabilidade única e isolada do departamento de controle de qualidade.',
+          'Trabalho padronizado impede a criatividade e deve ser evitado no chão de fábrica.',
+          'Estabilidade básica é irrelevante para sistemas Just-in-Time.',
+        ];
+        const allOpts = [correctOpt, ...wrongOpts].sort(() => 0.5 - Math.random());
+        const correctIdx = allOpts.indexOf(correctOpt);
+
+        generated.push({
+          id: seedIndex++,
+          question: `Em relação aos fundamentos centrais abordados no artigo "${art.title}", qual premissa é mandatória para o sucesso do programa Lean?`,
+          category: art.category,
+          articleId: art.id,
+          articleTitle: art.title,
+          options: allOpts as [string, string, string, string, string],
+          correctOptionIndex: correctIdx,
+          explanation: `O Sensei enfatiza no artigo: "${hint}".`,
+        });
+      }
+
+      return generated;
     };
 
-    const targetLowCount = Math.floor(questionCount / 2); // 5 questões (50%)
-    const targetHighCount = questionCount - targetLowCount; // 5 questões (50%)
+    // 4. Coletar e sintetizar questões do Grupo 1 (Menor Tempo / Menos Lidos)
+    const lowPool: ExamQuestionSnapshot[] = [];
+    const questionsPerLowArticle = Math.max(3, Math.ceil(targetLowCount / Math.max(1, lowMasteryArticles.length)));
+    lowMasteryArticles.forEach((art) => {
+      const qs = generateQuestionsFromArticle(art, questionsPerLowArticle);
+      lowPool.push(...qs);
+    });
 
-    const selectedLow = pickRandom(lowQuestions.length > 0 ? lowQuestions : allQuestions, targetLowCount);
-    const selectedHigh = pickRandom(
-      highQuestions.filter((q) => !selectedLow.includes(q)).length >= targetHighCount
-        ? highQuestions.filter((q) => !selectedLow.includes(q))
-        : allQuestions.filter((q) => !selectedLow.includes(q)),
-      targetHighCount
-    );
+    // 5. Coletar e sintetizar questões do Grupo 2 (Maior Tempo / Mais Lidos)
+    const highPool: ExamQuestionSnapshot[] = [];
+    const questionsPerHighArticle = Math.max(3, Math.ceil(targetHighCount / Math.max(1, highMasteryArticles.length)));
+    highMasteryArticles.forEach((art) => {
+      const qs = generateQuestionsFromArticle(art, questionsPerHighArticle);
+      highPool.push(...qs);
+    });
 
-    const combined = [...selectedLow, ...selectedHigh].sort(() => 0.5 - Math.random());
-
-    return combined.map((q) => {
-      const matchedArticle = articles.find((a) => {
-        const topics = topicToArticleMap[q.category] || [];
-        return topics.includes(a.id);
-      });
-
+    // 6. Complementar com banco clássico se o acervo de artigos for pequeno
+    const fallbackQuestions: ExamQuestionSnapshot[] = LEAN_EXAM_QUESTIONS.map((q) => {
+      const matched = articles.find((a) => (a.category as string) === (q.category as string) || a.title.includes(q.category.split(' ')[0])) || articles[0];
       return {
         id: q.id,
         question: q.question,
         category: q.category,
-        articleId: matchedArticle?.id,
-        articleTitle: matchedArticle?.title || q.category,
+        articleId: matched?.id,
+        articleTitle: matched?.title || q.category,
         options: q.options,
         correctOptionIndex: q.correctOptionIndex,
         explanation: q.explanation,
       };
     });
+
+    // Função de sorteio randômico sem repetição
+    const pickRandom = (arr: ExamQuestionSnapshot[], n: number): ExamQuestionSnapshot[] => {
+      const shuffled = [...arr].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, n);
+    };
+
+    const selectedLow = pickRandom(lowPool.length >= targetLowCount ? lowPool : [...lowPool, ...fallbackQuestions], targetLowCount);
+    const selectedHigh = pickRandom(highPool.length >= targetHighCount ? highPool : [...highPool, ...fallbackQuestions], targetHighCount);
+
+    // 7. Unir as 25 questões de Menor Tempo com as 25 questões de Maior Tempo
+    const combined = [...selectedLow, ...selectedHigh].sort(() => 0.5 - Math.random());
+
+    // 8. Re-indexar IDs de 1 a 50 com unicidade total
+    return combined.slice(0, questionCount).map((q, index) => ({
+      ...q,
+      id: index + 1,
+    }));
   },
 
   // =========================================================================
@@ -1814,16 +1901,16 @@ export const dataService = {
 
     setStoredData(STORAGE_KEYS.AGENT_ARTICLES, [...otherProgress, ...newProgress]);
 
-    // 2. Gera a prova randômica balanceada 50/50
-    const questions = this.generateRandomBalancedExam(agentId, 10);
+    // 2. Gera a prova randômica balanceada 50/50 com 50 questões dinâmicas
+    const questions = this.generateRandomBalancedExam(agentId, 50);
     const answers: Record<number, number> = {};
 
-    // 9 Acertos, 0 Erros, 1 em branco
+    // 45 Acertos (+45), 0 Erros (0), 5 em branco (0) -> Líquido: 45 / 50 -> Nota 9.0 (Aprovada)
     questions.forEach((q, idx) => {
-      if (idx < 9) {
+      if (idx < 45) {
         answers[q.id] = q.correctOptionIndex; // Acerto (+1)
       } else {
-        answers[q.id] = -1; // Deixada em branco (0)
+        answers[q.id] = -1; // Deixada estrategicamente em branco (0)
       }
     });
 
@@ -1833,7 +1920,7 @@ export const dataService = {
       agentName: agentName || 'Agente Lean',
       answers,
       questionsSnapshot: questions,
-      durationSeconds: 520,
+      durationSeconds: 1650,
     });
 
     // Marca recompensa como entregue
@@ -1843,18 +1930,16 @@ export const dataService = {
   },
 
   simulateFailAgent(agentId: string, agentName?: string): AgentExamResult {
-    const questions = this.generateRandomBalancedExam(agentId, 10);
+    const questions = this.generateRandomBalancedExam(agentId, 50);
     const answers: Record<number, number> = {};
 
-    // 5 Acertos, 4 Erros, 1 em branco -> Líquido = Max(0, 5 - 4) = 1 ponto -> Nota 1.0 (Reprovado)
+    // 25 Acertos (+25), 25 Erros (-25) -> Líquido = Max(0, 25 - 25) = 0 pontos -> Nota 0.0 (Reprovado com retrocesso a 50%)
     questions.forEach((q, idx) => {
-      if (idx < 5) {
+      if (idx < 25) {
         answers[q.id] = q.correctOptionIndex; // Acerto
-      } else if (idx < 9) {
-        // Erro
-        answers[q.id] = (q.correctOptionIndex + 1) % q.options.length;
       } else {
-        answers[q.id] = -1; // Em branco
+        const wrongOpt = (q.correctOptionIndex + 1) % 5;
+        answers[q.id] = wrongOpt; // Erro (-1)
       }
     });
 
