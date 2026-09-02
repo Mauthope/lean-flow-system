@@ -1,4 +1,5 @@
-import { Tenant, Sector, User, LeanAction, KaizenIdea, TpmMachine, TpmAudit, TpmTag } from './types';
+import { Tenant, Sector, User, LeanAction, KaizenIdea, TpmMachine, TpmAudit, TpmTag, LeanArticleItem } from './types';
+import { LEAN_ARTICLES } from '@/data/leanArticlesData';
 
 export const STORAGE_KEYS = {
   TENANTS: 'lean_flow_tenants',
@@ -13,6 +14,7 @@ export const STORAGE_KEYS = {
   TPM_TAGS: 'lean_flow_tpm_tags',
   AGENT_ARTICLES: 'lean_flow_agent_articles',
   AGENT_EXAMS: 'lean_flow_agent_exams',
+  LEAN_ARTICLES: 'lean_flow_lean_articles',
 };
 
 export const INITIAL_TENANTS: Tenant[] = [
@@ -1123,3 +1125,6 @@ export const INITIAL_TPM_TAGS: TpmTag[] = [
     createdAt: '2026-02-05T14:00:00.000Z',
   },
 ];
+
+export const INITIAL_LEAN_ARTICLES: LeanArticleItem[] = LEAN_ARTICLES;
+

@@ -28,18 +28,22 @@ import {
   Unlock,
   Activity,
   ShieldCheck,
+  Bot,
+  Plus,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { LEAN_ARTICLES, LeanArticle } from '@/data/leanArticlesData';
 import { ArticleReadingTelemetry } from '@/components/academy/LeanArticleModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
-import { AgentExamResult, AgentLearningRanking } from '@/lib/types';
+import { AgentExamResult, AgentLearningRanking, LeanArticleItem } from '@/lib/types';
 
 const LeanArticleModal = dynamic(() => import('@/components/academy/LeanArticleModal'), {
   ssr: false,
 });
 const LeanExamModal = dynamic(() => import('@/components/academy/LeanExamModal'), {
+  ssr: false,
+});
+const CreateArticleSenseiModal = dynamic(() => import('@/components/academy/CreateArticleSenseiModal'), {
   ssr: false,
 });
 
@@ -157,21 +161,30 @@ export default function LeanToolsIndexPage() {
   const [activeMainTab, setActiveMainTab] = useState<'articles' | 'tools'>('articles');
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
 
+  // Artigos Dinâmicos
+  const [articlesList, setArticlesList] = useState<LeanArticleItem[]>([]);
+
   // Gamificação & Telemetria
   const currentAgentId = currentUser?.id || 'agent_default';
   const [readArticleIds, setReadArticleIds] = useState<string[]>([]);
   const [validatedArticleIds, setValidatedArticleIds] = useState<string[]>([]);
-  const [selectedArticle, setSelectedArticle] = useState<LeanArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<LeanArticleItem | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
 
   // Prova de Certificação
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [latestExam, setLatestExam] = useState<AgentExamResult | undefined>(undefined);
 
+  // Co-criação de Artigo com Sensei (Exclusivo Master)
+  const [isCreateArticleOpen, setIsCreateArticleOpen] = useState(false);
+
   // Ranking de Agentes (Visão do Master/Admin)
   const [rankingList, setRankingList] = useState<AgentLearningRanking[]>([]);
 
   const loadData = () => {
+    const articles = dataService.getArticles();
+    setArticlesList(articles);
+
     const reads = dataService.getAgentReadArticles(currentAgentId);
     setReadArticleIds(reads);
 
@@ -191,7 +204,7 @@ export default function LeanToolsIndexPage() {
     loadData();
   }, [currentAgentId, isAdmin, currentTenant]);
 
-  const handleOpenArticle = (article: LeanArticle) => {
+  const handleOpenArticle = (article: LeanArticleItem) => {
     setSelectedArticle(article);
     setIsArticleModalOpen(true);
   };
@@ -215,7 +228,7 @@ export default function LeanToolsIndexPage() {
     loadData();
   };
 
-  const totalArticles = LEAN_ARTICLES.length;
+  const totalArticles = articlesList.length || 8;
   const validatedCount = validatedArticleIds.length;
   const validatedPercent = totalArticles > 0 ? Math.round((validatedCount / totalArticles) * 100) : 0;
   const canTakeExam = validatedPercent >= 95 || validatedCount >= Math.ceil(totalArticles * 0.95);
@@ -223,8 +236,8 @@ export default function LeanToolsIndexPage() {
   const categories = ['Todos', 'Fundamentos', 'Qualidade', 'Produtividade', 'Métodos', 'Manutenção'];
   const filteredArticles =
     selectedCategory === 'Todos'
-      ? LEAN_ARTICLES
-      : LEAN_ARTICLES.filter((a) => a.category === selectedCategory);
+      ? articlesList
+      : articlesList.filter((a) => a.category === selectedCategory);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
@@ -271,8 +284,34 @@ export default function LeanToolsIndexPage() {
           </p>
         </div>
 
-        {!isAdmin && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsCreateArticleOpen(true)}
+              style={{
+                background: 'linear-gradient(135deg, rgba(254, 240, 138, 0.22) 0%, rgba(245, 158, 11, 0.28) 100%)',
+                border: '1.5px solid rgba(254, 240, 138, 0.7)',
+                backdropFilter: 'blur(12px)',
+                color: '#fef08a',
+                fontWeight: 900,
+                fontSize: '0.8125rem',
+                padding: '0.6rem 1.25rem',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px -4px rgba(245, 158, 11, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Bot size={18} color="#fbbf24" />
+              <span>Criar Artigo com Sensei</span>
+            </button>
+          )}
+
+          {!isAdmin && (
             <button
               type="button"
               onClick={() => setIsExamModalOpen(true)}
@@ -293,13 +332,13 @@ export default function LeanToolsIndexPage() {
             >
               {canTakeExam ? <Unlock size={15} color="#fbbf24" /> : <Lock size={15} color="#94a3b8" />}
               {latestExam?.passed
-                ? 'Selo de Especialista Conquistado 🏆'
+                ? 'Agente Qualificado 🏆'
                 : canTakeExam
-                ? 'Iniciar Prova (50 Questões • 12 min)'
+                ? 'Iniciar Prova (10 Questões • 12 min)'
                 : 'Prova Bloqueada (Requer 95% lidos)'}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ================================================================= */}
@@ -341,7 +380,7 @@ export default function LeanToolsIndexPage() {
           }}
         >
           <BookOpen size={18} color={activeMainTab === 'articles' ? '#c084fc' : '#a855f7'} />
-          <span>1. Artigos da Academia ({LEAN_ARTICLES.length})</span>
+          <span>1. Artigos da Academia ({articlesList.length})</span>
           {validatedCount > 0 && (
             <span
               style={{
@@ -415,29 +454,46 @@ export default function LeanToolsIndexPage() {
                     width: '50px',
                     height: '50px',
                     borderRadius: '14px',
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                    border: '1.5px solid #a855f7',
+                    backgroundColor: latestExam?.passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+                    border: `1.5px solid ${latestExam?.passed ? '#10b981' : '#a855f7'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '1.6rem',
                   }}
                 >
-                  🎓
+                  {latestExam?.passed ? '🏆' : '🎓'}
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
-                    Sua Jornada de Capacitação Lean
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
+                      Sua Jornada de Capacitação Lean
+                    </span>
+                    {latestExam?.passed && (
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 900,
+                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          border: '1px solid #10b981',
+                          color: '#34d399',
+                          padding: '0.1rem 0.45rem',
+                          borderRadius: '999px',
+                        }}
+                      >
+                        Agente Qualificado 🏆
+                      </span>
+                    )}
+                  </div>
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
                     {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
                   </h3>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                     {latestExam?.passed
-                      ? `🏆 Aprovado na Prova com Nota ${latestExam.score.toFixed(1)} • Apto a Recompensa!`
+                      ? `🏆 Parabéns! Certificação de Agente Qualificado ativa com Nota ${latestExam.score.toFixed(1)}/10.0.`
                       : canTakeExam
-                      ? '🔓 Requisito atingido (≥95%)! Você já pode realizar a Prova de Certificação.'
-                      : `🔒 Complete mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
+                      ? '🔓 Requisito atingido (≥95%)! Prova de 10 questões liberada com regra anti-chute.'
+                      : `🔒 Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
                   </span>
                 </div>
               </div>
@@ -468,7 +524,7 @@ export default function LeanToolsIndexPage() {
                   }}
                 >
                   <Award size={15} />
-                  {latestExam?.passed ? 'Ver Certificado' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
+                  {latestExam?.passed ? 'Ver Certificado / Gabarito' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
                 </button>
               </div>
             </div>
@@ -506,7 +562,7 @@ export default function LeanToolsIndexPage() {
                       <th style={{ padding: '0.65rem 0.75rem' }}>Leitura Validada (Master)</th>
                       <th style={{ padding: '0.65rem 0.75rem' }}>Apto ao Exame (≥95%)</th>
                       <th style={{ padding: '0.65rem 0.75rem' }}>Nota na Prova</th>
-                      <th style={{ padding: '0.65rem 0.75rem' }}>Status</th>
+                      <th style={{ padding: '0.65rem 0.75rem' }}>Qualificação</th>
                       <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right' }}>Recompensa</th>
                     </tr>
                   </thead>
@@ -565,12 +621,14 @@ export default function LeanToolsIndexPage() {
                         </td>
 
                         <td style={{ padding: '0.75rem' }}>
-                          {rank.passedExam ? (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#34d399', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
-                              🏆 Apto a Recompensa
+                          {rank.isQualified || rank.passedExam ? (
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1.5px solid #10b981', color: '#34d399', padding: '0.2rem 0.6rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                              🏆 Agente Qualificado
                             </span>
                           ) : rank.latestExam ? (
-                            <span style={{ fontSize: '0.675rem', color: '#f87171' }}>Nota &lt; 8.0</span>
+                            <span style={{ fontSize: '0.675rem', color: '#f87171', fontWeight: 700 }}>
+                              Reprovado (Retrocedido a 50%)
+                            </span>
                           ) : (
                             <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>Em capacitação</span>
                           )}
@@ -887,6 +945,16 @@ export default function LeanToolsIndexPage() {
         onExamCompleted={handleExamCompleted}
         onNavigateToArticles={() => setActiveMainTab('articles')}
       />
+
+      {isAdmin && (
+        <CreateArticleSenseiModal
+          isOpen={isCreateArticleOpen}
+          onClose={() => setIsCreateArticleOpen(false)}
+          onSuccess={(newArticle) => {
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

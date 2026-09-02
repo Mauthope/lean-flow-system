@@ -18,6 +18,8 @@ import {
   AgentArticleProgress,
   AgentExamResult,
   AgentLearningRanking,
+  LeanArticleItem,
+  ExamQuestionSnapshot,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -32,8 +34,10 @@ import {
   INITIAL_TPM_MACHINES,
   INITIAL_TPM_AUDITS,
   INITIAL_TPM_TAGS,
+  INITIAL_LEAN_ARTICLES,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
+import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '../data/leanExamQuestions';
 
 export const dataService = {
   // ================= TENANTS / ENTIDADES =================
@@ -1431,6 +1435,40 @@ export const dataService = {
   // =========================================================================
   // ACADEMIA LEAN: ARTIGOS & GAMIFICAÇÃO
   // =========================================================================
+  // =========================================================================
+  // ACADEMIA LEAN: ARTIGOS & GESTÃO DINÂMICA
+  // =========================================================================
+  getArticles(): LeanArticleItem[] {
+    return getStoredData<LeanArticleItem[]>(STORAGE_KEYS.LEAN_ARTICLES, INITIAL_LEAN_ARTICLES);
+  },
+
+  getArticleById(id: string): LeanArticleItem | undefined {
+    return this.getArticles().find((a) => a.id === id);
+  },
+
+  createArticle(data: Omit<LeanArticleItem, 'id' | 'createdAt'>): LeanArticleItem {
+    const articles = this.getArticles();
+    const newArticle: LeanArticleItem = {
+      ...data,
+      id: generateId('art'),
+      createdAt: new Date().toISOString(),
+      isCustom: true,
+      isNew: true,
+    };
+    articles.push(newArticle);
+    setStoredData(STORAGE_KEYS.LEAN_ARTICLES, articles);
+    return newArticle;
+  },
+
+  updateArticle(id: string, data: Partial<LeanArticleItem>): LeanArticleItem {
+    const articles = this.getArticles();
+    const index = articles.findIndex((a) => a.id === id);
+    if (index === -1) throw new Error('Artigo não encontrado');
+    articles[index] = { ...articles[index], ...data };
+    setStoredData(STORAGE_KEYS.LEAN_ARTICLES, articles);
+    return articles[index];
+  },
+
   getAgentReadArticles(agentId: string): string[] {
     const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
     return progressList.filter((p) => p.agentId === agentId).map((p) => p.articleId);
@@ -1456,22 +1494,13 @@ export const dataService = {
     const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
     const existingIndex = progressList.findIndex((p) => p.agentId === agentId && p.articleId === articleId);
 
-    const articleMinTimes: Record<string, number> = {
-      '8-desperdicios': 150,
-      '5s-metodologia': 120,
-      'poka-yoke': 120,
-      'smed-troca-rapida': 180,
-      'vsm-fluxo-valor': 150,
-      'tpm-oee': 180,
-      'trabalho-padronizado-pop': 120,
-      'pdca-analise-causal': 150,
-    };
+    const article = this.getArticleById(articleId);
+    const minRequired = article?.minReadTimeSeconds || 120;
 
     const timeSpent = telemetry?.timeSpentSeconds ?? 45;
     const scrolled = telemetry?.scrolledToBottom ?? true;
     const interactions = telemetry?.interactionsCount ?? 3;
-    const minRequired = articleMinTimes[articleId] || 120;
-    // Regra do Master: rolagem confirmada, tempo >= minRequired (tempo personalizado) e tempo <= 15min (900s)
+    // Regra do Master: rolagem confirmada, tempo >= minRequired (tempo do artigo) e tempo <= 15min (900s)
     const isValidated =
       telemetry?.isValidated !== undefined
         ? telemetry.isValidated
@@ -1505,7 +1534,7 @@ export const dataService = {
     requiredPercent: number;
     missingCount: number;
   } {
-    const total = 8;
+    const total = this.getArticles().length || 8;
     const validated = this.getAgentValidatedArticles(agentId).length;
     const reads = this.getAgentReadArticles(agentId).length;
 
@@ -1527,7 +1556,118 @@ export const dataService = {
   },
 
   // =========================================================================
-  // ACADEMIA LEAN: PROVAS DE CERTIFICAÇÃO (50 QUESTÕES)
+  // ACADEMIA LEAN: GERADOR RANDÔMICO BALANCEADO (50% MENOS LIDOS / 50% MAIS LIDOS)
+  // =========================================================================
+  generateRandomBalancedExam(agentId: string, questionCount = 10): ExamQuestionSnapshot[] {
+    const articles = this.getArticles();
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const agentProgress = progressList.filter((p) => p.agentId === agentId);
+
+    // Mapeamento de tópicos de questões para IDs de artigos
+    const topicToArticleMap: Record<string, string[]> = {
+      'Fundamentos TPS & Lean': ['8-desperdicios', 'trabalho-padronizado-pop'],
+      '8 Desperdícios & Gemba': ['8-desperdicios'],
+      '5S & Padronização Avançada': ['5s-metodologia', 'trabalho-padronizado-pop'],
+      'Poka-Yoke & Jidoka': ['poka-yoke'],
+      'SMED & Engenharia de Setup': ['smed-troca-rapida'],
+      'VSM & Fluxo Contínuo': ['vsm-fluxo-valor'],
+      'TPM, Confiabilidade & OEE': ['tpm-oee'],
+      'PDCA & Causalidade Científica': ['pdca-analise-causal'],
+      'Engenharia Financeira & ROI Lean': ['vsm-fluxo-valor', '8-desperdicios'],
+      'Kanban, Supermercados & Heijunka': ['vsm-fluxo-valor', 'trabalho-padronizado-pop'],
+    };
+
+    // Calcular score de domínio (mastery) para cada artigo
+    const scoredArticles = articles.map((art) => {
+      const prog = agentProgress.find((p) => p.articleId === art.id);
+      const isVal = prog?.isValidated ? 50 : 0;
+      const timeRatio = Math.min(50, ((prog?.timeSpentSeconds || 0) / (art.minReadTimeSeconds || 120)) * 50);
+      const score = isVal + timeRatio; // 0 a 100
+      return { article: art, score };
+    });
+
+    // Ordenar do menor score (menos lidos/menor tempo) para o maior (mais lidos)
+    scoredArticles.sort((a, b) => a.score - b.score);
+
+    const midIndex = Math.max(1, Math.floor(scoredArticles.length / 2));
+    const lowMasteryArticles = scoredArticles.slice(0, midIndex).map((s) => s.article);
+    const highMasteryArticles = scoredArticles.slice(midIndex).map((s) => s.article);
+
+    const lowArticleIds = new Set(lowMasteryArticles.map((a) => a.id));
+    const highArticleIds = new Set(highMasteryArticles.map((a) => a.id));
+
+    // Separar o banco de questões (50 questões) nos dois grupos
+    const allQuestions = [...LEAN_EXAM_QUESTIONS];
+    const lowQuestions: ExamQuestion[] = [];
+    const highQuestions: ExamQuestion[] = [];
+    const neutralQuestions: ExamQuestion[] = [];
+
+    allQuestions.forEach((q) => {
+      const matchedArticles = topicToArticleMap[q.category] || [];
+      const inLow = matchedArticles.some((id) => lowArticleIds.has(id));
+      const inHigh = matchedArticles.some((id) => highArticleIds.has(id));
+
+      if (inLow && !inHigh) {
+        lowQuestions.push(q);
+      } else if (inHigh && !inLow) {
+        highQuestions.push(q);
+      } else {
+        neutralQuestions.push(q);
+      }
+    });
+
+    // Completar se um dos grupos tiver poucas questões
+    if (lowQuestions.length < Math.floor(questionCount / 2)) {
+      neutralQuestions.forEach((q) => {
+        if (lowQuestions.length < Math.floor(questionCount / 2)) lowQuestions.push(q);
+      });
+    }
+    if (highQuestions.length < Math.ceil(questionCount / 2)) {
+      neutralQuestions.forEach((q) => {
+        if (!lowQuestions.includes(q) && highQuestions.length < Math.ceil(questionCount / 2)) highQuestions.push(q);
+      });
+    }
+
+    // Função para sortear N itens aleatórios de um array sem repetição
+    const pickRandom = (arr: ExamQuestion[], n: number): ExamQuestion[] => {
+      const shuffled = [...arr].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, n);
+    };
+
+    const targetLowCount = Math.floor(questionCount / 2); // 5 questões (50%)
+    const targetHighCount = questionCount - targetLowCount; // 5 questões (50%)
+
+    const selectedLow = pickRandom(lowQuestions.length > 0 ? lowQuestions : allQuestions, targetLowCount);
+    const selectedHigh = pickRandom(
+      highQuestions.filter((q) => !selectedLow.includes(q)).length >= targetHighCount
+        ? highQuestions.filter((q) => !selectedLow.includes(q))
+        : allQuestions.filter((q) => !selectedLow.includes(q)),
+      targetHighCount
+    );
+
+    const combined = [...selectedLow, ...selectedHigh].sort(() => 0.5 - Math.random());
+
+    return combined.map((q) => {
+      const matchedArticle = articles.find((a) => {
+        const topics = topicToArticleMap[q.category] || [];
+        return topics.includes(a.id);
+      });
+
+      return {
+        id: q.id,
+        question: q.question,
+        category: q.category,
+        articleId: matchedArticle?.id,
+        articleTitle: matchedArticle?.title || q.category,
+        options: q.options,
+        correctOptionIndex: q.correctOptionIndex,
+        explanation: q.explanation,
+      };
+    });
+  },
+
+  // =========================================================================
+  // ACADEMIA LEAN: PROVAS DE CERTIFICAÇÃO, REGRA ANTI-CHUTE & RETROCESSO A 50%
   // =========================================================================
   getAgentExams(agentId: string): AgentExamResult[] {
     const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
@@ -1545,35 +1685,99 @@ export const dataService = {
 
   saveAgentExamResult(params: {
     agentId: string;
-    correctCount: number;
-    totalQuestions: number;
+    agentName?: string;
     answers: Record<number, number>;
+    questionsSnapshot?: ExamQuestionSnapshot[];
     durationSeconds?: number;
-    score?: number;
-    passed?: boolean;
   }): AgentExamResult {
     const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
-    const calculatedScore =
-      params.score !== undefined
-        ? params.score
-        : Number(((params.correctCount / params.totalQuestions) * 10).toFixed(1));
-    const isPassed = params.passed !== undefined ? params.passed : calculatedScore >= 8.0;
+    const questions = params.questionsSnapshot || [];
+    const totalQuestions = questions.length || 10;
+
+    let correctCount = 0;
+    let wrongCount = 0;
+    let blankCount = 0;
+
+    const evaluatedQuestions: ExamQuestionSnapshot[] = questions.map((q) => {
+      const selected = params.answers[q.id];
+      if (selected === undefined || selected === -1) {
+        blankCount++;
+        return {
+          ...q,
+          selectedOptionIndex: undefined,
+          isCorrect: undefined,
+        };
+      }
+      if (selected === q.correctOptionIndex) {
+        correctCount++;
+        return {
+          ...q,
+          selectedOptionIndex: selected,
+          isCorrect: true,
+        };
+      }
+      wrongCount++;
+      return {
+        ...q,
+        selectedOptionIndex: selected,
+        isCorrect: false,
+      };
+    });
+
+    // REGRA ANTI-CHUTE (CESPE): Cada errada anula 1 certa!
+    // Pontos Líquidos = Max(0, Acertos - Erros)
+    const netScore = Math.max(0, correctCount - wrongCount);
+    const calculatedScore = Number(((netScore / totalQuestions) * 10).toFixed(1));
+    const isPassed = calculatedScore >= 8.0; // Nota de corte: 8.0
 
     const newEntry: AgentExamResult = {
       id: generateId('exam'),
       agentId: params.agentId,
+      agentName: params.agentName,
       completedAt: new Date().toISOString(),
-      correctCount: params.correctCount,
-      totalQuestions: params.totalQuestions,
+      correctCount,
+      wrongCount,
+      blankCount,
+      totalQuestions,
+      netScore,
       score: calculatedScore,
       passed: isPassed,
       durationSeconds: params.durationSeconds,
       answers: params.answers,
+      questionsSnapshot: evaluatedQuestions,
+      feedbackSummary: isPassed
+        ? `🏆 Parabéns! Você atingiu ${calculatedScore.toFixed(1)}/10.0 com ${correctCount} acerto(s), ${wrongCount} erro(s) e ${blankCount} em branco. Conquistou o Selo de Agente Qualificado!`
+        : `⚠️ Nota ${calculatedScore.toFixed(1)}/10.0 insuficiente para qualificação (mínimo 8.0). Devido à regra anti-chute (${wrongCount} erro(s) anularam ${wrongCount} acerto(s)), seu percentual de capacitação retrocedeu para 50%. Reestude os artigos até 95% para tentar novamente.`,
       rewardClaimed: false,
     };
 
     exams.push(newEntry);
     setStoredData(STORAGE_KEYS.AGENT_EXAMS, exams);
+
+    // =========================================================================
+    // SE REPROVADO: APLICAR RETROCESSO PARA 50%
+    // =========================================================================
+    if (!isPassed) {
+      const totalArticles = this.getArticles().length || 8;
+      const targetAllowedValidated = Math.max(1, Math.floor(totalArticles * 0.5)); // 50%
+
+      const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+      let agentValidatedCount = 0;
+
+      const updatedProgress = progressList.map((p) => {
+        if (p.agentId === params.agentId && p.isValidated) {
+          agentValidatedCount++;
+          if (agentValidatedCount > targetAllowedValidated) {
+            // Retrocede este artigo: remove a validação
+            return { ...p, isValidated: false };
+          }
+        }
+        return p;
+      });
+
+      setStoredData(STORAGE_KEYS.AGENT_ARTICLES, updatedProgress);
+    }
+
     return newEntry;
   },
 
@@ -1589,12 +1793,13 @@ export const dataService = {
 
   getAllAgentsLearningRanking(tenantId?: string): AgentLearningRanking[] {
     const users = this.getUsers(tenantId).filter((u) => u.role === 'agent');
-    const totalArticles = 8;
+    const totalArticles = this.getArticles().length || 8;
 
     return users.map((agent) => {
       const readArticles = this.getAgentReadArticles(agent.id);
       const validatedArticles = this.getAgentValidatedArticles(agent.id);
-      const latestExam = this.getAgentLatestExam(agent.id);
+      const agentExams = this.getAgentExams(agent.id);
+      const latestExam = agentExams[0];
       const passedExam = Boolean(latestExam?.passed);
       const rewardClaimed = Boolean(latestExam?.rewardClaimed);
 
@@ -1613,12 +1818,15 @@ export const dataService = {
         validatedArticlesReadPercent,
         totalArticlesCount: totalArticles,
         canTakeExam,
+        isQualified: passedExam,
+        qualificationDate: passedExam ? latestExam?.completedAt : undefined,
+        attemptsCount: agentExams.length,
         latestExam,
         passedExam,
         rewardClaimed,
       };
     }).sort((a, b) => {
-      if (a.passedExam !== b.passedExam) return a.passedExam ? -1 : 1;
+      if (a.isQualified !== b.isQualified) return a.isQualified ? -1 : 1;
       const scoreA = a.latestExam?.score || 0;
       const scoreB = b.latestExam?.score || 0;
       if (scoreA !== scoreB) return scoreB - scoreA;
@@ -1639,5 +1847,6 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.TPM_MACHINES, JSON.stringify(INITIAL_TPM_MACHINES));
     localStorage.setItem(STORAGE_KEYS.TPM_AUDITS, JSON.stringify(INITIAL_TPM_AUDITS));
     localStorage.setItem(STORAGE_KEYS.TPM_TAGS, JSON.stringify(INITIAL_TPM_TAGS));
+    localStorage.setItem(STORAGE_KEYS.LEAN_ARTICLES, JSON.stringify(INITIAL_LEAN_ARTICLES));
   },
 };

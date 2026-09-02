@@ -16,10 +16,11 @@ import {
   ShieldCheck,
   Lock,
   BookOpen,
+  Printer,
+  Scale,
 } from 'lucide-react';
-import { LEAN_EXAM_QUESTIONS } from '@/data/leanExamQuestions';
 import { dataService } from '@/services/dataService';
-import { AgentExamResult } from '@/lib/types';
+import { AgentExamResult, ExamQuestionSnapshot } from '@/lib/types';
 
 interface LeanExamModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function LeanExamModal({
   onExamCompleted,
   onNavigateToArticles,
 }: LeanExamModalProps) {
+  const [questions, setQuestions] = useState<ExamQuestionSnapshot[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -53,9 +55,20 @@ export default function LeanExamModal({
   // Verificação de Liberação (95% dos artigos lidos e validados)
   const eligibility = dataService.canAgentTakeExam(agentId);
 
+  // Inicializar Prova Randômica Balanceada na Abertura
   useEffect(() => {
-    if (isOpen && eligibility.canTake && !isSubmitted) {
+    if (isOpen && eligibility.canTake && !isSubmitted && questions.length === 0) {
+      const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 10);
+      setQuestions(generatedQuestions);
+      setAnswers({});
+      setCurrentQuestionIndex(0);
       setTimeLeft(EXAM_MAX_DURATION_SECONDS);
+    }
+  }, [isOpen, eligibility.canTake, isSubmitted, agentId, questions.length]);
+
+  // Timer Countdown
+  useEffect(() => {
+    if (isOpen && eligibility.canTake && !isSubmitted && questions.length > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -70,15 +83,15 @@ export default function LeanExamModal({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isOpen, eligibility.canTake, isSubmitted]);
+  }, [isOpen, eligibility.canTake, isSubmitted, questions.length]);
 
   if (!isOpen) return null;
 
-  const questions = LEAN_EXAM_QUESTIONS;
   const currentQ = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
-  const answeredCount = Object.keys(answers).length;
-  const progressPercent = Math.round((answeredCount / totalQuestions) * 100);
+  const answeredCount = Object.keys(answers).filter((k) => answers[Number(k)] !== undefined && answers[Number(k)] !== -1).length;
+  const blankCount = totalQuestions - answeredCount;
+  const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -91,23 +104,25 @@ export default function LeanExamModal({
     setAnswers((prev) => ({ ...prev, [qId]: optIndex }));
   };
 
+  const handleClearOption = (qId: number) => {
+    if (isSubmitted) return;
+    setAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[qId];
+      return updated;
+    });
+  };
+
   const handleSubmitExam = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correctOptionIndex) {
-        correctCount++;
-      }
-    });
 
     const elapsed = EXAM_MAX_DURATION_SECONDS - timeLeft;
 
     const result = dataService.saveAgentExamResult({
       agentId,
-      correctCount,
-      totalQuestions,
+      agentName,
       answers,
+      questionsSnapshot: questions,
       durationSeconds: elapsed,
     });
 
@@ -120,8 +135,8 @@ export default function LeanExamModal({
         .then((module) => {
           const confettiFn = module.default || module;
           confettiFn({
-            particleCount: 150,
-            spread: 90,
+            particleCount: 160,
+            spread: 100,
             origin: { y: 0.6 },
             colors: ['#22d3ee', '#10b981', '#fbbf24', '#a855f7'],
           });
@@ -131,12 +146,20 @@ export default function LeanExamModal({
   };
 
   const handleRestart = () => {
+    const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 10);
+    setQuestions(generatedQuestions);
     setAnswers({});
     setIsSubmitted(false);
     setExamResult(null);
     setShowReview(false);
     setCurrentQuestionIndex(0);
     setTimeLeft(EXAM_MAX_DURATION_SECONDS);
+  };
+
+  const handlePrintPDF = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
   };
 
   // Se o agente não atingiu 95% dos artigos lidos e validados, bloqueia a prova
@@ -224,7 +247,7 @@ export default function LeanExamModal({
               <div style={{ width: `${eligibility.validatedPercent}%`, height: '100%', backgroundColor: '#ef4444' }} />
             </div>
             <span style={{ fontSize: '0.7rem', color: '#f87171', display: 'block', marginTop: '0.45rem' }}>
-              ⚠️ Faltam {eligibility.missingCount} artigo(s) com leitura ativa validada (tempo entre 30s e 15min com rolagem de página).
+              ⚠️ Faltam {eligibility.missingCount} artigo(s) com leitura ativa validada.
             </span>
           </div>
 
@@ -257,10 +280,11 @@ export default function LeanExamModal({
 
   return (
     <div
+      className="exam-modal-container"
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
         backdropFilter: 'blur(12px)',
         display: 'flex',
         alignItems: 'center',
@@ -269,15 +293,39 @@ export default function LeanExamModal({
         padding: '1rem',
       }}
     >
+      {/* CSS para Impressão PDF do Gabarito Oficial */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .exam-printable-area, .exam-printable-area * {
+            visibility: visible;
+          }
+          .exam-printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            background: #ffffff !important;
+            color: #000000 !important;
+            padding: 20px;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       <div
         style={{
           backgroundColor: '#090e1a',
           border: '1.5px solid rgba(6, 182, 212, 0.4)',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '960px',
+          maxWidth: '980px',
           height: '92vh',
-          maxHeight: '860px',
+          maxHeight: '880px',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 35px rgba(6, 182, 212, 0.25)',
@@ -286,8 +334,9 @@ export default function LeanExamModal({
       >
         {/* Header */}
         <div
+          className="no-print"
           style={{
-            padding: '1.15rem 1.5rem',
+            padding: '1.1rem 1.5rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
@@ -312,7 +361,7 @@ export default function LeanExamModal({
               🎓
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                 <h3
                   style={{
                     margin: 0,
@@ -322,7 +371,7 @@ export default function LeanExamModal({
                     fontFamily: 'var(--font-heading)',
                   }}
                 >
-                  Prova Oficial de Certificação Especialista Lean
+                  Prova Oficial de Certificação Lean
                 </h3>
                 <span
                   style={{
@@ -335,7 +384,7 @@ export default function LeanExamModal({
                     borderRadius: '999px',
                   }}
                 >
-                  50 Questões • Nível Especialista • Nota Mínima: 8.0
+                  10 Questões • Regra Anti-Chute • Nota Mínima: 8.0
                 </span>
               </div>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
@@ -359,7 +408,6 @@ export default function LeanExamModal({
                   color: timeLeft <= 120 ? '#f87171' : '#fbbf24',
                   fontFamily: 'var(--font-mono)',
                   fontWeight: 800,
-                  animation: timeLeft <= 120 ? 'pulse 1s infinite' : 'none',
                 }}
                 title="Tempo Restante (Limite máximo: 12 minutos)"
               >
@@ -388,40 +436,68 @@ export default function LeanExamModal({
           </div>
         </div>
 
+        {/* Faixa de Alerta: Regra Anti-Chute */}
+        {!isSubmitted && (
+          <div
+            className="no-print"
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.12)',
+              borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+              padding: '0.45rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.75rem',
+              color: '#fbbf24',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <Scale size={14} />
+              <span>
+                <strong>Regra Anti-Chute:</strong> 1 questão errada anula 1 acerto. Questões em branco não penalizam.
+              </span>
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+              {answeredCount} marcadas • {blankCount} em branco
+            </span>
+          </div>
+        )}
+
         {/* ============================================================= */}
         {/* TELA DE RESULTADO (PÓS-PROVA)                                   */}
         {/* ============================================================= */}
         {isSubmitted && examResult && !showReview && (
           <div
+            className="no-print"
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '2.5rem 1.5rem',
+              padding: '2rem 1.5rem',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               textAlign: 'center',
-              gap: '1.5rem',
+              gap: '1.25rem',
             }}
           >
             <div
               style={{
-                width: '90px',
-                height: '90px',
+                width: '84px',
+                height: '84px',
                 borderRadius: '50%',
                 backgroundColor: examResult.passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                 border: `3px solid ${examResult.passed ? '#10b981' : '#ef4444'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '2.75rem',
+                fontSize: '2.5rem',
               }}
             >
-              {examResult.passed ? '🏆' : '📚'}
+              {examResult.passed ? '🏆' : '⚠️'}
             </div>
 
-            <div style={{ maxWidth: '580px' }}>
+            <div style={{ maxWidth: '640px' }}>
               <span
                 style={{
                   fontSize: '0.75rem',
@@ -433,35 +509,58 @@ export default function LeanExamModal({
                   borderRadius: '999px',
                 }}
               >
-                {examResult.passed ? 'APROVADO COM EXCELÊNCIA' : 'NÃO APROVADO • REVISE OS CONCEITOS'}
+                {examResult.passed ? 'APROVADO • SELO DE AGENTE QUALIFICADO' : 'NÃO APROVADO • RETROCESSO A 50%'}
               </span>
 
-              <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#ffffff', margin: '0.5rem 0 0.25rem', fontFamily: 'var(--font-heading)' }}>
+              <h2 style={{ fontSize: '2.15rem', fontWeight: 900, color: '#ffffff', margin: '0.5rem 0 0.25rem', fontFamily: 'var(--font-heading)' }}>
                 Nota Final: <span style={{ color: examResult.passed ? '#34d399' : '#f87171' }}>{examResult.score.toFixed(1)}</span> / 10.0
               </h2>
 
-              <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0.5rem 0 0' }}>
-                {examResult.passed ? (
-                  <>
-                    Parabéns, <strong>{agentName}</strong>! Você acertou <strong>{examResult.correctCount} de 50 questões</strong> e conquistou a certificação de <strong>Especialista Lean</strong>. Você já está <strong>Apto a Receber a Recompensa</strong> junto à liderança Master!
-                  </>
-                ) : (
-                  <>
-                    Você acertou <strong>{examResult.correctCount} de 50 questões</strong>. A nota mínima de aprovação para recompensa é <strong>8.0 (40 acertos)</strong>. Revise os artigos na Academia Lean e realize uma nova tentativa!
-                  </>
-                )}
+              {/* Grid de Estatísticas CESPE */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '0.65rem',
+                  backgroundColor: '#0f172a',
+                  borderRadius: '14px',
+                  padding: '0.85rem',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  margin: '1rem 0',
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Acertos (+1)</span>
+                  <p style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', margin: '0.1rem 0 0' }}>{examResult.correctCount}</p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Erros (-1)</span>
+                  <p style={{ fontSize: '1.15rem', fontWeight: 900, color: '#f87171', margin: '0.1rem 0 0' }}>{examResult.wrongCount}</p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Em Branco (0)</span>
+                  <p style={{ fontSize: '1.15rem', fontWeight: 900, color: '#94a3b8', margin: '0.1rem 0 0' }}>{examResult.blankCount}</p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Pontos Líquidos</span>
+                  <p style={{ fontSize: '1.15rem', fontWeight: 900, color: '#22d3ee', margin: '0.1rem 0 0' }}>{examResult.netScore}</p>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.875rem', color: '#cbd5e1', lineHeight: 1.5, margin: '0' }}>
+                {examResult.feedbackSummary}
               </p>
             </div>
 
             {/* Ações pós-prova */}
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '0.5rem' }}>
               <button
                 type="button"
                 onClick={() => setShowReview(true)}
                 className="btn btn-secondary"
                 style={{
                   fontWeight: 800,
-                  padding: '0.65rem 1.5rem',
+                  padding: '0.65rem 1.35rem',
                   borderRadius: '10px',
                   fontSize: '0.875rem',
                   display: 'flex',
@@ -470,7 +569,28 @@ export default function LeanExamModal({
                 }}
               >
                 <FileCheck size={16} />
-                Revisar Gabarito e Explicações
+                Revisar Gabarito Completo
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintPDF}
+                className="btn btn-secondary"
+                style={{
+                  fontWeight: 800,
+                  padding: '0.65rem 1.35rem',
+                  borderRadius: '10px',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                  border: '1px solid #22d3ee',
+                  color: '#22d3ee',
+                }}
+              >
+                <Printer size={16} />
+                Baixar Prova & Gabarito (PDF)
               </button>
 
               {!examResult.passed && (
@@ -480,7 +600,7 @@ export default function LeanExamModal({
                   className="btn btn-primary"
                   style={{
                     fontWeight: 800,
-                    padding: '0.65rem 1.5rem',
+                    padding: '0.65rem 1.35rem',
                     borderRadius: '10px',
                     fontSize: '0.875rem',
                     display: 'flex',
@@ -489,7 +609,7 @@ export default function LeanExamModal({
                   }}
                 >
                   <RotateCcw size={16} />
-                  Fazer Nova Tentativa
+                  Nova Tentativa
                 </button>
               )}
 
@@ -500,7 +620,7 @@ export default function LeanExamModal({
                   className="btn btn-primary"
                   style={{
                     fontWeight: 800,
-                    padding: '0.65rem 1.75rem',
+                    padding: '0.65rem 1.6rem',
                     borderRadius: '10px',
                     fontSize: '0.875rem',
                     display: 'flex',
@@ -510,7 +630,7 @@ export default function LeanExamModal({
                   }}
                 >
                   <CheckCircle2 size={16} />
-                  Concluir & Voltar
+                  Concluir
                 </button>
               )}
             </div>
@@ -520,17 +640,18 @@ export default function LeanExamModal({
         {/* ============================================================= */}
         {/* MODO DE EXECUÇÃO OU REVISÃO DE QUESTÕES                       */}
         {/* ============================================================= */}
-        {(!isSubmitted || showReview) && (
+        {(!isSubmitted || showReview) && currentQ && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Barra de Progresso e Navegador de Questões */}
+            {/* Barra de Navegador de Questões */}
             <div
+              className="no-print"
               style={{
-                padding: '0.85rem 1.5rem',
+                padding: '0.75rem 1.5rem',
                 backgroundColor: '#070b14',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.65rem',
+                gap: '0.5rem',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
@@ -538,35 +659,24 @@ export default function LeanExamModal({
                   Questão <strong style={{ color: '#ffffff' }}>{currentQuestionIndex + 1}</strong> de {totalQuestions} • Domínio: <strong style={{ color: '#22d3ee' }}>{currentQ.category}</strong>
                 </span>
                 <span style={{ color: '#fbbf24', fontWeight: 700 }}>
-                  {answeredCount} / {totalQuestions} Respondidas ({progressPercent}%)
+                  {answeredCount} / {totalQuestions} Marcadas ({progressPercent}%)
                 </span>
               </div>
 
-              {/* Barra de progresso */}
-              <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${progressPercent}%`,
-                    backgroundColor: '#22d3ee',
-                    transition: 'width 0.2s ease',
-                  }}
-                />
-              </div>
-
-              {/* Grade de 50 botões de navegação rápida */}
+              {/* Grade de botões de navegação rápida */}
               <div
                 style={{
                   display: 'flex',
-                  gap: '0.25rem',
+                  gap: '0.35rem',
                   overflowX: 'auto',
-                  paddingBottom: '0.25rem',
+                  paddingBottom: '0.2rem',
                 }}
               >
                 {questions.map((q, idx) => {
-                  const isAnswered = answers[q.id] !== undefined;
+                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== -1;
                   const isCurrent = idx === currentQuestionIndex;
                   const isCorrect = isSubmitted && answers[q.id] === q.correctOptionIndex;
+                  const isWrong = isSubmitted && isAnswered && !isCorrect;
 
                   let bg = 'rgba(255, 255, 255, 0.05)';
                   let border = '1px solid rgba(255, 255, 255, 0.1)';
@@ -577,10 +687,14 @@ export default function LeanExamModal({
                       bg = 'rgba(16, 185, 129, 0.25)';
                       border = '1px solid #10b981';
                       color = '#34d399';
-                    } else {
+                    } else if (isWrong) {
                       bg = 'rgba(239, 68, 68, 0.25)';
                       border = '1px solid #ef4444';
                       color = '#f87171';
+                    } else {
+                      bg = 'rgba(255, 255, 255, 0.05)';
+                      border = '1px dashed rgba(255, 255, 255, 0.2)';
+                      color = '#94a3b8';
                     }
                   } else if (isCurrent) {
                     bg = 'rgba(6, 182, 212, 0.3)';
@@ -598,14 +712,14 @@ export default function LeanExamModal({
                       type="button"
                       onClick={() => setCurrentQuestionIndex(idx)}
                       style={{
-                        minWidth: '24px',
-                        height: '24px',
+                        minWidth: '28px',
+                        height: '28px',
                         padding: 0,
                         backgroundColor: bg,
                         border,
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         color,
-                        fontSize: '0.65rem',
+                        fontSize: '0.725rem',
                         fontWeight: 800,
                         cursor: 'pointer',
                         display: 'flex',
@@ -626,7 +740,7 @@ export default function LeanExamModal({
               style={{
                 flex: 1,
                 overflowY: 'auto',
-                padding: '1.75rem',
+                padding: '1.5rem',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1.25rem',
@@ -641,18 +755,41 @@ export default function LeanExamModal({
                   border: '1px solid rgba(255, 255, 255, 0.08)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.45rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>
-                    Questão {currentQuestionIndex + 1}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• {currentQ.category}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>
+                      Questão {currentQuestionIndex + 1}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• {currentQ.category}</span>
+                  </div>
+
+                  {!isSubmitted && answers[currentQ.id] !== undefined && (
+                    <button
+                      type="button"
+                      onClick={() => handleClearOption(currentQ.id)}
+                      style={{
+                        background: 'none',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '6px',
+                        color: '#f87171',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.2rem 0.5rem',
+                        cursor: 'pointer',
+                      }}
+                      title="Deixar em branco para não arriscar a anulação por erro"
+                    >
+                      Limpar Seleção (Deixar em Branco)
+                    </button>
+                  )}
                 </div>
+
                 <h4 style={{ margin: 0, fontSize: '1.025rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.55 }}>
                   {currentQ.question}
                 </h4>
               </div>
 
-              {/* 5 Alternativas (A, B, C, D, E) */}
+              {/* Alternativas */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 {currentQ.options.map((opt, optIdx) => {
                   const letter = String.fromCharCode(65 + optIdx); // A, B, C, D, E
@@ -749,8 +886,9 @@ export default function LeanExamModal({
 
             {/* Navegação Inferior (Anterior, Próxima e Enviar) */}
             <div
+              className="no-print"
               style={{
-                padding: '1rem 1.5rem',
+                padding: '0.85rem 1.5rem',
                 borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                 backgroundColor: '#040711',
                 display: 'flex',
@@ -814,6 +952,72 @@ export default function LeanExamModal({
             </div>
           </div>
         )}
+
+        {/* ============================================================= */}
+        {/* ÁREA DE IMPRESSÃO / PDF DO GABARITO OFICIAL                     */}
+        {/* ============================================================= */}
+        <div className="exam-printable-area" style={{ display: 'none' }}>
+          <div style={{ borderBottom: '2px solid #000000', paddingBottom: '12px', marginBottom: '16px' }}>
+            <h1 style={{ fontSize: '18pt', margin: 0, fontWeight: 900 }}>FLUXOLEAN — RELATÓRIO OFICIAL DE AVALIAÇÃO & GABARITO</h1>
+            <p style={{ fontSize: '10pt', color: '#555555', margin: '4px 0 0' }}>Certificação de Agente Qualificado em Métodos & Ferramentas Lean</p>
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px', fontSize: '9pt' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Candidato:</td>
+                <td style={{ padding: '4px' }}>{agentName}</td>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Data de Conclusão:</td>
+                <td style={{ padding: '4px' }}>{examResult?.completedAt ? new Date(examResult.completedAt).toLocaleString('pt-BR') : '-'}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Nota Final:</td>
+                <td style={{ padding: '4px', fontWeight: 'bold', fontSize: '11pt' }}>{examResult?.score.toFixed(1)} / 10.0</td>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Resultado Oficial:</td>
+                <td style={{ padding: '4px', fontWeight: 'bold', color: examResult?.passed ? '#059669' : '#dc2626' }}>
+                  {examResult?.passed ? 'APROVADO (AGENTE QUALIFICADO)' : 'NÃO APROVADO'}
+                </td>
+              </tr>
+              <tr>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Acertos (+1):</td>
+                <td style={{ padding: '4px' }}>{examResult?.correctCount}</td>
+                <td style={{ padding: '4px', fontWeight: 'bold' }}>Erros (-1 Anula Acerto):</td>
+                <td style={{ padding: '4px' }}>{examResult?.wrongCount}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 style={{ fontSize: '12pt', borderBottom: '1px solid #cccccc', paddingBottom: '4px', marginBottom: '12px' }}>
+            Gabarito Questão a Questão com Fundamentação do Sensei:
+          </h3>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '8.5pt' }}>
+            {questions.map((q, idx) => {
+              const selectedOpt = answers[q.id];
+              const isCorrect = selectedOpt === q.correctOptionIndex;
+              const isBlank = selectedOpt === undefined || selectedOpt === -1;
+
+              return (
+                <div key={q.id} style={{ border: '1px solid #dddddd', padding: '10px', borderRadius: '6px', pageBreakInside: 'avoid' }}>
+                  <p style={{ margin: '0 0 6px', fontWeight: 'bold' }}>
+                    {idx + 1}. {q.question} ({q.category})
+                  </p>
+                  <p style={{ margin: '0 0 4px' }}>
+                    <strong>Resposta do Aluno:</strong>{' '}
+                    {isBlank ? 'Deixada em Branco' : `${String.fromCharCode(65 + selectedOpt)}) ${q.options[selectedOpt]}`}{' '}
+                    {isCorrect ? '✅ (Correto)' : isBlank ? '⚪ (Neutro)' : '❌ (Incorreto)'}
+                  </p>
+                  <p style={{ margin: '0 0 4px', color: '#059669', fontWeight: 'bold' }}>
+                    <strong>Gabarito Oficial:</strong> {String.fromCharCode(65 + q.correctOptionIndex)}) {q.options[q.correctOptionIndex]}
+                  </p>
+                  <p style={{ margin: '4px 0 0', color: '#444444', fontStyle: 'italic', fontSize: '8pt' }}>
+                    <strong>Comentário do Sensei:</strong> {q.explanation}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

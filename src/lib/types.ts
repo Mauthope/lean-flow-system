@@ -464,17 +464,36 @@ export interface AgentArticleProgress {
   timeSpentSeconds: number;     // Tempo real ativo de leitura
   scrolledToBottom: boolean;    // Rolou até o final (profundidade de rolagem >= 80%)
   interactionsCount: number;    // Cliques e rolagens ativas
-  isValidated: boolean;         // Validado para o Master (scroll === true && time >= 30s && time <= 900s)
+  isValidated: boolean;         // Validado para o Master (scroll === true && time >= minRequired && time <= 900s)
+}
+
+export interface ExamQuestionSnapshot {
+  id: number;
+  question: string;
+  category: string;
+  articleId?: string;
+  articleTitle?: string;
+  options: string[];
+  correctOptionIndex: number;
+  explanation: string;
+  selectedOptionIndex?: number; // undefined se em branco
+  isCorrect?: boolean;
 }
 
 export interface AgentExamResult {
   id: string;
   agentId: string;
-  score: number; // 0 a 10
+  agentName?: string;
+  score: number; // Nota final líquida 0 a 10.0 (regra: Max(0, Acertos - Erros) / Total * 10)
+  netScore: number; // Pontos líquidos (Acertos - Erros)
   correctCount: number;
+  wrongCount: number;
+  blankCount: number;
   totalQuestions: number;
-  passed: boolean; // score >= 8.0
-  answers: Record<number, number>; // questionId -> selectedOptionIndex
+  passed: boolean; // score >= 8.0 (Selo de Agente Qualificado)
+  answers: Record<number, number>; // questionId -> selectedOptionIndex (ou -1 se em branco)
+  questionsSnapshot?: ExamQuestionSnapshot[];
+  feedbackSummary?: string;
   completedAt: string;
   durationSeconds?: number;
   rewardClaimed?: boolean;
@@ -492,7 +511,34 @@ export interface AgentLearningRanking {
   articlesReadPercent: number;
   validatedArticlesReadPercent: number;
   canTakeExam: boolean; // true if validatedArticlesReadPercent >= 95%
+  isQualified: boolean; // Selo Agente Qualificado (Aprovado com nota >= 8.0)
+  qualificationDate?: string;
+  attemptsCount: number;
   latestExam?: AgentExamResult;
   passedExam: boolean;
   rewardClaimed: boolean;
 }
+
+export interface LeanArticleItem {
+  id: string;
+  title: string;
+  category: 'Fundamentos' | 'Qualidade' | 'Produtividade' | 'Métodos' | 'Manutenção';
+  readTimeMinutes: number;
+  minReadTimeSeconds: number;
+  icon: string;
+  summary: string;
+  badge?: string;
+  isNew?: boolean;
+  isCustom?: boolean;
+  authorName?: string;
+  createdAt?: string;
+  content: {
+    introduction: string;
+    keyConcepts: { title: string; description: string }[];
+    howToApply: string[];
+    factoryExample: string;
+    bestPractices: string[];
+    quizHint: string;
+  };
+}
+
