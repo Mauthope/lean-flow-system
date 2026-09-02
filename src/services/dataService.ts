@@ -35,6 +35,8 @@ import {
   INITIAL_TPM_AUDITS,
   INITIAL_TPM_TAGS,
   INITIAL_LEAN_ARTICLES,
+  INITIAL_AGENT_ARTICLES,
+  INITIAL_AGENT_EXAMS,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '../data/leanExamQuestions';
@@ -1470,12 +1472,12 @@ export const dataService = {
   },
 
   getAgentReadArticles(agentId: string): string[] {
-    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
     return progressList.filter((p) => p.agentId === agentId).map((p) => p.articleId);
   },
 
   getAgentValidatedArticles(agentId: string): string[] {
-    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
     return progressList
       .filter((p) => p.agentId === agentId && p.isValidated)
       .map((p) => p.articleId);
@@ -1491,7 +1493,7 @@ export const dataService = {
       isValidated?: boolean;
     }
   ): void {
-    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
     const existingIndex = progressList.findIndex((p) => p.agentId === agentId && p.articleId === articleId);
 
     const article = this.getArticleById(articleId);
@@ -1560,7 +1562,7 @@ export const dataService = {
   // =========================================================================
   generateRandomBalancedExam(agentId: string, questionCount = 10): ExamQuestionSnapshot[] {
     const articles = this.getArticles();
-    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
     const agentProgress = progressList.filter((p) => p.agentId === agentId);
 
     // Mapeamento de tópicos de questões para IDs de artigos
@@ -1670,12 +1672,12 @@ export const dataService = {
   // ACADEMIA LEAN: PROVAS DE CERTIFICAÇÃO, REGRA ANTI-CHUTE & RETROCESSO A 50%
   // =========================================================================
   getAgentExams(agentId: string): AgentExamResult[] {
-    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, INITIAL_AGENT_EXAMS);
     return exams.filter((e) => e.agentId === agentId).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
   },
 
   getAgentLatestExam(agentId: string): AgentExamResult | undefined {
-    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, INITIAL_AGENT_EXAMS);
     const agentExams = exams.filter((e) => e.agentId === agentId);
     if (agentExams.length === 0) return undefined;
     return agentExams.sort(
@@ -1690,7 +1692,7 @@ export const dataService = {
     questionsSnapshot?: ExamQuestionSnapshot[];
     durationSeconds?: number;
   }): AgentExamResult {
-    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, INITIAL_AGENT_EXAMS);
     const questions = params.questionsSnapshot || [];
     const totalQuestions = questions.length || 10;
 
@@ -1761,7 +1763,7 @@ export const dataService = {
       const totalArticles = this.getArticles().length || 8;
       const targetAllowedValidated = Math.max(1, Math.floor(totalArticles * 0.5)); // 50%
 
-      const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, []);
+      const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
       let agentValidatedCount = 0;
 
       const updatedProgress = progressList.map((p) => {
@@ -1782,7 +1784,7 @@ export const dataService = {
   },
 
   toggleExamRewardClaimed(examId: string, claimed: boolean): void {
-    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, []);
+    const exams = getStoredData<AgentExamResult[]>(STORAGE_KEYS.AGENT_EXAMS, INITIAL_AGENT_EXAMS);
     const updated = exams.map((e) =>
       e.id === examId
         ? { ...e, rewardClaimed: claimed, rewardClaimedAt: claimed ? new Date().toISOString() : undefined }
@@ -1848,5 +1850,7 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.TPM_AUDITS, JSON.stringify(INITIAL_TPM_AUDITS));
     localStorage.setItem(STORAGE_KEYS.TPM_TAGS, JSON.stringify(INITIAL_TPM_TAGS));
     localStorage.setItem(STORAGE_KEYS.LEAN_ARTICLES, JSON.stringify(INITIAL_LEAN_ARTICLES));
+    localStorage.setItem(STORAGE_KEYS.AGENT_ARTICLES, JSON.stringify(INITIAL_AGENT_ARTICLES));
+    localStorage.setItem(STORAGE_KEYS.AGENT_EXAMS, JSON.stringify(INITIAL_AGENT_EXAMS));
   },
 };

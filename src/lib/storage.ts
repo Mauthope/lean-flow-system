@@ -1,4 +1,16 @@
-import { Tenant, Sector, User, LeanAction, KaizenIdea, TpmMachine, TpmAudit, TpmTag, LeanArticleItem } from './types';
+import {
+  Tenant,
+  Sector,
+  User,
+  LeanAction,
+  KaizenIdea,
+  TpmMachine,
+  TpmAudit,
+  TpmTag,
+  LeanArticleItem,
+  AgentArticleProgress,
+  AgentExamResult,
+} from './types';
 import { LEAN_ARTICLES } from '@/data/leanArticlesData';
 
 export const STORAGE_KEYS = {
@@ -1127,4 +1139,183 @@ export const INITIAL_TPM_TAGS: TpmTag[] = [
 ];
 
 export const INITIAL_LEAN_ARTICLES: LeanArticleItem[] = LEAN_ARTICLES;
+
+// =============================================================================
+// SEED INICIAL: PROGRESSO DE ARTIGOS & EXAMES LEAN (SIMULAÇÃO DE JULIANA MENDES)
+// =============================================================================
+export const INITIAL_AGENT_ARTICLES: AgentArticleProgress[] = [
+  // Juliana Mendes (100% dos artigos lidos e validados pelo Master)
+  { agentId: 'usr_rafitec_agent_02', articleId: '8-desperdicios', readAt: '2026-02-10T14:30:00.000Z', timeSpentSeconds: 210, scrolledToBottom: true, interactionsCount: 6, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: '5s-metodologia', readAt: '2026-02-12T10:15:00.000Z', timeSpentSeconds: 195, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'poka-yoke', readAt: '2026-02-14T16:00:00.000Z', timeSpentSeconds: 240, scrolledToBottom: true, interactionsCount: 7, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'smed-troca-rapida', readAt: '2026-02-17T09:40:00.000Z', timeSpentSeconds: 270, scrolledToBottom: true, interactionsCount: 8, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'vsm-fluxo-valor', readAt: '2026-02-19T11:20:00.000Z', timeSpentSeconds: 310, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'tpm-oee', readAt: '2026-02-22T15:00:00.000Z', timeSpentSeconds: 260, scrolledToBottom: true, interactionsCount: 6, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'pdca-analise-causal', readAt: '2026-02-25T14:10:00.000Z', timeSpentSeconds: 220, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+  { agentId: 'usr_rafitec_agent_02', articleId: 'trabalho-padronizado-pop', readAt: '2026-02-28T09:50:00.000Z', timeSpentSeconds: 190, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+
+  // Carlos Silva (6 artigos lidos - 75%)
+  { agentId: 'usr_rafitec_agent_01', articleId: '8-desperdicios', readAt: '2026-02-11T09:00:00.000Z', timeSpentSeconds: 180, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+  { agentId: 'usr_rafitec_agent_01', articleId: '5s-metodologia', readAt: '2026-02-13T11:00:00.000Z', timeSpentSeconds: 200, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+  { agentId: 'usr_rafitec_agent_01', articleId: 'poka-yoke', readAt: '2026-02-16T14:00:00.000Z', timeSpentSeconds: 220, scrolledToBottom: true, interactionsCount: 6, isValidated: true },
+  { agentId: 'usr_rafitec_agent_01', articleId: 'smed-troca-rapida', readAt: '2026-02-18T10:00:00.000Z', timeSpentSeconds: 250, scrolledToBottom: true, interactionsCount: 7, isValidated: true },
+  { agentId: 'usr_rafitec_agent_01', articleId: 'vsm-fluxo-valor', readAt: '2026-02-20T16:00:00.000Z', timeSpentSeconds: 290, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+  { agentId: 'usr_rafitec_agent_01', articleId: 'pdca-analise-causal', readAt: '2026-02-24T15:00:00.000Z', timeSpentSeconds: 210, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+
+  // Roberto Rocha (4 artigos - retrocedido a 50% após tentativa anterior)
+  { agentId: 'usr_rafitec_agent_03', articleId: '8-desperdicios', readAt: '2026-02-12T08:30:00.000Z', timeSpentSeconds: 170, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+  { agentId: 'usr_rafitec_agent_03', articleId: '5s-metodologia', readAt: '2026-02-14T10:30:00.000Z', timeSpentSeconds: 185, scrolledToBottom: true, interactionsCount: 3, isValidated: true },
+  { agentId: 'usr_rafitec_agent_03', articleId: 'tpm-oee', readAt: '2026-02-18T14:30:00.000Z', timeSpentSeconds: 240, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+  { agentId: 'usr_rafitec_agent_03', articleId: 'trabalho-padronizado-pop', readAt: '2026-02-21T11:00:00.000Z', timeSpentSeconds: 180, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+
+  // Fernanda Lima (3 artigos - 38%)
+  { agentId: 'usr_rafitec_agent_04', articleId: '8-desperdicios', readAt: '2026-02-15T09:15:00.000Z', timeSpentSeconds: 160, scrolledToBottom: true, interactionsCount: 3, isValidated: true },
+  { agentId: 'usr_rafitec_agent_04', articleId: '5s-metodologia', readAt: '2026-02-18T13:45:00.000Z', timeSpentSeconds: 190, scrolledToBottom: true, interactionsCount: 4, isValidated: true },
+  { agentId: 'usr_rafitec_agent_04', articleId: 'poka-yoke', readAt: '2026-02-22T10:00:00.000Z', timeSpentSeconds: 215, scrolledToBottom: true, interactionsCount: 5, isValidated: true },
+];
+
+export const INITIAL_AGENT_EXAMS: AgentExamResult[] = [
+  // Juliana Mendes: Prova Realizada e APROVADA com Nota 9.0 (Regra Anti-Chute: 9 Acertos, 0 Erros, 1 Em Branco) -> Selo Agente Qualificado 🏆
+  {
+    id: 'exam_juliana_mendes_01',
+    agentId: 'usr_rafitec_agent_02',
+    agentName: 'Juliana Mendes',
+    completedAt: '2026-03-01T15:45:00.000Z',
+    correctCount: 9,
+    wrongCount: 0,
+    blankCount: 1,
+    totalQuestions: 10,
+    netScore: 9,
+    score: 9.0,
+    passed: true,
+    durationSeconds: 520,
+    answers: { 1: 2, 2: 1, 3: 0, 4: 3, 5: 1, 6: 0, 7: 2, 8: 1, 9: 0, 10: -1 },
+    feedbackSummary: '🏆 Parabéns! Você atingiu 9.0/10.0 com 9 acerto(s), 0 erro(s) e 1 em branco. Conquistou o Selo de Agente Qualificado!',
+    rewardClaimed: true,
+    rewardClaimedAt: '2026-03-02T09:00:00.000Z',
+    questionsSnapshot: [
+      {
+        id: 1,
+        question: 'No Sistema Toyota de Produção (TPS), qual dos 8 desperdícios é considerado o mais grave por mascarar todos os demais problemas do fluxo?',
+        category: 'Fundamentos TPS & Lean',
+        articleId: '8-desperdicios',
+        articleTitle: 'Os 8 Grandes Desperdícios da Produção (Muda)',
+        options: ['Espera por materiais', 'Superprodução', 'Transporte excessivo', 'Movimentação desnecessária'],
+        correctOptionIndex: 1,
+        selectedOptionIndex: 1,
+        isCorrect: true,
+        explanation: 'A Superprodução consome matérias-primas antes da necessidade, gera estoques intermediários e oculta gargalos, refugos e instabilidades de máquinas.',
+      },
+      {
+        id: 2,
+        question: 'Qual é o princípio fundamental da etapa Seiso (Limpeza) dentro da metodologia 5S industrial?',
+        category: '5S & Padronização Avançada',
+        articleId: '5s-metodologia',
+        articleTitle: 'Programa 5S: Os 5 Sensos Fundamentais',
+        options: ['Limpeza estética para auditoria', 'Limpar inspecionando e eliminando fontes de sujeira na origem', 'Pintar o piso de cinza e faixas amarelas', 'Contratar empresa terceirizada de limpeza'],
+        correctOptionIndex: 1,
+        selectedOptionIndex: 1,
+        isCorrect: true,
+        explanation: 'O Seiso é a inspeção através da limpeza. Ao limpar a máquina, o operador descobre folgas, vazamentos incipientes e aquecimentos anormais.',
+      },
+      {
+        id: 3,
+        question: 'Na engenharia de setup SMED (Troca Rápida de Ferramenta), qual é a primeira e mais impactante etapa do processo?',
+        category: 'SMED & Engenharia de Setup',
+        articleId: 'smed-troca-rapida',
+        articleTitle: 'SMED: Troca Rápida de Ferramentas',
+        options: ['Separar categoricamente as operações internas das externas', 'Comprar chaves pneumáticas de alto torque', 'Eliminar todos os parafusos da matriz', 'Substituir os operadores por robôs de setup'],
+        correctOptionIndex: 0,
+        selectedOptionIndex: 0,
+        isCorrect: true,
+        explanation: 'A separação de setup interno (feito com máquina parada) e externo (preparado com a máquina ainda operando) costuma reduzir de 30% a 50% o tempo sem custos.',
+      },
+      {
+        id: 4,
+        question: 'Qual a principal diferença entre um Poka-Yoke de Controle e um Poka-Yoke de Advertência?',
+        category: 'Poka-Yoke & Jidoka',
+        articleId: 'poka-yoke',
+        articleTitle: 'Poka-Yoke: Sistemas à Prova de Erros',
+        options: ['O de controle custa mais caro', 'O de advertência desliga a máquina', 'O de controle paralisa fisicamente o processo diante de desvio, enquanto o de advertência apenas sinaliza', 'Não há diferença prática'],
+        correctOptionIndex: 2,
+        selectedOptionIndex: 2,
+        isCorrect: true,
+        explanation: 'O Poka-Yoke de controle é 100% infalível pois bloqueia a continuidade da montagem até que a peça esteja na orientação correta.',
+      },
+      {
+        id: 5,
+        question: 'Como é calculada a métrica OEE (Overall Equipment Effectiveness) no TPM?',
+        category: 'TPM, Confiabilidade & OEE',
+        articleId: 'tpm-oee',
+        articleTitle: 'TPM & OEE: Eficiência Global dos Equipamentos',
+        options: ['Horas Trabalhadas ÷ Horas Planejadas', 'Disponibilidade × Desempenho × Qualidade', 'Peças Boas ÷ Peças Totais', 'Tempo de Ciclo ÷ Takt Time'],
+        correctOptionIndex: 1,
+        selectedOptionIndex: 1,
+        isCorrect: true,
+        explanation: 'O OEE é a multiplicação dos três fatores de rendimento operacional: Disponibilidade, Performance da Velocidade e Índice de Qualidade.',
+      },
+      {
+        id: 6,
+        question: 'No Mapeamento do Fluxo de Valor (VSM), o que representa a Linha do Tempo (Lead Time Ladder)?',
+        category: 'VSM & Fluxo Contínuo',
+        articleId: 'vsm-fluxo-valor',
+        articleTitle: 'VSM: Mapeamento do Fluxo de Valor',
+        options: ['A comparação entre o Tempo de Processamento (VA) e o Lead Time Total (NVA)', 'A escala de trabalho dos turnos', 'O cronograma de manutenção preventiva', 'O tempo de entrega da matéria-prima'],
+        correctOptionIndex: 0,
+        selectedOptionIndex: 0,
+        isCorrect: true,
+        explanation: 'A escada de lead time evidencia a enorme disparidade entre os segundos em que o produto realmente é transformado e os dias em que ele fica parado em estoque.',
+      },
+      {
+        id: 7,
+        question: 'Na aplicação da técnica dos 5 Porquês, qual é a principal diretriz para encontrar a causa raiz sistêmica?',
+        category: 'PDCA & Causalidade Científica',
+        articleId: 'pdca-analise-causal',
+        articleTitle: 'PDCA & Análise Causal Profunda',
+        options: ['Culpar a desatenção do operador', 'Perguntar os porquês baseado em suposições', 'Validar cada porquê com evidência física no Gemba até alcançar a falha no padrão ou sistema', 'Parar no terceiro porquê se parecer óbvio'],
+        correctOptionIndex: 2,
+        selectedOptionIndex: 2,
+        isCorrect: true,
+        explanation: 'A causa raiz de um problema industrial reside sempre na falha de um padrão, procedimento ou método de trabalho, e nunca em erro individual.',
+      },
+      {
+        id: 8,
+        question: 'Qual é o objetivo principal da confecção de um POP (Procedimento Operacional Padrão) com Trabalho Padronizado?',
+        category: 'Fundamentos TPS & Lean',
+        articleId: 'trabalho-padronizado-pop',
+        articleTitle: 'Trabalho Padronizado e POP Visual',
+        options: ['Satisfazer exigências de auditoria ISO', 'Garantir a repetibilidade e a melhor sequência de movimentos com menor esforço e maior segurança', 'Diminuir o salário dos operadores', 'Aumentar a burocracia na linha'],
+        correctOptionIndex: 1,
+        selectedOptionIndex: 1,
+        isCorrect: true,
+        explanation: 'O trabalho padronizado define a melhor maneira conhecida de realizar uma tarefa hoje, servindo como base para o Kaizen de amanhã.',
+      },
+      {
+        id: 9,
+        question: 'No cálculo financeiro de um projeto Kaizen, o que caracteriza o Custo Evitado (Cost Avoidance)?',
+        category: 'Engenharia Financeira & ROI Lean',
+        articleId: '8-desperdicios',
+        articleTitle: 'Os 8 Grandes Desperdícios da Produção (Muda)',
+        options: ['Despesas evitadas futuras em retrabalho, horas extras ou investimentos que deixaram de ser necessários', 'Apenas descontos obtidos com fornecedores', 'Redução direta de headcount', 'Sobra de caixa no banco'],
+        correctOptionIndex: 0,
+        selectedOptionIndex: 0,
+        isCorrect: true,
+        explanation: 'O Custo Evitado quantifica o dinheiro que a empresa economiza ao prevenir paradas, refugos, multas de entrega e horas extras desnecessárias.',
+      },
+      {
+        id: 10,
+        question: 'No nivelamento de produção Heijunka com Kanban, qual é o papel do Supermercado de Peças?',
+        category: 'Kanban, Supermercados & Heijunka',
+        articleId: 'vsm-fluxo-valor',
+        articleTitle: 'VSM: Mapeamento do Fluxo de Valor',
+        options: ['Vender lanches para os operadores', 'Armazenar estoques ilimitados', 'Manter um estoque pulmão dimensionado com sinalização visual para puxar a reposição conforme o consumo real', 'Guardar ferramentas quebradas'],
+        correctOptionIndex: 2,
+        selectedOptionIndex: -1, // Deixada estrategicamente em branco pela Juliana
+        isCorrect: false,
+        explanation: 'Juliana deixou esta questão em branco para evitar a penalidade da regra anti-chute (+1 acerto, -1 erro, 0 em branco), garantindo 9.0 pontos líquidos!',
+      },
+    ],
+  },
+];
+
 
