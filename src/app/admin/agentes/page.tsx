@@ -216,12 +216,14 @@ export default function AdminAgentesPage() {
       </div>
 
       {/* Agent Modal */}
-      <AgentModal
-        agent={selectedAgent}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={refreshData}
-      />
+      {isModalOpen && (
+        <AgentModal
+          agent={selectedAgent}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={refreshData}
+        />
+      )}
     </div>
   );
 }

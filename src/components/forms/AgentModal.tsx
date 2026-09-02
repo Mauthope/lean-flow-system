@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, Sector } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
@@ -43,7 +43,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
   onSuccess,
 }) => {
   const { currentTenant } = useAuth();
-  const sectors = dataService.getSectors();
+  const sectors = useMemo(() => dataService.getSectors(), [isOpen]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -59,6 +59,9 @@ export const AgentModal: React.FC<AgentModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    const currentSectors = dataService.getSectors();
     if (agent) {
       setName(agent.name);
       setEmail(agent.email);
@@ -70,7 +73,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       // Initialize sectors
       if (agent.allSectors || agent.sectorName === 'Todos os Setores (Geral)') {
         setAllSectors(true);
-        setSelectedSectorIds(sectors.map((s) => s.id));
+        setSelectedSectorIds(currentSectors.map((s) => s.id));
       } else if (agent.sectorIds && agent.sectorIds.length > 0) {
         setAllSectors(false);
         setSelectedSectorIds(agent.sectorIds);
@@ -79,7 +82,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         setSelectedSectorIds([agent.sectorId]);
       } else {
         setAllSectors(false);
-        setSelectedSectorIds(sectors[0] ? [sectors[0].id] : []);
+        setSelectedSectorIds(currentSectors[0] ? [currentSectors[0].id] : []);
       }
     } else {
       setName('');
@@ -89,9 +92,9 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       setAvatarUrl(DEFAULT_AVATARS[0]);
       setActive(true);
       setAllSectors(true); // By default new lean agent can act plant-wide
-      setSelectedSectorIds(sectors.map((s) => s.id));
+      setSelectedSectorIds(currentSectors.map((s) => s.id));
     }
-  }, [agent, isOpen, sectors]);
+  }, [agent, isOpen]);
 
   const handleToggleAllSectors = (checked: boolean) => {
     setAllSectors(checked);

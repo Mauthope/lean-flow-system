@@ -20,7 +20,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   onSuccess,
 }) => {
   const { currentTenant, allAgents } = useAuth();
-  const sectors = dataService.getSectors();
+  const sectors = React.useMemo(() => dataService.getSectors(), [isOpen]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,16 +33,17 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
+      const currentSectors = dataService.getSectors();
       setTitle('');
       setDescription('');
       setWasteCategory('espera');
-      setOriginSectorId(sectors[0]?.id || '');
+      setOriginSectorId(currentSectors[0]?.id || '');
       setAssignedAgentId(allAgents[0]?.id || '');
       setPriority('media');
       setEstimatedCostAvoided('20000');
       setDueDate('');
     }
-  }, [isOpen, sectors, allAgents]);
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
