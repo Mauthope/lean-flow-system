@@ -171,9 +171,12 @@ export default function LeanToolsIndexPage() {
   const [selectedArticle, setSelectedArticle] = useState<LeanArticleItem | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
 
-  // Prova de Certificação
+  // Prova de Certificação & Revisão de Gabarito
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
   const [latestExam, setLatestExam] = useState<AgentExamResult | undefined>(undefined);
+  const [examModalAgent, setExamModalAgent] = useState<{ id: string; name: string } | null>(null);
+  const [examModalResult, setExamModalResult] = useState<AgentExamResult | null>(null);
+  const [examModalReviewOnly, setExamModalReviewOnly] = useState(false);
 
   // Co-criação de Artigo com Sensei (Exclusivo Master)
   const [isCreateArticleOpen, setIsCreateArticleOpen] = useState(false);
@@ -203,6 +206,20 @@ export default function LeanToolsIndexPage() {
   useEffect(() => {
     loadData();
   }, [currentAgentId, isAdmin, currentTenant]);
+
+  const handleOpenExamForTaking = () => {
+    setExamModalAgent({ id: currentAgentId, name: currentUser?.name || 'Agente Lean' });
+    setExamModalResult(null);
+    setExamModalReviewOnly(false);
+    setIsExamModalOpen(true);
+  };
+
+  const handleOpenExamForReview = (agentId: string, agentName: string, exam: AgentExamResult) => {
+    setExamModalAgent({ id: agentId, name: agentName });
+    setExamModalResult(exam);
+    setExamModalReviewOnly(true);
+    setIsExamModalOpen(true);
+  };
 
   const handleOpenArticle = (article: LeanArticleItem) => {
     setSelectedArticle(article);
@@ -314,7 +331,15 @@ export default function LeanToolsIndexPage() {
           {!isAdmin && (
             <button
               type="button"
-              onClick={() => setIsExamModalOpen(true)}
+              onClick={() => {
+                if (latestExam?.passed) {
+                  handleOpenExamForReview(currentAgentId, currentUser?.name || 'Agente Lean', latestExam);
+                } else if (canTakeExam) {
+                  handleOpenExamForTaking();
+                } else {
+                  handleOpenExamForTaking();
+                }
+              }}
               className="btn btn-sm"
               style={{
                 backgroundColor: canTakeExam ? 'rgba(251, 191, 36, 0.15)' : 'rgba(255, 255, 255, 0.05)',
@@ -531,7 +556,11 @@ export default function LeanToolsIndexPage() {
                 <div style={{ zIndex: 1 }}>
                   <button
                     type="button"
-                    onClick={() => setIsExamModalOpen(true)}
+                    onClick={() => {
+                      if (latestExam) {
+                        handleOpenExamForReview(currentAgentId, currentUser?.name || 'Agente Lean', latestExam);
+                      }
+                    }}
                     className="btn btn-primary"
                     style={{
                       backgroundColor: '#fbbf24',
@@ -616,7 +645,7 @@ export default function LeanToolsIndexPage() {
 
                   <button
                     type="button"
-                    onClick={() => setIsExamModalOpen(true)}
+                    onClick={handleOpenExamForTaking}
                     className="btn btn-primary btn-sm"
                     style={{
                       fontWeight: 800,
@@ -718,9 +747,33 @@ export default function LeanToolsIndexPage() {
 
                         <td style={{ padding: '0.75rem' }}>
                           {rank.latestExam ? (
-                            <strong style={{ color: rank.latestExam.passed ? '#34d399' : '#f87171', fontFamily: 'var(--font-mono)' }}>
-                              {rank.latestExam.score.toFixed(1)} / 10.0
-                            </strong>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <strong style={{ color: rank.latestExam.passed ? '#34d399' : '#f87171', fontFamily: 'var(--font-mono)' }}>
+                                {rank.latestExam.score.toFixed(1)} / 10.0
+                              </strong>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenExamForReview(rank.agentId, rank.agentName, rank.latestExam!)}
+                                className="btn btn-sm"
+                                style={{
+                                  fontSize: '0.675rem',
+                                  fontWeight: 800,
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: '6px',
+                                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                  border: '1px solid #06b6d4',
+                                  color: '#22d3ee',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                }}
+                                title="Visualizar Prova e Gabarito Assinalado pelo Agente"
+                              >
+                                <FileCheck size={12} />
+                                <span>Gabarito</span>
+                              </button>
+                            </div>
                           ) : (
                             <span style={{ color: '#94a3b8' }}>Não realizada</span>
                           )}
@@ -1069,8 +1122,10 @@ export default function LeanToolsIndexPage() {
       <LeanExamModal
         isOpen={isExamModalOpen}
         onClose={() => setIsExamModalOpen(false)}
-        agentId={currentAgentId}
-        agentName={currentUser?.name || 'Agente Lean'}
+        agentId={examModalAgent?.id || currentAgentId}
+        agentName={examModalAgent?.name || currentUser?.name || 'Agente Lean'}
+        initialExamResult={examModalResult}
+        isReviewOnly={examModalReviewOnly}
         onExamCompleted={handleExamCompleted}
         onNavigateToArticles={() => setActiveMainTab('articles')}
       />

@@ -27,7 +27,9 @@ interface LeanExamModalProps {
   onClose: () => void;
   agentId: string;
   agentName: string;
-  onExamCompleted: (result: AgentExamResult) => void;
+  initialExamResult?: AgentExamResult | null;
+  isReviewOnly?: boolean;
+  onExamCompleted?: (result: AgentExamResult) => void;
   onNavigateToArticles?: () => void;
 }
 
@@ -38,6 +40,8 @@ export default function LeanExamModal({
   onClose,
   agentId,
   agentName,
+  initialExamResult,
+  isReviewOnly = false,
   onExamCompleted,
   onNavigateToArticles,
 }: LeanExamModalProps) {
@@ -55,20 +59,47 @@ export default function LeanExamModal({
   // Verificação de Liberação (95% dos artigos lidos e validados)
   const eligibility = dataService.canAgentTakeExam(agentId);
 
-  // Inicializar Prova Randômica Balanceada na Abertura
+  // Inicializar Prova ou Gabarito na Abertura
   useEffect(() => {
-    if (isOpen && eligibility.canTake && !isSubmitted && questions.length === 0) {
+    if (!isOpen) return;
+
+    // Se foi passado um resultado inicial (ex: Gestor Master clicou em "Ver Gabarito" ou Agente Qualificado)
+    if (initialExamResult) {
+      setExamResult(initialExamResult);
+      setIsSubmitted(true);
+      setShowReview(true);
+      setQuestions(initialExamResult.questionsSnapshot || []);
+      setAnswers(initialExamResult.answers || {});
+      return;
+    }
+
+    // Se isReviewOnly ou se o agente já concluiu a prova com aprovação
+    const existing = dataService.getAgentLatestExam(agentId);
+    if (existing && (isReviewOnly || existing.passed)) {
+      setExamResult(existing);
+      setIsSubmitted(true);
+      setShowReview(true);
+      setQuestions(existing.questionsSnapshot || []);
+      setAnswers(existing.answers || {});
+      return;
+    }
+
+    // Se é uma nova tentativa de prova por um agente elegível
+    if (eligibility.canTake && !isSubmitted) {
       const generatedQuestions = dataService.generateRandomBalancedExam(agentId, 10);
       setQuestions(generatedQuestions);
       setAnswers({});
+      setIsSubmitted(false);
+      setExamResult(null);
+      setShowReview(false);
       setCurrentQuestionIndex(0);
       setTimeLeft(EXAM_MAX_DURATION_SECONDS);
     }
-  }, [isOpen, eligibility.canTake, isSubmitted, agentId, questions.length]);
+  }, [isOpen, initialExamResult, isReviewOnly, agentId]);
 
-  // Timer Countdown
+  // Timer Countdown (Apenas se a prova estiver em execução ao vivo e não submetida)
   useEffect(() => {
-    if (isOpen && eligibility.canTake && !isSubmitted && questions.length > 0) {
+    if (isOpen && eligibility.canTake && !isSubmitted && !initialExamResult && !isReviewOnly && questions.length > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -83,7 +114,7 @@ export default function LeanExamModal({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isOpen, eligibility.canTake, isSubmitted, questions.length]);
+  }, [isOpen, eligibility.canTake, isSubmitted, initialExamResult, isReviewOnly, questions.length]);
 
   if (!isOpen) return null;
 
@@ -128,7 +159,7 @@ export default function LeanExamModal({
 
     setExamResult(result);
     setIsSubmitted(true);
-    onExamCompleted(result);
+    if (onExamCompleted) onExamCompleted(result);
 
     if (result.passed && typeof window !== 'undefined') {
       import('canvas-confetti')
@@ -162,8 +193,8 @@ export default function LeanExamModal({
     }
   };
 
-  // Se o agente não atingiu 95% dos artigos lidos e validados, bloqueia a prova
-  if (!eligibility.canTake) {
+  // Se não há resultado e o agente não atingiu 95%, bloqueia
+  if (!eligibility.canTake && !initialExamResult && !isReviewOnly && !examResult) {
     return (
       <div
         style={{

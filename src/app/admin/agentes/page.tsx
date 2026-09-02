@@ -112,19 +112,40 @@ export default function AdminAgentesPage() {
                     </div>
                   </div>
 
-                  <span
-                    style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 800,
-                      backgroundColor: agent.active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                      color: agent.active ? '#34d399' : '#94a3b8',
-                      border: `1px solid ${agent.active ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
-                      padding: '0.15rem 0.5rem',
-                      borderRadius: '9999px',
-                    }}
-                  >
-                    {agent.active ? 'Ativo' : 'Inativo'}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        backgroundColor: agent.active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                        color: agent.active ? '#34d399' : '#94a3b8',
+                        border: `1px solid ${agent.active ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '9999px',
+                      }}
+                    >
+                      {agent.active ? 'Ativo' : 'Inativo'}
+                    </span>
+
+                    {dataService.getAgentLatestExam(agent.id)?.passed && (
+                      <span
+                        style={{
+                          fontSize: '0.675rem',
+                          fontWeight: 800,
+                          backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                          color: '#fbbf24',
+                          border: '1px solid #fbbf24',
+                          padding: '0.1rem 0.45rem',
+                          borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                      >
+                        🏆 Qualificado ({dataService.getAgentLatestExam(agent.id)?.score.toFixed(1)})
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info List */}
