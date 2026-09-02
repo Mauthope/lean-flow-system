@@ -73,8 +73,8 @@ export default function CreateArticleSenseiModal({
   if (!isOpen) return null;
 
   const handleGenerateDraft = async () => {
-    if (!topic.trim() || !guidelines.trim()) {
-      alert('Por favor, preencha o tópico do artigo e as diretrizes/explanação.');
+    if (!topic.trim()) {
+      alert('Por favor, informe o tópico ou tema do artigo (ex: Pareto, SMED, 5S, OEE, Kanban...).');
       return;
     }
 
@@ -96,7 +96,7 @@ export default function CreateArticleSenseiModal({
         {
           id: '1',
           sender: 'sensei',
-          text: `Oss! Pesquisei e formulei a minuta técnica completa para "${topic.trim()}" com base nas suas diretrizes. Você pode conferir os tópicos, o caso prático e o passo a passo no painel à esquerda. O que você gostaria de refinar, corrigir ou aprofundar?`,
+          text: `Oss! Pesquisei e formulei o artigo técnico completo sobre "${generated.title}". Você pode conferir os conceitos, o caso prático no chão de fábrica e o passo a passo no painel à esquerda. O que você gostaria de refinar, corrigir ou aprofundar?`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -350,7 +350,7 @@ export default function CreateArticleSenseiModal({
                     1. Briefing de Pesquisa para o Sensei
                   </h4>
                   <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.45 }}>
-                    Informe o tema e as diretrizes práticas. O Sensei irá pesquisar e estruturar uma aula técnica profunda com exemplos de fábrica e questões de fixação.
+                    Digite o tópico desejado (ex: <strong>pareto</strong>, <strong>5s</strong>, <strong>smed</strong>, <strong>oee</strong>). O Sensei pesquisará na ciência Lean e trará o artigo técnico completo e estruturado para você revisar!
                   </p>
                 </div>
 
@@ -359,7 +359,7 @@ export default function CreateArticleSenseiModal({
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Ex: SMED Avançado em Prensas de 500T, Poka-Yoke na Montagem, OEE e TPM..."
+                    placeholder="Ex: pareto, smed, 5s, oee, kanban, matriz gut, trabalho padronizado..."
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                   />
@@ -395,14 +395,20 @@ export default function CreateArticleSenseiModal({
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Diretrizes & Explanação do Master: *</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <label className="form-label" style={{ color: '#cbd5e1', margin: 0 }}>Diretrizes & Sugestão do Master:</label>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>(Opcional)</span>
+                  </div>
                   <textarea
                     className="form-textarea"
-                    rows={5}
-                    placeholder="Explique os pontos fundamentais que o Sensei deve pesquisar e abordar (ex: separação de setup interno/externo, ferramentas no ponto de uso, exemplos com custos evitados, cálculos de OEE e regras de ergonomia)..."
+                    rows={3}
+                    placeholder="Ex: 'quero exemplos práticos', 'focar em estamparia', 'incluir cálculos de ROI'... (Se deixar em branco, o Sensei pesquisará tudo)"
                     value={guidelines}
                     onChange={(e) => setGuidelines(e.target.value)}
                   />
+                  <span style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                    Dica: basta uma sugestão simples ou deixar em branco. O Sensei formulará a introdução, conceitos, passos no Gemba, caso real e dicas para prova.
+                  </span>
                 </div>
 
                 <button

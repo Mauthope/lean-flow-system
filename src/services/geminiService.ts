@@ -1238,6 +1238,7 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
   const cleanTopic = topic.trim();
   const lowerTopic = cleanTopic.toLowerCase();
 
+  let formattedTitle = cleanTopic.charAt(0).toUpperCase() + cleanTopic.slice(1);
   let intro = `No ambiente industrial contemporâneo, a aplicação sistemática de "${cleanTopic}" é um dos pilares essenciais para alcançar a estabilidade operacional, eliminar desperdícios invisíveis e elevar a taxa de agregação de valor na produção. Integrando conceitos do TPS (Sistema Toyota de Produção) e Kaizen, esta metodologia transforma postos de trabalho e garante sustentabilidade aos resultados. ${guidelines ? `Alinhado com a diretriz do Master: ${guidelines}` : ''}`;
   let keyConcepts = [
     {
@@ -1272,8 +1273,48 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
   ];
   let quizHint = `Lembre-se para a prova: o objetivo central de ${cleanTopic} é garantir a repetibilidade e a previsibilidade do fluxo, eliminando perdas sem sobrecarregar ergonomicamente o operador.`;
 
-  if (lowerTopic.includes('smed') || lowerTopic.includes('setup') || lowerTopic.includes('troca rapida') || lowerTopic.includes('troca rápida')) {
-    intro = `O SMED (Single Minute Exchange of Die) ou Troca Rápida de Ferramenta é a metodologia definitiva para reduzir tempos de preparação de máquinas para menos de 10 minutos (um dígito). Permite fabricar em lotes menores, responder rapidamente à demanda e eliminar gargalos operacionais.`;
+  // 1. Tópico: PARETO / 80-20
+  if (lowerTopic.includes('pareto') || lowerTopic.includes('80/20') || lowerTopic.includes('80-20') || lowerTopic.includes('poucos vitais')) {
+    formattedTitle = 'Diagrama de Pareto & Princípio 80/20: Priorização Estratégica no Gemba';
+    intro = `O Diagrama de Pareto, fundamentado no Princípio de Pareto (regra 80/20) popularizado na qualidade por Joseph Juran, estabelece que aproximadamente 80% dos problemas ou custos em uma fábrica derivam de apenas 20% das causas raízes ("poucos vitais"). Em um ambiente de melhoria contínua, esta ferramenta é o ponto de partida indispensável para direcionar a energia e os investimentos do time exatamente onde o impacto financeiro e operacional é máximo.`;
+    keyConcepts = [
+      {
+        title: '1. A Regra 80/20 e os Poucos Vitais',
+        description: 'Diferenciação clara entre os "poucos vitais" (causas prioritárias com alto impacto) e os "muitos triviais" (pequenas perdas dispersas que consomem energia se atacadas sem foco).',
+      },
+      {
+        title: '2. Estrutura do Gráfico (Barras + Curva de Pareto)',
+        description: 'O gráfico combina barras verticais ordenadas em ordem decrescente de frequência/custo com a curva ogiva de percentual acumulado até atingir 100%.',
+      },
+      {
+        title: '3. Estratificação de 2º e 3º Níveis',
+        description: 'Nunca pare no primeiro gráfico de Pareto: ao identificar a barra principal (ex: 60% dos refugos em usinagem), crie um sub-Pareto por máquina, por turno, por ferramental ou por tipo de falha.',
+      },
+      {
+        title: '4. Foco no Custo Financeiro vs. Frequência',
+        description: 'Nem sempre o defeito mais frequente é o mais caro: o Pareto deve ser avaliado tanto pela quantidade de ocorrências quanto pelo custo monetário total gerado.',
+      },
+    ];
+    howToApply = [
+      'Colete dados confiáveis no Gemba durante pelo menos 30 a 60 dias (folhas de verificação de refugos, paradas de linha ou retrabalhos).',
+      'Classifique os dados em categorias claras e calcule o total de ocorrências e o custo financeiro unitário de cada tipo de perda.',
+      'Ordene as categorias em ordem decrescente da maior para a menor frequência/custo.',
+      'Calcule as porcentagens individuais e a porcentagem acumulada de cada categoria até totalizar 100%.',
+      'Desenhe o gráfico de barras com o eixo esquerdo (quantidade/R$) e o eixo direito (0 a 100% acumulado) e trace a linha dos 80%.',
+      'Abra um Plano de Ação 5W2H e análise de 5 Porquês focado exclusivamente nas categorias que compõem os 80% do topo.',
+    ];
+    factoryExample = `Na linha de injeção plástica, a fábrica registrava 14,2% de refugos distribuídos em 18 tipos de defeitos diferentes. O time aplicou o Diagrama de Pareto e descobriu que apenas 2 defeitos ("chupagem" com 52% e "rebarba excessiva" com 31%) respondiam por 83% do prejuízo total. Focando as contramedidas apenas no controle de temperatura do molde e pressão de injeção, o refugo despencou para 1,8%, gerando uma economia auditada de R$ 78.400 ao ano.`;
+    bestPractices = [
+      'Sempre estratifique os dados antes de iniciar o plano de ação (Pareto por turno, máquina e matéria-prima).',
+      'Atualize o gráfico de Pareto mensalmente no quadro de gestão visual para comprovar a eficácia do Kaizen.',
+      'Evite a categoria "Outros" muito grande: se "Outros" ultrapassar 10%, reestratifique os dados em categorias mais específicas.',
+    ];
+    quizHint = `Regra de Prova: O Diagrama de Pareto organiza as causas em ordem DECRESCENTE e utiliza a curva de porcentagem acumulada para identificar os 20% de causas que originam 80% dos problemas.`;
+  }
+  // 2. Tópico: SMED / SETUP
+  else if (lowerTopic.includes('smed') || lowerTopic.includes('setup') || lowerTopic.includes('troca rapida') || lowerTopic.includes('troca rápida')) {
+    formattedTitle = 'SMED Avançado: Redução do Tempo de Preparação para Menos de 1 Dígito';
+    intro = `O SMED (Single Minute Exchange of Die) ou Troca Rápida de Ferramenta é a metodologia definitiva criada por Shigeo Shingo para reduzir tempos de preparação de máquinas para menos de 10 minutos (um dígito). Permite fabricar em lotes menores, responder rapidamente à demanda e eliminar gargalos operacionais.`;
     keyConcepts = [
       { title: '1. Setup Interno vs. Setup Externo', description: 'Setup interno só pode ser feito com a máquina parada. Setup externo DEVE ser realizado com a máquina ainda operando.' },
       { title: '2. Conversão de Setup Interno em Externo', description: 'Pré-aquecimento de matrizes, pré-ajuste de ferramentas e kits preparados antecipadamente fora da linha.' },
@@ -1288,7 +1329,10 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
     ];
     factoryExample = `Na linha de prensas pesadas de 400T, a aplicação do SMED reduziu o tempo de troca de matrizes de 85 minutos para apenas 9 minutos (-89%), liberando 18 horas de capacidade produtiva por semana com ganho de R$ 92.000/ano.`;
     quizHint = `Regra de Ouro SMED: A etapa mais impactante é a separação e conversão do setup interno para externo. Nunca realize com máquina parada o que pode ser preparado com ela rodando!`;
-  } else if (lowerTopic.includes('poka') || lowerTopic.includes('yoke') || lowerTopic.includes('jidoka') || lowerTopic.includes('qualidade')) {
+  }
+  // 3. Tópico: POKA-YOKE / JIDOKA / QUALIDADE
+  else if (lowerTopic.includes('poka') || lowerTopic.includes('yoke') || lowerTopic.includes('jidoka') || lowerTopic.includes('qualidade')) {
+    formattedTitle = 'Poka-Yoke & Jidoka: Engenharia de Qualidade à Prova de Falhas';
     intro = `Poka-Yoke (à prova de erros) e Jidoka (automação com toque humano) são as disciplinas que garantem que defeitos não sejam gerados e nem passem para o posto de trabalho seguinte. A qualidade deve ser construída na fonte (Zero Defeitos).`;
     keyConcepts = [
       { title: '1. Poka-Yoke de Controle vs. Advertência', description: 'O de controle paralisa fisicamente a máquina ou operação diante de anomalia; o de advertência aciona alarmes visuais/sonoros.' },
@@ -1305,14 +1349,53 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
     factoryExample = `Na célula de chicotes automotivos, um gabarito Poka-Yoke mecânico de R$ 350 eliminou 100% das falhas de inversão de polaridade, evitando R$ 42.000 anuais em recall e retrabalho de bancada.`;
     quizHint = `Dica para Prova: Um Poka-Yoke de controle é superior ao de advertência porque não depende da reação humana para interromper o fluxo defeituoso.`;
   }
+  // 4. Tópico: 5S / HOUSEKEEPING
+  else if (lowerTopic.includes('5s') || lowerTopic.includes('cinco s') || lowerTopic.includes('senso')) {
+    formattedTitle = 'Programa 5S Industrial: A Base da Estabilidade e Disciplina Operacional';
+    intro = `O Programa 5S (Seiri, Seiton, Seiso, Seiketsu, Shitsuke) é o alicerce fundamental de qualquer sistema de manufatura enxuta. Mais do que limpeza e organização física, o 5S molda o comportamento e a disciplina operacional no Gemba, permitindo que anomalias sejam identificadas em até 3 segundos e criando um ambiente seguro e de alta produtividade.`;
+    keyConcepts = [
+      { title: '1. Seiri (Utilização / Descarte)', description: 'Separar o necessário do desnecessário e retirar do posto o que não agrega valor diário.' },
+      { title: '2. Seiton (Organização / Ponto de Uso)', description: 'Um lugar para cada coisa e cada coisa em seu lugar com ferramentas na altura ergonômica.' },
+      { title: '3. Seiso (Limpeza com Inspeção)', description: 'Limpar inspecionando e eliminando fontes de sujeira e vazamento na raiz.' },
+      { title: '4. Seiketsu & Shitsuke (Padronização e Disciplina)', description: 'Padrões visuais claros e auditorias periódicas sustentando a melhoria no dia a dia.' },
+    ];
+    howToApply = [
+      'Realize o "Dia D" de descarte com etiquetas vermelhas para remover itens ociosos.',
+      'Defina marcações no piso, quadros de ferramentas sombreados e identificação visual de estoques mínimos/máximos.',
+      'Elabore o mapa de 5 minutos diários de 5S no início e fim de cada turno.',
+      'Crie a matriz de auditoria 5S com escala de pontuação de 0 a 100.',
+      'Celebre as melhores células e promova o benchmarking interno.',
+    ];
+    factoryExample = `Em uma linha de montagem com 12 operadores, a implantação do 5S reduziu as caminhadas em 4,2 km diários, economizou 15 minutos por operador na busca por ferramentas e aumentou a produtividade em 11%, com custo evitado de R$ 36.000/ano.`;
+    quizHint = `Dica de Prova: O 5S não é apenas limpeza: a etapa Seiso é 'limpar inspecionando' para antecipar falhas de máquinas e vazamentos antes que causem paradas de linha.`;
+  }
+  // 5. Tópico: OEE / DISPONIBILIDADE / TPM
+  else if (lowerTopic.includes('oee') || lowerTopic.includes('eficiencia global') || lowerTopic.includes('tpm')) {
+    formattedTitle = 'OEE (Overall Equipment Effectiveness) e Eliminação das 6 Grandes Perdas';
+    intro = `O OEE é a métrica padrão mundial para mensurar a produtividade real de máquinas e processos. Calculado pela multiplicação de Disponibilidade x Desempenho x Qualidade, o OEE revela a capacidade oculta das máquinas e direciona os planos de manutenção autônoma e engenharia de confiabilidade.`;
+    keyConcepts = [
+      { title: '1. As 3 Dimensões do OEE', description: 'Disponibilidade (paradas), Performance (velocidade e microparadas) e Qualidade (refugo e retrabalho).' },
+      { title: '2. As 6 Grandes Perdas Industriais', description: 'Quebras, Setup, Microparadas, Velocidade Reduzida, Defeitos de Partida e Refugos de Processo.' },
+      { title: '3. OEE World-Class Benchmark', description: 'Padrão internacional classe mundial: OEE ≥ 85% (Disponibilidade 90%, Performance 95%, Qualidade 99,9%).' },
+    ];
+    howToApply = [
+      'Instale apontamento horário padronizado de paradas no quadro de hora-a-hora.',
+      'Categorize as paradas em programadas vs não programadas.',
+      'Calcule semanalmente o OEE de cada máquina gargalo da fábrica.',
+      'Abra projetos Kaizen para atacar a dimensão com menor índice (ex: Disponibilidade se < 80%).',
+      'Implante a Manutenção Autônoma (Fases 1 a 4 TPM) com operadores capacitados.',
+    ];
+    factoryExample = `No torno CNC principal, o OEE subiu de 62% para 81% após a redução de microparadas na esteira de cavacos, liberando 22 horas adicionais de usinagem por mês e gerando R$ 65.000/ano em faturamento extra.`;
+    quizHint = `Dica para Prova: O OEE é a multiplicação dos três fatores: Disponibilidade × Performance × Qualidade. Se um dos três cair, o OEE total cai drasticamente.`;
+  }
 
   return {
-    title: cleanTopic,
+    title: formattedTitle,
     category,
     readTimeMinutes: targetTime,
     minReadTimeSeconds: minSeconds,
     icon: category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚',
-    summary: `Guia prático e estruturado sobre ${cleanTopic}, desenvolvido com o Sensei IA.`,
+    summary: `Guia prático e estruturado sobre ${formattedTitle}, desenvolvido com o Sensei IA.`,
     content: {
       introduction: intro,
       keyConcepts,
