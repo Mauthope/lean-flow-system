@@ -155,7 +155,7 @@ const LEAN_TOOLS: ToolCardItem[] = [
 ];
 
 export default function LeanToolsIndexPage() {
-  const { currentUser, currentTenant, allUsers, loginAs } = useAuth();
+  const { currentUser, currentTenant } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
 
   const [activeMainTab, setActiveMainTab] = useState<'articles' | 'tools'>('articles');
@@ -203,18 +203,6 @@ export default function LeanToolsIndexPage() {
   useEffect(() => {
     loadData();
   }, [currentAgentId, isAdmin, currentTenant]);
-
-  const handleSimulateApproveJuliana = () => {
-    dataService.simulateApproveAgent('usr_rafitec_agent_02', 'Juliana Mendes');
-    loginAs('usr_rafitec_agent_02');
-    loadData();
-  };
-
-  const handleSimulateFailJuliana = () => {
-    dataService.simulateFailAgent('usr_rafitec_agent_02', 'Juliana Mendes');
-    loginAs('usr_rafitec_agent_02');
-    loadData();
-  };
 
   const handleOpenArticle = (article: LeanArticleItem) => {
     setSelectedArticle(article);
@@ -297,44 +285,6 @@ export default function LeanToolsIndexPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {/* Seletor Rápido de Persona (Simulação) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              backgroundColor: 'rgba(15, 23, 42, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              padding: '0.35rem 0.65rem',
-              borderRadius: '10px',
-            }}
-          >
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>Perfil:</span>
-            <select
-              value={currentUser?.id || ''}
-              onChange={(e) => {
-                loginAs(e.target.value);
-              }}
-              style={{
-                backgroundColor: '#020617',
-                color: currentUser?.id === 'usr_rafitec_agent_02' ? '#34d399' : '#f8fafc',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '6px',
-                padding: '0.25rem 0.5rem',
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              {allUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} {u.role === 'admin' ? '(👑 Master)' : u.id === 'usr_rafitec_agent_02' ? '(🏆 Qualificada 9.0)' : u.id === 'usr_rafitec_agent_01' ? '(75% Leitura)' : '(Agente)'}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {isAdmin && (
             <button
               type="button"
@@ -701,55 +651,12 @@ export default function LeanToolsIndexPage() {
                 gap: '1rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <Users size={18} color="#22d3ee" />
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                     Ranking de Estudos dos Agentes & Status de Recompensas
                   </h3>
-                </div>
-
-                {/* Botões de Ação Rápida de Simulação para o Gestor Master */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    onClick={handleSimulateApproveJuliana}
-                    style={{
-                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                      border: '1px solid #10b981',
-                      color: '#34d399',
-                      fontWeight: 800,
-                      fontSize: '0.725rem',
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <span>⚡ Simular Aprovação Juliana (Nota 9.0)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleSimulateFailJuliana}
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                      border: '1px solid #ef4444',
-                      color: '#f87171',
-                      fontWeight: 800,
-                      fontSize: '0.725rem',
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <span>⚠️ Simular Reprovação (50%)</span>
-                  </button>
                 </div>
               </div>
 
