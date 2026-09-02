@@ -204,6 +204,18 @@ export default function LeanToolsIndexPage() {
     loadData();
   }, [currentAgentId, isAdmin, currentTenant]);
 
+  const handleSimulateApproveJuliana = () => {
+    dataService.simulateApproveAgent('usr_rafitec_agent_02', 'Juliana Mendes');
+    loginAs('usr_rafitec_agent_02');
+    loadData();
+  };
+
+  const handleSimulateFailJuliana = () => {
+    dataService.simulateFailAgent('usr_rafitec_agent_02', 'Juliana Mendes');
+    loginAs('usr_rafitec_agent_02');
+    loadData();
+  };
+
   const handleOpenArticle = (article: LeanArticleItem) => {
     setSelectedArticle(article);
     setIsArticleModalOpen(true);
@@ -469,103 +481,209 @@ export default function LeanToolsIndexPage() {
       {/* ================================================================= */}
       {activeMainTab === 'articles' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Card de Progresso na Academia Lean (Visão do Agente) */}
+          {/* Card de Progresso / Selo de Agente Qualificado (Visão do Agente) */}
           {!isAdmin && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #130f2e 0%, #090e1a 100%)',
-                backgroundColor: '#090e1a',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                borderRadius: '18px',
-                padding: '1.25rem 1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '1rem',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div
-                  style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '14px',
-                    backgroundColor: latestExam?.passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.15)',
-                    border: `1.5px solid ${latestExam?.passed ? '#10b981' : '#a855f7'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.6rem',
-                  }}
-                >
-                  {latestExam?.passed ? '🏆' : '🎓'}
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
-                      Sua Jornada de Capacitação Lean
-                    </span>
-                    {latestExam?.passed && (
+            latestExam?.passed ? (
+              /* ============================================================= */
+              /* SELO GIGANTE DE AGENTE QUALIFICADO (AGENTE APROVADO)          */
+              /* ============================================================= */
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(6, 78, 59, 0.85) 0%, rgba(6, 40, 30, 0.95) 45%, #022c22 100%)',
+                  backgroundColor: '#022c22',
+                  border: '2px solid #10b981',
+                  borderRadius: '24px',
+                  padding: '1.75rem 2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1.5rem',
+                  boxShadow: '0 12px 36px -4px rgba(16, 185, 129, 0.35), inset 0 0 30px rgba(16, 185, 129, 0.15)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', zIndex: 1 }}>
+                  <div
+                    style={{
+                      width: '76px',
+                      height: '76px',
+                      borderRadius: '20px',
+                      backgroundColor: 'rgba(251, 191, 36, 0.25)',
+                      border: '2.5px solid #fbbf24',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2.6rem',
+                      boxShadow: '0 0 30px rgba(251, 191, 36, 0.45)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    🏆
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
                       <span
                         style={{
-                          fontSize: '0.65rem',
+                          fontSize: '0.75rem',
                           fontWeight: 900,
-                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          backgroundColor: '#fbbf24',
+                          color: '#000000',
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: '999px',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                        }}
+                      >
+                        🏆 AGENTE QUALIFICADO EM LEAN MANUFACTURING
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          backgroundColor: 'rgba(16, 185, 129, 0.3)',
                           border: '1px solid #10b981',
                           color: '#34d399',
-                          padding: '0.1rem 0.45rem',
+                          padding: '0.2rem 0.6rem',
                           borderRadius: '999px',
                         }}
                       >
-                        Agente Qualificado 🏆
+                        Certificação Ouro Ativa
                       </span>
-                    )}
-                  </div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
-                    {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
-                  </h3>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    {latestExam?.passed
-                      ? `🏆 Parabéns! Certificação de Agente Qualificado ativa com Nota ${latestExam.score.toFixed(1)}/10.0.`
-                      : canTakeExam
-                      ? '🔓 Requisito atingido (≥95%)! Prova de 10 questões liberada com regra anti-chute.'
-                      : `🔒 Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
-                  </span>
-                </div>
-              </div>
+                    </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
-                    <span>Validação Master</span>
-                    <strong style={{ color: validatedPercent >= 95 ? '#34d399' : '#ffffff' }}>{validatedPercent}%</strong>
-                  </div>
-                  <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${validatedPercent}%`, backgroundColor: validatedPercent >= 95 ? '#10b981' : '#a855f7' }} />
+                    <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0', fontFamily: 'var(--font-heading)' }}>
+                      Parabéns, {currentUser?.name || 'Juliana Mendes'}! Você é uma Agente Qualificada.
+                    </h3>
+
+                    <p style={{ fontSize: '0.875rem', color: '#d1fae5', margin: '0.2rem 0 0.85rem', maxWidth: '680px', lineHeight: 1.45 }}>
+                      Você concluiu 100% da grade técnica da Academia Lean e obteve aproveitamento oficial de <strong>{latestExam.score.toFixed(1)} / 10.0</strong> na Prova de Certificação com Regra Anti-Chute.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#a7f3d0' }}>
+                        📚 {validatedCount}/{totalArticles} Artigos Validados (100%)
+                      </span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#fde68a' }}>
+                        🎯 {latestExam.correctCount} Acertos • {latestExam.wrongCount} Erros • {latestExam.blankCount} Em Branco
+                      </span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#6ee7b7' }}>
+                        🛡️ Pontos Líquidos: {latestExam.netScore} pts (Anti-Chute)
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsExamModalOpen(true)}
-                  className="btn btn-primary btn-sm"
-                  style={{
-                    fontWeight: 800,
-                    padding: '0.55rem 1.25rem',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    backgroundColor: canTakeExam ? '#10b981' : undefined,
-                  }}
-                >
-                  <Award size={15} />
-                  {latestExam?.passed ? 'Ver Certificado / Gabarito' : canTakeExam ? 'Fazer Prova' : 'Prova (Bloqueada)'}
-                </button>
+                <div style={{ zIndex: 1 }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsExamModalOpen(true)}
+                    className="btn btn-primary"
+                    style={{
+                      backgroundColor: '#fbbf24',
+                      color: '#000000',
+                      fontWeight: 900,
+                      fontSize: '0.875rem',
+                      padding: '0.85rem 1.6rem',
+                      borderRadius: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.55rem',
+                      boxShadow: '0 0 25px rgba(251, 191, 36, 0.45)',
+                      cursor: 'pointer',
+                      border: 'none',
+                    }}
+                  >
+                    <Award size={20} />
+                    <span>Ver Prova, Gabarito & Certificado (PDF)</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* CARD DE PROGRESSO PADRÃO (EM CAPACITAÇÃO) */
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #130f2e 0%, #090e1a 100%)',
+                  backgroundColor: '#090e1a',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  borderRadius: '18px',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div
+                    style={{
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '14px',
+                      backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                      border: '1.5px solid #a855f7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.6rem',
+                    }}
+                  >
+                    🎓
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
+                        Sua Jornada de Capacitação Lean
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0' }}>
+                      {validatedCount} de {totalArticles} Artigos com Leitura Validada ({validatedPercent}%)
+                    </h3>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                      {canTakeExam
+                        ? '🔓 Requisito atingido (≥95%)! Prova de 10 questões liberada com regra anti-chute.'
+                        : `🔒 Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '140px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
+                      <span>Validação Master</span>
+                      <strong style={{ color: validatedPercent >= 95 ? '#34d399' : '#ffffff' }}>{validatedPercent}%</strong>
+                    </div>
+                    <div style={{ height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${validatedPercent}%`, backgroundColor: validatedPercent >= 95 ? '#10b981' : '#a855f7' }} />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsExamModalOpen(true)}
+                    className="btn btn-primary btn-sm"
+                    style={{
+                      fontWeight: 800,
+                      padding: '0.55rem 1.25rem',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      backgroundColor: canTakeExam ? '#10b981' : undefined,
+                    }}
+                  >
+                    <Award size={15} />
+                    {canTakeExam ? 'Fazer Prova de Certificação' : 'Prova (Bloqueada)'}
+                  </button>
+                </div>
+              </div>
+            )
           )}
 
           {/* ============================================================= */}
@@ -583,12 +701,55 @@ export default function LeanToolsIndexPage() {
                 gap: '1rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <Users size={18} color="#22d3ee" />
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
                     Ranking de Estudos dos Agentes & Status de Recompensas
                   </h3>
+                </div>
+
+                {/* Botões de Ação Rápida de Simulação para o Gestor Master */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={handleSimulateApproveJuliana}
+                    style={{
+                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid #10b981',
+                      color: '#34d399',
+                      fontWeight: 800,
+                      fontSize: '0.725rem',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <span>⚡ Simular Aprovação Juliana (Nota 9.0)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSimulateFailJuliana}
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid #ef4444',
+                      color: '#f87171',
+                      fontWeight: 800,
+                      fontSize: '0.725rem',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <span>⚠️ Simular Reprovação (50%)</span>
+                  </button>
                 </div>
               </div>
 

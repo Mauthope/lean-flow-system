@@ -1793,6 +1793,80 @@ export const dataService = {
     setStoredData(STORAGE_KEYS.AGENT_EXAMS, updated);
   },
 
+  // =========================================================================
+  // SIMULAÇÃO COMPLETA: APROVAÇÃO, REPROVAÇÃO & RETROCESSO EM TEMPO REAL
+  // =========================================================================
+  simulateApproveAgent(agentId: string, agentName?: string): AgentExamResult {
+    const articles = this.getArticles();
+    const progressList = getStoredData<AgentArticleProgress[]>(STORAGE_KEYS.AGENT_ARTICLES, INITIAL_AGENT_ARTICLES);
+    const otherProgress = progressList.filter((p) => p.agentId !== agentId);
+
+    // 1. Simula leitura ativa de 100% dos artigos com telemetria validada
+    const newProgress: AgentArticleProgress[] = articles.map((art, idx) => ({
+      agentId,
+      articleId: art.id,
+      readAt: new Date(Date.now() - (8 - idx) * 86400000).toISOString(),
+      timeSpentSeconds: (art.minReadTimeSeconds || 120) + 60,
+      scrolledToBottom: true,
+      interactionsCount: 6,
+      isValidated: true,
+    }));
+
+    setStoredData(STORAGE_KEYS.AGENT_ARTICLES, [...otherProgress, ...newProgress]);
+
+    // 2. Gera a prova randômica balanceada 50/50
+    const questions = this.generateRandomBalancedExam(agentId, 10);
+    const answers: Record<number, number> = {};
+
+    // 9 Acertos, 0 Erros, 1 em branco
+    questions.forEach((q, idx) => {
+      if (idx < 9) {
+        answers[q.id] = q.correctOptionIndex; // Acerto (+1)
+      } else {
+        answers[q.id] = -1; // Deixada em branco (0)
+      }
+    });
+
+    // 3. Salva o resultado oficial com Nota 9.0 e Selo de Agente Qualificado
+    const result = this.saveAgentExamResult({
+      agentId,
+      agentName: agentName || 'Agente Lean',
+      answers,
+      questionsSnapshot: questions,
+      durationSeconds: 520,
+    });
+
+    // Marca recompensa como entregue
+    this.toggleExamRewardClaimed(result.id, true);
+
+    return result;
+  },
+
+  simulateFailAgent(agentId: string, agentName?: string): AgentExamResult {
+    const questions = this.generateRandomBalancedExam(agentId, 10);
+    const answers: Record<number, number> = {};
+
+    // 5 Acertos, 4 Erros, 1 em branco -> Líquido = Max(0, 5 - 4) = 1 ponto -> Nota 1.0 (Reprovado)
+    questions.forEach((q, idx) => {
+      if (idx < 5) {
+        answers[q.id] = q.correctOptionIndex; // Acerto
+      } else if (idx < 9) {
+        // Erro
+        answers[q.id] = (q.correctOptionIndex + 1) % q.options.length;
+      } else {
+        answers[q.id] = -1; // Em branco
+      }
+    });
+
+    return this.saveAgentExamResult({
+      agentId,
+      agentName: agentName || 'Agente Lean',
+      answers,
+      questionsSnapshot: questions,
+      durationSeconds: 480,
+    });
+  },
+
   getAllAgentsLearningRanking(tenantId?: string): AgentLearningRanking[] {
     const users = this.getUsers(tenantId).filter((u) => u.role === 'agent');
     const totalArticles = this.getArticles().length || 8;
