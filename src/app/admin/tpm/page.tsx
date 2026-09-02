@@ -4,48 +4,32 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import {
-  Settings,
   ArrowLeft,
   Wrench,
   Shield,
-  Activity,
-  Sparkles,
   Clock,
-  AlertCircle,
-  CheckCircle2,
   AlertTriangle,
   Plus,
-  Filter,
   Search,
-  Tag,
   CheckSquare,
   BarChart3,
   Layers,
-  Calendar,
-  User,
-  Sliders,
-  ChevronRight,
-  TrendingUp,
-  XCircle,
-  FileText,
-  Zap,
-  Droplet,
-  Flame,
-  RotateCcw,
   Award,
+  Activity,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import {
   TpmMachine,
   TpmAudit,
-  TpmTag,
   TpmMaintenanceMetrics,
   Sector,
-  TpmTagType,
   TpmAuditChecklistItem,
 } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDateTime, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
 import { TpmPhaseSeal } from '@/components/tpm/TpmPhaseSeal';
 
@@ -68,7 +52,7 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
   },
   {
     title: '5. Identificação Visual & Padrões',
-    description: 'Etiquetas de lubrificação, setas de sentido de giro e manômetros com faixas verde/vermelha legíveis.',
+    description: 'Instruções de operação visual, setas de sentido de giro e manômetros com faixas verde/vermelha legíveis.',
   },
   {
     title: '6. Condições Elétricas & Fiação',
@@ -80,7 +64,7 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
   },
   {
     title: '8. Quadro de Manutenção Autônoma em Dia',
-    description: 'Checklist diário da operação preenchido, assinado e anomalias apontadas no quadro visual.',
+    description: 'Checklist diário da operação preenchido, assinado e rotinas de manutenção preventiva consolidadas.',
   },
 ];
 
@@ -91,21 +75,16 @@ export default function AdminTPMPage() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [machines, setMachines] = useState<TpmMachine[]>([]);
   const [audits, setAudits] = useState<TpmAudit[]>([]);
-  const [tags, setTags] = useState<TpmTag[]>([]);
   const [metrics, setMetrics] = useState<TpmMaintenanceMetrics | null>(null);
 
   // Navegação e Filtros
-  const [activeTab, setActiveTab] = useState<'maquinas' | 'auditorias' | 'etiquetas' | 'indicadores'>('maquinas');
+  const [activeTab, setActiveTab] = useState<'maquinas' | 'auditorias' | 'indicadores'>('maquinas');
   const [selectedSectorId, setSelectedSectorId] = useState<string>('all');
   const [searchMachine, setSearchMachine] = useState<string>('');
-  const [tagTypeFilter, setTagTypeFilter] = useState<'all' | 'vermelha' | 'azul'>('all');
-  const [tagStatusFilter, setTagStatusFilter] = useState<string>('all');
 
   // Modais
   const [isMachineModalOpen, setIsMachineModalOpen] = useState(false);
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  const [resolveTagModal, setResolveTagModal] = useState<TpmTag | null>(null);
   const [celebrationModal, setCelebrationModal] = useState<{
     machineCode: string;
     machineName: string;
@@ -130,26 +109,12 @@ export default function AdminTPMPage() {
   const [auditChecklist, setAuditChecklist] = useState<TpmAuditChecklistItem[]>([]);
   const [auditObservations, setAuditObservations] = useState('');
 
-  // Form states: Nova Etiqueta TPM
-  const [tagMachineId, setTagMachineId] = useState('');
-  const [tagType, setTagType] = useState<TpmTagType>('vermelha');
-  const [tagCategory, setTagCategory] = useState<TpmTag['category']>('mecanica');
-  const [tagPriority, setTagPriority] = useState<TpmTag['priority']>('media');
-  const [tagDescription, setTagDescription] = useState('');
-  const [tagOpenedBy, setTagOpenedBy] = useState('');
-  const [tagDueDate, setTagDueDate] = useState('');
-
-  // Form states: Resolução de Etiqueta
-  const [resolutionResolvedBy, setResolutionResolvedBy] = useState('');
-  const [resolutionNotes, setResolutionNotes] = useState('');
-
   // Carregar dados
   const loadData = () => {
     const s = dataService.getSectors();
     setSectors(s);
     setMachines(dataService.getTpmMachines());
     setAudits(dataService.getTpmAudits());
-    setTags(dataService.getTpmTags());
     setMetrics(dataService.getTpmMaintenanceMetrics(selectedSectorId === 'all' ? undefined : selectedSectorId));
   };
 
@@ -187,21 +152,6 @@ export default function AdminTPMPage() {
     }, 0);
     return Math.round(totalScore / auditChecklist.length);
   }, [auditChecklist]);
-
-  // Abertura do modal de etiqueta com máquina pré-selecionada opcional
-  const handleOpenNewTagModal = (preselectedMachineId?: string) => {
-    setTagMachineId(preselectedMachineId || (machines[0]?.id || ''));
-    setTagType('vermelha');
-    setTagCategory('mecanica');
-    setTagPriority('media');
-    setTagDescription('');
-    setTagOpenedBy(currentUser?.name || 'Operador / Agente');
-    // Prazo padrão: 3 dias a partir de hoje
-    const d = new Date();
-    d.setDate(d.getDate() + 3);
-    setTagDueDate(d.toISOString().split('T')[0]);
-    setIsTagModalOpen(true);
-  };
 
   // Submissão: Nova Máquina
   const handleCreateMachine = (e: React.FormEvent) => {
@@ -272,47 +222,6 @@ export default function AdminTPMPage() {
     }
   };
 
-  // Submissão: Nova Etiqueta
-  const handleCreateTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    const machine = machines.find((m) => m.id === tagMachineId);
-    if (!machine || !tagDescription.trim() || !tagDueDate) return;
-
-    dataService.createTpmTag({
-      machineId: machine.id,
-      machineName: machine.name,
-      machineCode: machine.code,
-      sectorId: machine.sectorId,
-      sectorName: machine.sectorName,
-      type: tagType,
-      category: tagCategory,
-      priority: tagPriority,
-      description: tagDescription.trim(),
-      openedBy: tagOpenedBy.trim() || currentUser?.name || 'Operação',
-      dueDate: new Date(tagDueDate).toISOString(),
-    });
-
-    setIsTagModalOpen(false);
-    loadData();
-    confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
-  };
-
-  // Submissão: Conclusão / Resolução de Etiqueta
-  const handleResolveTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resolveTagModal) return;
-
-    dataService.updateTpmTagStatus(resolveTagModal.id, 'concluida', {
-      resolvedBy: resolutionResolvedBy.trim() || currentUser?.name || 'Técnico de Manutenção',
-      solutionNotes: resolutionNotes.trim() || 'Anomalia corrigida e equipamento liberado para produção.',
-      resolvedAt: new Date().toISOString(),
-    });
-
-    setResolveTagModal(null);
-    loadData();
-    confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
-  };
-
   // Filtros de Máquinas
   const filteredMachines = useMemo(() => {
     return machines.filter((m) => {
@@ -338,31 +247,6 @@ export default function AdminTPMPage() {
     });
   }, [audits, selectedSectorId, searchMachine]);
 
-  // Filtros de Etiquetas
-  const filteredTags = useMemo(() => {
-    const now = new Date();
-    return tags.filter((t) => {
-      const matchSector = selectedSectorId === 'all' || t.sectorId === selectedSectorId;
-      const matchType = tagTypeFilter === 'all' || t.type === tagTypeFilter;
-
-      let matchStatus = true;
-      if (tagStatusFilter === 'aberta') matchStatus = t.status === 'aberta';
-      else if (tagStatusFilter === 'em_andamento') matchStatus = t.status === 'em_andamento';
-      else if (tagStatusFilter === 'concluida') matchStatus = t.status === 'concluida';
-      else if (tagStatusFilter === 'em_atraso') {
-        matchStatus = t.status !== 'concluida' && t.status !== 'cancelada' && new Date(t.dueDate) < now;
-      } else if (tagStatusFilter === 'no_prazo') {
-        matchStatus = t.status !== 'concluida' && t.status !== 'cancelada' && new Date(t.dueDate) >= now;
-      } else if (tagStatusFilter === 'atendida_no_prazo') {
-        matchStatus = t.status === 'concluida' && (!t.resolvedAt || new Date(t.resolvedAt) <= new Date(t.dueDate));
-      } else if (tagStatusFilter === 'atendida_em_atraso') {
-        matchStatus = t.status === 'concluida' && !!t.resolvedAt && new Date(t.resolvedAt) > new Date(t.dueDate);
-      }
-
-      return matchSector && matchType && matchStatus;
-    });
-  }, [tags, selectedSectorId, tagTypeFilter, tagStatusFilter]);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '3rem' }}>
       {/* Header Principal */}
@@ -386,7 +270,7 @@ export default function AdminTPMPage() {
               >
                 PILAR LEAN 4.0
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Gestão de Máquinas, Auditorias & Etiquetas</span>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Gestão de Máquinas, Auditorias & Selos de Manutenção Autônoma</span>
             </div>
             <h1 style={{ fontSize: '1.55rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.2rem 0 0 0', fontFamily: 'var(--font-heading)' }}>
               TPM (Manutenção Produtiva Total)
@@ -410,22 +294,6 @@ export default function AdminTPMPage() {
             }}
           >
             <CheckSquare size={15} /> Realizar Auditoria
-          </button>
-
-          <button
-            onClick={() => handleOpenNewTagModal()}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#f87171',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontWeight: 800,
-            }}
-          >
-            <Tag size={15} /> Abrir Etiqueta TPM
           </button>
 
           <button
@@ -526,7 +394,7 @@ export default function AdminTPMPage() {
 
       {/* Grid de KPIs de Destaque Executivo de Manutenção */}
       {metrics && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           {/* Card 1: Total de Máquinas */}
           <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #22d3ee' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -537,7 +405,7 @@ export default function AdminTPMPage() {
               {filteredMachines.length}
             </div>
             <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-              {filteredMachines.filter((m) => m.status === 'operacional').length} operacionais • {filteredMachines.filter((m) => m.status !== 'operacional').length} com atenção
+              {filteredMachines.filter((m) => m.status === 'operacional').length} operando • {filteredMachines.filter((m) => m.status !== 'operacional').length} manutenção/paradas
             </span>
           </div>
 
@@ -555,50 +423,21 @@ export default function AdminTPMPage() {
             </span>
           </div>
 
-          {/* Card 3: Taxa de Atendimento no Prazo (SLA) */}
-          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: metrics.slaOnTimeRate >= 80 ? '4px solid #3b82f6' : '4px solid #f59e0b' }}>
+          {/* Card 3: Total de Auditorias Realizadas */}
+          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #3b82f6' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Atendidas no Prazo (SLA)</span>
-              <Clock size={18} color="#60a5fa" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Auditorias Realizadas</span>
+              <CheckSquare size={18} color="#60a5fa" />
             </div>
             <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#60a5fa', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
-              {metrics.slaOnTimeRate}%
+              {filteredAudits.length}
             </div>
             <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-              {metrics.resolvedOnTimeTags} no prazo • {metrics.resolvedLateTags} com atraso
+              {filteredAudits.filter((a) => a.score === 100).length} auditorias com nota 100%
             </span>
           </div>
 
-          {/* Card 4: Etiquetas em Atraso Crítico */}
-          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: metrics.overdueTags > 0 ? '4px solid #ef4444' : '4px solid #10b981' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Pendências em Atraso</span>
-              <AlertTriangle size={18} color={metrics.overdueTags > 0 ? '#f87171' : '#34d399'} />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: metrics.overdueTags > 0 ? '#f87171' : '#34d399', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
-              {metrics.overdueTags}
-            </div>
-            <span style={{ fontSize: '0.725rem', color: metrics.overdueTags > 0 ? '#f87171' : '#34d399' }}>
-              {metrics.overdueTags > 0 ? 'Exigem intervenção imediata da gestão' : 'Nenhuma etiqueta com prazo vencido'}
-            </span>
-          </div>
-
-          {/* Card 5: Distribuição de Etiquetas (Vermelhas vs Azuis) */}
-          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #a855f7' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Etiquetas Abertas</span>
-              <Tag size={18} color="#c084fc" />
-            </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
-              {metrics.openTags + metrics.inProgressTags}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.15rem' }}>
-              <span style={{ fontSize: '0.725rem', color: '#f87171', fontWeight: 700 }}>🔴 {metrics.redTagsCount} Manut.</span>
-              <span style={{ fontSize: '0.725rem', color: '#60a5fa', fontWeight: 700 }}>🔵 {metrics.blueTagsCount} Autôn.</span>
-            </div>
-          </div>
-
-          {/* Card 6: Selo de Fases TPM (4 Fases) */}
+          {/* Card 4: Selo de Fases TPM (4 Fases) */}
           <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Selo de Fases TPM</span>
@@ -663,26 +502,6 @@ export default function AdminTPMPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('etiquetas')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.55rem 1rem',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: activeTab === 'etiquetas' ? '#0f172a' : 'transparent',
-            color: activeTab === 'etiquetas' ? '#22d3ee' : '#94a3b8',
-            fontWeight: 800,
-            fontSize: '0.8125rem',
-            cursor: 'pointer',
-            borderBottom: activeTab === 'etiquetas' ? '2px solid #22d3ee' : 'none',
-          }}
-        >
-          <Tag size={16} /> 3. Gestão de Etiquetas TPM ({filteredTags.length})
-        </button>
-
-        <button
           onClick={() => setActiveTab('indicadores')}
           style={{
             display: 'flex',
@@ -699,7 +518,7 @@ export default function AdminTPMPage() {
             borderBottom: activeTab === 'indicadores' ? '2px solid #22d3ee' : 'none',
           }}
         >
-          <BarChart3 size={16} /> 4. Indicadores da Manutenção
+          <BarChart3 size={16} /> 3. Indicadores & Selos TPM
         </button>
       </div>
 
@@ -713,7 +532,7 @@ export default function AdminTPMPage() {
                 Nenhuma máquina cadastrada neste setor
               </h3>
               <p style={{ fontSize: '0.8125rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                Cadastre as máquinas para iniciar a gestão de auditorias e etiquetas TPM.
+                Cadastre as máquinas para iniciar a gestão de auditorias e evolução do Selo TPM.
               </p>
               <button
                 onClick={() => setIsMachineModalOpen(true)}
@@ -726,9 +545,6 @@ export default function AdminTPMPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '1.25rem' }}>
               {filteredMachines.map((m) => {
-                const machineTags = tags.filter((t) => t.machineId === m.id && t.status !== 'concluida' && t.status !== 'cancelada');
-                const now = new Date();
-                const overdueCount = machineTags.filter((t) => new Date(t.dueDate) < now).length;
                 const scoreColor = m.currentAuditScore >= 85 ? '#34d399' : m.currentAuditScore >= 70 ? '#fbbf24' : '#f87171';
 
                 return (
@@ -854,58 +670,28 @@ export default function AdminTPMPage() {
                         </div>
                       </div>
 
-                      {/* Resumo de Etiquetas da Máquina */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <Tag size={13} color="#22d3ee" />
-                          <span>Etiquetas ativas: <strong style={{ color: '#ffffff' }}>{machineTags.length}</strong></span>
-                        </div>
-                        {overdueCount > 0 ? (
-                          <span style={{ color: '#f87171', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <AlertTriangle size={13} /> {overdueCount} em atraso
-                          </span>
-                        ) : (
-                          <span style={{ color: '#34d399', fontWeight: 700 }}>Todas no prazo</span>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Botões de Ação na Máquina */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                    {/* Botão de Ação na Máquina */}
+                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
                       <button
                         onClick={() => handleOpenNewAuditModal(m.id)}
                         className="btn btn-sm"
                         style={{
+                          width: '100%',
                           backgroundColor: 'rgba(6, 182, 212, 0.15)',
                           border: '1px solid rgba(6, 182, 212, 0.35)',
                           color: '#22d3ee',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '0.3rem',
+                          gap: '0.4rem',
                           fontSize: '0.75rem',
                           fontWeight: 700,
+                          padding: '0.45rem',
                         }}
                       >
-                        <CheckSquare size={13} /> Auditar
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenNewTagModal(m.id)}
-                        className="btn btn-sm"
-                        style={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                          border: '1px solid rgba(239, 68, 68, 0.35)',
-                          color: '#f87171',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.3rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                        }}
-                      >
-                        <Tag size={13} /> Nova Etiqueta
+                        <CheckSquare size={14} /> Realizar Auditoria na Máquina
                       </button>
                     </div>
                   </div>
@@ -999,351 +785,112 @@ export default function AdminTPMPage() {
         </div>
       )}
 
-      {/* CONTEÚDO DA ABA 3: GESTÃO DE ETIQUETAS TPM */}
-      {activeTab === 'etiquetas' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Sub-barra de Filtros para Etiquetas */}
-          <div
-            style={{
-              backgroundColor: '#0f172a',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
-            }}
-          >
-            {/* Filtro Tipo: Vermelha vs Azul */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Tipo:</span>
-              <button
-                onClick={() => setTagTypeFilter('all')}
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  padding: '0.25rem 0.65rem',
-                  borderRadius: '6px',
-                  border: tagTypeFilter === 'all' ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: tagTypeFilter === 'all' ? 'rgba(6, 182, 212, 0.15)' : '#090e1a',
-                  color: tagTypeFilter === 'all' ? '#22d3ee' : '#94a3b8',
-                  cursor: 'pointer',
-                }}
-              >
-                Todas ({tags.length})
-              </button>
-              <button
-                onClick={() => setTagTypeFilter('vermelha')}
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  padding: '0.25rem 0.65rem',
-                  borderRadius: '6px',
-                  border: tagTypeFilter === 'vermelha' ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: tagTypeFilter === 'vermelha' ? 'rgba(239, 68, 68, 0.15)' : '#090e1a',
-                  color: '#f87171',
-                  cursor: 'pointer',
-                }}
-              >
-                🔴 Vermelhas - Manutenção ({tags.filter((t) => t.type === 'vermelha').length})
-              </button>
-              <button
-                onClick={() => setTagTypeFilter('azul')}
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  padding: '0.25rem 0.65rem',
-                  borderRadius: '6px',
-                  border: tagTypeFilter === 'azul' ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: tagTypeFilter === 'azul' ? 'rgba(59, 130, 246, 0.15)' : '#090e1a',
-                  color: '#60a5fa',
-                  cursor: 'pointer',
-                }}
-              >
-                🔵 Azuis - Autônomas ({tags.filter((t) => t.type === 'azul').length})
-              </button>
-            </div>
-
-            {/* Filtro Status e SLA */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Situação:</span>
-              <select
-                className="form-select"
-                value={tagStatusFilter}
-                onChange={(e) => setTagStatusFilter(e.target.value)}
-                style={{ fontSize: '0.75rem', height: '32px', padding: '0.2rem 1.75rem 0.2rem 0.6rem' }}
-              >
-                <option value="all">Todas as Situações</option>
-                <option value="aberta">Abertas (Pendentes)</option>
-                <option value="em_andamento">Em Andamento</option>
-                <option value="concluida">Concluídas</option>
-                <option value="em_atraso">⚠️ Em Atraso (Vencidas)</option>
-                <option value="no_prazo">⏱️ Em Aberto no Prazo</option>
-                <option value="atendida_no_prazo">✅ Atendidas no Prazo</option>
-                <option value="atendida_em_atraso">⏳ Atendidas com Atraso</option>
-              </select>
-
-              <button
-                onClick={() => handleOpenNewTagModal()}
-                className="btn btn-primary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800, height: '32px', fontSize: '0.75rem' }}
-              >
-                <Plus size={14} /> Nova Etiqueta
-              </button>
-            </div>
-          </div>
-
-          {/* Listagem de Etiquetas */}
-          {filteredTags.length === 0 ? (
-            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
-              <Tag size={40} color="#64748b" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff' }}>Nenhuma etiqueta encontrada para estes filtros</h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>Abra uma nova etiqueta para registrar anomalias de manutenção ou autônomas.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {filteredTags.map((t) => {
-                const isConcluded = t.status === 'concluida';
-                const due = new Date(t.dueDate);
-                const now = new Date();
-                const isOverdue = !isConcluded && due < now;
-                const wasResolvedOnTime = isConcluded && (!t.resolvedAt || new Date(t.resolvedAt) <= due);
-
-                return (
-                  <div
-                    key={t.id}
-                    className="card"
-                    style={{
-                      padding: '1.15rem 1.35rem',
-                      borderLeft: t.type === 'vermelha' ? '5px solid #ef4444' : '5px solid #3b82f6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '1rem',
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: '280px' }}>
-                      {/* Top badges */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-                        <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#ffffff' }}>
-                          {t.tagNumber}
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: '0.675rem',
-                            fontWeight: 800,
-                            padding: '0.1rem 0.45rem',
-                            borderRadius: '4px',
-                            backgroundColor: t.type === 'vermelha' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                            color: t.type === 'vermelha' ? '#f87171' : '#60a5fa',
-                            border: `1px solid ${t.type === 'vermelha' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`,
-                          }}
-                        >
-                          {t.type === 'vermelha' ? '🔴 Vermelha (Especializada)' : '🔵 Azul (Autônoma)'}
-                        </span>
-
-                        <span style={{ fontSize: '0.675rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#cbd5e1', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          {t.category.toUpperCase()}
-                        </span>
-
-                        <span
-                          style={{
-                            fontSize: '0.675rem',
-                            fontWeight: 800,
-                            padding: '0.1rem 0.45rem',
-                            borderRadius: '4px',
-                            backgroundColor: t.priority === 'critica' ? 'rgba(239, 68, 68, 0.2)' : t.priority === 'alta' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(100, 116, 139, 0.2)',
-                            color: t.priority === 'critica' ? '#f87171' : t.priority === 'alta' ? '#fbbf24' : '#cbd5e1',
-                          }}
-                        >
-                          Prioridade {t.priority.toUpperCase()}
-                        </span>
-                      </div>
-
-                      {/* Descrição e Máquina */}
-                      <p style={{ fontSize: '0.875rem', color: '#ffffff', fontWeight: 700, margin: '0 0 0.35rem' }}>
-                        {t.description}
-                      </p>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: '#94a3b8', flexWrap: 'wrap' }}>
-                        <span>🏭 Máquina: <strong style={{ color: '#22d3ee' }}>{t.machineCode} - {t.machineName}</strong></span>
-                        <span>Setor: <strong style={{ color: '#cbd5e1' }}>{t.sectorName}</strong></span>
-                        <span>Aberta por: {t.openedBy} em {formatDate(t.openedAt)}</span>
-                      </div>
-
-                      {/* Notas de Solução se Concluída */}
-                      {isConcluded && t.solutionNotes && (
-                        <div style={{ marginTop: '0.5rem', backgroundColor: '#090e1a', padding: '0.45rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                          <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700 }}>
-                            ✓ Solução Aplicada por {t.resolvedBy || 'Técnico'} em {t.resolvedAt ? formatDate(t.resolvedAt) : '--'}:
-                          </span>
-                          <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#cbd5e1' }}>
-                            {t.solutionNotes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Status Temporal & SLA */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                      {/* SLA Badge */}
-                      {isConcluded ? (
-                        <span
-                          style={{
-                            fontSize: '0.725rem',
-                            fontWeight: 800,
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '9999px',
-                            backgroundColor: wasResolvedOnTime ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                            color: wasResolvedOnTime ? '#34d399' : '#fbbf24',
-                            border: `1px solid ${wasResolvedOnTime ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
-                          }}
-                        >
-                          {wasResolvedOnTime ? '✅ Atendida no Prazo' : '⏳ Atendida com Atraso'}
-                        </span>
-                      ) : isOverdue ? (
-                        <span
-                          style={{
-                            fontSize: '0.725rem',
-                            fontWeight: 800,
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '9999px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.4)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
-                        >
-                          <AlertTriangle size={13} /> EM ATRASO CRÍTICO (Venceu em {formatDate(t.dueDate)})
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: '0.725rem',
-                            fontWeight: 800,
-                            padding: '0.25rem 0.65rem',
-                            borderRadius: '9999px',
-                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                            color: '#22d3ee',
-                            border: '1px solid rgba(6, 182, 212, 0.35)',
-                          }}
-                        >
-                          ⏱️ Prazo: {formatDate(t.dueDate)}
-                        </span>
-                      )}
-
-                      {/* Botões de Ação da Etiqueta */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        {t.status === 'aberta' && (
-                          <button
-                            onClick={() => {
-                              dataService.updateTpmTagStatus(t.id, 'em_andamento');
-                              loadData();
-                            }}
-                            className="btn btn-sm"
-                            style={{ backgroundColor: '#090e1a', color: '#22d3ee', border: '1px solid rgba(6, 182, 212, 0.3)', fontSize: '0.725rem', padding: '0.25rem 0.6rem' }}
-                          >
-                            Iniciar Reparo
-                          </button>
-                        )}
-
-                        {t.status !== 'concluida' && (
-                          <button
-                            onClick={() => {
-                              setResolveTagModal(t);
-                              setResolutionResolvedBy(currentUser?.name || '');
-                              setResolutionNotes('');
-                            }}
-                            className="btn btn-success btn-sm"
-                            style={{ fontSize: '0.725rem', padding: '0.25rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 800 }}
-                          >
-                            <CheckCircle2 size={13} /> Concluir Atendimento
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* CONTEÚDO DA ABA 4: INDICADORES DA MANUTENÇÃO */}
+      {/* CONTEÚDO DA ABA 3: INDICADORES & SELOS TPM */}
       {activeTab === 'indicadores' && metrics && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {/* Gráfico 1: Cumprimento de Prazo das Etiquetas */}
+            {/* Indicador 1: Maturidade dos Selos TPM (Fases 1 a 4) */}
             <div className="card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                    Taxa de Resolução Dentro do Prazo (SLA)
+                    Maturidade do Selo TPM (Fases 1 a 4)
                   </h4>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Aderência da equipe aos prazos pactuados</span>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Distribuição de evolução dos postos de trabalho</span>
                 </div>
-                <Clock size={20} color="#22d3ee" />
+                <Award size={20} color="#fbbf24" />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1rem 0' }}>
-                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
-                  {metrics.slaOnTimeRate}%
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '0.5rem 0' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#22d3ee', fontWeight: 700 }}>Fase 1: Limpeza Inicial & 5S</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.phase1Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase1Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase1Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#22d3ee' }} />
+                  </div>
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                    <span style={{ color: '#34d399', fontWeight: 700 }}>Atendidas no Prazo:</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.resolvedOnTimeTags}</strong>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#38bdf8', fontWeight: 700 }}>Fase 2: Fontes de Contaminação</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.phase2Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase2Count / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: 700 }}>Atendidas com Atraso:</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.resolvedLateTags}</strong>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase2Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#38bdf8' }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                    <span style={{ color: '#f87171', fontWeight: 700 }}>Pendências em Atraso:</span>
-                    <strong style={{ color: '#f87171' }}>{metrics.overdueTags}</strong>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#818cf8', fontWeight: 700 }}>Fase 3: Padrões de Manutenção Autônoma</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.phase3Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase3Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase3Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#818cf8' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#fbbf24', fontWeight: 800 }}>🏆 Fase 4: Selo Ouro (Excelência Plena)</span>
+                    <strong style={{ color: '#fbbf24' }}>{metrics.phase4Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase4Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase4Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#fbbf24' }} />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Gráfico 2: Distribuição por Tipo de Etiqueta */}
+            {/* Indicador 2: Status Operacional & Criticidade */}
             <div className="card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                    Especializada (Vermelha) vs Autônoma (Azul)
+                    Status Operacional do Parque Fabril
                   </h4>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Engajamento dos operadores no posto</span>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Disponibilidade e criticidade de fluxo</span>
                 </div>
-                <Tag size={20} color="#c084fc" />
+                <Activity size={20} color="#34d399" />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.5rem 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '0.5rem 0' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#f87171', fontWeight: 700 }}>🔴 Manutenção Técnica (Vermelha)</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.redTagsCount} ({metrics.totalTags > 0 ? Math.round((metrics.redTagsCount / metrics.totalTags) * 100) : 0}%)</strong>
+                    <span style={{ color: '#34d399', fontWeight: 700 }}>● Em Operação Normal</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.operationalMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.operationalMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalTags > 0 ? (metrics.redTagsCount / metrics.totalTags) * 100 : 0}%`, height: '100%', backgroundColor: '#ef4444' }} />
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.operationalMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#10b981' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#60a5fa', fontWeight: 700 }}>🔵 Manutenção Autônoma (Azul)</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.blueTagsCount} ({metrics.totalTags > 0 ? Math.round((metrics.blueTagsCount / metrics.totalTags) * 100) : 0}%)</strong>
+                    <span style={{ color: '#fbbf24', fontWeight: 700 }}>⚙️ Em Manutenção Preventiva/Corretiva</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.inMaintenanceMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.inMaintenanceMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalTags > 0 ? (metrics.blueTagsCount / metrics.totalTags) * 100 : 0}%`, height: '100%', backgroundColor: '#3b82f6' }} />
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.inMaintenanceMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#f59e0b' }} />
                   </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: '#f87171', fontWeight: 700 }}>⏹️ Paradas / Em Espera</span>
+                    <strong style={{ color: '#ffffff' }}>{metrics.stoppedMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.stoppedMachines / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.stoppedMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#ef4444' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem', fontSize: '0.75rem', color: '#94a3b8' }}>
+                  <span>Criticidade A (Gargalo): <strong style={{ color: '#f87171' }}>{metrics.criticalityACount}</strong></span>
+                  <span>Criticidade B: <strong style={{ color: '#fbbf24' }}>{metrics.criticalityBCount}</strong></span>
+                  <span>Criticidade C: <strong style={{ color: '#60a5fa' }}>{metrics.criticalityCCount}</strong></span>
                 </div>
               </div>
             </div>
@@ -1761,202 +1308,7 @@ export default function AdminTPMPage() {
         </form>
       </Modal>
 
-      {/* MODAL 3: ABRIR NOVA ETIQUETA TPM */}
-      <Modal
-        isOpen={isTagModalOpen}
-        onClose={() => setIsTagModalOpen(false)}
-        title="Abrir Nova Etiqueta TPM (Anomalia / Manutenção)"
-        subtitle="Aponte anomalias na máquina com classificação de urgência e prazo SLA para atendimento"
-      >
-        <form onSubmit={handleCreateTag} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Máquina com Anomalia: *</label>
-            <select
-              className="form-select"
-              value={tagMachineId}
-              onChange={(e) => setTagMachineId(e.target.value)}
-              required
-            >
-              {machines.map((m) => (
-                <option key={m.id} value={m.id}>
-                  [{m.code}] {m.name} ({m.sectorName})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo de Etiqueta (Vermelha vs Azul) */}
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Tipo de Etiqueta TPM: *</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <button
-                type="button"
-                onClick={() => setTagType('vermelha')}
-                style={{
-                  padding: '0.65rem',
-                  borderRadius: '8px',
-                  border: tagType === 'vermelha' ? '2px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: tagType === 'vermelha' ? 'rgba(239, 68, 68, 0.2)' : '#090e1a',
-                  color: tagType === 'vermelha' ? '#f87171' : '#94a3b8',
-                  fontWeight: 800,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                🔴 Etiqueta Vermelha
-                <span style={{ fontSize: '0.65rem', display: 'block', fontWeight: 400, color: '#cbd5e1' }}>Manutenção Técnica</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTagType('azul')}
-                style={{
-                  padding: '0.65rem',
-                  borderRadius: '8px',
-                  border: tagType === 'azul' ? '2px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.08)',
-                  backgroundColor: tagType === 'azul' ? 'rgba(59, 130, 246, 0.2)' : '#090e1a',
-                  color: tagType === 'azul' ? '#60a5fa' : '#94a3b8',
-                  fontWeight: 800,
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                }}
-              >
-                🔵 Etiqueta Azul
-                <span style={{ fontSize: '0.65rem', display: 'block', fontWeight: 400, color: '#cbd5e1' }}>Manutenção Autônoma</span>
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Categoria da Falha:</label>
-              <select
-                className="form-select"
-                value={tagCategory}
-                onChange={(e) => setTagCategory(e.target.value as any)}
-              >
-                <option value="mecanica">Mecânica</option>
-                <option value="eletrica">Elétrica</option>
-                <option value="pneumatica_hidraulica">Pneumática / Hidráulica</option>
-                <option value="seguranca">Segurança (NR-12)</option>
-                <option value="lubrificacao">Lubrificação</option>
-                <option value="limpeza_5s">Limpeza & 5S</option>
-              </select>
-            </div>
-
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Prioridade:</label>
-              <select
-                className="form-select"
-                value={tagPriority}
-                onChange={(e) => setTagPriority(e.target.value as any)}
-              >
-                <option value="baixa">Baixa (Rotina)</option>
-                <option value="media">Média (Acompanhamento)</option>
-                <option value="alta">Alta (Risco de Parada)</option>
-                <option value="critica">Crítica (Interrupção Imediata)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição da Anomalia / Problema: *</label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              placeholder="Descreva o sintoma (ruído, aquecimento, folga, vazamento, mau contato elétrico)..."
-              value={tagDescription}
-              onChange={(e) => setTagDescription(e.target.value)}
-              required
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Apontado por:</label>
-              <input
-                type="text"
-                className="form-control"
-                value={tagOpenedBy}
-                onChange={(e) => setTagOpenedBy(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Prazo Limite (SLA): *</label>
-              <input
-                type="date"
-                className="form-control"
-                value={tagDueDate}
-                onChange={(e) => setTagDueDate(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <button type="button" onClick={() => setIsTagModalOpen(false)} className="btn btn-secondary btn-sm">
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
-              Emitir Etiqueta TPM
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* MODAL 4: CONCLUIR ATENDIMENTO DE ETIQUETA */}
-      <Modal
-        isOpen={!!resolveTagModal}
-        onClose={() => setResolveTagModal(null)}
-        title={`Concluir Atendimento — ${resolveTagModal?.tagNumber}`}
-        subtitle={`Registro da ação corretiva para a máquina ${resolveTagModal?.machineCode}`}
-      >
-        <form onSubmit={handleResolveTag} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>Anomalia Reportada:</span>
-            <p style={{ fontSize: '0.8125rem', color: '#ffffff', margin: '0.2rem 0 0' }}>{resolveTagModal?.description}</p>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Responsável pela Resolução: *</label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Nome do técnico ou operador executor..."
-              value={resolutionResolvedBy}
-              onChange={(e) => setResolutionResolvedBy(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Ação Corretiva Realizada: *</label>
-            <textarea
-              className="form-textarea"
-              rows={3}
-              placeholder="Descreva o reparo efetuado, componentes trocados e teste de validação..."
-              value={resolutionNotes}
-              onChange={(e) => setResolutionNotes(e.target.value)}
-              required
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-            <button type="button" onClick={() => setResolveTagModal(null)} className="btn btn-secondary btn-sm">
-              Cancelar
-            </button>
-            <button type="submit" className="btn btn-success btn-sm" style={{ fontWeight: 800 }}>
-              <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '4px' }} />
-              Confirmar Conclusão
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* MODAL 5: CELEBRAÇÃO DE CONQUISTA DE FASE DO SELO TPM */}
+      {/* MODAL 3: CELEBRAÇÃO DE CONQUISTA DE FASE DO SELO TPM */}
       <Modal
         isOpen={!!celebrationModal}
         onClose={() => setCelebrationModal(null)}

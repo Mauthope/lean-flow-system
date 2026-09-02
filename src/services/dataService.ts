@@ -1387,9 +1387,11 @@ export const dataService = {
   getTpmMaintenanceMetrics(sectorId?: string): TpmMaintenanceMetrics {
     const machines = this.getTpmMachines(sectorId);
     const audits = this.getTpmAudits().filter((a) => !sectorId || sectorId === 'all' || a.sectorId === sectorId);
-    const tags = this.getTpmTags({ sectorId: sectorId && sectorId !== 'all' ? sectorId : undefined });
 
     const totalMachines = machines.length;
+    const operationalMachines = machines.filter((m) => m.status === 'operacional').length;
+    const inMaintenanceMachines = machines.filter((m) => m.status === 'em_manutencao').length;
+    const stoppedMachines = machines.filter((m) => m.status === 'parada').length;
     const totalAudits = audits.length;
 
     const scoredMachines = machines.filter((m) => m.currentAuditScore > 0);
@@ -1398,56 +1400,31 @@ export const dataService = {
         ? Math.round(scoredMachines.reduce((acc, m) => acc + m.currentAuditScore, 0) / scoredMachines.length)
         : 0;
 
-    const now = new Date();
-    let openTags = 0;
-    let inProgressTags = 0;
-    let completedTags = 0;
-    let overdueTags = 0;
-    let resolvedOnTimeTags = 0;
-    let resolvedLateTags = 0;
-    let redTagsCount = 0;
-    let blueTagsCount = 0;
+    const phase1Count = machines.filter((m) => (m.tpmPhase || 1) === 1).length;
+    const phase2Count = machines.filter((m) => (m.tpmPhase || 1) === 2).length;
+    const phase3Count = machines.filter((m) => (m.tpmPhase || 1) === 3).length;
+    const phase4Count = machines.filter((m) => (m.tpmPhase || 1) >= 4).length;
+    const goldSealMachinesCount = phase4Count;
 
-    tags.forEach((tag) => {
-      if (tag.type === 'vermelha') redTagsCount++;
-      if (tag.type === 'azul') blueTagsCount++;
-
-      const due = new Date(tag.dueDate);
-
-      if (tag.status === 'concluida') {
-        completedTags++;
-        const resolved = tag.resolvedAt ? new Date(tag.resolvedAt) : due;
-        if (resolved <= due) {
-          resolvedOnTimeTags++;
-        } else {
-          resolvedLateTags++;
-        }
-      } else if (tag.status === 'em_andamento') {
-        inProgressTags++;
-        if (due < now) overdueTags++;
-      } else if (tag.status === 'aberta') {
-        openTags++;
-        if (due < now) overdueTags++;
-      }
-    });
-
-    const slaOnTimeRate =
-      completedTags > 0 ? Number(((resolvedOnTimeTags / completedTags) * 100).toFixed(1)) : 100;
+    const criticalityACount = machines.filter((m) => m.criticality === 'A').length;
+    const criticalityBCount = machines.filter((m) => m.criticality === 'B').length;
+    const criticalityCCount = machines.filter((m) => m.criticality === 'C').length;
 
     return {
       totalMachines,
+      operationalMachines,
+      inMaintenanceMachines,
+      stoppedMachines,
       totalAudits,
       averageAuditScore,
-      totalTags: tags.length,
-      openTags,
-      inProgressTags,
-      completedTags,
-      overdueTags,
-      resolvedOnTimeTags,
-      resolvedLateTags,
-      slaOnTimeRate,
-      redTagsCount,
-      blueTagsCount,
+      goldSealMachinesCount,
+      phase1Count,
+      phase2Count,
+      phase3Count,
+      phase4Count,
+      criticalityACount,
+      criticalityBCount,
+      criticalityCCount,
     };
   },
 

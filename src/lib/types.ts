@@ -442,18 +442,19 @@ export interface TpmTag {
 
 export interface TpmMaintenanceMetrics {
   totalMachines: number;
+  operationalMachines: number;
+  inMaintenanceMachines: number;
+  stoppedMachines: number;
   totalAudits: number;
   averageAuditScore: number;
-  totalTags: number;
-  openTags: number;
-  inProgressTags: number;
-  completedTags: number;
-  overdueTags: number;                   // Abertas ou em andamento cujo prazo venceu
-  resolvedOnTimeTags: number;            // Concluídas dentro do prazo
-  resolvedLateTags: number;              // Concluídas após o prazo
-  slaOnTimeRate: number;                 // % atendidas no prazo (concluídas no prazo / total concluídas)
-  redTagsCount: number;                  // Especializadas
-  blueTagsCount: number;                 // Autônomas
+  goldSealMachinesCount: number;         // Máquinas com Selo Ouro (Fase 4/4)
+  phase1Count: number;
+  phase2Count: number;
+  phase3Count: number;
+  phase4Count: number;
+  criticalityACount: number;
+  criticalityBCount: number;
+  criticalityCCount: number;
 }
 
 export interface AgentArticleProgress {
