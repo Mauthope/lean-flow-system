@@ -702,23 +702,39 @@ export default function LeanToolsIndexPage() {
             {filteredArticles.map((article) => {
               const isRead = readArticleIds.includes(article.id);
               const isValidated = validatedArticleIds.includes(article.id);
+              const isCompleted = isRead || isValidated;
+
               return (
                 <div
                   key={article.id}
                   style={{
-                    backgroundColor: '#0f172a',
-                    border: isValidated
-                      ? '1px solid rgba(16, 185, 129, 0.4)'
+                    backgroundColor: isValidated
+                      ? '#06281e'
                       : isRead
-                      ? '1px solid rgba(168, 85, 247, 0.4)'
+                      ? '#05231c'
+                      : '#0f172a',
+                    background: isValidated
+                      ? 'linear-gradient(135deg, rgba(6, 78, 59, 0.5) 0%, rgba(6, 40, 30, 0.95) 50%, #090e1a 100%)'
+                      : isRead
+                      ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 35, 28, 0.85) 60%, #090e1a 100%)'
+                      : 'linear-gradient(135deg, #0f172a 0%, #0b1120 100%)',
+                    border: isValidated
+                      ? '1.5px solid #10b981'
+                      : isRead
+                      ? '1.5px solid rgba(16, 185, 129, 0.65)'
                       : '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '16px',
                     padding: '1.25rem',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+                    boxShadow: isValidated
+                      ? '0 10px 25px -5px rgba(16, 185, 129, 0.3), inset 0 0 20px rgba(16, 185, 129, 0.1)'
+                      : isRead
+                      ? '0 8px 20px -4px rgba(16, 185, 129, 0.22), inset 0 0 15px rgba(16, 185, 129, 0.06)'
+                      : '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
                     position: 'relative',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <div>
@@ -730,9 +746,9 @@ export default function LeanToolsIndexPage() {
                             style={{
                               fontSize: '0.65rem',
                               fontWeight: 800,
-                              backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                              border: '1px solid rgba(168, 85, 247, 0.3)',
-                              color: '#c084fc',
+                              backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+                              border: `1px solid ${isCompleted ? 'rgba(16, 185, 129, 0.4)' : 'rgba(168, 85, 247, 0.3)'}`,
+                              color: isCompleted ? '#34d399' : '#c084fc',
                               padding: '0.1rem 0.45rem',
                               borderRadius: '6px',
                             }}
@@ -744,29 +760,35 @@ export default function LeanToolsIndexPage() {
                           <span
                             style={{
                               fontSize: '0.65rem',
-                              fontWeight: 800,
-                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              fontWeight: 900,
+                              backgroundColor: 'rgba(16, 185, 129, 0.25)',
                               border: '1px solid #10b981',
                               color: '#34d399',
-                              padding: '0.1rem 0.45rem',
+                              padding: '0.12rem 0.5rem',
                               borderRadius: '999px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
                             }}
                           >
-                            Validado ✓
+                            ✓ Validado
                           </span>
                         ) : isRead ? (
                           <span
                             style={{
                               fontSize: '0.65rem',
-                              fontWeight: 800,
-                              backgroundColor: 'rgba(168, 85, 247, 0.2)',
-                              border: '1px solid #a855f7',
-                              color: '#c084fc',
-                              padding: '0.1rem 0.45rem',
+                              fontWeight: 900,
+                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                              border: '1px solid #10b981',
+                              color: '#34d399',
+                              padding: '0.12rem 0.5rem',
                               borderRadius: '999px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
                             }}
                           >
-                            Lido
+                            ✓ Lido
                           </span>
                         ) : null}
                       </div>
@@ -776,14 +798,14 @@ export default function LeanToolsIndexPage() {
                       {article.title}
                     </h4>
 
-                    <p style={{ fontSize: '0.8125rem', color: '#94a3b8', lineHeight: 1.45, marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '0.8125rem', color: isCompleted ? '#cbd5e1' : '#94a3b8', lineHeight: 1.45, marginBottom: '1rem' }}>
                       {article.summary}
                     </p>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
-                    <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <Clock size={12} /> {article.readTimeMinutes} min
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: isCompleted ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
+                    <span style={{ fontSize: '0.725rem', color: isCompleted ? '#34d399' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: isCompleted ? 700 : 500 }}>
+                      <Clock size={12} color={isCompleted ? '#34d399' : '#94a3b8'} /> {article.readTimeMinutes} min
                     </span>
 
                     <button
@@ -791,9 +813,9 @@ export default function LeanToolsIndexPage() {
                       onClick={() => handleOpenArticle(article)}
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: isValidated ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.18)',
-                        border: isValidated ? '1px solid #10b981' : '1.5px solid #a855f7',
-                        color: isValidated ? '#34d399' : '#c084fc',
+                        backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(168, 85, 247, 0.18)',
+                        border: isCompleted ? '1.5px solid #10b981' : '1.5px solid #a855f7',
+                        color: isCompleted ? '#34d399' : '#c084fc',
                         fontWeight: 800,
                         fontSize: '0.75rem',
                         padding: '0.35rem 0.85rem',
@@ -802,9 +824,10 @@ export default function LeanToolsIndexPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.3rem',
+                        boxShadow: isCompleted ? '0 0 12px rgba(16, 185, 129, 0.25)' : 'none',
                       }}
                     >
-                      <span>{isValidated ? 'Reler Artigo' : 'Ler Artigo (+10 XP)'}</span>
+                      <span>{isCompleted ? 'Reler Artigo' : 'Ler Artigo (+10 XP)'}</span>
                       <ArrowRight size={13} />
                     </button>
                   </div>
