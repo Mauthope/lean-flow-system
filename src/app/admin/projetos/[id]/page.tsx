@@ -58,6 +58,7 @@ import {
   ChevronUp,
   Maximize2,
   Users,
+  Bot,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SenseiVoiceAssistant from '@/components/presentation/SenseiVoiceAssistant';
@@ -1145,23 +1146,58 @@ export default function AdminProjectDetailPage() {
           <button
             type="button"
             onClick={() => setShowSenseiCopilot(true)}
-            className="btn btn-sm"
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
-              backgroundColor: 'rgba(6, 182, 212, 0.16)',
-              border: '1px solid #22d3ee',
-              color: '#22d3ee',
-              fontWeight: 800,
-              boxShadow: '0 0 14px rgba(6, 182, 212, 0.25)',
-              padding: '0.4rem 0.85rem',
-              borderRadius: '8px',
+              gap: '0.45rem',
+              padding: '0.45rem 1.1rem',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(251, 191, 36, 0.35) 50%, rgba(217, 119, 6, 0.4) 100%)',
+              backdropFilter: 'blur(20px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+              border: '1.5px solid rgba(254, 240, 138, 0.75)',
+              color: '#ffffff',
+              fontWeight: 900,
+              fontSize: '0.78125rem',
+              letterSpacing: '0.01em',
               cursor: 'pointer',
+              boxShadow: '0 6px 25px rgba(245, 158, 11, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.85), inset 0 -1.5px 3px rgba(0, 0, 0, 0.25), 0 0 14px rgba(251, 191, 36, 0.35)',
+              textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              overflow: 'hidden',
             }}
             title="Pedir ajuda ao Sensei para auditar, refinar os campos e sugerir melhorias no projeto com Lean"
           >
-            <Sparkles size={14} /> Ajuda do Sensei
+            {/* Reflexo de luz de vidro líquido */}
+            <span
+              style={{
+                position: 'absolute',
+                top: '1px',
+                left: '8%',
+                right: '8%',
+                height: '45%',
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                borderRadius: '999px',
+                pointerEvents: 'none',
+              }}
+            />
+
+            {/* Ponto indicador de IA Live */}
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#34d399',
+                boxShadow: '0 0 8px #34d399, 0 0 3px #ffffff',
+                display: 'inline-block',
+                flexShrink: 0,
+              }}
+            />
+
+            <Bot size={15} color="#ffffff" style={{ filter: 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.9))' }} />
+            <span>Ajuda do Sensei</span>
           </button>
         </div>
       </div>

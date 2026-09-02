@@ -7,6 +7,7 @@ import {
   Volume2,
   VolumeX,
   Sparkles,
+  Bot,
 } from 'lucide-react';
 import { LeanAction } from '@/lib/types';
 import {
@@ -395,35 +396,33 @@ export default function SenseiVoiceAssistant({
           <button
             type="button"
             onClick={toggleListening}
-            className="btn btn-sm"
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               gap: '0.45rem',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '999px',
+              padding: '0.4rem 0.95rem',
+              borderRadius: '12px',
               fontSize: '0.75rem',
-              fontWeight: 800,
+              fontWeight: 900,
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backgroundColor: isListening
-                ? 'rgba(16, 185, 129, 0.2)'
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              background: isListening
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.7) 0%, rgba(5, 150, 105, 0.65) 100%)'
                 : isThinking
-                ? 'rgba(139, 92, 246, 0.25)'
-                : 'rgba(255, 255, 255, 0.06)',
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.75) 0%, rgba(217, 119, 6, 0.7) 100%)'
+                : 'linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(251, 191, 36, 0.35) 50%, rgba(217, 119, 6, 0.4) 100%)',
+              backdropFilter: 'blur(20px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(200%)',
               border: isListening
-                ? '1.5px solid #10b981'
-                : isThinking
-                ? '1.5px solid #a855f7'
-                : '1px solid rgba(255, 255, 255, 0.15)',
-              color: isListening
-                ? '#34d399'
-                : isThinking
-                ? '#c084fc'
-                : '#cbd5e1',
+                ? '1.5px solid rgba(110, 231, 183, 0.8)'
+                : '1.5px solid rgba(254, 240, 138, 0.75)',
+              color: '#ffffff',
               boxShadow: isListening
-                ? '0 0 15px rgba(168, 85, 247, 0.4)'
-                : 'none',
+                ? '0 6px 25px rgba(16, 185, 129, 0.5), inset 0 1.5px 2px rgba(255, 255, 255, 0.8)'
+                : '0 6px 25px rgba(245, 158, 11, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.85), inset 0 -1.5px 3px rgba(0, 0, 0, 0.25), 0 0 14px rgba(251, 191, 36, 0.35)',
+              textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
+              overflow: 'hidden',
             }}
             title={
               isListening
@@ -431,9 +430,23 @@ export default function SenseiVoiceAssistant({
                 : 'Ativar Sensei (Assistente de Voz ao Vivo)'
             }
           >
+            {/* Reflexo de luz de vidro líquido */}
+            <span
+              style={{
+                position: 'absolute',
+                top: '1px',
+                left: '8%',
+                right: '8%',
+                height: '45%',
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                borderRadius: '999px',
+                pointerEvents: 'none',
+              }}
+            />
+
             {isThinking ? (
               <>
-                <Sparkles size={14} className="animate-spin" color="#c084fc" />
+                <Bot size={15} className="animate-spin" color="#ffffff" />
                 <span>Sensei pensando...</span>
               </>
             ) : isListening ? (
@@ -443,18 +456,30 @@ export default function SenseiVoiceAssistant({
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    backgroundColor: '#10b981',
+                    backgroundColor: '#ffffff',
                     animation: 'pulse 1.5s infinite',
+                    boxShadow: '0 0 8px #ffffff',
                   }}
                 />
-                <Mic size={14} color="#34d399" />
+                <Mic size={14} color="#ffffff" />
                 <span>Sensei Ouvindo</span>
-                <span style={{ fontSize: '0.65rem', opacity: 0.8, color: '#6ee7b7' }}>(Diga &quot;Sensei...&quot;)</span>
+                <span style={{ fontSize: '0.65rem', opacity: 0.9, color: '#d1fae5' }}>(Diga &quot;Sensei...&quot;)</span>
               </>
             ) : (
               <>
-                <MicOff size={14} color="#94a3b8" />
-                <span>Ativar Sensei</span>
+                <span
+                  style={{
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#34d399',
+                    boxShadow: '0 0 8px #34d399, 0 0 3px #ffffff',
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                <Bot size={15} color="#ffffff" style={{ filter: 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.9))' }} />
+                <span>Sensei IA (Voz)</span>
               </>
             )}
           </button>

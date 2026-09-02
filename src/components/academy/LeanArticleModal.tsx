@@ -343,7 +343,7 @@ export default function LeanArticleModal({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* Botão Liquid Glass Chamativo do Sensei */}
+            {/* Botão Liquid Glass Dourado/Amarelo do Sensei com Ícone Bot Padrão */}
             <button
               type="button"
               onClick={() => setIsSenseiChatOpen((prev) => !prev)}
@@ -355,19 +355,19 @@ export default function LeanArticleModal({
                 padding: '0.45rem 1.15rem',
                 borderRadius: '12px',
                 background: isSenseiChatOpen
-                  ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.55) 0%, rgba(236, 72, 153, 0.45) 50%, rgba(6, 182, 212, 0.45) 100%)'
-                  : 'linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(236, 72, 153, 0.28) 50%, rgba(6, 182, 212, 0.3) 100%)',
+                  ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.7) 0%, rgba(251, 191, 36, 0.55) 50%, rgba(217, 119, 6, 0.65) 100%)'
+                  : 'linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(251, 191, 36, 0.35) 50%, rgba(217, 119, 6, 0.4) 100%)',
                 backdropFilter: 'blur(20px) saturate(200%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(200%)',
-                border: '1.5px solid rgba(255, 255, 255, 0.65)',
+                border: '1.5px solid rgba(254, 240, 138, 0.75)',
                 color: '#ffffff',
                 fontWeight: 900,
                 fontSize: '0.78125rem',
                 letterSpacing: '0.01em',
                 cursor: 'pointer',
                 boxShadow: isSenseiChatOpen
-                  ? '0 8px 32px rgba(168, 85, 247, 0.6), inset 0 1.5px 2px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.35), 0 0 20px rgba(236, 72, 153, 0.55)'
-                  : '0 6px 25px rgba(168, 85, 247, 0.45), inset 0 1.5px 2px rgba(255, 255, 255, 0.8), inset 0 -1.5px 3px rgba(0, 0, 0, 0.25), 0 0 14px rgba(6, 182, 212, 0.35)',
+                  ? '0 8px 32px rgba(245, 158, 11, 0.65), inset 0 1.5px 2px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.35), 0 0 20px rgba(251, 191, 36, 0.6)'
+                  : '0 6px 25px rgba(245, 158, 11, 0.5), inset 0 1.5px 2px rgba(255, 255, 255, 0.85), inset 0 -1.5px 3px rgba(0, 0, 0, 0.25), 0 0 14px rgba(251, 191, 36, 0.4)',
                 textShadow: '0 1px 3px rgba(0, 0, 0, 0.8)',
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: isSenseiChatOpen ? 'scale(1.03)' : 'scale(1)',
@@ -382,7 +382,7 @@ export default function LeanArticleModal({
                   left: '8%',
                   right: '8%',
                   height: '45%',
-                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.05) 100%)',
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.05) 100%)',
                   borderRadius: '999px',
                   pointerEvents: 'none',
                 }}
@@ -401,8 +401,8 @@ export default function LeanArticleModal({
                 }}
               />
 
-              <Sparkles size={15} color="#ffffff" style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9))' }} />
-              <span>{isSenseiChatOpen ? 'Ocultar Sensei' : '💬 Dúvidas com o Sensei'}</span>
+              <Bot size={16} color="#ffffff" style={{ filter: 'drop-shadow(0 0 6px rgba(251, 191, 36, 0.9))' }} />
+              <span>{isSenseiChatOpen ? 'Ocultar Sensei' : 'Dúvidas com o Sensei'}</span>
             </button>
 
             <button
@@ -555,11 +555,11 @@ export default function LeanArticleModal({
                   overflow: 'hidden',
                   borderRadius: '18px',
                   padding: '1.15rem 1.35rem',
-                  background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(236, 72, 153, 0.16) 50%, rgba(6, 182, 212, 0.18) 100%)',
+                  background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(251, 191, 36, 0.16) 50%, rgba(217, 119, 6, 0.18) 100%)',
                   backdropFilter: 'blur(20px) saturate(190%)',
                   WebkitBackdropFilter: 'blur(20px) saturate(190%)',
-                  border: '1.5px solid rgba(255, 255, 255, 0.45)',
-                  boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3), inset 0 1.5px 2px rgba(255, 255, 255, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.2)',
+                  border: '1.5px solid rgba(254, 240, 138, 0.5)',
+                  boxShadow: '0 10px 30px rgba(245, 158, 11, 0.25), inset 0 1.5px 2px rgba(255, 255, 255, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -586,22 +586,21 @@ export default function LeanArticleModal({
                       width: '42px',
                       height: '42px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #06b6d4 100%)',
+                      background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.35rem',
-                      boxShadow: '0 0 15px rgba(168, 85, 247, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.5)',
+                      boxShadow: '0 0 15px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.8)',
+                      border: '1px solid rgba(254, 240, 138, 0.7)',
                     }}
                   >
-                    🥋
+                    <Bot size={22} color="#ffffff" style={{ filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))' }} />
                   </div>
                   <div>
                     <h5 style={{ margin: 0, fontSize: '0.875rem', fontWeight: 900, color: '#ffffff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
                       Dúvidas sobre como aplicar na sua fábrica?
                     </h5>
-                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#e2e8f0', opacity: 0.9 }}>
+                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: '#fde68a', opacity: 0.9 }}>
                       O Sensei responde em tempo real e prepara você para a Prova de Certificação!
                     </p>
                   </div>
@@ -617,20 +616,20 @@ export default function LeanArticleModal({
                     gap: '0.45rem',
                     padding: '0.5rem 1.15rem',
                     borderRadius: '10px',
-                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.7) 0%, rgba(236, 72, 153, 0.6) 100%)',
+                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.8) 0%, rgba(217, 119, 6, 0.75) 100%)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    border: '1.5px solid rgba(255, 255, 255, 0.75)',
+                    border: '1.5px solid rgba(254, 240, 138, 0.85)',
                     color: '#ffffff',
                     fontWeight: 900,
                     fontSize: '0.78125rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 18px rgba(168, 85, 247, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8)',
+                    boxShadow: '0 4px 18px rgba(245, 158, 11, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.85)',
                     textShadow: '0 1px 2px rgba(0,0,0,0.6)',
                   }}
                 >
-                  <Sparkles size={14} color="#ffffff" style={{ filter: 'drop-shadow(0 0 4px #ffffff)' }} />
-                  <span>💬 Chamar o Sensei</span>
+                  <Bot size={15} color="#ffffff" style={{ filter: 'drop-shadow(0 0 4px rgba(251, 191, 36, 0.8))' }} />
+                  <span>Tirar Dúvidas com o Sensei</span>
                 </button>
               </div>
             )}
