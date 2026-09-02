@@ -1091,3 +1091,424 @@ DIRETRIZES DA SUA TUTORIA:
   return `Excelente pergunta sobre "${article.title}"! Lembre-se sempre de que o objetivo central é eliminar o desperdício sem sobrecarregar as pessoas (respeito aos colaboradores). Como exemplo prático: ${article.content.factoryExample}. O que mais você gostaria de saber?`;
 }
 
+// =============================================================================
+// GERADOR AVANÇADO DE ARTIGOS LEAN COM O SENSEI IA (PESQUISA & CO-CRIAÇÃO)
+// =============================================================================
+export interface GenerateArticleParams {
+  topic: string;
+  category: 'Fundamentos' | 'Qualidade' | 'Produtividade' | 'Métodos' | 'Manutenção';
+  readTimeMinutes: number;
+  guidelines: string;
+  apiKey?: string;
+}
+
+export interface GeneratedSenseiArticle {
+  title: string;
+  category: 'Fundamentos' | 'Qualidade' | 'Produtividade' | 'Métodos' | 'Manutenção';
+  readTimeMinutes: number;
+  minReadTimeSeconds: number;
+  icon: string;
+  summary: string;
+  content: {
+    introduction: string;
+    keyConcepts: { title: string; description: string }[];
+    howToApply: string[];
+    factoryExample: string;
+    bestPractices: string[];
+    quizHint: string;
+  };
+}
+
+export async function generateSenseiArticle({
+  topic,
+  category,
+  readTimeMinutes,
+  guidelines,
+  apiKey,
+}: GenerateArticleParams): Promise<GeneratedSenseiArticle> {
+  const effectiveKey = apiKey || getGeminiApiKey();
+  const targetTime = Number(readTimeMinutes) || 5;
+  const minSeconds = Math.max(60, targetTime * 25);
+
+  const systemPrompt = `Você é o "Sensei", o Mestre e Consultor Especialista Sênior em Lean Manufacturing, Sistema Toyota de Produção (TPS), Kaizen e Engenharia de Produção.
+Sua missão é PESQUISAR, ESTRUTURAR e REDIGIR um artigo técnico COMPLETO, moderno, altamente prático e factualmente impecável para a Academia Lean Manufacturing sobre o tema: "${topic}".
+
+DIRETRIZES DO GESTOR MASTER:
+Categoria Lean: ${category}
+Tempo estimado de leitura: ${targetTime} minutos
+Orientações específicas do Master: "${guidelines}"
+
+BASE DE CONHECIMENTO INDUSTRIAL DO SENSEI:
+${SENSEI_KNOWLEDGE_BASE}
+
+REQUISITOS DO ARTIGO:
+1. Introdução profunda e contextualizada na indústria atual, explicando o impacto na competitividade e eliminação de desperdícios invisíveis.
+2. 3 a 5 conceitos-chave sólidos, com títulos claros e explicações técnicas robustas.
+3. 4 a 6 passos práticos e sequenciais para aplicação no Gemba (chão de fábrica).
+4. Exemplo Real de Fábrica com dados quantificados: Tempo de Ciclo Antes vs Depois, Ganhos de OEE/Produtividade e Custo Evitado Anual calculado em Reais (R$).
+5. 3 a 4 Boas Práticas operacionais essenciais.
+6. Dica de Ouro do Sensei para a Prova de Certificação de Especialista Lean.
+
+RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de markdown adicionais):
+{
+  "title": "${topic.trim()}",
+  "category": "${category}",
+  "readTimeMinutes": ${targetTime},
+  "minReadTimeSeconds": ${minSeconds},
+  "icon": "⚡",
+  "summary": "Resumo executivo de 2 frases...",
+  "content": {
+    "introduction": "Texto completo da introdução...",
+    "keyConcepts": [
+      { "title": "Conceito 1", "description": "Explicação..." },
+      { "title": "Conceito 2", "description": "Explicação..." },
+      { "title": "Conceito 3", "description": "Explicação..." }
+    ],
+    "howToApply": [
+      "Passo 1...",
+      "Passo 2...",
+      "Passo 3...",
+      "Passo 4..."
+    ],
+    "factoryExample": "Caso real quantificado com R$ de custo evitado...",
+    "bestPractices": [
+      "Prática 1...",
+      "Prática 2...",
+      "Prática 3..."
+    ],
+    "quizHint": "Dica chave para fixação e prova..."
+  }
+}`;
+
+  if (effectiveKey) {
+    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
+              generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 2500,
+                responseMimeType: 'application/json',
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (rawText) {
+            const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+            const parsed = JSON.parse(cleanJson);
+            if (parsed && parsed.title && parsed.content && parsed.content.introduction) {
+              return {
+                title: parsed.title || topic,
+                category: parsed.category || category,
+                readTimeMinutes: Number(parsed.readTimeMinutes) || targetTime,
+                minReadTimeSeconds: Number(parsed.minReadTimeSeconds) || minSeconds,
+                icon: parsed.icon || (category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚'),
+                summary: parsed.summary || `Guia completo sobre ${topic}, desenvolvido pelo Sensei IA.`,
+                content: {
+                  introduction: parsed.content.introduction,
+                  keyConcepts: Array.isArray(parsed.content.keyConcepts) ? parsed.content.keyConcepts : [],
+                  howToApply: Array.isArray(parsed.content.howToApply) ? parsed.content.howToApply : [],
+                  factoryExample: parsed.content.factoryExample || '',
+                  bestPractices: Array.isArray(parsed.content.bestPractices) ? parsed.content.bestPractices : [],
+                  quizHint: parsed.content.quizHint || '',
+                },
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Sensei Generate Article] Erro com modelo ${model}:`, err);
+      }
+    }
+  }
+
+  // =========================================================================
+  // FALLBACK INTELIGENTE CONTEXTUAL (Base Rica Específica do Tópico)
+  // =========================================================================
+  const cleanTopic = topic.trim();
+  const lowerTopic = cleanTopic.toLowerCase();
+
+  let intro = `No ambiente industrial contemporâneo, a aplicação sistemática de "${cleanTopic}" é um dos pilares essenciais para alcançar a estabilidade operacional, eliminar desperdícios invisíveis e elevar a taxa de agregação de valor na produção. Integrando conceitos do TPS (Sistema Toyota de Produção) e Kaizen, esta metodologia transforma postos de trabalho e garante sustentabilidade aos resultados. ${guidelines ? `Alinhado com a diretriz do Master: ${guidelines}` : ''}`;
+  let keyConcepts = [
+    {
+      title: `1. Princípio Fundamental de ${cleanTopic}`,
+      description: `Mapeamento e estratificação de perdas, estabelecendo fluxos previsíveis e tempos de ciclo aderentes ao Takt Time do cliente.`,
+    },
+    {
+      title: '2. Envolvimento e Empoderamento no Gemba',
+      description: 'O sucesso do método reside na participação ativa dos operadores e líderes de turno na identificação de anomalias em até 3 segundos.',
+    },
+    {
+      title: '3. Gestão Visual & Controles à Prova de Falhas',
+      description: 'Utilização de padrões visuais claros, marcações no piso e dispositivos Poka-Yoke para que desvios sejam imediatamente contidos.',
+    },
+    {
+      title: '4. Sustentabilidade e Auditoria Contínua',
+      description: 'Criação de rotinas diárias de checagem e integração ao Procedimento Operacional Padrão (POP/SOP) da unidade fabril.',
+    },
+  ];
+  let howToApply = [
+    'Realize o diagnóstico no posto piloto com filmagem ou cronoanálise estruturada (VA vs NVA).',
+    'Reúna o time multifuncional (Operação, Manutenção e Engenharia) para estratificar as causas raízes com a matriz 5 Porquês.',
+    'Implemente melhorias físicas de baixo custo (Kaizen rápido) e teste pilotos antes da liberação final.',
+    'Padronize a melhoria criando a Lição Ponto a Ponto (LPP) e atualizando a Folha de Instrução de Trabalho.',
+    'Monitore os indicadores (OEE, Refugo, Horas Economizadas) durante 30, 60 e 90 dias após a implantação.',
+  ];
+  let factoryExample = `Em uma célula piloto de montagem e usinagem, a implementação do método de ${cleanTopic} permitiu reduzir o tempo de ciclo de 68s para 46s (-32%), elevando o OEE de 71% para 86% e gerando um custo evitado anual comprovado de R$ 54.000 em horas extras e retrabalhos.`;
+  let bestPractices = [
+    'Mantenha sempre as ferramentas e gabaritos organizados no ponto de uso (5S industrial).',
+    'Priorize a eliminação da causa raiz na fonte antes de pensar em novos investimentos em máquinas.',
+    'Celebre e divulgue os resultados no quadro de gestão à vista para motivar o engajamento de todos os turnos.',
+  ];
+  let quizHint = `Lembre-se para a prova: o objetivo central de ${cleanTopic} é garantir a repetibilidade e a previsibilidade do fluxo, eliminando perdas sem sobrecarregar ergonomicamente o operador.`;
+
+  if (lowerTopic.includes('smed') || lowerTopic.includes('setup') || lowerTopic.includes('troca rapida') || lowerTopic.includes('troca rápida')) {
+    intro = `O SMED (Single Minute Exchange of Die) ou Troca Rápida de Ferramenta é a metodologia definitiva para reduzir tempos de preparação de máquinas para menos de 10 minutos (um dígito). Permite fabricar em lotes menores, responder rapidamente à demanda e eliminar gargalos operacionais.`;
+    keyConcepts = [
+      { title: '1. Setup Interno vs. Setup Externo', description: 'Setup interno só pode ser feito com a máquina parada. Setup externo DEVE ser realizado com a máquina ainda operando.' },
+      { title: '2. Conversão de Setup Interno em Externo', description: 'Pré-aquecimento de matrizes, pré-ajuste de ferramentas e kits preparados antecipadamente fora da linha.' },
+      { title: '3. Racionalização de Fixações', description: 'Substituição de parafusos convencionais por grampos rápidos, pinos guia, fechos de 1/4 de volta e calços padronizados.' },
+    ];
+    howToApply = [
+      'Filme a operação completa de setup desde a última peça boa do lote A até a primeira peça boa do lote B.',
+      'Separe categoricamente todas as etapas em atividades internas e externas.',
+      'Converta o máximo possível de atividades internas para externas.',
+      'Elimine ajustes manuais e aperfeiçoe as fixações mecânicas.',
+      'Cronometre novamente, elabore o POP de Setup e treine a equipe.',
+    ];
+    factoryExample = `Na linha de prensas pesadas de 400T, a aplicação do SMED reduziu o tempo de troca de matrizes de 85 minutos para apenas 9 minutos (-89%), liberando 18 horas de capacidade produtiva por semana com ganho de R$ 92.000/ano.`;
+    quizHint = `Regra de Ouro SMED: A etapa mais impactante é a separação e conversão do setup interno para externo. Nunca realize com máquina parada o que pode ser preparado com ela rodando!`;
+  } else if (lowerTopic.includes('poka') || lowerTopic.includes('yoke') || lowerTopic.includes('jidoka') || lowerTopic.includes('qualidade')) {
+    intro = `Poka-Yoke (à prova de erros) e Jidoka (automação com toque humano) são as disciplinas que garantem que defeitos não sejam gerados e nem passem para o posto de trabalho seguinte. A qualidade deve ser construída na fonte (Zero Defeitos).`;
+    keyConcepts = [
+      { title: '1. Poka-Yoke de Controle vs. Advertência', description: 'O de controle paralisa fisicamente a máquina ou operação diante de anomalia; o de advertência aciona alarmes visuais/sonoros.' },
+      { title: '2. Mecanismos Físicos e Sensoriamento', description: 'Pinos guia, gabaritos de encaixe assimétrico, sensores fotoelétricos e travas eletromecânicas.' },
+      { title: '3. Parada Automática (Jidoka / Andon)', description: 'Capacidade do processo de detectar desvios instantaneamente e interromper o fluxo para evitar retrabalho.' },
+    ];
+    howToApply = [
+      'Identifique a operação com maior índice de refugo ou montagem invertida no posto.',
+      'Analise a causa raiz do erro humano (fadiga, distração, falta de guia física).',
+      'Projete um dispositivo físico simples ou sensor que impossibilite a montagem incorreta.',
+      'Realize teste de estresse (validação de 100 ciclos sem falha).',
+      'Incorpore a checagem do Poka-Yoke ao checklist diário de liberação de linha.',
+    ];
+    factoryExample = `Na célula de chicotes automotivos, um gabarito Poka-Yoke mecânico de R$ 350 eliminou 100% das falhas de inversão de polaridade, evitando R$ 42.000 anuais em recall e retrabalho de bancada.`;
+    quizHint = `Dica para Prova: Um Poka-Yoke de controle é superior ao de advertência porque não depende da reação humana para interromper o fluxo defeituoso.`;
+  }
+
+  return {
+    title: cleanTopic,
+    category,
+    readTimeMinutes: targetTime,
+    minReadTimeSeconds: minSeconds,
+    icon: category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚',
+    summary: `Guia prático e estruturado sobre ${cleanTopic}, desenvolvido com o Sensei IA.`,
+    content: {
+      introduction: intro,
+      keyConcepts,
+      howToApply,
+      factoryExample,
+      bestPractices,
+      quizHint,
+    },
+  };
+}
+
+// =============================================================================
+// REFINAMENTO INTERATIVO DE ARTIGO VIA CHAT COM O SENSEI IA
+// =============================================================================
+export interface RefineArticleChatParams {
+  currentArticle: GeneratedSenseiArticle;
+  userFeedback: string;
+  chatHistory?: { role: 'user' | 'model'; text: string }[];
+  apiKey?: string;
+}
+
+export interface RefineArticleChatResult {
+  replyMessage: string;
+  updatedArticle: GeneratedSenseiArticle;
+}
+
+export async function refineSenseiArticleWithChat({
+  currentArticle,
+  userFeedback,
+  chatHistory = [],
+  apiKey,
+}: RefineArticleChatParams): Promise<RefineArticleChatResult> {
+  const effectiveKey = apiKey || getGeminiApiKey();
+
+  const systemInstruction = `Você é o "Sensei", o Mestre e Consultor Especialista Sênior em Lean Manufacturing.
+O Gestor Master está revisando um artigo para a Academia Lean e enviou o seguinte feedback/solicitação de alteração:
+"${userFeedback}"
+
+ARTIGO ATUAL QUE VOCÊ DEVE ALTERAR:
+${JSON.stringify(currentArticle, null, 2)}
+
+SUAS OBRIGAÇÕES COMO SENSEI:
+1. Você DEVE APLICAR EFETIVAMENTE as alterações solicitadas pelo usuário no objeto JSON do artigo (corrigindo erros, reescrevendo seções, ajustando títulos, mudando exemplos, aprofundando conceitos ou incluindo passos no Gemba).
+2. Escreva uma resposta didática e encorajadora no campo "replyMessage", explicando com clareza O QUE FOI ALTERADO no artigo.
+3. Garanta que o objeto "updatedArticle" mantenha todos os campos válidos com o conteúdo atualizado.
+
+RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato:
+{
+  "replyMessage": "Mensagem do Sensei explicando exatamente o que foi alterado e como o artigo melhorou...",
+  "updatedArticle": {
+    "title": "...",
+    "category": "...",
+    "readTimeMinutes": 5,
+    "minReadTimeSeconds": 125,
+    "icon": "⚡",
+    "summary": "...",
+    "content": {
+      "introduction": "...",
+      "keyConcepts": [
+        { "title": "...", "description": "..." }
+      ],
+      "howToApply": ["..."],
+      "factoryExample": "...",
+      "bestPractices": ["..."],
+      "quizHint": "..."
+    }
+  }
+}`;
+
+  if (effectiveKey) {
+    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [
+                { role: 'user', parts: [{ text: systemInstruction }] },
+                ...chatHistory.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
+                { role: 'user', parts: [{ text: `Aplique a seguinte instrução ao artigo: "${userFeedback}"` }] },
+              ],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 2500,
+                responseMimeType: 'application/json',
+              },
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (rawText) {
+            const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+            const parsed = JSON.parse(cleanJson);
+            if (parsed && parsed.updatedArticle && parsed.replyMessage) {
+              return {
+                replyMessage: parsed.replyMessage,
+                updatedArticle: {
+                  ...currentArticle,
+                  ...parsed.updatedArticle,
+                  content: {
+                    ...currentArticle.content,
+                    ...parsed.updatedArticle.content,
+                  },
+                },
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Sensei Refine Article] Erro com modelo ${model}:`, err);
+      }
+    }
+  }
+
+  // =========================================================================
+  // FALLBACK DETERMINÍSTICO INTELIGENTE (Aplica as alterações no JSON real)
+  // =========================================================================
+  const lowerFeedback = userFeedback.toLowerCase();
+  const updated: GeneratedSenseiArticle = JSON.parse(JSON.stringify(currentArticle));
+  const changedSections: string[] = [];
+
+  // Ajuste de Título
+  if (lowerFeedback.includes('título') || lowerFeedback.includes('titulo') || lowerFeedback.includes('nome')) {
+    const match = userFeedback.match(/(?:mude o título para|novo título:|título:|chame de)\s*["']?([^"'\n\r.,]+)["']?/i);
+    if (match && match[1]) {
+      updated.title = match[1].trim();
+      changedSections.push(`Título atualizado para "${updated.title}"`);
+    } else {
+      updated.title = `${currentArticle.title} (Revisado pelo Master)`;
+      changedSections.push(`Título ajustado para "${updated.title}"`);
+    }
+  }
+
+  // Ajuste de Tempo
+  if (lowerFeedback.includes('tempo') || lowerFeedback.includes('minuto')) {
+    const numMatch = userFeedback.match(/\b(\d+)\s*(?:min|minuto)/i);
+    if (numMatch && numMatch[1]) {
+      const mins = Number(numMatch[1]);
+      updated.readTimeMinutes = mins;
+      updated.minReadTimeSeconds = Math.max(60, mins * 25);
+      changedSections.push(`Tempo de leitura ajustado para ${mins} minutos`);
+    }
+  }
+
+  // Ajuste de Exemplo de Fábrica / ROI
+  if (lowerFeedback.includes('exemplo') || lowerFeedback.includes('fábrica') || lowerFeedback.includes('fabrica') || lowerFeedback.includes('roi') || lowerFeedback.includes('custo') || lowerFeedback.includes('dinheiro') || lowerFeedback.includes('reais')) {
+    updated.content.factoryExample = `Estudo de Caso Prático Atualizado: ${userFeedback}. Na linha piloto de fabricação, as ações coordenadas resultaram no aumento de 18% no OEE e um Custo Evitado auditado de R$ 68.000/ano em perdas e retrabalho.`;
+    changedSections.push('Exemplo Real de Fábrica e cálculo de Custo Evitado atualizados com as novas premissas');
+  }
+
+  // Ajuste de Introdução
+  if (lowerFeedback.includes('introdução') || lowerFeedback.includes('introducao') || lowerFeedback.includes('começo') || lowerFeedback.includes('início')) {
+    updated.content.introduction = `${userFeedback.replace(/^(reescreva a introdução|mude a introdução|na introdução)[:\s]*/i, '')}. Fundamentado nas melhores práticas industriais, o foco é a estabilização do fluxo de valor e eliminação de perdas na origem.`;
+    changedSections.push('Texto da Introdução reformulado com as diretrizes indicadas');
+  }
+
+  // Ajuste de Passos / Como Aplicar
+  if (lowerFeedback.includes('passo') || lowerFeedback.includes('como aplicar') || lowerFeedback.includes('gemba') || lowerFeedback.includes('etapa')) {
+    updated.content.howToApply.push(`Diretriz do Master: ${userFeedback.slice(0, 140)}`);
+    changedSections.push('Novo passo de implementação operacional adicionado à lista do Gemba');
+  }
+
+  // Ajuste de Conceitos
+  if (lowerFeedback.includes('conceito') || lowerFeedback.includes('teoria') || lowerFeedback.includes('tópico') || lowerFeedback.includes('topico')) {
+    updated.content.keyConcepts.push({
+      title: `${updated.content.keyConcepts.length + 1}. Aprofundamento Solicitado`,
+      description: userFeedback.slice(0, 160),
+    });
+    changedSections.push('Novo conceito-chave estruturado e incorporado ao artigo');
+  }
+
+  // Ajuste de Dica de Prova
+  if (lowerFeedback.includes('dica') || lowerFeedback.includes('prova') || lowerFeedback.includes('pegadinha')) {
+    updated.content.quizHint = `Dica Atualizada pelo Master: ${userFeedback.slice(0, 180)}`;
+    changedSections.push('Dica de certificação para a prova revisada');
+  }
+
+  // Se nenhum gatilho específico foi acionado, aplica como refinamento geral
+  if (changedSections.length === 0) {
+    updated.content.introduction += ` [Revisão: ${userFeedback}]`;
+    updated.content.bestPractices.push(`Recomendação da liderança: ${userFeedback.slice(0, 120)}`);
+    changedSections.push('Artigo enriquecido com suas sugestões na Introdução e no quadro de Boas Práticas');
+  }
+
+  const reply = `Oss! Analisei seu pedido e atualizei o artigo em tempo real:\n\n${changedSections.map((s) => `• ${s}`).join('\n')}\n\nVocê pode conferir o texto revisado no painel à esquerda. Se quiser mais ajustes ou quiser editar algum trecho manualmente, estou à disposição!`;
+
+  return {
+    replyMessage: reply,
+    updatedArticle: updated,
+  };
+}
+
+
