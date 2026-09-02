@@ -658,11 +658,24 @@ export function initializeLocalStorage(): void {
   if (!localStorage.getItem(STORAGE_KEYS.TPM_MACHINES)) {
     localStorage.setItem(STORAGE_KEYS.TPM_MACHINES, JSON.stringify(INITIAL_TPM_MACHINES));
   }
-  if (!localStorage.getItem(STORAGE_KEYS.TPM_AUDITS)) {
-    localStorage.setItem(STORAGE_KEYS.TPM_AUDITS, JSON.stringify(INITIAL_TPM_AUDITS));
-  }
   if (!localStorage.getItem(STORAGE_KEYS.TPM_TAGS)) {
     localStorage.setItem(STORAGE_KEYS.TPM_TAGS, JSON.stringify(INITIAL_TPM_TAGS));
+  }
+
+  // Inicialização e Migração da Academia Lean & Provas de Certificação
+  const leanArticlesStr = localStorage.getItem(STORAGE_KEYS.LEAN_ARTICLES);
+  if (!leanArticlesStr || !leanArticlesStr.includes('8-desperdicios')) {
+    localStorage.setItem(STORAGE_KEYS.LEAN_ARTICLES, JSON.stringify(INITIAL_LEAN_ARTICLES));
+  }
+
+  const agentArticlesStr = localStorage.getItem(STORAGE_KEYS.AGENT_ARTICLES);
+  if (!agentArticlesStr || !agentArticlesStr.includes('usr_rafitec_agent_02')) {
+    localStorage.setItem(STORAGE_KEYS.AGENT_ARTICLES, JSON.stringify(INITIAL_AGENT_ARTICLES));
+  }
+
+  const agentExamsStr = localStorage.getItem(STORAGE_KEYS.AGENT_EXAMS);
+  if (!agentExamsStr || !agentExamsStr.includes('usr_rafitec_agent_02')) {
+    localStorage.setItem(STORAGE_KEYS.AGENT_EXAMS, JSON.stringify(INITIAL_AGENT_EXAMS));
   }
 }
 

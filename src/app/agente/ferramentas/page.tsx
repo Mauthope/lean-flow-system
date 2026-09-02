@@ -155,7 +155,7 @@ const LEAN_TOOLS: ToolCardItem[] = [
 ];
 
 export default function LeanToolsIndexPage() {
-  const { currentUser, currentTenant } = useAuth();
+  const { currentUser, currentTenant, allUsers, loginAs } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
 
   const [activeMainTab, setActiveMainTab] = useState<'articles' | 'tools'>('articles');
@@ -285,6 +285,44 @@ export default function LeanToolsIndexPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Seletor Rápido de Persona (Simulação) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: 'rgba(15, 23, 42, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              padding: '0.35rem 0.65rem',
+              borderRadius: '10px',
+            }}
+          >
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>Perfil:</span>
+            <select
+              value={currentUser?.id || ''}
+              onChange={(e) => {
+                loginAs(e.target.value);
+              }}
+              style={{
+                backgroundColor: '#020617',
+                color: currentUser?.id === 'usr_rafitec_agent_02' ? '#34d399' : '#f8fafc',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '6px',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {allUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} {u.role === 'admin' ? '(👑 Master)' : u.id === 'usr_rafitec_agent_02' ? '(🏆 Qualificada 9.0)' : u.id === 'usr_rafitec_agent_01' ? '(75% Leitura)' : '(Agente)'}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {isAdmin && (
             <button
               type="button"
