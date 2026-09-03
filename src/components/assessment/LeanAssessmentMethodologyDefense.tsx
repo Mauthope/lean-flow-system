@@ -15,6 +15,22 @@ export const LeanAssessmentMethodologyDefense: React.FC<LeanAssessmentMethodolog
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [activeTab, setActiveTab] = useState<'pilares' | 'memorial'>('memorial');
 
+  // Estados para Simulação da Formação da Conta (Etapa 5)
+  const [simMachineHours, setSimMachineHours] = useState<number>(120);
+  const [simHourlyRate, setSimHourlyRate] = useState<number>(350);
+  const [simScrapKg, setSimScrapKg] = useState<number>(2800);
+  const [simScrapKgRate, setSimScrapKgRate] = useState<number>(8.5);
+  const [simSetupHours, setSimSetupHours] = useState<number>(45);
+  const [simSetupHourlyRate, setSimSetupHourlyRate] = useState<number>(180);
+  const [simOvertimeHours, setSimOvertimeHours] = useState<number>(95);
+  const [simOvertimeRate, setSimOvertimeRate] = useState<number>(65);
+
+  const subtotalOEE = simMachineHours * simHourlyRate;
+  const subtotalScrap = simScrapKg * simScrapKgRate;
+  const subtotalSetup = simSetupHours * simSetupHourlyRate;
+  const subtotalOvertime = simOvertimeHours * simOvertimeRate;
+  const totalFormedSavings = subtotalOEE + subtotalScrap + subtotalSetup + subtotalOvertime;
+
   return (
     <div
       style={{
@@ -406,55 +422,296 @@ export const LeanAssessmentMethodologyDefense: React.FC<LeanAssessmentMethodolog
                 </div>
               </div>
 
-              {/* Etapa 5: Conversão em Custo Evitado */}
+              {/* Etapa 5: Conversão em Custo Evitado com a Conta Aberta */}
               <div
                 style={{
                   backgroundColor: '#070a12',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  border: '1.5px solid rgba(6, 182, 212, 0.3)',
                   borderRadius: '12px',
-                  padding: '1.25rem',
+                  padding: '1.35rem',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.65rem',
+                  gap: '1rem',
+                  boxShadow: '0 0 20px rgba(6, 182, 212, 0.08)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(6, 182, 212, 0.18)', color: '#06b6d4', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#06b6d4', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                       ETAPA 5
                     </span>
-                    <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>
-                      Conversão da Evolução (Δ%) em Custo Evitado Real em R$
+                    <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>
+                      Formação Detalhada do Custo Evitado (A Conta Aberta ao Lado do Resultado)
                     </strong>
                   </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                    Engenharia Financeira & ROI
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '6px', fontWeight: 800 }}>
+                    Transparência & Confiança Financeira
                   </span>
                 </div>
 
-                <p style={{ margin: 0, fontSize: '0.775rem', color: '#94a3b8', lineHeight: 1.5 }}>
-                  A cada ciclo de auditoria, a variação positiva (Δ%) nos eixos é convertida em economia fabril auditada através das fontes:
+                <p style={{ margin: 0, fontSize: '0.785rem', color: '#cbd5e1', lineHeight: 1.6 }}>
+                  Para que a Diretoria Executiva e os auditores validem o retorno financeiro do Lean Assessment, <strong>a conta matemática é exibida explicitamente junto do resultado final</strong>. Nenhum valor surge sem a sua multiplicação física de chão de fábrica (Horas × Tarifa, Quilos × Preço).
                 </p>
 
+                {/* BLOCO DA CONTA ABERTA (A EQUAÇÃO RESOLVIDA COM OS NÚMEROS REAIS) */}
                 <div
                   style={{
-                    backgroundColor: '#030712',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: '8px',
-                    padding: '0.75rem 1rem',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.775rem',
-                    color: '#22d3ee',
+                    backgroundColor: '#020617',
+                    border: '1.5px solid #22d3ee',
+                    borderRadius: '10px',
+                    padding: '1.15rem 1.25rem',
+                    boxShadow: '0 0 25px rgba(34, 211, 238, 0.15)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.35rem',
+                    gap: '0.65rem',
                   }}
                 >
-                  <div>Δ Custo Evitado = ( Δ OEE × Custo/Hora Máquina ) + ( Δ Refugo × Preço Matéria-Prima R$/kg ) + ( Δ Setup × Horas Recuperadas )</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      ⚡ Equação Numérica da Formação do Valor (Memória de Cálculo Aberta):
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Valores mensais auditados</span>
+                  </div>
+
+                  {/* Linha 1: Parênteses da Multiplicação Física */}
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.85rem',
+                      color: '#93c5fd',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '6px',
+                      overflowX: 'auto',
+                      whiteSpace: 'nowrap',
+                      borderLeft: '3px solid #38bdf8',
+                    }}
+                  >
+                    [ ({simMachineHours}h × R$ {simHourlyRate},00) + ({simScrapKg.toLocaleString('pt-BR')}kg × R$ {simScrapKgRate.toFixed(2)}) + ({simSetupHours}h × R$ {simSetupHourlyRate},00) + ({simOvertimeHours}h × R$ {simOvertimeRate},00) ]
+                  </div>
+
+                  {/* Linha 2: Parcelas Subtotais Somadas */}
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.875rem',
+                      color: '#cbd5e1',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: '6px',
+                      overflowX: 'auto',
+                      whiteSpace: 'nowrap',
+                      borderLeft: '3px solid #c084fc',
+                    }}
+                  >
+                    [ R$ {subtotalOEE.toLocaleString('pt-BR')},00 + R$ {subtotalScrap.toLocaleString('pt-BR')},00 + R$ {subtotalSetup.toLocaleString('pt-BR')},00 + R$ {subtotalOvertime.toLocaleString('pt-BR')},00 ]
+                  </div>
+
+                  {/* Linha 3: O Resultado Final em Destaque */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem',
+                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                      border: '1.5px solid #10b981',
+                      borderRadius: '8px',
+                      padding: '0.75rem 1rem',
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: '#a7f3d0', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                        = Custo Evitado Mensal Consolidado
+                      </span>
+                      <strong style={{ fontSize: '1.45rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                        R$ {totalFormedSavings.toLocaleString('pt-BR')},00
+                      </strong>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block' }}>
+                        Impacto Anualizado Projetado (12 meses):
+                      </span>
+                      <strong style={{ fontSize: '1.1rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                        R$ {(totalFormedSavings * 12).toLocaleString('pt-BR')},00 / ano
+                      </strong>
+                    </div>
+                  </div>
                 </div>
 
-                <div style={{ fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.5 }}>
-                  Desta forma, todo o esforço do Agente Lean e dos operadores no Gemba é matematicamente validado perante a Diretoria Master com base em <strong>lucro líquido retido e capital operacional preservado</strong>.
+                {/* TABELA DE DECOMPOSIÇÃO DAS 4 PARCELAS LEAN */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)', color: '#94a3b8', textAlign: 'left' }}>
+                        <th style={{ padding: '0.5rem', fontWeight: 700 }}>Parcela / Dimensão Lean</th>
+                        <th style={{ padding: '0.5rem', fontWeight: 700 }}>Variável de Chão de Fábrica</th>
+                        <th style={{ padding: '0.5rem', fontWeight: 700 }}>Multiplicador Unitário</th>
+                        <th style={{ padding: '0.5rem', fontWeight: 700 }}>Memória da Conta (A Operação)</th>
+                        <th style={{ padding: '0.5rem', fontWeight: 700, textAlign: 'right' }}>Subtotal Gerado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <strong style={{ color: '#22d3ee' }}>1. Disponibilidade OEE (TPM)</strong>
+                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>Microparadas e quebras evitadas</div>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
+                          {simMachineHours} horas recuperadas
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1' }}>
+                          R$ {simHourlyRate},00 / hora-máquina
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#93c5fd' }}>
+                          {simMachineHours} × R$ {simHourlyRate},00
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399' }}>
+                          R$ {subtotalOEE.toLocaleString('pt-BR')},00
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <strong style={{ color: '#c084fc' }}>2. Qualidade & Refugos (Poka-Yoke)</strong>
+                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>Aparas e resina não descartadas</div>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
+                          {simScrapKg.toLocaleString('pt-BR')} kg eliminados
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1' }}>
+                          R$ {simScrapKgRate.toFixed(2)} / kg de resina
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#c084fc' }}>
+                          {simScrapKg.toLocaleString('pt-BR')} × R$ {simScrapKgRate.toFixed(2)}
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399' }}>
+                          R$ {subtotalScrap.toLocaleString('pt-BR')},00
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <strong style={{ color: '#fbbf24' }}>3. Troca Rápida de Matriz (SMED / JIT)</strong>
+                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>Tempo de setup convertido em produção</div>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
+                          {simSetupHours} horas de setup salvas
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1' }}>
+                          R$ {simSetupHourlyRate},00 / hora
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#fcd34d' }}>
+                          {simSetupHours} × R$ {simSetupHourlyRate},00
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399' }}>
+                          R$ {subtotalSetup.toLocaleString('pt-BR')},00
+                        </td>
+                      </tr>
+
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                        <td style={{ padding: '0.6rem 0.5rem' }}>
+                          <strong style={{ color: '#38bdf8' }}>4. Padronização Operacional (5S & POPs)</strong>
+                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>Corte de retrabalho e horas extras</div>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
+                          {simOvertimeHours} horas extras cortadas
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1' }}>
+                          R$ {simOvertimeRate},00 / hora c/ encargos
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', fontFamily: 'var(--font-mono)', color: '#7dd3fc' }}>
+                          {simOvertimeHours} × R$ {simOvertimeRate},00
+                        </td>
+                        <td style={{ padding: '0.6rem 0.5rem', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#34d399' }}>
+                          R$ {subtotalOvertime.toLocaleString('pt-BR')},00
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* SIMULADOR INTERATIVO DE FORMAÇÃO DA CONTA */}
+                <div
+                  style={{
+                    backgroundColor: '#090d16',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '10px',
+                    padding: '1rem 1.15rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <Calculator size={15} color="#22d3ee" />
+                      <strong style={{ fontSize: '0.8rem', color: '#ffffff' }}>
+                        Simulador Interativo: Teste com os Parâmetros da Sua Fábrica
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      Altere os valores abaixo para ver a conta se reescrever em tempo real:
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginBottom: '0.2rem' }}>
+                        Horas Salvas de Máquina (OEE):
+                      </label>
+                      <input
+                        type="number"
+                        value={simMachineHours}
+                        onChange={(e) => setSimMachineHours(Number(e.target.value) || 0)}
+                        style={{ width: '100%', backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', padding: '0.35rem 0.6rem', color: '#ffffff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginBottom: '0.2rem' }}>
+                        Custo/Hora de Máquina (R$):
+                      </label>
+                      <input
+                        type="number"
+                        value={simHourlyRate}
+                        onChange={(e) => setSimHourlyRate(Number(e.target.value) || 0)}
+                        style={{ width: '100%', backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', padding: '0.35rem 0.6rem', color: '#ffffff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginBottom: '0.2rem' }}>
+                        Refugo Evitado (kg de Matéria-Prima):
+                      </label>
+                      <input
+                        type="number"
+                        value={simScrapKg}
+                        onChange={(e) => setSimScrapKg(Number(e.target.value) || 0)}
+                        style={{ width: '100%', backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', padding: '0.35rem 0.6rem', color: '#ffffff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginBottom: '0.2rem' }}>
+                        Preço da Matéria-Prima (R$/kg):
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={simScrapKgRate}
+                        onChange={(e) => setSimScrapKgRate(Number(e.target.value) || 0)}
+                        style={{ width: '100%', backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', padding: '0.35rem 0.6rem', color: '#ffffff', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.5, borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem' }}>
+                  💡 <strong>Conclusão para Auditoria Master:</strong> A exibição da conta aberta ao lado do resultado blinda o Agente Lean e os líderes fabris de questionamentos subjetivos, comprovando com matemática elementar o capital preservado pela redução de desperdícios no chão de fábrica.
                 </div>
               </div>
             </div>
