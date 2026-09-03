@@ -611,6 +611,7 @@ export interface LeanAssessmentCriterion {
   gembaVerificationGuide: string; // O que checar fisicamente no Gemba
   weight: number; // 1 a 3
   score: number; // 1 a 5 (1 = Caótico, 2 = Básico, 3 = Padronizado, 4 = Avançado, 5 = Classe Mundial)
+  checkpoints?: string[]; // Checkpoints práticos de campo derivados da matriz TPS
   observations?: string;
   evidencePhotoUrl?: string;
 }

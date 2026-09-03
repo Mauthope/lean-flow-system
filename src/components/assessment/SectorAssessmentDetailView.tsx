@@ -16,6 +16,7 @@ import {
   Plus,
   Printer,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
   Lightbulb,
   CheckCircle2,
@@ -38,6 +39,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | undefined>(undefined);
   const [compareAssessmentId, setCompareAssessmentId] = useState<string | undefined>(undefined);
+  const [expandedDimensionId, setExpandedDimensionId] = useState<string | null>(null);
 
   // Carregar histórico de assessments do setor
   const assessments = useMemo(() => {
@@ -905,112 +907,205 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 const completedCount = dimData?.completedActions.length || 0;
                 const totalProjects = dimData?.actions.length || 0;
 
+                const isExpanded = expandedDimensionId === item.dimensionId;
+                const criteria = (dimDetail?.criteria && dimDetail.criteria.length > 0)
+                  ? dimDetail.criteria
+                  : (dataService.getDefaultLeanAssessmentDimensions().find((d) => d.id === item.dimensionId)?.criteria || []);
+
                 return (
-                  <tr
-                    key={item.dimensionId}
-                    style={{
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <td style={{ padding: '0.85rem 0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <span style={{ fontSize: '1rem' }}>{dimData?.config.icon || '📌'}</span>
-                        <div>
-                          <div style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</div>
-                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                            {dimDetail?.description || 'Auditoria de padrões no Gemba'}
+                  <React.Fragment key={item.dimensionId}>
+                    <tr
+                      style={{
+                        borderBottom: isExpanded ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
+                        backgroundColor: isExpanded ? 'rgba(34, 211, 238, 0.04)' : 'transparent',
+                        transition: 'background 0.15s',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setExpandedDimensionId(isExpanded ? null : item.dimensionId)}
+                    >
+                      <td style={{ padding: '0.85rem 0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon || '📌'}</span>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</span>
+                              <span
+                                style={{
+                                  fontSize: '0.65rem',
+                                  color: isExpanded ? '#22d3ee' : '#94a3b8',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                                  padding: '0.1rem 0.4rem',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.2rem',
+                                }}
+                              >
+                                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                {criteria.length} Critérios
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                              {dimDetail?.description || 'Auditoria de padrões no Gemba'}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
-                      <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                          color: '#e2e8f0',
-                          padding: '0.2rem 0.45rem',
-                          borderRadius: '6px',
-                        }}
-                      >
-                        Nível {level}
-                      </span>
-                    </td>
-
-                    {comparisonData?.previousAssessment && (
-                      <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#c084fc', fontWeight: 700 }}>
-                        {item.previousScore !== undefined ? `${item.previousScore}%` : '-'}
                       </td>
-                    )}
 
-                    <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 900, fontSize: '0.95rem' }}>
-                      {item.currentScore}%
-                    </td>
-
-                    {comparisonData?.previousAssessment && (
                       <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
                         <span
                           style={{
-                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.7rem',
                             fontWeight: 800,
-                            color: item.delta > 0 ? '#34d399' : item.delta < 0 ? '#f87171' : '#94a3b8',
-                            backgroundColor: item.delta > 0 ? 'rgba(16, 185, 129, 0.15)' : item.delta < 0 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
-                            padding: '0.15rem 0.45rem',
-                            borderRadius: '4px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                            color: '#e2e8f0',
+                            padding: '0.2rem 0.45rem',
+                            borderRadius: '6px',
                           }}
                         >
-                          {item.delta > 0 ? `+${item.delta}%` : `${item.delta}%`}
+                          Nível {level}
                         </span>
                       </td>
-                    )}
 
-                    <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                        {item.trend === 'up' && (
-                          <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                            <TrendingUp size={14} /> Avanço
-                          </span>
-                        )}
-                        {item.trend === 'down' && (
-                          <span style={{ color: '#f87171', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                            <TrendingDown size={14} /> Recuo
-                          </span>
-                        )}
-                        {item.trend === 'stable' && (
-                          <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                            <Minus size={14} /> Mantido
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
-                      {val > 0 ? (
-                        <div>
-                          <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
-                            {formatCurrency(val)}
-                          </strong>
-                          <div style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                            {completedCount > 0 ? `${completedCount} concluído(s)` : `${totalProjects} em andamento`}
-                          </div>
-                        </div>
-                      ) : totalProjects > 0 ? (
-                        <div>
-                          <span style={{ fontSize: '0.725rem', color: '#fbbf24', fontWeight: 700 }}>
-                            {totalProjects} Kaizen(s)
-                          </span>
-                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>
-                            Em andamento
-                          </div>
-                        </div>
-                      ) : (
-                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
+                      {comparisonData?.previousAssessment && (
+                        <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#c084fc', fontWeight: 700 }}>
+                          {item.previousScore !== undefined ? `${item.previousScore}%` : '-'}
+                        </td>
                       )}
-                    </td>
-                  </tr>
+
+                      <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center', fontFamily: 'var(--font-mono)', color: '#34d399', fontWeight: 900, fontSize: '0.95rem' }}>
+                        {item.currentScore}%
+                      </td>
+
+                      {comparisonData?.previousAssessment && (
+                        <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
+                          <span
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontWeight: 800,
+                              color: item.delta > 0 ? '#34d399' : item.delta < 0 ? '#f87171' : '#94a3b8',
+                              backgroundColor: item.delta > 0 ? 'rgba(16, 185, 129, 0.15)' : item.delta < 0 ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                              padding: '0.15rem 0.45rem',
+                              borderRadius: '4px',
+                            }}
+                          >
+                            {item.delta > 0 ? `+${item.delta}%` : `${item.delta}%`}
+                          </span>
+                        </td>
+                      )}
+
+                      <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                          {item.trend === 'up' && (
+                            <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <TrendingUp size={14} /> Avanço
+                            </span>
+                          )}
+                          {item.trend === 'down' && (
+                            <span style={{ color: '#f87171', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <TrendingDown size={14} /> Recuo
+                            </span>
+                          )}
+                          {item.trend === 'stable' && (
+                            <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Minus size={14} /> Mantido
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
+                        {val > 0 ? (
+                          <div>
+                            <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                              {formatCurrency(val)}
+                            </strong>
+                            <div style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                              {completedCount > 0 ? `${completedCount} concluído(s)` : `${totalProjects} em andamento`}
+                            </div>
+                          </div>
+                        ) : totalProjects > 0 ? (
+                          <div>
+                            <span style={{ fontSize: '0.725rem', color: '#fbbf24', fontWeight: 700 }}>
+                              {totalProjects} Kaizen(s)
+                            </span>
+                            <div style={{ fontSize: '0.675rem', color: '#64748b' }}>
+                              Em andamento
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* Linha Expansível com os Critérios Mestres e Checkpoints do Gemba */}
+                    {isExpanded && (
+                      <tr style={{ backgroundColor: 'rgba(2, 6, 23, 0.75)', borderBottom: '1.5px solid rgba(34, 211, 238, 0.3)' }}>
+                        <td colSpan={comparisonData?.previousAssessment ? 7 : 5} style={{ padding: '1rem 1.25rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon}</span>
+                                <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>
+                                  Critérios Mestres & Checkpoints Auditados — {item.dimensionName}
+                                </strong>
+                              </div>
+                              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>
+                                ⚖️ {criteria.length} Critérios Mestres de Alta Relevância (Princípio de Pareto TPS)
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
+                              {criteria.map((crit, cIdx) => (
+                                <div
+                                  key={crit.id || cIdx}
+                                  style={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                                    borderRadius: '8px',
+                                    padding: '0.75rem',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.45rem',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                    <div>
+                                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                        Item {cIdx + 1} • Peso {crit.weight}
+                                      </span>
+                                      <strong style={{ display: 'block', fontSize: '0.8rem', color: '#ffffff', marginTop: '0.2rem' }}>
+                                        {crit.title}
+                                      </strong>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: crit.score >= 4 ? '#34d399' : crit.score >= 3 ? '#fbbf24' : '#f87171', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                      Nota {crit.score}/5
+                                    </span>
+                                  </div>
+
+                                  <div style={{ fontSize: '0.725rem', color: '#fef08a', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '0.4rem 0.55rem', borderRadius: '6px', lineHeight: 1.35 }}>
+                                    <strong>Gemba: </strong>{crit.gembaVerificationGuide}
+                                  </div>
+
+                                  {crit.checkpoints && crit.checkpoints.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
+                                      {crit.checkpoints.map((chk, chkI) => (
+                                        <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
+                                          <span style={{ color: '#22d3ee' }}>✓</span>
+                                          <span>{chk}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>

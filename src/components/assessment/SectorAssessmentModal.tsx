@@ -597,6 +597,43 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                         </div>
                       </div>
 
+                      {/* Checkpoints Práticos de Campo (TPS) */}
+                      {criterion.checkpoints && criterion.checkpoints.length > 0 && (
+                        <div
+                          style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderRadius: '8px',
+                            padding: '0.55rem 0.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.675rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            🔍 Checkpoints Práticos Auditados:
+                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            {criterion.checkpoints.map((chk, chkIdx) => (
+                              <div
+                                key={chkIdx}
+                                style={{
+                                  fontSize: '0.725rem',
+                                  color: '#cbd5e1',
+                                  display: 'flex',
+                                  alignItems: 'flex-start',
+                                  gap: '0.4rem',
+                                  lineHeight: 1.35,
+                                }}
+                              >
+                                <span style={{ color: '#22d3ee', fontWeight: 800 }}>✓</span>
+                                <span>{chk}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Avaliação no Posto (1 a 5 estrelas) */}
                       <div
                         style={{
@@ -769,6 +806,43 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                         <span style={{ color: '#fef08a' }}>{criterion.gembaVerificationGuide}</span>
                       </div>
                     </div>
+
+                    {/* Checkpoints Práticos de Campo (TPS) */}
+                    {criterion.checkpoints && criterion.checkpoints.length > 0 && (
+                      <div
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                          borderRadius: '8px',
+                          padding: '0.55rem 0.75rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.675rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                          🔍 Checkpoints Práticos Auditados:
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          {criterion.checkpoints.map((chk, chkIdx) => (
+                            <div
+                              key={chkIdx}
+                              style={{
+                                fontSize: '0.725rem',
+                                color: '#cbd5e1',
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '0.4rem',
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              <span style={{ color: '#22d3ee', fontWeight: 800 }}>✓</span>
+                              <span>{chk}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Seletor de Escala 1 a 5 Estrelas / Pontos */}
                     <div
