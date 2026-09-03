@@ -5,13 +5,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { Sector } from '@/lib/types';
 import { SectorModal } from '@/components/forms/SectorModal';
-import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2 } from 'lucide-react';
+import { SectorAssessmentDetailView } from '@/components/assessment/SectorAssessmentDetailView';
+import { Modal } from '@/components/ui/Modal';
+import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2, Award, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 export default function AdminSetoresPage() {
   const { dataVersion, refreshData } = useAuth();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assessmentSector, setAssessmentSector] = useState<Sector | null>(null);
 
   const sectors = useMemo(() => {
     return dataService.getSectors();
@@ -47,7 +50,7 @@ export default function AdminSetoresPage() {
             Gestão & Cadastro de Setores
           </h2>
           <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
-            Estruture os departamentos da organização para canalização de fluxo Lean e alocação de agentes
+            Estruture os departamentos da organização para canalização de fluxo Lean, Lean Assessment e alocação de agentes
           </p>
         </div>
 
@@ -61,9 +64,10 @@ export default function AdminSetoresPage() {
       </div>
 
       {/* Sectors Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
         {sectors.map((sec) => {
           const stats = metrics.bySector.find((s) => s.sectorId === sec.id);
+          const latestAssessment = dataService.getLatestSectorAssessment(sec.id);
 
           return (
             <div
@@ -75,6 +79,7 @@ export default function AdminSetoresPage() {
                 justifyContent: 'space-between',
                 padding: '1.5rem',
                 borderLeft: `5px solid ${sec.color || '#06b6d4'}`,
+                backgroundColor: '#090d16',
               }}
             >
               <div>
@@ -94,14 +99,36 @@ export default function AdminSetoresPage() {
                     {sec.code}
                   </span>
 
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                    {stats?.count || 0} ações vinculadas
-                  </span>
+                  {latestAssessment ? (
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        color: '#34d399',
+                        border: '1px solid #10b981',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                      }}
+                      title="Maturidade Lean aferida no último Gemba Walk"
+                    >
+                      <Award size={12} /> {latestAssessment.overallScore}% (Nível {latestAssessment.overallLevel})
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Assessment</span>
+                  )}
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
                   {sec.name}
                 </h3>
+
+                <p style={{ fontSize: '0.775rem', color: '#94a3b8', marginBottom: '1rem', minHeight: '36px' }}>
+                  {sec.description || 'Setor fabril cadastrado para alocação de ações Kaizen.'}
+                </p>
 
                 {/* Avoided cost snippet */}
                 {stats && stats.costAvoided > 0 && (
@@ -135,37 +162,115 @@ export default function AdminSetoresPage() {
                   justifyContent: 'space-between',
                   borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                   paddingTop: '0.875rem',
+                  gap: '0.5rem',
+                  flexWrap: 'wrap',
                 }}
               >
                 <button
-                  onClick={() => handleEdit(sec)}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  onClick={() => setAssessmentSector(sec)}
+                  className="btn btn-sm btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
+                  title="Abrir Gráfico de Radar e Avaliação Lean"
                 >
-                  <Edit2 size={13} /> Editar Setor
+                  <Award size={14} /> Lean Assessment
                 </button>
 
-                <button
-                  onClick={() => handleDelete(sec)}
-                  className="btn btn-outline-danger btn-sm"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                  title="Excluir Setor"
-                >
-                  <Trash2 size={13} /> Excluir
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    onClick={() => handleEdit(sec)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                  >
+                    <Edit2 size={13} /> Editar
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(sec)}
+                    className="btn btn-outline-danger btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    title="Excluir Setor"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Sector Modal */}
+      {/* Sector Modal (Cadastro/Edição) */}
       <SectorModal
         sector={selectedSector}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={refreshData}
       />
+
+      {/* Modal de Detalhamento do Lean Assessment */}
+      {assessmentSector && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 95,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#090d16',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '1040px',
+              maxHeight: '94vh',
+              overflowY: 'auto',
+              padding: '1.75rem',
+              position: 'relative',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#ffffff' }}>
+                  Lean Assessment & Radar de Maturidade — {assessmentSector.name}
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  Visão executiva do Gestor Master com comparativo evolutivo
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAssessmentSector(null)}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '0.4rem',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <SectorAssessmentDetailView
+              sector={assessmentSector}
+              onNewAssessmentCreated={() => {
+                refreshData();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

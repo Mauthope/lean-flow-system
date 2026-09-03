@@ -68,7 +68,7 @@ export const Sidebar: React.FC = () => {
       label: 'Cadastros & Equipe',
       items: [
         { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
-        { href: '/admin/setores', label: 'Gestão de Setores', icon: Building2 },
+        { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
       ],
     },
     {
@@ -95,6 +95,7 @@ export const Sidebar: React.FC = () => {
       label: 'Meu Trabalho',
       items: [
         { href: '/agente/kanban', label: 'Meu Kanban', icon: Kanban },
+        { href: '/agente/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
         { href: '/agente/relatorio-pessoal', label: 'Minhas Entregas & ROI', icon: TrendingUp },
       ],
     },

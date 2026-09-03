@@ -542,3 +542,96 @@ export interface LeanArticleItem {
   };
 }
 
+// ==========================================
+// MÓDULO LEAN ASSESSMENT DOS SETORES
+// ==========================================
+
+export type LeanAssessmentDimensionId =
+  | 'estabilidade_5s'
+  | 'trabalho_padronizado'
+  | 'fluxo_jit'
+  | 'qualidade_poka_yoke'
+  | 'tpm_oee'
+  | 'cultura_kaizen';
+
+export interface LeanAssessmentCriterion {
+  id: string;
+  dimensionId: LeanAssessmentDimensionId;
+  title: string;
+  description: string;
+  gembaVerificationGuide: string; // O que checar fisicamente no Gemba
+  weight: number; // 1 a 3
+  score: number; // 1 a 5 (1 = Caótico, 2 = Básico, 3 = Padronizado, 4 = Avançado, 5 = Classe Mundial)
+  observations?: string;
+  evidencePhotoUrl?: string;
+}
+
+export interface LeanAssessmentDimension {
+  id: LeanAssessmentDimensionId;
+  name: string;
+  shortName: string;
+  description: string;
+  score: number; // 0 a 100%
+  level: 1 | 2 | 3 | 4 | 5; // Nível 1 a 5
+  criteria: LeanAssessmentCriterion[];
+  strengths?: string[];
+  opportunities?: string[];
+  observations?: string;
+}
+
+export interface SenseiAssessmentDiagnosis {
+  summary: string;
+  strongestDimension: string;
+  strongestScore: number;
+  criticalBottleneck: string;
+  bottleneckScore: number;
+  suggestedKaizenProject: {
+    title: string;
+    description: string;
+    targetDimension: string;
+    expectedBenefits: string;
+  };
+}
+
+export interface SectorLeanAssessment {
+  id: string;
+  tenantId: string;
+  sectorId: string;
+  sectorName: string;
+  evaluatorId: string;
+  evaluatorName: string;
+  evaluatorRole: 'admin' | 'agent';
+  assessmentDate: string; // ISO date
+  overallScore: number; // 0 a 100%
+  overallLevel: 1 | 2 | 3 | 4 | 5; // 1=Reativo, 2=Iniciante, 3=Padronizado, 4=Avançado, 5=Classe Mundial
+  dimensions: Record<LeanAssessmentDimensionId, number>; // Score 0-100 por dimensão
+  dimensionDetails: LeanAssessmentDimension[];
+  senseiDiagnosis: SenseiAssessmentDiagnosis;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface DimensionEvolutionMetric {
+  dimensionId: LeanAssessmentDimensionId;
+  dimensionName: string;
+  currentScore: number;
+  previousScore?: number;
+  delta: number; // current - previous
+  trend: 'up' | 'stable' | 'down';
+}
+
+export interface SectorEvolutionComparison {
+  sectorId: string;
+  currentAssessment: SectorLeanAssessment;
+  previousAssessment?: SectorLeanAssessment;
+  overallDelta: number; // current.overallScore - previous.overallScore
+  overallTrend: 'up' | 'stable' | 'down';
+  dimensionsMetrics: DimensionEvolutionMetric[];
+  assessmentsHistory: {
+    id: string;
+    assessmentDate: string;
+    overallScore: number;
+    evaluatorName: string;
+  }[];
+}
+

@@ -20,6 +20,13 @@ import {
   AgentLearningRanking,
   LeanArticleItem,
   ExamQuestionSnapshot,
+  SectorLeanAssessment,
+  LeanAssessmentDimensionId,
+  LeanAssessmentDimension,
+  SectorEvolutionComparison,
+  SenseiAssessmentDiagnosis,
+  DimensionEvolutionMetric,
+  LeanAssessmentCriterion,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -37,6 +44,7 @@ import {
   INITIAL_LEAN_ARTICLES,
   INITIAL_AGENT_ARTICLES,
   INITIAL_AGENT_EXAMS,
+  INITIAL_SECTOR_ASSESSMENTS,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '../data/leanExamQuestions';
@@ -1995,6 +2003,447 @@ export const dataService = {
     });
   },
 
+  // =========================================================================
+  // MÓDULO LEAN ASSESSMENT DOS SETORES
+  // =========================================================================
+  getSectorAssessments(sectorId?: string): SectorLeanAssessment[] {
+    const all = getStoredData<SectorLeanAssessment[]>(
+      STORAGE_KEYS.SECTOR_ASSESSMENTS,
+      INITIAL_SECTOR_ASSESSMENTS
+    );
+    const filtered = sectorId ? all.filter((a) => a.sectorId === sectorId) : all;
+    return filtered.sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime());
+  },
+
+  getLatestSectorAssessment(sectorId: string): SectorLeanAssessment | undefined {
+    const list = this.getSectorAssessments(sectorId);
+    return list.length > 0 ? list[0] : undefined;
+  },
+
+  getPreviousSectorAssessment(sectorId: string, currentAssessmentId?: string): SectorLeanAssessment | undefined {
+    const list = this.getSectorAssessments(sectorId);
+    if (list.length < 2) return undefined;
+    if (currentAssessmentId) {
+      const idx = list.findIndex((a) => a.id === currentAssessmentId);
+      if (idx >= 0 && idx + 1 < list.length) {
+        return list[idx + 1];
+      }
+    }
+    return list[1];
+  },
+
+  getSectorEvolutionComparison(
+    sectorId: string,
+    currentId?: string,
+    compareWithId?: string
+  ): SectorEvolutionComparison | null {
+    const history = this.getSectorAssessments(sectorId);
+    if (history.length === 0) return null;
+
+    const current = currentId ? history.find((a) => a.id === currentId) || history[0] : history[0];
+    let previous: SectorLeanAssessment | undefined = undefined;
+
+    if (compareWithId) {
+      previous = history.find((a) => a.id === compareWithId);
+    } else {
+      previous = this.getPreviousSectorAssessment(sectorId, current.id);
+    }
+
+    const overallDelta = previous ? current.overallScore - previous.overallScore : 0;
+    const overallTrend: 'up' | 'stable' | 'down' =
+      overallDelta > 1 ? 'up' : overallDelta < -1 ? 'down' : 'stable';
+
+    const dimensionKeys: { id: LeanAssessmentDimensionId; name: string }[] = [
+      { id: 'estabilidade_5s', name: 'Estabilidade Básica & 5S' },
+      { id: 'trabalho_padronizado', name: 'Trabalho Padronizado' },
+      { id: 'fluxo_jit', name: 'Fluxo Contínuo & JIT' },
+      { id: 'qualidade_poka_yoke', name: 'Qualidade & Poka-Yoke' },
+      { id: 'tpm_oee', name: 'TPM & Confiabilidade' },
+      { id: 'cultura_kaizen', name: 'Cultura Kaizen & Pessoas' },
+    ];
+
+    const dimensionsMetrics: DimensionEvolutionMetric[] = dimensionKeys.map((dim) => {
+      const currentScore = current.dimensions[dim.id] || 0;
+      const previousScore = previous ? previous.dimensions[dim.id] : undefined;
+      const delta = previousScore !== undefined ? currentScore - previousScore : 0;
+      const trend: 'up' | 'stable' | 'down' = delta > 1 ? 'up' : delta < -1 ? 'down' : 'stable';
+
+      return {
+        dimensionId: dim.id,
+        dimensionName: dim.name,
+        currentScore,
+        previousScore,
+        delta,
+        trend,
+      };
+    });
+
+    return {
+      sectorId,
+      currentAssessment: current,
+      previousAssessment: previous,
+      overallDelta,
+      overallTrend,
+      dimensionsMetrics,
+      assessmentsHistory: history.map((h) => ({
+        id: h.id,
+        assessmentDate: h.assessmentDate,
+        overallScore: h.overallScore,
+        evaluatorName: h.evaluatorName,
+      })),
+    };
+  },
+
+  saveSectorAssessment(assessmentData: Omit<SectorLeanAssessment, 'id' | 'createdAt'>): SectorLeanAssessment {
+    const list = getStoredData<SectorLeanAssessment[]>(
+      STORAGE_KEYS.SECTOR_ASSESSMENTS,
+      INITIAL_SECTOR_ASSESSMENTS
+    );
+    const newEntry: SectorLeanAssessment = {
+      ...assessmentData,
+      id: generateId('asm'),
+      createdAt: new Date().toISOString(),
+    };
+
+    list.unshift(newEntry);
+    setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, list);
+    return newEntry;
+  },
+
+  deleteSectorAssessment(id: string): void {
+    const list = getStoredData<SectorLeanAssessment[]>(
+      STORAGE_KEYS.SECTOR_ASSESSMENTS,
+      INITIAL_SECTOR_ASSESSMENTS
+    );
+    const updated = list.filter((a) => a.id !== id);
+    setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, updated);
+  },
+
+  getDefaultLeanAssessmentDimensions(): LeanAssessmentDimension[] {
+    return [
+      {
+        id: 'estabilidade_5s',
+        name: 'Estabilidade Básica, 5S & Gestão Visual',
+        shortName: '5S & Visual',
+        description: 'Postos organizados no ponto de uso, descarte de obsoletos, limpeza inspecional e gestão à vista.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: '5s_c1',
+            dimensionId: 'estabilidade_5s',
+            title: 'Descarte & Organização no Ponto de Uso (Seiri & Seiton)',
+            description: 'Ferramentas de trabalho e gabaritos dispostos a menos de 2 metros no painel sombra; pisos demarcados.',
+            gembaVerificationGuide: 'Verificar se ferramentas e dispositivos estão nos locais demarcados e se há itens obsoletos ocupando espaço útil.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: '5s_c2',
+            dimensionId: 'estabilidade_5s',
+            title: 'Limpeza com Inspeção Ativa (Seiso)',
+            description: 'A limpeza do posto é utilizada rotineiramente para identificar vazamentos, trincas e anomalias mecânicas.',
+            gembaVerificationGuide: 'Inspecionar a parte inferior e traseira das máquinas. Verificar se bandejas de óleo estão limpas e sem vazamentos crônicos.',
+            weight: 2,
+            score: 3,
+          },
+          {
+            id: '5s_c3',
+            dimensionId: 'estabilidade_5s',
+            title: 'Gestão Visual e Padronização Operacional (Seiketsu & Shitsuke)',
+            description: 'Quadros de hora a hora atualizados, manômetros com faixas coloridas (verde/vermelho) e disciplina mantida.',
+            gembaVerificationGuide: 'Checar se o quadro de produção do setor está preenchido com os dados das últimas 2 horas e se desvios têm ação anotada.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+      {
+        id: 'trabalho_padronizado',
+        name: 'Trabalho Padronizado, POPs & TWI',
+        shortName: 'Trabalho Padronizado',
+        description: 'Instruções visuais nos postos, repetibilidade de ciclo e matriz de versatilidade ativa.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: 'tp_c1',
+            dimensionId: 'trabalho_padronizado',
+            title: 'Disponibilidade e Clareza Visual dos POPs',
+            description: 'Instruções de trabalho visuais com fotos reais e pontos críticos de segurança afixadas no posto.',
+            gembaVerificationGuide: 'Verificar se o operador do posto consegue apontar onde está o POP e se as etapas descritas batem com a operação real.',
+            weight: 2,
+            score: 3,
+          },
+          {
+            id: 'tp_c2',
+            dimensionId: 'trabalho_padronizado',
+            title: 'Sequência Repetível e Respeito ao Tempo de Ciclo',
+            description: 'Operadores distintos executam a mesma sequência padronizada de movimentos dentro do tempo de ciclo planejado.',
+            gembaVerificationGuide: 'Cronometrar 2 ciclos de trabalho de operadores diferentes e comparar desvios de método ou movimentos desnecessários.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'tp_c3',
+            dimensionId: 'trabalho_padronizado',
+            title: 'Matriz de Versatilidade & Treinamento no Posto (TWI)',
+            description: 'Quadro de polivalência atualizado com plano de treinamento formal para cobrir ausências e gargalos.',
+            gembaVerificationGuide: 'Verificar se a matriz de habilidades do setor foi revisada nos últimos 60 dias e se há substitutos qualificados.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+      {
+        id: 'fluxo_jit',
+        name: 'Fluxo Contínuo, JIT & Gestão de Estoques',
+        shortName: 'Fluxo & Kanban',
+        description: 'Redução de WIP entre postos, puxada por sinalização Kanban e sincronismo com Takt Time.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: 'jit_c1',
+            dimensionId: 'fluxo_jit',
+            title: 'Controle Físico do Estoque em Processo (WIP)',
+            description: 'Delimitação de limites máximos e mínimos de peças/lotes entre etapas sucessivas do processo produtivo.',
+            gembaVerificationGuide: 'Contar as peças paradas entre máquinas. Verificar se o buffer delimitado no piso está sendo rigorosamente respeitado.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'jit_c2',
+            dimensionId: 'fluxo_jit',
+            title: 'Puxada por Sinalização Visual / Kanban',
+            description: 'A produção ou movimentação só ocorre após o consumo da etapa posterior, acionada por cartão ou caixa vazia.',
+            gembaVerificationGuide: 'Checar se o supermercado de peças possui cartões Kanban ativos e se não há produção antecipada não autorizada.',
+            weight: 2,
+            score: 3,
+          },
+          {
+            id: 'jit_c3',
+            dimensionId: 'fluxo_jit',
+            title: 'Sincronismo com o Ritmo da Demanda (Takt Time)',
+            description: 'O setor produz equilibradamente na cadência da demanda, sem lotes gigantescos de empurrada.',
+            gembaVerificationGuide: 'Comparar o tempo de ciclo médio do setor com o Takt Time da fábrica.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+      {
+        id: 'qualidade_poka_yoke',
+        name: 'Qualidade na Origem, Jidoka & Poka-Yoke',
+        shortName: 'Qualidade & Poka-Yoke',
+        description: 'Dispositivos à prova de erro no processo, autocontrole pelo operador e cultura de parada Andon.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: 'q_c1',
+            dimensionId: 'qualidade_poka_yoke',
+            title: 'Autocontrole Operacional na Origem',
+            description: 'O próprio operador inspeciona os parâmetros vitais antes de liberar a peça para a etapa seguinte.',
+            gembaVerificationGuide: 'Verificar se os instrumentos de medição ou gabaritos de bancada são utilizados pelo operador em cada lote.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'q_c2',
+            dimensionId: 'qualidade_poka_yoke',
+            title: 'Dispositivos Físicos à Prova de Falha (Poka-Yoke)',
+            description: 'Sensores de fim de curso, travas mecânicas ou gabaritos que bloqueiam a passagem de peças defeituosas.',
+            gembaVerificationGuide: 'Testar se o dispositivo Poka-Yoke da máquina realmente paralisa a operação ao simular uma peça invertida/não-conforme.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'q_c3',
+            dimensionId: 'qualidade_poka_yoke',
+            title: 'Autonomia Andon e Parada Imediata de Linha',
+            description: 'Operador possui autoridade expressa para acionar o alarme Andon e paralisar o processo ao constatar desvio.',
+            gembaVerificationGuide: 'Conversar com o operador e verificar se o botão/cordão Andon do posto está funcional e se o chamado é atendido em <5 min.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+      {
+        id: 'tpm_oee',
+        name: 'Manutenção Produtiva Total (TPM) & OEE',
+        shortName: 'TPM & OEE',
+        description: 'Manutenção autônoma pelo operador, controle diário do OEE e erradicação de quebras mecânicas.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: 'tpm_c1',
+            dimensionId: 'tpm_oee',
+            title: 'Manutenção Autônoma do Operador (Rotina LIP)',
+            description: 'Limpeza, inspeção, reaperto e lubrificação diária executadas com rigor pelos operadores.',
+            gembaVerificationGuide: 'Examinar o checklist diário de manutenção autônoma fixado na máquina e conferir o nível de óleo nos visores.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'tpm_c2',
+            dimensionId: 'tpm_oee',
+            title: 'Gestão à Vista do OEE e Microparadas',
+            description: 'Disponibilidade, desempenho de velocidade e qualidade medidos e estratificados visualmente no posto.',
+            gembaVerificationGuide: 'Conferir o quadro de OEE do setor e analisar se as causas de paradas mecânicas acima de 5 minutos estão registradas.',
+            weight: 2,
+            score: 3,
+          },
+          {
+            id: 'tpm_c3',
+            dimensionId: 'tpm_oee',
+            title: 'Gestão Ágil de Etiquetas TPM (Azuis & Vermelhas)',
+            description: 'Anomalias identificadas com etiquetas visuais e resolvidas dentro dos prazos pactuados com a manutenção.',
+            gembaVerificationGuide: 'Inspecionar as etiquetas afixadas nas máquinas e checar se há pendências vencidas há mais de 10 dias.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+      {
+        id: 'cultura_kaizen',
+        name: 'Cultura Kaizen, Resolução Científica & Pessoas',
+        shortName: 'Cultura Kaizen',
+        description: 'Submissão ativa de ideias no Canal Kaizen, método dos 5 Porquês e replicação Yokoten.',
+        score: 0,
+        level: 1,
+        criteria: [
+          {
+            id: 'kz_c1',
+            dimensionId: 'cultura_kaizen',
+            title: 'Engajamento no Canal Kaizen de Ideias',
+            description: 'Os colaboradores do setor sugerem melhorias contínuas de ergonomia, setup e qualidade regularmente.',
+            gembaVerificationGuide: 'Checar a quantidade de ideias enviadas pelos operadores do setor no último mês no painel do Canal Kaizen.',
+            weight: 2,
+            score: 3,
+          },
+          {
+            id: 'kz_c2',
+            dimensionId: 'cultura_kaizen',
+            title: 'Solução Estruturada de Problemas (5 Porquês / A3)',
+            description: 'Anomalias reincidentes são tratadas com aprofundamento de causa raiz até a falha do método/padrão.',
+            gembaVerificationGuide: 'Verificar o último plano de ação de causa raiz concluído no setor e se as ações bloquearam a reincidência.',
+            weight: 3,
+            score: 3,
+          },
+          {
+            id: 'kz_c3',
+            dimensionId: 'cultura_kaizen',
+            title: 'Padronização Pós-Melhoria e Replicação (Yokoten)',
+            description: 'Ganhos comprovados geram revisão imediata de POPs e são compartilhados com os demais setores da fábrica.',
+            gembaVerificationGuide: 'Verificar se os POPs foram atualizados após a última melhoria Kaizen implantada no setor.',
+            weight: 2,
+            score: 3,
+          },
+        ],
+      },
+    ];
+  },
+
+  generateSenseiAssessmentDiagnosis(
+    dimensions: Record<LeanAssessmentDimensionId, number>,
+    sectorName: string
+  ): SenseiAssessmentDiagnosis {
+    const dimensionMeta: Record<LeanAssessmentDimensionId, { name: string; project: { title: string; desc: string; target: string; benefits: string } }> = {
+      estabilidade_5s: {
+        name: 'Estabilidade Básica, 5S & Gestão Visual',
+        project: {
+          title: `Mutirão 5S Avançado & Ponto de Uso no Setor ${sectorName}`,
+          desc: 'Redesenhar o layout dos postos com painéis sombra móveis e implantar gestão visual hora a hora.',
+          target: 'Estabilidade Básica & 5S',
+          benefits: 'Redução de até 40 minutos diários em buscas e caminhadas desnecessárias no posto.',
+        },
+      },
+      trabalho_padronizado: {
+        name: 'Trabalho Padronizado, POPs & TWI',
+        project: {
+          title: `Mapeamento e Padronização de Ciclos (POP Visual) - ${sectorName}`,
+          desc: 'Filmar as operações dos postos de trabalho, eliminar micro-desperdícios e criar POPs com fotos reais.',
+          target: 'Trabalho Padronizado & POPs',
+          benefits: 'Equalização do tempo de ciclo entre turnos e redução de 25% na variabilidade de método.',
+        },
+      },
+      fluxo_jit: {
+        name: 'Fluxo Contínuo, JIT & Gestão de Estoques (Kanban)',
+        project: {
+          title: `Supermercado de Peças e Nivelamento Kanban - ${sectorName}`,
+          desc: 'Dimensionar buffer intermediário máximo e sinalizar puxada de materiais por cartões Kanban.',
+          target: 'Fluxo Contínuo & JIT',
+          benefits: 'Redução de 30% no estoque em processo (WIP) e eliminação de esperas por materiais.',
+        },
+      },
+      qualidade_poka_yoke: {
+        name: 'Qualidade na Origem, Jidoka & Poka-Yoke',
+        project: {
+          title: `Dispositivos à Prova de Falha (Poka-Yoke) no Posto Crítico - ${sectorName}`,
+          desc: 'Instalar sensores ópticos e gabaritos físicos que bloqueiam montagem invertida ou defeito na origem.',
+          target: 'Qualidade na Origem & Poka-Yoke',
+          benefits: 'Erradicação do refugo na operação e zero não-conformidade repassada para a etapa seguinte.',
+        },
+      },
+      tpm_oee: {
+        name: 'Manutenção Produtiva Total (TPM) & OEE',
+        project: {
+          title: `Implantação de Manutenção Autônoma (Fase 1 e 2 TPM) - ${sectorName}`,
+          desc: 'Capacitar os operadores em rotinas de Limpeza com Inspeção, Reaperto e Lubrificação no início do turno.',
+          target: 'TPM & Confiabilidade',
+          benefits: 'Aumento de 6 a 10 pontos percentuais no OEE e queda de 50% em microparadas de máquina.',
+        },
+      },
+      cultura_kaizen: {
+        name: 'Cultura Kaizen, Resolução Científica & Pessoas',
+        project: {
+          title: `Ciclo Semanal de Kaizen Rápido & 5 Porquês - ${sectorName}`,
+          desc: 'Estruturar reuniões de 15 minutos na linha com os operadores para solucionar desvios com o método 5 Porquês.',
+          target: 'Cultura Kaizen & Pessoas',
+          benefits: 'Aumento no engajamento operacional e geração de pelo menos 6 melhorias de baixo custo por mês.',
+        },
+      },
+    };
+
+    let strongestKey: LeanAssessmentDimensionId = 'estabilidade_5s';
+    let weakestKey: LeanAssessmentDimensionId = 'estabilidade_5s';
+    let maxScore = -1;
+    let minScore = 999;
+
+    (Object.keys(dimensions) as LeanAssessmentDimensionId[]).forEach((key) => {
+      const score = dimensions[key] || 0;
+      if (score > maxScore) {
+        maxScore = score;
+        strongestKey = key;
+      }
+      if (score < minScore) {
+        minScore = score;
+        weakestKey = key;
+      }
+    });
+
+    const strongest = dimensionMeta[strongestKey];
+    const bottleneck = dimensionMeta[weakestKey];
+
+    const summary = `Diagnóstico do Sensei para o setor ${sectorName}: O setor apresenta forte domínio em "${strongest.name}" (${maxScore}%), que serve como base de estabilidade. Contudo, o principal gargalo restritivo de maturidade está em "${bottleneck.name}" (${minScore}%), onde perdas e desvios ocultos ainda drenam a eficiência do Gemba.`;
+
+    return {
+      summary,
+      strongestDimension: strongest.name,
+      strongestScore: maxScore,
+      criticalBottleneck: bottleneck.name,
+      bottleneckScore: minScore,
+      suggestedKaizenProject: {
+        title: bottleneck.project.title,
+        description: bottleneck.project.desc,
+        targetDimension: bottleneck.project.target,
+        expectedBenefits: bottleneck.project.benefits,
+      },
+    };
+  },
+
   // Reset to default seed
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
@@ -2011,5 +2460,6 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.LEAN_ARTICLES, JSON.stringify(INITIAL_LEAN_ARTICLES));
     localStorage.setItem(STORAGE_KEYS.AGENT_ARTICLES, JSON.stringify(INITIAL_AGENT_ARTICLES));
     localStorage.setItem(STORAGE_KEYS.AGENT_EXAMS, JSON.stringify(INITIAL_AGENT_EXAMS));
+    localStorage.setItem(STORAGE_KEYS.SECTOR_ASSESSMENTS, JSON.stringify(INITIAL_SECTOR_ASSESSMENTS));
   },
 };
