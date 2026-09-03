@@ -174,6 +174,7 @@ export interface LeanAction {
   title: string;
   description: string;
   wasteCategory: LeanWasteCategory;
+  assessmentDimensionId?: LeanAssessmentDimensionId; // Eixo do Lean Assessment que este projeto alavanca
   originSectorId: string;
   originSectorName?: string;
   targetSectorId?: string;
@@ -553,6 +554,54 @@ export type LeanAssessmentDimensionId =
   | 'qualidade_poka_yoke'
   | 'tpm_oee'
   | 'cultura_kaizen';
+
+export const ASSESSMENT_DIMENSIONS_CONFIG: Record<
+  LeanAssessmentDimensionId,
+  { name: string; shortName: string; color: string; icon: string; description: string }
+> = {
+  estabilidade_5s: {
+    name: 'Estabilidade Básica, 5S & Gestão Visual',
+    shortName: '5S & Visual',
+    color: '#06b6d4',
+    icon: '🧹',
+    description: 'Organização, demarcações e ferramentas a <2m no posto de trabalho',
+  },
+  trabalho_padronizado: {
+    name: 'Trabalho Padronizado, POPs & TWI',
+    shortName: 'Trabalho Padronizado',
+    color: '#3b82f6',
+    icon: '📋',
+    description: 'Instruções de trabalho vivas, tempo padrão e versatilidade operacional',
+  },
+  fluxo_jit: {
+    name: 'Fluxo Contínuo & JIT (Kanban / SMED)',
+    shortName: 'Fluxo & Kanban',
+    color: '#eab308',
+    icon: '🔄',
+    description: 'Puxada por cartões Kanban, redução de WIP e troca rápida de moldes/matrizes',
+  },
+  qualidade_poka_yoke: {
+    name: 'Qualidade na Origem (Poka-Yoke & Zero Defeito)',
+    shortName: 'Qualidade & Poka-Yoke',
+    color: '#a855f7',
+    icon: '🎯',
+    description: 'Dispositivos à prova de erro, travas mecânicas e eliminação de refugos',
+  },
+  tpm_oee: {
+    name: 'Manutenção Produtiva Total (TPM & OEE)',
+    shortName: 'TPM & OEE',
+    color: '#10b981',
+    icon: '⚙️',
+    description: 'Manutenção autônoma, rotinas LIP e eliminação de microparadas',
+  },
+  cultura_kaizen: {
+    name: 'Cultura Kaizen & Desenvolvimento de Pessoas',
+    shortName: 'Cultura Kaizen',
+    color: '#f97316',
+    icon: '💡',
+    description: 'Engajamento da equipe, banco de ideias do chão de fábrica e melhoria contínua',
+  },
+};
 
 export interface LeanAssessmentCriterion {
   id: string;

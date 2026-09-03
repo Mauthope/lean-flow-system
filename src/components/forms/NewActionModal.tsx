@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LeanWasteCategory, ActionPriority } from '@/lib/types';
+import { LeanWasteCategory, ActionPriority, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [wasteCategory, setWasteCategory] = useState<LeanWasteCategory>('espera');
+  const [assessmentDimensionId, setAssessmentDimensionId] = useState<LeanAssessmentDimensionId>('tpm_oee');
   const [originSectorId, setOriginSectorId] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [priority, setPriority] = useState<ActionPriority>('media');
@@ -37,6 +38,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       setTitle('');
       setDescription('');
       setWasteCategory('espera');
+      setAssessmentDimensionId('tpm_oee');
       setOriginSectorId(currentSectors[0]?.id || '');
       setAssignedAgentId(allAgents[0]?.id || '');
       setPriority('media');
@@ -44,6 +46,11 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       setDueDate('');
     }
   }, [isOpen]);
+
+  const handleWasteChange = (cat: LeanWasteCategory) => {
+    setWasteCategory(cat);
+    setAssessmentDimensionId(dataService.getDefaultAssessmentDimensionForWaste(cat));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +63,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       title,
       description,
       wasteCategory,
+      assessmentDimensionId,
       originSectorId,
       assignedAgentId: assignedAgentId || undefined,
       priority,
@@ -151,7 +159,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
             <select
               className="form-select"
               value={wasteCategory}
-              onChange={(e) => setWasteCategory(e.target.value as LeanWasteCategory)}
+              onChange={(e) => handleWasteChange(e.target.value as LeanWasteCategory)}
             >
               {Object.entries(WASTE_CATEGORIES).map(([k, v]) => (
                 <option key={k} value={k}>
@@ -173,6 +181,53 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
               <option value="alta">Alta</option>
               <option value="critica">Crítica (Interrupção de Fluxo)</option>
             </select>
+          </div>
+        </div>
+
+        {/* Eixo Alvo do Lean Assessment */}
+        <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.05)', border: '1.5px solid rgba(34, 211, 238, 0.25)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+            <label className="form-label" style={{ color: '#22d3ee', margin: 0, fontWeight: 700, fontSize: '0.85rem' }}>
+              🎯 Eixo Alvo do Lean Assessment:
+            </label>
+            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+              Os ganhos deste Kaizen formarão o valor auditado deste eixo no setor
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
+            {(Object.entries(ASSESSMENT_DIMENSIONS_CONFIG) as [LeanAssessmentDimensionId, typeof ASSESSMENT_DIMENSIONS_CONFIG[LeanAssessmentDimensionId]][]).map(([dimId, config]) => {
+              const isSelected = assessmentDimensionId === dimId;
+              return (
+                <button
+                  type="button"
+                  key={dimId}
+                  onClick={() => setAssessmentDimensionId(dimId)}
+                  style={{
+                    backgroundColor: isSelected ? 'rgba(34, 211, 238, 0.2)' : '#020617',
+                    border: isSelected ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.65rem',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '1rem' }}>{config.icon}</span>
+                    <strong style={{ fontSize: '0.775rem', color: isSelected ? '#ffffff' : '#cbd5e1' }}>
+                      {config.shortName}
+                    </strong>
+                  </div>
+                  <span style={{ fontSize: '0.65rem', color: '#94a3b8', lineHeight: 1.2 }}>
+                    {config.description}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

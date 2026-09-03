@@ -27,6 +27,7 @@ import {
   SenseiAssessmentDiagnosis,
   DimensionEvolutionMetric,
   LeanAssessmentCriterion,
+  ASSESSMENT_DIMENSIONS_CONFIG,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -2442,6 +2443,80 @@ export const dataService = {
         expectedBenefits: bottleneck.project.benefits,
       },
     };
+  },
+
+  // Mapeamento automático de Categoria de Desperdício -> Dimensão do Assessment
+  getDefaultAssessmentDimensionForWaste(waste: LeanWasteCategory): LeanAssessmentDimensionId {
+    switch (waste) {
+      case 'defeitos':
+        return 'qualidade_poka_yoke';
+      case 'espera':
+        return 'tpm_oee';
+      case 'movimentacao':
+        return 'estabilidade_5s';
+      case 'transporte':
+      case 'estoque':
+      case 'superproducao':
+        return 'fluxo_jit';
+      case 'processamento_excessivo':
+        return 'trabalho_padronizado';
+      case 'talento_subutilizado':
+      default:
+        return 'cultura_kaizen';
+    }
+  },
+
+  // Obter Kaizens de um Setor agrupados por Dimensão do Lean Assessment
+  getSectorKaizensByAssessmentDimension(sectorId: string) {
+    const allActions = this.getActions().filter(
+      (a) => a.originSectorId === sectorId || a.targetSectorId === sectorId
+    );
+
+    const dimensionKeys: LeanAssessmentDimensionId[] = [
+      'estabilidade_5s',
+      'trabalho_padronizado',
+      'fluxo_jit',
+      'qualidade_poka_yoke',
+      'tpm_oee',
+      'cultura_kaizen',
+    ];
+
+    const result = dimensionKeys.reduce((acc, dimId) => {
+      acc[dimId] = {
+        dimensionId: dimId,
+        config: ASSESSMENT_DIMENSIONS_CONFIG[dimId],
+        actions: [] as LeanAction[],
+        completedActions: [] as LeanAction[],
+        totalCostAvoided: 0,
+        totalHoursSaved: 0,
+      };
+      return acc;
+    }, {} as Record<LeanAssessmentDimensionId, {
+      dimensionId: LeanAssessmentDimensionId;
+      config: (typeof ASSESSMENT_DIMENSIONS_CONFIG)[LeanAssessmentDimensionId];
+      actions: LeanAction[];
+      completedActions: LeanAction[];
+      totalCostAvoided: number;
+      totalHoursSaved: number;
+    }>);
+
+    allActions.forEach((action) => {
+      const dimId: LeanAssessmentDimensionId =
+        action.assessmentDimensionId || this.getDefaultAssessmentDimensionForWaste(action.wasteCategory);
+
+      if (result[dimId]) {
+        result[dimId].actions.push(action);
+        const cost = action.actualCostAvoided || action.estimatedCostAvoided || 0;
+        const hours = action.hoursSaved || 0;
+        result[dimId].totalCostAvoided += cost;
+        result[dimId].totalHoursSaved += hours;
+        if (action.status === 'concluida') {
+          result[dimId].completedActions.push(action);
+        }
+      }
+    });
+
+    return result;
   },
 
   // Reset to default seed

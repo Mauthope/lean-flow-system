@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Sector, SectorLeanAssessment, LeanAssessmentDimensionId } from '@/lib/types';
+import { Sector, SectorLeanAssessment, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { LeanRadarChart, RadarDataPoint } from '@/components/charts/LeanRadarChart';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
@@ -89,6 +89,11 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
       setupSavings,
       laborSavings,
     };
+  }, [sector.id]);
+
+  // Kaizens do setor mapeados aos 6 eixos do Lean Assessment
+  const sectorKaizensByDim = useMemo(() => {
+    return dataService.getSectorKaizensByAssessmentDimension(sector.id);
   }, [sector.id]);
 
   // Preparar dados para o Gráfico de Radar
@@ -651,6 +656,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700, textAlign: 'center' }}>Evolução (Δ)</th>
                 )}
                 <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700, textAlign: 'center' }}>Tendência</th>
+                <th style={{ padding: '0.75rem 0.5rem', fontWeight: 700, textAlign: 'right' }}>Kaizens do Eixo (Retorno Real)</th>
               </tr>
             </thead>
             <tbody>
@@ -663,6 +669,11 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 else if (score >= 41) level = 3;
                 else if (score >= 21) level = 2;
 
+                const dimData = sectorKaizensByDim[item.dimensionId];
+                const val = dimData?.totalCostAvoided || 0;
+                const completedCount = dimData?.completedActions.length || 0;
+                const totalProjects = dimData?.actions.length || 0;
+
                 return (
                   <tr
                     key={item.dimensionId}
@@ -672,9 +683,14 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     }}
                   >
                     <td style={{ padding: '0.85rem 0.5rem' }}>
-                      <div style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                        {dimDetail?.description || 'Auditoria de padrões no Gemba'}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span style={{ fontSize: '1rem' }}>{dimData?.config.icon || '📌'}</span>
+                        <div>
+                          <div style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            {dimDetail?.description || 'Auditoria de padrões no Gemba'}
+                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -738,6 +754,30 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                           </span>
                         )}
                       </div>
+                    </td>
+
+                    <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
+                      {val > 0 ? (
+                        <div>
+                          <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)', fontSize: '0.875rem' }}>
+                            {formatCurrency(val)}
+                          </strong>
+                          <div style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                            {completedCount > 0 ? `${completedCount} concluído(s)` : `${totalProjects} em andamento`}
+                          </div>
+                        </div>
+                      ) : totalProjects > 0 ? (
+                        <div>
+                          <span style={{ fontSize: '0.725rem', color: '#fbbf24', fontWeight: 700 }}>
+                            {totalProjects} Kaizen(s)
+                          </span>
+                          <div style={{ fontSize: '0.675rem', color: '#64748b' }}>
+                            Em andamento
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -805,6 +845,52 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
           </div>
         </div>
 
+        {/* Decomposição dos 6 Eixos do Assessment com os Kaizens Vinculados */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+              Decomposição do Custo Evitado pelos 6 Eixos do Lean Assessment:
+            </span>
+            <span style={{ fontSize: '0.7rem', color: '#22d3ee' }}>
+              🎯 Cada real retido é vinculado ao seu respectivo eixo de maturidade
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.65rem' }}>
+            {(Object.entries(sectorKaizensByDim) as [LeanAssessmentDimensionId, typeof sectorKaizensByDim[LeanAssessmentDimensionId]][]).map(([dimKey, dimData]) => (
+              <div
+                key={dimKey}
+                style={{
+                  backgroundColor: dimData.totalCostAvoided > 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                  border: dimData.totalCostAvoided > 0 ? '1.5px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.07)',
+                  borderRadius: '10px',
+                  padding: '0.75rem 0.85rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '1.1rem' }}>{dimData.config.icon}</span>
+                    <strong style={{ fontSize: '0.775rem', color: '#ffffff' }}>
+                      {dimData.config.shortName}
+                    </strong>
+                  </div>
+                  <strong style={{ fontSize: '0.85rem', color: dimData.totalCostAvoided > 0 ? '#34d399' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                    {formatCurrency(dimData.totalCostAvoided)}
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.675rem', color: '#94a3b8' }}>
+                  <span>{dimData.completedActions.length} Kaizen(s) concluído(s)</span>
+                  <span>{dimData.totalHoursSaved}h salvas</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Bloco com a Expressão da Conta Aberta do Setor */}
         <div
           style={{
@@ -850,15 +936,18 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
           </div>
         </div>
 
-        {/* Lista de Ações do Setor com a Conta de Cada Uma */}
+        {/* Lista de Ações do Setor com o Eixo e a Conta de Cada Uma */}
         {sectorSavings.completed.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.725rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-              Projetos Kaizen Homologados que Compõem esta Conta:
+              Projetos Kaizen Homologados e Seus Respectivos Eixos no Assessment:
             </span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {sectorSavings.completed.map((action) => {
                 const val = action.actualCostAvoided || action.estimatedCostAvoided || 0;
+                const dimId = action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(action.wasteCategory);
+                const dimConfig = ASSESSMENT_DIMENSIONS_CONFIG[dimId];
+
                 return (
                   <div
                     key={action.id}
@@ -866,7 +955,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                       backgroundColor: 'rgba(255, 255, 255, 0.03)',
                       border: '1px solid rgba(255, 255, 255, 0.06)',
                       borderRadius: '8px',
-                      padding: '0.55rem 0.85rem',
+                      padding: '0.65rem 0.85rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -875,12 +964,31 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                       fontSize: '0.775rem',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <CheckCircle2 size={14} color="#34d399" />
                       <strong style={{ color: '#ffffff' }}>{action.title}</strong>
                       <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                         ({action.protocol})
                       </span>
+                      {dimConfig && (
+                        <span
+                          style={{
+                            fontSize: '0.675rem',
+                            fontWeight: 700,
+                            backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                            color: '#22d3ee',
+                            border: '1px solid rgba(6, 182, 212, 0.3)',
+                            padding: '0.15rem 0.5rem',
+                            borderRadius: '12px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                          }}
+                        >
+                          <span>{dimConfig.icon}</span>
+                          <span>{dimConfig.shortName}</span>
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontFamily: 'var(--font-mono)' }}>
