@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Sector, SectorLeanAssessment, LeanAssessmentDimension, LeanAssessmentDimensionId } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface SectorAssessmentModalProps {
@@ -30,6 +30,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
   const [activeDimensionIndex, setActiveDimensionIndex] = useState(0);
   const [generalNotes, setGeneralNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showMethodologyDefense, setShowMethodologyDefense] = useState(false);
 
   if (!isOpen) return null;
 
@@ -225,21 +226,86 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowMethodologyDefense(!showMethodologyDefense)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: showMethodologyDefense ? 'rgba(34, 211, 238, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(34, 211, 238, 0.35)',
+                color: '#22d3ee',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              title="Entenda por que esta metodologia é a mais adequada para o Gemba"
+            >
+              <ShieldCheck size={15} /> Por que Esta Metodologia?
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                padding: '0.4rem',
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Banner Expansível: Defesa da Metodologia para o Auditor */}
+        {showMethodologyDefense && (
+          <div
             style={{
-              background: 'none',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '0.4rem',
+              padding: '1rem 1.75rem',
+              backgroundColor: '#070a12',
+              borderBottom: '1.5px solid rgba(34, 211, 238, 0.3)',
+              fontSize: '0.775rem',
+              lineHeight: 1.5,
+              color: '#cbd5e1',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
             }}
           >
-            <X size={18} />
-          </button>
-        </div>
+            <div>
+              <strong style={{ color: '#22d3ee', display: 'block', marginBottom: '0.2rem' }}>
+                1. Fato no Gemba (Genchi Genbutsu)
+              </strong>
+              Substitua opiniões por evidências visíveis no posto (ferramentas a &lt;2m, ausência de vazamentos, registros hora a hora).
+            </div>
+            <div>
+              <strong style={{ color: '#c084fc', display: 'block', marginBottom: '0.2rem' }}>
+                2. Teoria das Restrições (Radar)
+              </strong>
+              Não mascare gargalos com médias. O polígono contrai-se onde o fluxo está restrito, focando a ação Kaizen onde dói mais.
+            </div>
+            <div>
+              <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '0.2rem' }}>
+                3. Rota Pedagógica (N1 a N5)
+              </strong>
+              Em vez de punir com &quot;reprovado&quot;, guie os operadores do Reativo ao Classe Mundial sem medo de expor os desvios.
+            </div>
+            <div>
+              <strong style={{ color: '#34d399', display: 'block', marginBottom: '0.2rem' }}>
+                4. Custo Evitado Real
+              </strong>
+              Cada evolução nas 6 dimensões reduz refugos em toneladas de matéria-prima e paradas, gerando ROI auditado.
+            </div>
+          </div>
+        )}
 
         {/* Barra Superior de Metadados & Resumo do Score em Tempo Real */}
         <div
