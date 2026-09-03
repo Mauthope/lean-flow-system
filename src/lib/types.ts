@@ -639,6 +639,12 @@ export interface SenseiAssessmentDiagnosis {
     description: string;
     targetDimension: string;
     expectedBenefits: string;
+    executiveSummary?: string;           // Resumo executivo do desafio
+    criticalPoints?: string[];           // Mapeamento dos pontos críticos e gargalos
+    rootCauses?: string[];               // Principais causas raízes identificadas
+    actionableSuggestions?: string[];    // Sugestões práticas e passos imediatos de alavancagem
+    estimatedMaturityJump?: string;      // Salto de maturidade estimado (ex: +30% no eixo)
+    projectedCostAvoidedMonthly?: number;// Custo evitado projetado mensal (R$/mês)
   };
 }
 

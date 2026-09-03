@@ -96,6 +96,33 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
     return dataService.getSectorKaizensByAssessmentDimension(sector.id);
   }, [sector.id]);
 
+  // Diagnóstico aprofundado do Sensei com mapeamento dos pontos críticos e sugestões acionáveis
+  const senseiActionDetails = useMemo(() => {
+    if (!currentAssessment?.senseiDiagnosis?.suggestedKaizenProject) return null;
+    const proj = currentAssessment.senseiDiagnosis.suggestedKaizenProject;
+
+    // Se já tiver os campos preenchidos, usa diretamente
+    if (proj.criticalPoints && proj.criticalPoints.length > 0) {
+      return proj;
+    }
+
+    // Caso contrário, gera dinamicamente através do dimensionMeta do dataService
+    const diagnosis = dataService.generateSenseiAssessmentDiagnosis(
+      currentAssessment.dimensions,
+      sector.name
+    );
+
+    return {
+      ...proj,
+      executiveSummary: proj.executiveSummary || diagnosis.suggestedKaizenProject.executiveSummary || proj.description,
+      criticalPoints: proj.criticalPoints || diagnosis.suggestedKaizenProject.criticalPoints,
+      rootCauses: proj.rootCauses || diagnosis.suggestedKaizenProject.rootCauses,
+      actionableSuggestions: proj.actionableSuggestions || diagnosis.suggestedKaizenProject.actionableSuggestions,
+      estimatedMaturityJump: proj.estimatedMaturityJump || diagnosis.suggestedKaizenProject.estimatedMaturityJump,
+      projectedCostAvoidedMonthly: proj.projectedCostAvoidedMonthly || diagnosis.suggestedKaizenProject.projectedCostAvoidedMonthly,
+    };
+  }, [currentAssessment, sector.name]);
+
   // Preparar dados para o Gráfico de Radar
   const radarData: RadarDataPoint[] = useMemo(() => {
     if (!currentAssessment) return [];
@@ -579,39 +606,243 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             </div>
           </div>
 
-          {/* Recomendação de Projeto Kaizen para Desbloquear o Gargalo */}
-          {currentAssessment.senseiDiagnosis.suggestedKaizenProject && (
+          {/* Recomendação Estratégica do Sensei para Alavancagem do Setor */}
+          {senseiActionDetails && (
             <div
               style={{
-                backgroundColor: 'rgba(251, 191, 36, 0.08)',
+                backgroundColor: 'rgba(251, 191, 36, 0.06)',
                 border: '1.5px solid rgba(251, 191, 36, 0.35)',
                 borderRadius: '12px',
-                padding: '1rem 1.15rem',
+                padding: '1.15rem 1.25rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.5rem',
+                gap: '0.85rem',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <Lightbulb size={16} color="#fbbf24" />
-                <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase' }}>
-                  Ação Recomendada pelo Sensei para Alavancar o Setor:
-                </span>
+              {/* Top Header: Badge + Eixo Alvo */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(251, 191, 36, 0.18)',
+                      border: '1px solid #fbbf24',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.05rem',
+                    }}
+                  >
+                    💡
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Ação Recomendada pelo Sensei para Alavancar o Setor:
+                    </span>
+                    <h5 style={{ margin: '0.15rem 0 0 0', fontSize: '1rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                      {senseiActionDetails.title}
+                    </h5>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(34, 211, 238, 0.12)',
+                      color: '#22d3ee',
+                      border: '1px solid rgba(34, 211, 238, 0.3)',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    🎯 Eixo: {senseiActionDetails.targetDimension}
+                  </span>
+                  {senseiActionDetails.estimatedMaturityJump && (
+                    <span
+                      style={{
+                        fontSize: '0.675rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        color: '#34d399',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '10px',
+                      }}
+                    >
+                      🚀 {senseiActionDetails.estimatedMaturityJump}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#ffffff' }}>
-                {currentAssessment.senseiDiagnosis.suggestedKaizenProject.title}
-              </h5>
+              {/* 1. Resumo Executivo do Desafio */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  borderLeft: '3px solid #fbbf24',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '0 8px 8px 0',
+                }}
+              >
+                <div style={{ fontSize: '0.675rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                  📋 Resumo Executivo do Desafio:
+                </div>
+                <p style={{ margin: 0, fontSize: '0.785rem', color: '#cbd5e1', lineHeight: 1.55 }}>
+                  {senseiActionDetails.executiveSummary || senseiActionDetails.description}
+                </p>
+              </div>
 
-              <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.5 }}>
-                {currentAssessment.senseiDiagnosis.suggestedKaizenProject.description}
-              </p>
+              {/* 2. Mapeamento dos Pontos Críticos no Gemba */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <AlertTriangle size={14} color="#f87171" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Mapeamento dos Pontos Críticos & Gargalos Identificados:
+                  </span>
+                </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.725rem', marginTop: '0.25rem', paddingTop: '0.45rem', borderTop: '1px solid rgba(251, 191, 36, 0.2)' }}>
-                <span style={{ color: '#94a3b8' }}>Ganhos Estimados:</span>
-                <strong style={{ color: '#34d399' }}>
-                  {currentAssessment.senseiDiagnosis.suggestedKaizenProject.expectedBenefits}
-                </strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                  {(senseiActionDetails.criticalPoints || [
+                    'Dispersão operacional de métodos e falta de dispositivos à prova de erro no posto.',
+                    'Microparadas e perdas invisíveis que não são captadas no fechamento de turno.',
+                    'Retrabalho e movimentações fora do padrão ergonômico ideal.',
+                  ]).map((point, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                        border: '1px solid rgba(239, 68, 68, 0.15)',
+                        borderRadius: '6px',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.75rem',
+                        color: '#fca5a5',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.45rem',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, color: '#f87171', fontSize: '0.8rem' }}>•</span>
+                      <span>{point}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Principais Causas Raízes Diagnosticadas */}
+              {senseiActionDetails.rootCauses && senseiActionDetails.rootCauses.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                    🔍 Principais Causas Raízes Mapeadas:
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.4rem' }}>
+                    {senseiActionDetails.rootCauses.map((cause, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                          borderRadius: '6px',
+                          padding: '0.4rem 0.6rem',
+                          fontSize: '0.725rem',
+                          color: '#cbd5e1',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <span style={{ color: '#fbbf24' }}>↳</span>
+                        <span>{cause}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Sugestões e Ações Práticas Imediatas */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <CheckCircle2 size={14} color="#34d399" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Sugestões e Passos Práticos para o Agente e Liderança:
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  {(senseiActionDetails.actionableSuggestions || [
+                    'Executar evento Kaizen de alinhamento com os operadores do turno.',
+                    'Instalar dispositivos visuais e checar tempo padrão no posto de trabalho.',
+                    'Auditar o cumprimento das ações corretivas na reunião diária de 10 minutos.',
+                  ]).map((suggestion, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                        border: '1px solid rgba(16, 185, 129, 0.18)',
+                        borderRadius: '6px',
+                        padding: '0.45rem 0.65rem',
+                        fontSize: '0.75rem',
+                        color: '#d1fae5',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '0.5rem',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      <span
+                        style={{
+                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          color: '#34d399',
+                          fontWeight: 800,
+                          fontSize: '0.625rem',
+                          padding: '0.1rem 0.35rem',
+                          borderRadius: '4px',
+                          flexShrink: 0,
+                          marginTop: '0.1rem',
+                        }}
+                      >
+                        Passo {idx + 1}
+                      </span>
+                      <span>{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 5. Ganhos Estimados & Custo Evitado Projetado */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.65rem',
+                  fontSize: '0.725rem',
+                  marginTop: '0.15rem',
+                  paddingTop: '0.55rem',
+                  borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ color: '#94a3b8' }}>Impacto Operacional:</span>
+                  <strong style={{ color: '#34d399' }}>
+                    {senseiActionDetails.expectedBenefits}
+                  </strong>
+                </div>
+
+                {senseiActionDetails.projectedCostAvoidedMonthly ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ color: '#94a3b8' }}>Custo Evitado Projetado:</span>
+                    <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                      {formatCurrency(senseiActionDetails.projectedCostAvoidedMonthly)} / mês
+                    </strong>
+                  </div>
+                ) : null}
               </div>
             </div>
           )}

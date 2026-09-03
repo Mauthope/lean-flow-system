@@ -2351,7 +2351,24 @@ export const dataService = {
     dimensions: Record<LeanAssessmentDimensionId, number>,
     sectorName: string
   ): SenseiAssessmentDiagnosis {
-    const dimensionMeta: Record<LeanAssessmentDimensionId, { name: string; project: { title: string; desc: string; target: string; benefits: string } }> = {
+    const dimensionMeta: Record<
+      LeanAssessmentDimensionId,
+      {
+        name: string;
+        project: {
+          title: string;
+          desc: string;
+          target: string;
+          benefits: string;
+          executiveSummary: string;
+          criticalPoints: string[];
+          rootCauses: string[];
+          actionableSuggestions: string[];
+          estimatedMaturityJump: string;
+          projectedCostAvoidedMonthly: number;
+        };
+      }
+    > = {
       estabilidade_5s: {
         name: 'Estabilidade Básica, 5S & Gestão Visual',
         project: {
@@ -2359,6 +2376,24 @@ export const dataService = {
           desc: 'Redesenhar o layout dos postos com painéis sombra móveis e implantar gestão visual hora a hora.',
           target: 'Estabilidade Básica & 5S',
           benefits: 'Redução de até 40 minutos diários em buscas e caminhadas desnecessárias no posto.',
+          executiveSummary: `Falta de estabilidade primária e desorganização física no setor ${sectorName} provocam dispersão de ferramentas, esperas invisíveis e fadiga operacional desnecessária.`,
+          criticalPoints: [
+            'Ferramentas de ajuste e troca de formato espalhadas fora do raio de 2 metros do operador.',
+            'Peças não-conformes ou refugos armazenados em caixas sem identificação visual clara no posto.',
+            'Quadro de acompanhamento hora a hora desatualizado ou preenchido apenas ao final do turno.',
+          ],
+          rootCauses: [
+            'Ausência de demarcações físicas no piso para caixas de entrada/saída e falta de painéis sombra.',
+            'Falta de rotina padronizada de 5 minutos para auditoria de 5S no fechamento de turno.',
+          ],
+          actionableSuggestions: [
+            'Realizar evento Kaizen de 1 dia para etiquetagem vermelha e descarte de todos os itens obsoletos.',
+            'Instalar painel sombra móvel ao lado da máquina com as ferramentas estritamente necessárias.',
+            'Pintar demarcações de piso (verde para produto bom, vermelho para refugo, amarelo para espera).',
+            'Instituir checklist visual diário de 5S executado pelo próprio operador antes da passagem de turno.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~80% (+30 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 14500,
         },
       },
       trabalho_padronizado: {
@@ -2368,6 +2403,24 @@ export const dataService = {
           desc: 'Filmar as operações dos postos de trabalho, eliminar micro-desperdícios e criar POPs com fotos reais.',
           target: 'Trabalho Padronizado & POPs',
           benefits: 'Equalização do tempo de ciclo entre turnos e redução de 25% na variabilidade de método.',
+          executiveSummary: `Divergência expressiva de método e produtividade entre os turnos no setor ${sectorName}, provocada por instruções de trabalho complexas ou ausentes na bancada.`,
+          criticalPoints: [
+            'Dispersão de tempo de ciclo superior a 35% entre operadores da mesma máquina/célula.',
+            'POPs extensos em texto guardados em pastas técnicas sem uso real no Gemba.',
+            'Gargalos transitórios frequentes por falta de balanceamento de carga de trabalho.',
+          ],
+          rootCauses: [
+            'Instruções não são visuais e não detalham os pontos críticos de segurança e qualidade.',
+            'Ausência de treinamento sistemático no método TWI (Job Instruction) para novos operadores.',
+          ],
+          actionableSuggestions: [
+            'Filmar a melhor prática operacional da célula e desmembrá-la em 4 a 6 macro-passos sequenciais.',
+            'Criar POP Visual de 1 folha com fotos coloridas em alta resolução fixado no campo de visão do operador.',
+            'Realizar cronoanálise de 10 ciclos para balizar o Tempo de Ciclo Padrão alinhado ao Takt Time.',
+            'Treinar 100% dos operadores da célula no método TWI e atualizar a Matriz de Polivalência.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~82% (+28 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 19800,
         },
       },
       fluxo_jit: {
@@ -2377,6 +2430,24 @@ export const dataService = {
           desc: 'Dimensionar buffer intermediário máximo e sinalizar puxada de materiais por cartões Kanban.',
           target: 'Fluxo Contínuo & JIT',
           benefits: 'Redução de 30% no estoque em processo (WIP) e eliminação de esperas por materiais.',
+          executiveSummary: `Produção operando em lotes grandes empurrados no setor ${sectorName}, gerando acúmulo excessivo de estoque intermediário (WIP) e trocas de produto (setup) excessivamente longas.`,
+          criticalPoints: [
+            'Tempo de troca de matriz/ferramental superior a 60 minutos com a linha completamente paralisada.',
+            'Paletes de materiais acumulados bloqueando corredores e gerando risco de avarias mecânicas.',
+            'Paradas de linha inesperadas por falta de insumos que não foram reabastecidos a tempo.',
+          ],
+          rootCauses: [
+            'Atividades de setup interno executadas com máquina parada sem pré-aquecimento ou separação prévia.',
+            'Falta de supermercado intermediário dimensionado com reposição sinalizada por cartões Kanban.',
+          ],
+          actionableSuggestions: [
+            'Aplicar metodologia SMED: converter tarefas de setup interno em externo (preparação antes da parada).',
+            'Pré-posicionar matrizes, insumos e ferramentas ao lado da linha 15 minutos antes da troca.',
+            'Dimensionar buffer máximo e implantar supermercado físico de componentes com cartões Kanban.',
+            'Padronizar o checklist de troca rápida de produto buscando reduzir o tempo de setup em pelo menos 50%.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~85% (+35 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 34000,
         },
       },
       qualidade_poka_yoke: {
@@ -2386,6 +2457,24 @@ export const dataService = {
           desc: 'Instalar sensores ópticos e gabaritos físicos que bloqueiam montagem invertida ou defeito na origem.',
           target: 'Qualidade na Origem & Poka-Yoke',
           benefits: 'Erradicação do refugo na operação e zero não-conformidade repassada para a etapa seguinte.',
+          executiveSummary: `Geração recorrente de refugos e retrabalhos no setor ${sectorName} por depender exclusivamente da atenção visual humana em operações repetitivas.`,
+          criticalPoints: [
+            'Refugos crônicos por desvios de tolerância dimensional, fita desfiada ou montagem fora de padrão.',
+            'Detecção tardia de não-conformidades, permitindo que lotes inteiros defeituosos sejam processados.',
+            'Operador sem autonomia ou dispositivo imediato de bloqueio automático do posto de trabalho.',
+          ],
+          rootCauses: [
+            'Processo sem travas físicas ou sensores de barreira contra erros de posicionamento.',
+            'Falta de gabaritos passa-não-passa no ponto de operação para checagem 100% autônoma.',
+          ],
+          actionableSuggestions: [
+            'Projetar e instalar gabarito mecânico "passa-não-passa" que impede fisicamente o encaixe incorreto.',
+            'Instalar sensor óptico/indutivo intertravado ao relé de partida da máquina para bloqueio automático.',
+            'Instalar botão/cordão Andon no posto permitindo que o operador solicite apoio de liderança em <3 min.',
+            'Instituir o compromisso "Não Aceito defeito, Não Fabrico defeito, Não Repasso defeito" na equipe.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~88% (+38 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 42500,
         },
       },
       tpm_oee: {
@@ -2395,6 +2484,24 @@ export const dataService = {
           desc: 'Capacitar os operadores em rotinas de Limpeza com Inspeção, Reaperto e Lubrificação no início do turno.',
           target: 'TPM & Confiabilidade',
           benefits: 'Aumento de 6 a 10 pontos percentuais no OEE e queda de 50% em microparadas de máquina.',
+          executiveSummary: `Perda crônica de disponibilidade e microparadas intermitentes no setor ${sectorName} degradam o OEE e sobrecarregam a equipe de manutenção com chamados corretivos de emergência.`,
+          criticalPoints: [
+            'Microparadas diárias não apontadas decorrentes de sujeira acumulada, falta de lubrificação e folgas.',
+            'Cultura reativa onde o operador apenas opera e aguarda a equipe mecânica para intervenções simples.',
+            'Vazamentos de óleo ou acúmulo de resíduos ocultando o desgaste prematuro de componentes vitais.',
+          ],
+          rootCauses: [
+            'Inexistência da rotina estruturada de Manutenção Autônoma LIP (Limpeza, Inspeção e Lubrificação).',
+            'Falta de gestão visual de anomalias com quadro de etiquetas TPM (azuis para operação, vermelhas para manutenção).',
+          ],
+          actionableSuggestions: [
+            'Realizar o "Dia da Limpeza com Inspeção" na máquina crítica com retirada de proteções e reaperto geral.',
+            'Criar Folha de Rotina LIP plastificada com pontos de lubrificação demarcados em cores na própria máquina.',
+            'Instalar Quadro de Gestão Visual de Etiquetas TPM na célula para abertura e fechamento de anomalias.',
+            'Monitorar diariamente o Pareto das 3 principais causas de parada de máquina na reunião de 10 min.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~84% (+36 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 48000,
         },
       },
       cultura_kaizen: {
@@ -2404,6 +2511,24 @@ export const dataService = {
           desc: 'Estruturar reuniões de 15 minutos na linha com os operadores para solucionar desvios com o método 5 Porquês.',
           target: 'Cultura Kaizen & Pessoas',
           benefits: 'Aumento no engajamento operacional e geração de pelo menos 6 melhorias de baixo custo por mês.',
+          executiveSummary: `Baixa participação operacional nas iniciativas de melhoria contínua no setor ${sectorName}; problemas do dia a dia são normalizados sem aplicação de metodologia de causa raiz.`,
+          criticalPoints: [
+            'Ideias dos operadores do Gemba não são capturadas, avaliadas ou testadas de forma ágil.',
+            'Tratamento superficial de desvios operacionais com soluções paleativas ("apagar incêndios").',
+            'Pouca visibilidade dos sucessos e ausência de reconhecimento aos times que implementam melhorias.',
+          ],
+          rootCauses: [
+            'Ausência de reuniões diárias curtas de alinhamento operacional junto ao quadro de gestão à vista.',
+            'Falta de treinamento prático dos líderes de célula na ferramenta dos 5 Porquês e no ciclo PDCA.',
+          ],
+          actionableSuggestions: [
+            'Implantar a Reunião Diária de 10 minutos no Gemba para discutir desvios das últimas 24 horas.',
+            'Capacitar líderes e operadores no uso dos 5 Porquês para investigar anomalias antes de encerrar o turno.',
+            'Estimular a submissão de ideias no Canal Kaizen com meta de pelo menos 2 ideias implantadas/operador/mês.',
+            'Criar painel de destaque com fotos dos operadores e o impacto financeiro dos Kaizens homologados.',
+          ],
+          estimatedMaturityJump: 'De nível crítico para ~82% (+26 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 16500,
         },
       },
     };
@@ -2441,6 +2566,12 @@ export const dataService = {
         description: bottleneck.project.desc,
         targetDimension: bottleneck.project.target,
         expectedBenefits: bottleneck.project.benefits,
+        executiveSummary: bottleneck.project.executiveSummary,
+        criticalPoints: bottleneck.project.criticalPoints,
+        rootCauses: bottleneck.project.rootCauses,
+        actionableSuggestions: bottleneck.project.actionableSuggestions,
+        estimatedMaturityJump: bottleneck.project.estimatedMaturityJump,
+        projectedCostAvoidedMonthly: bottleneck.project.projectedCostAvoidedMonthly,
       },
     };
   },
