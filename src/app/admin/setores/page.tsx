@@ -7,6 +7,7 @@ import { Sector } from '@/lib/types';
 import { SectorModal } from '@/components/forms/SectorModal';
 import { SectorAssessmentDetailView } from '@/components/assessment/SectorAssessmentDetailView';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
+import { SectorCardPolygon } from '@/components/charts/SectorCardPolygon';
 import { Modal } from '@/components/ui/Modal';
 import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2, Award, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -132,9 +133,30 @@ export default function AdminSetoresPage() {
                   {sec.name}
                 </h3>
 
-                <p style={{ fontSize: '0.775rem', color: '#94a3b8', marginBottom: '1rem', minHeight: '36px' }}>
+                <p style={{ fontSize: '0.775rem', color: '#94a3b8', marginBottom: '0.75rem', minHeight: '34px' }}>
                   {sec.description || 'Setor fabril cadastrado para alocação de ações Kaizen.'}
                 </p>
+
+                {/* POLÍGONO DE MATURIDADE DO SETOR (RADAR SVG COMPACTO) */}
+                <div
+                  style={{
+                    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    padding: '0.65rem 0.5rem',
+                    marginBottom: '0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <SectorCardPolygon
+                    assessment={latestAssessment}
+                    sectorColor={sec.color || '#10b981'}
+                    width={260}
+                    height={185}
+                  />
+                </div>
 
                 {/* Avoided cost snippet */}
                 {stats && stats.costAvoided > 0 && (
@@ -143,8 +165,8 @@ export default function AdminSetoresPage() {
                       backgroundColor: 'rgba(16, 185, 129, 0.15)',
                       border: '1px solid rgba(16, 185, 129, 0.35)',
                       borderRadius: '8px',
-                      padding: '0.625rem 0.75rem',
-                      marginBottom: '1rem',
+                      padding: '0.5rem 0.75rem',
+                      marginBottom: '0.85rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
