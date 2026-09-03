@@ -6,6 +6,7 @@ import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck, ListFilter, Layers } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 
 interface SectorAssessmentModalProps {
   isOpen: boolean;
@@ -280,45 +281,18 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
           </div>
         </div>
 
-        {/* Banner Expansível: Defesa da Metodologia para o Auditor */}
+        {/* Banner Expansível: Defesa da Metodologia & Memorial de Cálculo para o Auditor */}
         {showMethodologyDefense && (
           <div
             style={{
-              padding: '1rem 1.75rem',
+              padding: '1.25rem 1.75rem',
               backgroundColor: '#070a12',
               borderBottom: '1.5px solid rgba(34, 211, 238, 0.3)',
-              fontSize: '0.775rem',
-              lineHeight: 1.5,
-              color: '#cbd5e1',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '1rem',
+              maxHeight: '450px',
+              overflowY: 'auto',
             }}
           >
-            <div>
-              <strong style={{ color: '#22d3ee', display: 'block', marginBottom: '0.2rem' }}>
-                1. Fato no Gemba (Genchi Genbutsu)
-              </strong>
-              Substitua opiniões por evidências visíveis no posto (ferramentas a &lt;2m, ausência de vazamentos, registros hora a hora).
-            </div>
-            <div>
-              <strong style={{ color: '#c084fc', display: 'block', marginBottom: '0.2rem' }}>
-                2. Teoria das Restrições (Radar)
-              </strong>
-              Não mascare gargalos com médias. O polígono contrai-se onde o fluxo está restrito, focando a ação Kaizen onde dói mais.
-            </div>
-            <div>
-              <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '0.2rem' }}>
-                3. Rota Pedagógica (N1 a N5)
-              </strong>
-              Em vez de punir com &quot;reprovado&quot;, guie os operadores do Reativo ao Classe Mundial sem medo de expor os desvios.
-            </div>
-            <div>
-              <strong style={{ color: '#34d399', display: 'block', marginBottom: '0.2rem' }}>
-                4. Custo Evitado Real
-              </strong>
-              Cada evolução nas 6 dimensões reduz refugos em toneladas de matéria-prima e paradas, gerando ROI auditado.
-            </div>
+            <LeanAssessmentMethodologyDefense defaultExpanded={true} />
           </div>
         )}
 

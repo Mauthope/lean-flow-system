@@ -23,6 +23,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 
 interface SectorAssessmentDetailViewProps {
   sector: Sector;
@@ -717,135 +718,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
       </div>
 
       {/* 5. Defesa e Fundamentação Científica da Metodologia Aplicada */}
-      <div
-        className="card"
-        style={{
-          padding: '1.75rem',
-          backgroundColor: '#0a0f1d',
-          border: '1.5px solid rgba(34, 211, 238, 0.25)',
-          borderRadius: '16px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              backgroundColor: 'rgba(34, 211, 238, 0.15)',
-              border: '1.5px solid #22d3ee',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.25rem',
-            }}
-          >
-            🛡️
-          </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-              Defesa da Metodologia: Por que Este Lean Assessment é o Mais Adequado?
-            </h3>
-            <span style={{ fontSize: '0.75rem', color: '#22d3ee', fontWeight: 700 }}>
-              Os 4 Pilares Científicos do Modelo de Avaliação em Radar
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
-          {/* Pilar 1 */}
-          <div
-            style={{
-              backgroundColor: '#070a12',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(34, 211, 238, 0.2)', color: '#22d3ee', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                PILAR 1
-              </span>
-              <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>Fato Físico no Gemba (Genchi Genbutsu)</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-              Diferente de auditorias formais de escritório que apenas verificam se há papéis assinados em pastas de rede, esta metodologia afere <strong>evidências físicas no posto</strong>: ferramentas dispostas no ponto de uso a menos de 2 metros, ausência de vazamentos, peças refugadas segregadas e quadros hora a hora atualizados pelos próprios operadores.
-            </p>
-          </div>
-
-          {/* Pilar 2 */}
-          <div
-            style={{
-              backgroundColor: '#070a12',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(192, 132, 252, 0.2)', color: '#c084fc', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                PILAR 2
-              </span>
-              <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>Teoria das Restrições no Gráfico de Radar</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-              Médias aritméticas lineares escondem os gargalos que paralisam a fábrica. O polígono do Radar revela visualmente a <strong>assimetria do fluxo</strong>: se o setor atinge 90% em 5S mas tem 30% em Poka-Yoke ou TPM, o gráfico se contrai violentamente naquele vértice, direcionando os projetos Kaizen com exatidão cirúrgica para onde há maior retorno.
-            </p>
-          </div>
-
-          {/* Pilar 3 */}
-          <div
-            style={{
-              backgroundColor: '#070a12',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                PILAR 3
-              </span>
-              <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>Escala Evolutiva Contínua (Níveis 1 a 5)</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-              Avaliações binárias de &quot;Passou / Reprovou&quot; geram medo, dissimulação de falhas e resistência dos operadores. A escala comportamental em 5 níveis (Reativo ➔ Básico ➔ Padronizado ➔ Avançado ➔ Classe Mundial) cria uma rota pedagógica clara e transparente de melhoria contínua onde cada avanço é celebrado.
-            </p>
-          </div>
-
-          {/* Pilar 4 */}
-          <div
-            style={{
-              backgroundColor: '#070a12',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '12px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                PILAR 4
-              </span>
-              <strong style={{ color: '#ffffff', fontSize: '0.9rem' }}>Conexão com Custo Evitado & ROI</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-              O modelo não é um exercício acadêmico abstrato: cada 10 pontos conquistados no Radar traduzem-se diretamente em horas salvas de máquina, redução de refugos em toneladas de matéria-prima e eliminação de horas extras, alimentando o indicador financeiro de Custo Evitado auditado pela Entidade Master.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* 5. Defesa Científica da Metodologia do Assessment & Memorial de Cálculo */}
+      <LeanAssessmentMethodologyDefense defaultExpanded={true} />
 
       {/* Modal de Novo Assessment */}
       <SectorAssessmentModal

@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
+import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 import { Building2, Trash2, Award, Sparkles, ChevronDown, ChevronUp, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 interface SectorModalProps {
@@ -30,7 +31,6 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#06b6d4');
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
-  const [showMethodologyDefense, setShowMethodologyDefense] = useState(false);
 
   useEffect(() => {
     if (sector) {
@@ -237,60 +237,8 @@ export const SectorModal: React.FC<SectorModalProps> = ({
             </div>
           )}
 
-          {/* Campo Expansível: Defesa da Metodologia Aplicada */}
-          <div
-            style={{
-              backgroundColor: '#0c121e',
-              border: '1px solid rgba(34, 211, 238, 0.25)',
-              borderRadius: '12px',
-              overflow: 'hidden',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setShowMethodologyDefense(!showMethodologyDefense)}
-              style={{
-                width: '100%',
-                padding: '0.85rem 1.15rem',
-                backgroundColor: 'rgba(34, 211, 238, 0.05)',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShieldCheck size={17} color="#22d3ee" />
-                <strong style={{ fontSize: '0.825rem', color: '#22d3ee' }}>
-                  Fundamentação Científica: Por que Esta Metodologia de Assessment é a Mais Adequada?
-                </strong>
-              </div>
-              {showMethodologyDefense ? <ChevronUp size={16} color="#22d3ee" /> : <ChevronDown size={16} color="#22d3ee" />}
-            </button>
-
-            {showMethodologyDefense && (
-              <div style={{ padding: '1.15rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-                <div>
-                  <strong style={{ color: '#ffffff' }}>1. Fato Físico no Gemba (Genchi Genbutsu): </strong>
-                  Elimina a subjetividade de auditorias burocráticas de escritório. Cada critério exige evidências visíveis no posto (ferramentas a &lt;2m, ausência de vazamento de óleo, quadros hora a hora vivos, sensores Poka-Yoke calibrados).
-                </div>
-                <div>
-                  <strong style={{ color: '#ffffff' }}>2. Teoria das Restrições no Gráfico de Radar: </strong>
-                  Médias lineares tradicionais mascaram gargalos graves. O radar de 6 dimensões expõe a assimetria do fluxo; se a qualidade ou o TPM falharem, a área do polígono se contrai, apontando cirurgicamente a causa raiz restritiva.
-                </div>
-                <div>
-                  <strong style={{ color: '#ffffff' }}>3. Escala Evolutiva Comportamental (Níveis 1 a 5): </strong>
-                  Em vez de um carimbo binário &quot;aprovado/reprovado&quot; que gera medo e ocultação de problemas, estabelece uma rota pedagógica clara: Reativo (N1) ➔ Básico (N2) ➔ Padronizado (N3) ➔ Avançado (N4) ➔ Classe Mundial (N5).
-                </div>
-                <div>
-                  <strong style={{ color: '#ffffff' }}>4. Conversão Direta em Custo Evitado: </strong>
-                  Cada ponto percentual evoluído no radar correlaciona-se com redução comprovada de paradas de máquina, eliminação de retrabalho e horas extras, maximizando o ROI fabril.
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Campo Expansível: Defesa da Metodologia Aplicada & Memorial de Cálculo */}
+          <LeanAssessmentMethodologyDefense defaultExpanded={false} />
 
           {/* Botões de Exclusão & Ação */}
           <div
