@@ -32,6 +32,20 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showMethodologyDefense, setShowMethodologyDefense] = useState(false);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const currentDimension = dimensions[activeDimensionIndex];
@@ -152,7 +166,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
         inset: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',
         backdropFilter: 'blur(8px)',
-        zIndex: 100,
+        zIndex: 250,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

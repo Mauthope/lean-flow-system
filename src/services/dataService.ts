@@ -2126,8 +2126,8 @@ export const dataService = {
         name: 'Estabilidade Básica, 5S & Gestão Visual',
         shortName: '5S & Visual',
         description: 'Postos organizados no ponto de uso, descarte de obsoletos, limpeza inspecional e gestão à vista.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: '5s_c1',
@@ -2163,8 +2163,8 @@ export const dataService = {
         name: 'Trabalho Padronizado, POPs & TWI',
         shortName: 'Trabalho Padronizado',
         description: 'Instruções visuais nos postos, repetibilidade de ciclo e matriz de versatilidade ativa.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: 'tp_c1',
@@ -2200,8 +2200,8 @@ export const dataService = {
         name: 'Fluxo Contínuo, JIT & Gestão de Estoques',
         shortName: 'Fluxo & Kanban',
         description: 'Redução de WIP entre postos, puxada por sinalização Kanban e sincronismo com Takt Time.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: 'jit_c1',
@@ -2237,8 +2237,8 @@ export const dataService = {
         name: 'Qualidade na Origem, Jidoka & Poka-Yoke',
         shortName: 'Qualidade & Poka-Yoke',
         description: 'Dispositivos à prova de erro no processo, autocontrole pelo operador e cultura de parada Andon.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: 'q_c1',
@@ -2274,8 +2274,8 @@ export const dataService = {
         name: 'Manutenção Produtiva Total (TPM) & OEE',
         shortName: 'TPM & OEE',
         description: 'Manutenção autônoma pelo operador, controle diário do OEE e erradicação de quebras mecânicas.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: 'tpm_c1',
@@ -2311,8 +2311,8 @@ export const dataService = {
         name: 'Cultura Kaizen, Resolução Científica & Pessoas',
         shortName: 'Cultura Kaizen',
         description: 'Submissão ativa de ideias no Canal Kaizen, método dos 5 Porquês e replicação Yokoten.',
-        score: 0,
-        level: 1,
+        score: 60,
+        level: 3,
         criteria: [
           {
             id: 'kz_c1',

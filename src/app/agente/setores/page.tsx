@@ -24,7 +24,14 @@ export default function AgentSetoresPage() {
     sectors.length > 0 ? sectors[0].id : ''
   );
 
+  React.useEffect(() => {
+    if ((!selectedSectorId || !sectors.find((s) => s.id === selectedSectorId)) && sectors.length > 0) {
+      setSelectedSectorId(sectors[0].id);
+    }
+  }, [sectors, selectedSectorId]);
+
   const selectedSector = useMemo(() => {
+    if (sectors.length === 0) return null;
     return sectors.find((s) => s.id === selectedSectorId) || sectors[0];
   }, [sectors, selectedSectorId]);
 

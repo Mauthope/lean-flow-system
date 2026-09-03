@@ -6,6 +6,7 @@ import { dataService } from '@/services/dataService';
 import { Sector } from '@/lib/types';
 import { SectorModal } from '@/components/forms/SectorModal';
 import { SectorAssessmentDetailView } from '@/components/assessment/SectorAssessmentDetailView';
+import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
 import { Modal } from '@/components/ui/Modal';
 import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2, Award, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -15,6 +16,7 @@ export default function AdminSetoresPage() {
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assessmentSector, setAssessmentSector] = useState<Sector | null>(null);
+  const [directAuditSector, setDirectAuditSector] = useState<Sector | null>(null);
 
   const sectors = useMemo(() => {
     return dataService.getSectors();
@@ -72,6 +74,7 @@ export default function AdminSetoresPage() {
           return (
             <div
               key={sec.id}
+              onClick={() => setAssessmentSector(sec)}
               className="card"
               style={{
                 display: 'flex',
@@ -80,7 +83,10 @@ export default function AdminSetoresPage() {
                 padding: '1.5rem',
                 borderLeft: `5px solid ${sec.color || '#06b6d4'}`,
                 backgroundColor: '#090d16',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
+              title="Clique para visualizar o Lean Assessment & Radar de Maturidade"
             >
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -167,7 +173,10 @@ export default function AdminSetoresPage() {
                 }}
               >
                 <button
-                  onClick={() => setAssessmentSector(sec)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAssessmentSector(sec);
+                  }}
                   className="btn btn-sm btn-primary"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
                   title="Abrir Gráfico de Radar e Avaliação Lean"
@@ -177,7 +186,10 @@ export default function AdminSetoresPage() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <button
-                    onClick={() => handleEdit(sec)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(sec);
+                    }}
                     className="btn btn-secondary btn-sm"
                     style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   >
@@ -185,7 +197,10 @@ export default function AdminSetoresPage() {
                   </button>
 
                   <button
-                    onClick={() => handleDelete(sec)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(sec);
+                    }}
                     className="btn btn-outline-danger btn-sm"
                     style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                     title="Excluir Setor"
@@ -205,6 +220,10 @@ export default function AdminSetoresPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={refreshData}
+        onStartAssessment={(sec) => {
+          setIsModalOpen(false);
+          setDirectAuditSector(sec);
+        }}
       />
 
       {/* Modal de Detalhamento do Lean Assessment */}
@@ -215,7 +234,7 @@ export default function AdminSetoresPage() {
             inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.85)',
             backdropFilter: 'blur(8px)',
-            zIndex: 95,
+            zIndex: 150,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -270,6 +289,19 @@ export default function AdminSetoresPage() {
             />
           </div>
         </div>
+      )}
+
+      {/* Modal de Auditoria Direta disparada pelo formulário do setor */}
+      {directAuditSector && (
+        <SectorAssessmentModal
+          sector={directAuditSector}
+          isOpen={true}
+          onClose={() => setDirectAuditSector(null)}
+          onSaved={() => {
+            setDirectAuditSector(null);
+            refreshData();
+          }}
+        />
       )}
     </div>
   );

@@ -681,7 +681,7 @@ export function initializeLocalStorage(): void {
   }
 
   const sectorAssessmentsStr = localStorage.getItem(STORAGE_KEYS.SECTOR_ASSESSMENTS);
-  if (!sectorAssessmentsStr || !sectorAssessmentsStr.includes('sec_rafitec_extrusao')) {
+  if (!sectorAssessmentsStr || !sectorAssessmentsStr.includes('sec_rafitec_laminacao')) {
     localStorage.setItem(STORAGE_KEYS.SECTOR_ASSESSMENTS, JSON.stringify(INITIAL_SECTOR_ASSESSMENTS));
   }
 }
@@ -2126,6 +2126,191 @@ export const INITIAL_SECTOR_ASSESSMENTS: SectorLeanAssessment[] = [
     },
     notes: 'Avaliação presencial de rotina com o supervisor da tecelagem.',
     createdAt: '2026-02-10T11:00:00.000Z',
+  },
+
+  // 4. Laminação & Revestimento (12/02/2026)
+  {
+    id: 'asm_laminacao_01',
+    tenantId: 'tenant_rafitec_01',
+    sectorId: 'sec_rafitec_laminacao',
+    sectorName: 'Laminação & Revestimento',
+    evaluatorId: 'usr_rafitec_admin_01',
+    evaluatorName: 'Marcos Vinicius Rezende',
+    evaluatorRole: 'admin',
+    assessmentDate: '2026-02-12T15:00:00.000Z',
+    overallScore: 64,
+    overallLevel: 4,
+    dimensions: {
+      estabilidade_5s: 70,
+      trabalho_padronizado: 65,
+      fluxo_jit: 55,
+      qualidade_poka_yoke: 60,
+      tpm_oee: 70,
+      cultura_kaizen: 64,
+    },
+    senseiDiagnosis: {
+      summary: 'Setor de Laminação com bom padrão de 5S e controle de temperatura da resina, contudo o acúmulo de bobinas intermediárias (WIP) prejudica o fluxo puxado.',
+      strongestDimension: 'Estabilidade Básica, 5S & Gestão Visual',
+      strongestScore: 70,
+      criticalBottleneck: 'Fluxo Contínuo, JIT & Gestão de Estoques (Kanban)',
+      bottleneckScore: 55,
+      suggestedKaizenProject: {
+        title: 'Dimensionamento de Buffer FIFO entre Laminação e Corte',
+        description: 'Implementar trilhos de piso com demarcação FIFO para no máximo 6 bobinas aguardando laminação.',
+        targetDimension: 'Fluxo & Kanban',
+        expectedBenefits: 'Redução de 35% no tempo de espera de bobinas e prevenção de danos mecânicos no tecido.',
+      },
+    },
+    notes: 'Auditoria Gemba com foco na redução de refugo por pontas de bobina.',
+    createdAt: '2026-02-12T15:00:00.000Z',
+  },
+
+  // 5. Corte, Costura & Big Bags (18/02/2026)
+  {
+    id: 'asm_acabamento_01',
+    tenantId: 'tenant_rafitec_01',
+    sectorId: 'sec_rafitec_acabamento',
+    sectorName: 'Corte, Costura & Big Bags',
+    evaluatorId: 'usr_rafitec_agent_02',
+    evaluatorName: 'Juliana Mendes',
+    evaluatorRole: 'agent',
+    assessmentDate: '2026-02-18T10:30:00.000Z',
+    overallScore: 58,
+    overallLevel: 3,
+    dimensions: {
+      estabilidade_5s: 65,
+      trabalho_padronizado: 55,
+      fluxo_jit: 50,
+      qualidade_poka_yoke: 60,
+      tpm_oee: 55,
+      cultura_kaizen: 63,
+    },
+    senseiDiagnosis: {
+      summary: 'Setor intensivo em mão de obra com boa cultura de sugestões Kaizen, porém carece de balanceamento de células de costura e gestão visual de estoque intermediário.',
+      strongestDimension: 'Estabilidade Básica, 5S & Gestão Visual',
+      strongestScore: 65,
+      criticalBottleneck: 'Fluxo Contínuo, JIT & Gestão de Estoques (Kanban)',
+      bottleneckScore: 50,
+      suggestedKaizenProject: {
+        title: 'Balanceamento de Célula de Costura de Big Bags',
+        description: 'Redistribuir operações de alça e corpo entre as costureiras para eliminar filas de espera.',
+        targetDimension: 'Trabalho Padronizado & Fluxo',
+        expectedBenefits: 'Aumento de 18% na produtividade por hora e redução de peças aguardando fechamento.',
+      },
+    },
+    notes: 'Verificação no Gemba com foco em ergonomia e balanceamento de linha.',
+    createdAt: '2026-02-18T10:30:00.000Z',
+  },
+
+  // 6. Logística & Expedição (20/02/2026)
+  {
+    id: 'asm_expedicao_01',
+    tenantId: 'tenant_rafitec_01',
+    sectorId: 'sec_rafitec_expedicao',
+    sectorName: 'Logística & Expedição',
+    evaluatorId: 'usr_rafitec_admin_01',
+    evaluatorName: 'Marcos Vinicius Rezende',
+    evaluatorRole: 'admin',
+    assessmentDate: '2026-02-20T16:00:00.000Z',
+    overallScore: 72,
+    overallLevel: 4,
+    dimensions: {
+      estabilidade_5s: 78,
+      trabalho_padronizado: 70,
+      fluxo_jit: 75,
+      qualidade_poka_yoke: 68,
+      tpm_oee: 65,
+      cultura_kaizen: 76,
+    },
+    senseiDiagnosis: {
+      summary: 'Expedição com excelente organização de docas e demarcação de corredores 5S, operando com rotas de empilhadeira bem definidas.',
+      strongestDimension: 'Estabilidade Básica, 5S & Gestão Visual',
+      strongestScore: 78,
+      criticalBottleneck: 'Manutenção Produtiva Total (TPM) & OEE',
+      bottleneckScore: 65,
+      suggestedKaizenProject: {
+        title: 'Checklist Diário Autônomo de Baterias e Empilhadeiras',
+        description: 'Implantar rotina matinal de 5 minutos de inspeção de pneus, garfos e nível de água das baterias.',
+        targetDimension: 'TPM & Confiabilidade',
+        expectedBenefits: 'Redução de paradas inesperadas de empilhadeira no pico de carregamento.',
+      },
+    },
+    notes: 'Auditoria Gemba realizada nas docas de carregamento.',
+    createdAt: '2026-02-20T16:00:00.000Z',
+  },
+
+  // 7. Manutenção Central & Oficinas (22/02/2026)
+  {
+    id: 'asm_manutencao_01',
+    tenantId: 'tenant_rafitec_01',
+    sectorId: 'sec_rafitec_manutencao',
+    sectorName: 'Manutenção Central & Oficinas',
+    evaluatorId: 'usr_rafitec_admin_01',
+    evaluatorName: 'Marcos Vinicius Rezende',
+    evaluatorRole: 'admin',
+    assessmentDate: '2026-02-22T09:30:00.000Z',
+    overallScore: 68,
+    overallLevel: 4,
+    dimensions: {
+      estabilidade_5s: 72,
+      trabalho_padronizado: 65,
+      fluxo_jit: 60,
+      qualidade_poka_yoke: 65,
+      tpm_oee: 78,
+      cultura_kaizen: 68,
+    },
+    senseiDiagnosis: {
+      summary: 'Equipe de manutenção técnica com alta especialização e ótimo controle de sobressalentes críticos, buscando agora maior suporte à manutenção autônoma dos operadores.',
+      strongestDimension: 'Manutenção Produtiva Total (TPM & OEE)',
+      strongestScore: 78,
+      criticalBottleneck: 'Fluxo Contínuo, JIT & Gestão de Estoques (Kanban)',
+      bottleneckScore: 60,
+      suggestedKaizenProject: {
+        title: 'Almoxarifado 5S de Peças com Kanban de Reposição de Rolamentos',
+        description: 'Criar prateleiras com caixas bidi e cartões de reposição automática de itens de alto giro.',
+        targetDimension: '5S & Gestão de Estoques',
+        expectedBenefits: 'Eliminação do tempo de espera do mecânico procurando peças na bancada.',
+      },
+    },
+    notes: 'Gemba na oficina mecânica e elétrica central.',
+    createdAt: '2026-02-22T09:30:00.000Z',
+  },
+
+  // 8. Controle da Qualidade & Lab (25/02/2026)
+  {
+    id: 'asm_qualidade_01',
+    tenantId: 'tenant_rafitec_01',
+    sectorId: 'sec_rafitec_qualidade',
+    sectorName: 'Controle da Qualidade & Lab',
+    evaluatorId: 'usr_rafitec_agent_02',
+    evaluatorName: 'Juliana Mendes',
+    evaluatorRole: 'agent',
+    assessmentDate: '2026-02-25T14:00:00.000Z',
+    overallScore: 82,
+    overallLevel: 5,
+    dimensions: {
+      estabilidade_5s: 85,
+      trabalho_padronizado: 84,
+      fluxo_jit: 75,
+      qualidade_poka_yoke: 88,
+      tpm_oee: 76,
+      cultura_kaizen: 84,
+    },
+    senseiDiagnosis: {
+      summary: 'Laboratório e controle de qualidade em nível Classe Mundial (82%), com calibrações rigorosas e testes de tração padronizados.',
+      strongestDimension: 'Qualidade na Origem, Jidoka & Poka-Yoke',
+      strongestScore: 88,
+      criticalBottleneck: 'Fluxo Contínuo, JIT & Gestão de Estoques',
+      bottleneckScore: 75,
+      suggestedKaizenProject: {
+        title: 'Digitalização dos Laudos de Tração com Alerta em Tempo Real para Extrusão',
+        description: 'Conectar dinamômetro ao sistema para alertar o operador de extrusão imediatamente se a tenacidade cair abaixo do limite.',
+        targetDimension: 'Poka-Yoke & Digitalização',
+        expectedBenefits: 'Eliminação de bobinas fora da especificação antes que entrem na tecelagem.',
+      },
+    },
+    notes: 'Auditoria de padrões no laboratório físico-químico.',
+    createdAt: '2026-02-25T14:00:00.000Z',
   },
 ];
 

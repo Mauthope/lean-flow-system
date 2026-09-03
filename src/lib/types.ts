@@ -605,7 +605,7 @@ export interface SectorLeanAssessment {
   overallScore: number; // 0 a 100%
   overallLevel: 1 | 2 | 3 | 4 | 5; // 1=Reativo, 2=Iniciante, 3=Padronizado, 4=Avançado, 5=Classe Mundial
   dimensions: Record<LeanAssessmentDimensionId, number>; // Score 0-100 por dimensão
-  dimensionDetails: LeanAssessmentDimension[];
+  dimensionDetails?: LeanAssessmentDimension[];
   senseiDiagnosis: SenseiAssessmentDiagnosis;
   notes?: string;
   createdAt: string;

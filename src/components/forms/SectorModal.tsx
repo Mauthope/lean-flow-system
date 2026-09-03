@@ -13,6 +13,7 @@ interface SectorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onStartAssessment?: (sector: Sector) => void;
 }
 
 export const SectorModal: React.FC<SectorModalProps> = ({
@@ -20,6 +21,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  onStartAssessment,
 }) => {
   const { currentTenant } = useAuth();
 
@@ -48,21 +50,22 @@ export const SectorModal: React.FC<SectorModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentTenant) return;
+    const activeTenant = currentTenant || dataService.getCurrentTenant();
+    const tenantId = activeTenant?.id || 'tenant_rafitec_01';
 
     if (sector) {
       dataService.updateSector(sector.id, {
-        name,
-        code: code.toUpperCase(),
-        description,
+        name: name.trim(),
+        code: code.trim().toUpperCase(),
+        description: description.trim(),
         color,
       });
     } else {
       dataService.createSector({
-        tenantId: currentTenant.id,
-        name,
-        code: code.toUpperCase(),
-        description,
+        tenantId,
+        name: name.trim(),
+        code: code.trim().toUpperCase(),
+        description: description.trim(),
         color,
       });
     }
@@ -210,7 +213,14 @@ export const SectorModal: React.FC<SectorModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => setIsAssessmentModalOpen(true)}
+                onClick={() => {
+                  onClose();
+                  if (onStartAssessment) {
+                    onStartAssessment(sector);
+                  } else {
+                    setIsAssessmentModalOpen(true);
+                  }
+                }}
                 className="btn btn-primary"
                 style={{
                   display: 'flex',
