@@ -180,6 +180,31 @@ export type ControllershipAuditStatus =
   | 'ajustado_e_aprovado'
   | 'rejeitado';
 
+// Detalhamento e Memória de Cálculo de Ganhos Financeiros (Auditoria Controladoria)
+export interface GainProofAttachment {
+  id: string;
+  name: string;
+  sizeBytes?: number;
+  sizeFormatted?: string;
+  fileType: string;
+  url: string; // Base64 Data URL ou link para download
+  uploadedAt: string;
+  uploadedBy?: string;
+}
+
+export interface GainProofDetail {
+  category: string;                       // ex: 'laborSavings', 'productionIncrease', etc.
+  categoryLabel: string;                  // ex: 'Mão de Obra / Horas Economizadas'
+  value: number;                          // Valor declarado pelo Agente (R$)
+  explanation?: string;                   // Explicação do cálculo / premissas pelo Agente
+  attachment?: GainProofAttachment;       // Memória de cálculo (planilha/PDF) do Agente (OBRIGATÓRIO para o Agente)
+  
+  // Auditoria da Controladoria
+  auditorValue?: number;                  // Valor revisado/aprovado pelo Auditor da Controladoria
+  auditorExplanation?: string;            // Justificativa do Auditor
+  auditorAttachment?: GainProofAttachment;// Planilha corrigida do Auditor (OPCIONAL para a Controladoria)
+}
+
 export interface ControllershipAudit {
   id: string;
   token: string;                       // Token exclusivo para o link seguro escopado
@@ -192,6 +217,9 @@ export interface ControllershipAudit {
   originalCostBreakdown: LeanCostBreakdown;
   originalEstimatedCostAvoided: number;
   originalProjectCosts?: ProjectInvestmentCosts;
+
+  // Memórias de cálculo e arquivos por categoria de ganho
+  gainDetails?: Record<string, GainProofDetail>;
 
   // Valores auditados e certificados pela Controladoria
   approvedCostBreakdown?: LeanCostBreakdown;
@@ -289,6 +317,7 @@ export interface LeanAction {
 
   // Auditoria Prévia da Controladoria (Obrigatória se houver ganhos financeiros)
   controllershipAudit?: ControllershipAudit;
+  gainDetails?: Record<string, GainProofDetail>;
 
   // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
   quarterlyFollowUp?: QuarterlyFollowUp;

@@ -434,6 +434,18 @@ code, pre {
   color: #64748b;
 }
 
+/* Ocultar setas e botões de incremento/decremento em inputs numéricos (spinners) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type=number] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
 .form-select {
   background-color: #0d1527;
   color: #f8fafc;

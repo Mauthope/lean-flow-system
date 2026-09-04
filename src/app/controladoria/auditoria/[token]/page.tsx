@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
-import { LeanAction, LeanCostBreakdown, ProjectInvestmentCosts } from '@/lib/types';
+import { LeanAction, LeanCostBreakdown, ProjectInvestmentCosts, GainProofDetail, GainProofAttachment } from '@/lib/types';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import {
   FileCheck2,
@@ -25,6 +25,10 @@ import {
   FileSpreadsheet,
   Download,
   Percent,
+  Paperclip,
+  Trash2,
+  FileText,
+  UploadCloud,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -48,14 +52,17 @@ export default function ControladoriaAuditoriaPage() {
   const [successStatus, setSuccessStatus] = useState<string | null>(null);
 
   // Breakdown Editável pelo Auditor
-  const [laborSavings, setLaborSavings] = useState<number>(0);
-  const [productionIncrease, setProductionIncrease] = useState<number>(0);
-  const [scrapReduction, setScrapReduction] = useState<number>(0);
-  const [machineDowntime, setMachineDowntime] = useState<number>(0);
-  const [toolingAndEnergy, setToolingAndEnergy] = useState<number>(0);
-  const [logisticsAndFreight, setLogisticsAndFreight] = useState<number>(0);
-  const [otherSavings, setOtherSavings] = useState<number>(0);
+  const [laborSavings, setLaborSavings] = useState<number | ''>('');
+  const [productionIncrease, setProductionIncrease] = useState<number | ''>('');
+  const [scrapReduction, setScrapReduction] = useState<number | ''>('');
+  const [machineDowntime, setMachineDowntime] = useState<number | ''>('');
+  const [toolingAndEnergy, setToolingAndEnergy] = useState<number | ''>('');
+  const [logisticsAndFreight, setLogisticsAndFreight] = useState<number | ''>('');
+  const [otherSavings, setOtherSavings] = useState<number | ''>('');
   const [otherSavingsDescription, setOtherSavingsDescription] = useState<string>('');
+
+  // Memórias de Cálculo & Anexos por Categoria
+  const [gainDetails, setGainDetails] = useState<Record<string, GainProofDetail>>({});
 
   // Carregar Ação pelo Token
   useEffect(() => {
@@ -83,14 +90,18 @@ export default function ControladoriaAuditoriaPage() {
 
     // Inicializar valores com a proposta ou valores já aprovados
     const bk = found.controllershipAudit?.approvedCostBreakdown || found.costBreakdown || {};
-    setLaborSavings(bk.laborSavings || 0);
-    setProductionIncrease(bk.productionIncrease || 0);
-    setScrapReduction(bk.scrapReduction || 0);
-    setMachineDowntime(bk.machineDowntime || 0);
-    setToolingAndEnergy(bk.toolingAndEnergy || 0);
-    setLogisticsAndFreight(bk.logisticsAndFreight || 0);
-    setOtherSavings(bk.otherSavings || 0);
+    setLaborSavings(bk.laborSavings !== undefined ? bk.laborSavings : '');
+    setProductionIncrease(bk.productionIncrease !== undefined ? bk.productionIncrease : '');
+    setScrapReduction(bk.scrapReduction !== undefined ? bk.scrapReduction : '');
+    setMachineDowntime(bk.machineDowntime !== undefined ? bk.machineDowntime : '');
+    setToolingAndEnergy(bk.toolingAndEnergy !== undefined ? bk.toolingAndEnergy : '');
+    setLogisticsAndFreight(bk.logisticsAndFreight !== undefined ? bk.logisticsAndFreight : '');
+    setOtherSavings(bk.otherSavings !== undefined ? bk.otherSavings : '');
     setOtherSavingsDescription(bk.otherSavingsDescription || '');
+
+    // Carregar memórias de cálculo e arquivos comprobatórios
+    const gDetails = found.controllershipAudit?.gainDetails || found.gainDetails || {};
+    setGainDetails(JSON.parse(JSON.stringify(gDetails)));
 
     if (found.controllershipAudit?.reviewedBy) {
       setReviewerName(found.controllershipAudit.reviewedBy);
@@ -110,6 +121,84 @@ export default function ControladoriaAuditoriaPage() {
 
     setLoading(false);
   }, [token]);
+
+  // Handlers para o Auditor manipular a contra-memória e justificativa de cada ganho
+  const handleAuditorExplanationChange = (category: string, text: string) => {
+    setGainDetails((prev) => ({
+      ...prev,
+      [category]: {
+        ...(prev[category] || {
+          category,
+          categoryLabel: category,
+          value: 0,
+        }),
+        auditorExplanation: text,
+      },
+    }));
+  };
+
+  const handleAuditorFileUpload = (
+    category: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const formatFileSize = (bytes: number): string => {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const newAttachment: GainProofAttachment = {
+        id: 'att_auditor_' + Date.now(),
+        name: file.name,
+        sizeBytes: file.size,
+        sizeFormatted: formatFileSize(file.size),
+        fileType: file.type || 'application/octet-stream',
+        url: dataUrl,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: reviewerName.trim() || 'Auditor da Controladoria',
+      };
+
+      setGainDetails((prev) => ({
+        ...prev,
+        [category]: {
+          ...(prev[category] || {
+            category,
+            categoryLabel: category,
+            value: 0,
+          }),
+          auditorAttachment: newAttachment,
+        },
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAuditorFile = (category: string) => {
+    setGainDetails((prev) => {
+      const copy = { ...prev };
+      if (copy[category]) {
+        copy[category] = { ...copy[category], auditorAttachment: undefined };
+      }
+      return copy;
+    });
+  };
+
+  const handleDownloadAttachment = (attachment: GainProofAttachment) => {
+    if (!attachment?.url) return;
+    const link = document.createElement('a');
+    link.href = attachment.url;
+    link.download = attachment.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Soma Total Original (Proposta)
   const originalTotal = useMemo(() => {
@@ -163,8 +252,15 @@ export default function ControladoriaAuditoriaPage() {
     }
     setIsSubmitting(true);
     try {
+      const finalGainDetails: Record<string, GainProofDetail> = { ...gainDetails };
+      // Sincronizar os valores aprovados no gainDetails
+      Object.keys(finalGainDetails).forEach((cat) => {
+        finalGainDetails[cat].auditorValue = finalGainDetails[cat].value;
+      });
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'aprovado',
+        gainDetails: finalGainDetails,
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
         reviewerRole: reviewerRole.trim(),
@@ -202,10 +298,36 @@ export default function ControladoriaAuditoriaPage() {
         otherSavingsDescription: otherSavingsDescription.trim() || undefined,
       };
 
+      const finalGainDetails: Record<string, GainProofDetail> = { ...gainDetails };
+      const mapValues: Record<string, number> = {
+        laborSavings: Number(laborSavings) || 0,
+        productionIncrease: Number(productionIncrease) || 0,
+        scrapReduction: Number(scrapReduction) || 0,
+        machineDowntime: Number(machineDowntime) || 0,
+        toolingAndEnergy: Number(toolingAndEnergy) || 0,
+        logisticsAndFreight: Number(logisticsAndFreight) || 0,
+        otherSavings: Number(otherSavings) || 0,
+      };
+
+      Object.entries(mapValues).forEach(([cat, val]) => {
+        if (!finalGainDetails[cat]) {
+          finalGainDetails[cat] = {
+            category: cat,
+            categoryLabel: cat,
+            value: val,
+            explanation: '',
+            auditorValue: val,
+          };
+        } else {
+          finalGainDetails[cat].auditorValue = val;
+        }
+      });
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'ajustado_e_aprovado',
         approvedBreakdown,
         approvedEstimatedCostAvoided: auditedTotal,
+        gainDetails: finalGainDetails,
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
         reviewerRole: reviewerRole.trim(),
@@ -461,180 +583,313 @@ export default function ControladoriaAuditoriaPage() {
                 </tr>
               </thead>
               <tbody>
-                {/* 1. Mão de Obra */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>1. Mão de Obra / Horas de Trabalho Salvas</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Eliminação de horas extras, rebalanceamento de posto e ergonomia</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={laborSavings}
-                      onChange={(e) => setLaborSavings(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (laborSavings - (action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0)) === 0 ? '#64748b' : (laborSavings - (action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(laborSavings - (action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0))}
-                  </td>
-                </tr>
+                {[
+                  {
+                    key: 'laborSavings',
+                    num: 1,
+                    title: '1. Mão de Obra / Horas de Trabalho Salvas',
+                    subtitle: 'Eliminação de horas extras, rebalanceamento de posto e ergonomia',
+                    val: laborSavings,
+                    setVal: setLaborSavings,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0,
+                  },
+                  {
+                    key: 'productionIncrease',
+                    num: 2,
+                    title: '2. Aumento de Produção / Capacidade Extra',
+                    subtitle: 'Redução de tempo de ciclo (SMED/Setup) e ganho de vazão horária',
+                    val: productionIncrease,
+                    setVal: setProductionIncrease,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0,
+                  },
+                  {
+                    key: 'scrapReduction',
+                    num: 3,
+                    title: '3. Redução de Refugo / Matéria-Prima',
+                    subtitle: 'Eliminação de defeitos, perdas de partida e quebras de produto',
+                    val: scrapReduction,
+                    setVal: setScrapReduction,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0,
+                  },
+                  {
+                    key: 'machineDowntime',
+                    num: 4,
+                    title: '4. Redução de Paradas de Máquina / OEE',
+                    subtitle: 'Melhoria de confiabilidade e disponibilidade do equipamento',
+                    val: machineDowntime,
+                    setVal: setMachineDowntime,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0,
+                  },
+                  {
+                    key: 'toolingAndEnergy',
+                    num: 5,
+                    title: '5. Ferramental, Energia e Insumos',
+                    subtitle: 'Eficiência energética, ar comprimido, durabilidade de moldes',
+                    val: toolingAndEnergy,
+                    setVal: setToolingAndEnergy,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0,
+                  },
+                  {
+                    key: 'logisticsAndFreight',
+                    num: 6,
+                    title: '6. Fretes Especiais e Estoque',
+                    subtitle: 'Eliminação de fretes aéreos/urgentes e redução de WIP/estoque parado',
+                    val: logisticsAndFreight,
+                    setVal: setLogisticsAndFreight,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0,
+                  },
+                  {
+                    key: 'otherSavings',
+                    num: 7,
+                    title: '7. Outros Custos Evitados',
+                    subtitle: 'Custos operacionais diversos evitados ou contingenciados',
+                    val: otherSavings,
+                    setVal: setOtherSavings,
+                    orig: action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0,
+                    isOther: true,
+                  },
+                ].map(({ key, title, subtitle, val, setVal, orig, isOther }) => {
+                  const numVal = Number(val) || 0;
+                  const delta = numVal - orig;
+                  const proof = gainDetails[key];
+                  const hasAgentProof = Boolean(proof?.attachment || proof?.explanation);
+                  const showDetailBox = orig > 0 || numVal > 0 || hasAgentProof || proof?.auditorAttachment || proof?.auditorExplanation;
 
-                {/* 2. Aumento de Produção */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>2. Aumento de Produção / Capacidade Extra</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Redução de tempo de ciclo (SMED/Setup) e ganho de vazão horária</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={productionIncrease}
-                      onChange={(e) => setProductionIncrease(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (productionIncrease - (action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0)) === 0 ? '#64748b' : (productionIncrease - (action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(productionIncrease - (action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0))}
-                  </td>
-                </tr>
+                  return (
+                    <React.Fragment key={key}>
+                      <tr style={{ borderBottom: showDetailBox ? 'none' : '1px solid #1e293b' }}>
+                        <td style={{ padding: '0.85rem 1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <strong style={{ color: '#ffffff' }}>{title}</strong>
+                            {proof?.attachment && (
+                              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                                ✓ Planilha do Agente Anexada
+                              </span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block' }}>{subtitle}</span>
+                          {isOther && (
+                            <input
+                              type="text"
+                              disabled={isAlreadyReviewed}
+                              placeholder="Descrição da economia adicional..."
+                              value={otherSavingsDescription}
+                              onChange={(e) => setOtherSavingsDescription(e.target.value)}
+                              style={{ width: '100%', padding: '0.35rem 0.5rem', marginTop: '0.3rem', fontSize: '0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '4px', color: '#cbd5e1' }}
+                            />
+                          )}
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
+                          {formatCurrency(orig)}
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem' }}>
+                          <input
+                            type="number"
+                            disabled={isAlreadyReviewed}
+                            placeholder="0"
+                            value={val === 0 || val === '' || val === undefined ? '' : val}
+                            onChange={(e) => setVal(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="input"
+                            style={{
+                              width: '100%',
+                              padding: '0.5rem 0.75rem',
+                              backgroundColor: '#0b1120',
+                              border: '1px solid #334155',
+                              borderRadius: '6px',
+                              color: '#ffffff',
+                              fontWeight: 700,
+                              textAlign: 'right',
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: delta === 0 ? '#64748b' : delta > 0 ? '#34d399' : '#f87171' }}>
+                          {delta > 0 ? `+${formatCurrency(delta)}` : formatCurrency(delta)}
+                        </td>
+                      </tr>
 
-                {/* 3. Redução de Refugo */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>3. Redução de Refugo / Matéria-Prima</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Eliminação de defeitos, perdas de partida e quebras de produto</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={scrapReduction}
-                      onChange={(e) => setScrapReduction(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (scrapReduction - (action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0)) === 0 ? '#64748b' : (scrapReduction - (action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(scrapReduction - (action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0))}
-                  </td>
-                </tr>
+                      {/* Linha Expansível com Memória de Cálculo do Agente e Parecer do Auditor */}
+                      {showDetailBox && (
+                        <tr style={{ borderBottom: '1px solid #1e293b' }}>
+                          <td colSpan={4} style={{ padding: '0 1rem 1rem 1rem' }}>
+                            <div
+                              style={{
+                                backgroundColor: '#090e1a',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                padding: '0.85rem 1rem',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                                gap: '1rem',
+                              }}
+                            >
+                              {/* 1. Comprovação do Agente Lean */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  👤 Memória de Cálculo do Agente Lean:
+                                </span>
+                                {proof?.explanation ? (
+                                  <div style={{ backgroundColor: 'rgba(0,0,0,0.35)', padding: '0.5rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', color: '#e2e8f0', borderLeft: '3px solid #38bdf8' }}>
+                                    &quot;{proof.explanation}&quot;
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+                                    Nenhuma explicação textual fornecida.
+                                  </span>
+                                )}
 
-                {/* 4. Paradas de Máquina / OEE */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>4. Redução de Paradas de Máquina / OEE</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Melhoria de confiabilidade e disponibilidade do equipamento</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={machineDowntime}
-                      onChange={(e) => setMachineDowntime(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (machineDowntime - (action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0)) === 0 ? '#64748b' : (machineDowntime - (action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(machineDowntime - (action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0))}
-                  </td>
-                </tr>
+                                {proof?.attachment ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem', borderRadius: '6px', backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', marginTop: '0.2rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
+                                      <FileSpreadsheet size={16} color="#38bdf8" />
+                                      <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px' }}>
+                                        {proof.attachment.name}
+                                      </span>
+                                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({proof.attachment.sizeFormatted})</span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownloadAttachment(proof.attachment!)}
+                                      style={{
+                                        padding: '0.25rem 0.55rem',
+                                        fontSize: '0.7rem',
+                                        borderRadius: '4px',
+                                        backgroundColor: '#0284c7',
+                                        color: '#ffffff',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem',
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      <Download size={12} /> Baixar Planilha do Agente
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: '0.72rem', color: '#f87171' }}>
+                                    ⚠️ Nenhum arquivo de memória de cálculo anexado pelo Agente.
+                                  </span>
+                                )}
+                              </div>
 
-                {/* 5. Ferramental & Energia */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>5. Ferramental, Energia e Insumos</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Eficiência energética, ar comprimido, durabilidade de moldes</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={toolingAndEnergy}
-                      onChange={(e) => setToolingAndEnergy(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (toolingAndEnergy - (action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0)) === 0 ? '#64748b' : (toolingAndEnergy - (action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(toolingAndEnergy - (action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0))}
-                  </td>
-                </tr>
+                              {/* 2. Anotações & Contra-Memória da Controladoria */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    🏛️ Parecer & Contra-Memória da Controladoria:
+                                  </span>
+                                  <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                                    (Anexo Opcional)
+                                  </span>
+                                </div>
 
-                {/* 6. Fretes & Estoque */}
-                <tr style={{ borderBottom: '1px solid #1e293b' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>6. Fretes Especiais e Estoque</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Eliminação de fretes aéreos/urgentes e redução de WIP/estoque parado</span>
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={logisticsAndFreight}
-                      onChange={(e) => setLogisticsAndFreight(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (logisticsAndFreight - (action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0)) === 0 ? '#64748b' : (logisticsAndFreight - (action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(logisticsAndFreight - (action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0))}
-                  </td>
-                </tr>
+                                <textarea
+                                  rows={2}
+                                  disabled={isAlreadyReviewed}
+                                  placeholder="Observação da auditoria sobre esta fonte de custo evitado..."
+                                  value={proof?.auditorExplanation || ''}
+                                  onChange={(e) => handleAuditorExplanationChange(key, e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '0.45rem 0.65rem',
+                                    fontSize: '0.75rem',
+                                    backgroundColor: '#0b1120',
+                                    border: '1px solid #334155',
+                                    borderRadius: '6px',
+                                    color: '#ffffff',
+                                  }}
+                                />
 
-                {/* 7. Outros Custos */}
-                <tr style={{ borderBottom: '2px solid #3b82f6' }}>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <strong style={{ color: '#ffffff', display: 'block' }}>7. Outros Custos Evitados</strong>
-                    <input
-                      type="text"
-                      disabled={isAlreadyReviewed}
-                      placeholder="Descrição da economia adicional..."
-                      value={otherSavingsDescription}
-                      onChange={(e) => setOtherSavingsDescription(e.target.value)}
-                      style={{ width: '100%', padding: '0.35rem 0.5rem', marginTop: '0.3rem', fontSize: '0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '4px', color: '#cbd5e1' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontWeight: 600 }}>
-                    {formatCurrency(action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0)}
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem' }}>
-                    <input
-                      type="number"
-                      disabled={isAlreadyReviewed}
-                      value={otherSavings}
-                      onChange={(e) => setOtherSavings(Number(e.target.value) || 0)}
-                      className="input"
-                      style={{ width: '100%', padding: '0.5rem 0.75rem', backgroundColor: '#0b1120', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontWeight: 700 }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: (otherSavings - (action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0)) === 0 ? '#64748b' : (otherSavings - (action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0)) > 0 ? '#34d399' : '#f87171' }}>
-                    {formatCurrency(otherSavings - (action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0))}
-                  </td>
-                </tr>
+                                {/* Upload / Download de Contra-Memória Corrigida */}
+                                {proof?.auditorAttachment ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem', borderRadius: '6px', backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', marginTop: '0.2rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
+                                      <FileSpreadsheet size={16} color="#34d399" />
+                                      <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '180px' }}>
+                                        {proof.auditorAttachment.name}
+                                      </span>
+                                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({proof.auditorAttachment.sizeFormatted})</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadAttachment(proof.auditorAttachment!)}
+                                        style={{
+                                          padding: '0.25rem 0.55rem',
+                                          fontSize: '0.7rem',
+                                          borderRadius: '4px',
+                                          backgroundColor: '#059669',
+                                          color: '#ffffff',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        <Download size={12} /> Baixar
+                                      </button>
+                                      {!isAlreadyReviewed && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveAuditorFile(key)}
+                                          style={{
+                                            padding: '0.25rem 0.45rem',
+                                            fontSize: '0.7rem',
+                                            borderRadius: '4px',
+                                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                            color: '#f87171',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : !isAlreadyReviewed ? (
+                                  <label
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: '0.4rem',
+                                      padding: '0.45rem',
+                                      borderRadius: '6px',
+                                      border: '1px dashed rgba(52, 211, 153, 0.4)',
+                                      backgroundColor: 'rgba(52, 211, 153, 0.04)',
+                                      color: '#34d399',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      textAlign: 'center',
+                                    }}
+                                  >
+                                    <Paperclip size={13} />
+                                    <span>Anexar Planilha Corrigida pela Controladoria (Opcional)</span>
+                                    <input
+                                      type="file"
+                                      accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,image/*"
+                                      onChange={(e) => handleAuditorFileUpload(key, e)}
+                                      style={{ display: 'none' }}
+                                    />
+                                  </label>
+                                ) : (
+                                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                                    Nenhuma planilha corrigida anexada pela auditoria.
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
 
                 {/* Linha de Total Geral */}
                 <tr style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)' }}>

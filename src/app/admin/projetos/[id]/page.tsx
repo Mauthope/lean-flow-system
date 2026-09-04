@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -121,21 +121,24 @@ export default function AdminProjectDetailPage() {
   // Seletor de Ferramentas Ativas no PLAN ('fiveWhys' | 'pareto' | 'ishikawa')
   const [selectedDiagnosticTools, setSelectedDiagnosticTools] = useState<string[]>(['fiveWhys']);
 
-  // Costs (Investimento Capex/Opex)
-  const [partsAndEquipment, setPartsAndEquipment] = useState<number>(0);
-  const [thirdPartyServices, setThirdPartyServices] = useState<number>(0);
-  const [internalLaborHours, setInternalLaborHours] = useState<number>(0);
-  const [laborHourlyRate, setLaborHourlyRate] = useState<number>(45);
-  const [otherCosts, setOtherCosts] = useState<number>(0);
+  // Costs (Investimento Capex/Opex) - Limpos sem '0' pré-estabelecido
+  const [partsAndEquipment, setPartsAndEquipment] = useState<number | ''>('');
+  const [thirdPartyServices, setThirdPartyServices] = useState<number | ''>('');
+  const [internalLaborHours, setInternalLaborHours] = useState<number | ''>('');
+  const [laborHourlyRate, setLaborHourlyRate] = useState<number | ''>(45);
+  const [otherCosts, setOtherCosts] = useState<number | ''>('');
 
-  // Gains (7 Fontes)
-  const [machineDowntime, setMachineDowntime] = useState<number>(0);
-  const [laborSavings, setLaborSavings] = useState<number>(0);
-  const [scrapReduction, setScrapReduction] = useState<number>(0);
-  const [toolingAndEnergy, setToolingAndEnergy] = useState<number>(0);
-  const [logisticsAndFreight, setLogisticsAndFreight] = useState<number>(0);
-  const [productionIncrease, setProductionIncrease] = useState<number>(0);
-  const [otherSavings, setOtherSavings] = useState<number>(0);
+  // Gains (7 Fontes) - Limpos sem '0' pré-estabelecido
+  const [machineDowntime, setMachineDowntime] = useState<number | ''>('');
+  const [laborSavings, setLaborSavings] = useState<number | ''>('');
+  const [scrapReduction, setScrapReduction] = useState<number | ''>('');
+  const [toolingAndEnergy, setToolingAndEnergy] = useState<number | ''>('');
+  const [logisticsAndFreight, setLogisticsAndFreight] = useState<number | ''>('');
+  const [productionIncrease, setProductionIncrease] = useState<number | ''>('');
+  const [otherSavings, setOtherSavings] = useState<number | ''>('');
+
+  // Memórias de cálculo e explicações por ganho (Obrigatório para o Agente antes da Controladoria)
+  const [gainDetails, setGainDetails] = useState<Record<string, GainProofDetail>>({});
 
   // Standardization & Act
   const [standardWorkUpdated, setStandardWorkUpdated] = useState(false);
@@ -247,19 +250,21 @@ export default function AdminProjectDetailPage() {
 
         // C - CHECK
         setAttachments(found.attachments || []);
-        setPartsAndEquipment(found.projectCosts?.partsAndEquipment || 0);
-        setThirdPartyServices(found.projectCosts?.thirdPartyServices || 0);
-        setInternalLaborHours(found.projectCosts?.internalLaborHours || 0);
+        setPartsAndEquipment(found.projectCosts?.partsAndEquipment || '');
+        setThirdPartyServices(found.projectCosts?.thirdPartyServices || '');
+        setInternalLaborHours(found.projectCosts?.internalLaborHours || '');
         setLaborHourlyRate(found.projectCosts?.laborHourlyRate || 45);
-        setOtherCosts(found.projectCosts?.otherCosts || 0);
+        setOtherCosts(found.projectCosts?.otherCosts || '');
 
-        setMachineDowntime(found.costBreakdown?.machineDowntime || 0);
-        setLaborSavings(found.costBreakdown?.laborSavings || 0);
-        setScrapReduction(found.costBreakdown?.scrapReduction || 0);
-        setToolingAndEnergy(found.costBreakdown?.toolingAndEnergy || 0);
-        setLogisticsAndFreight(found.costBreakdown?.logisticsAndFreight || 0);
-        setProductionIncrease(found.costBreakdown?.productionIncrease || 0);
-        setOtherSavings(found.costBreakdown?.otherSavings || 0);
+        setMachineDowntime(found.costBreakdown?.machineDowntime || '');
+        setLaborSavings(found.costBreakdown?.laborSavings || '');
+        setScrapReduction(found.costBreakdown?.scrapReduction || '');
+        setToolingAndEnergy(found.costBreakdown?.toolingAndEnergy || '');
+        setLogisticsAndFreight(found.costBreakdown?.logisticsAndFreight || '');
+        setProductionIncrease(found.costBreakdown?.productionIncrease || '');
+        setOtherSavings(found.costBreakdown?.otherSavings || '');
+
+        setGainDetails(found.gainDetails || found.controllershipAudit?.gainDetails || {});
 
         // A - ACT
         setStandardWorkUpdated(!!found.standardWorkUpdated);
@@ -415,19 +420,19 @@ export default function AdminProjectDetailPage() {
 
   // Dynamic Calculated Financials
   const totalInvestmentCost =
-    partsAndEquipment +
-    thirdPartyServices +
-    internalLaborHours * laborHourlyRate +
-    otherCosts;
+    (Number(partsAndEquipment) || 0) +
+    (Number(thirdPartyServices) || 0) +
+    (Number(internalLaborHours) || 0) * (Number(laborHourlyRate) || 0) +
+    (Number(otherCosts) || 0);
 
   const totalGrossSavings =
-    machineDowntime +
-    laborSavings +
-    scrapReduction +
-    toolingAndEnergy +
-    logisticsAndFreight +
-    productionIncrease +
-    otherSavings;
+    (Number(machineDowntime) || 0) +
+    (Number(laborSavings) || 0) +
+    (Number(scrapReduction) || 0) +
+    (Number(toolingAndEnergy) || 0) +
+    (Number(logisticsAndFreight) || 0) +
+    (Number(productionIncrease) || 0) +
+    (Number(otherSavings) || 0);
 
   const netSavings = Math.max(0, totalGrossSavings - totalInvestmentCost);
   const roiPercentage = totalInvestmentCost > 0 ? Math.round((netSavings / totalInvestmentCost) * 100) : 0;
@@ -523,6 +528,7 @@ export default function AdminProjectDetailPage() {
     roiPercentage,
     paybackMonths,
     attachments,
+    gainDetails,
     standardWorkUpdated,
     standardWorkDocRef,
     yokotenReplication,
@@ -576,6 +582,7 @@ export default function AdminProjectDetailPage() {
       roiPercentage,
       paybackMonths,
       attachments,
+      gainDetails,
       standardWorkUpdated,
       standardWorkDocRef,
       yokotenReplication,
@@ -627,22 +634,23 @@ export default function AdminProjectDetailPage() {
       photoAfterUrl: s.photoAfterUrl,
       checklist: s.checklistItems,
       projectCosts: {
-        partsAndEquipment: s.partsAndEquipment,
-        thirdPartyServices: s.thirdPartyServices,
-        internalLaborHours: s.internalLaborHours,
-        laborHourlyRate: s.laborHourlyRate,
-        otherCosts: s.otherCosts,
+        partsAndEquipment: s.partsAndEquipment !== '' ? Number(s.partsAndEquipment) : undefined,
+        thirdPartyServices: s.thirdPartyServices !== '' ? Number(s.thirdPartyServices) : undefined,
+        internalLaborHours: s.internalLaborHours !== '' ? Number(s.internalLaborHours) : undefined,
+        laborHourlyRate: s.laborHourlyRate !== '' ? Number(s.laborHourlyRate) : 45,
+        otherCosts: s.otherCosts !== '' ? Number(s.otherCosts) : undefined,
         totalCost: s.totalInvestmentCost,
       },
       costBreakdown: {
-        machineDowntime: s.machineDowntime,
-        laborSavings: s.laborSavings,
-        scrapReduction: s.scrapReduction,
-        toolingAndEnergy: s.toolingAndEnergy,
-        logisticsAndFreight: s.logisticsAndFreight,
-        productionIncrease: s.productionIncrease,
-        otherSavings: s.otherSavings,
+        machineDowntime: s.machineDowntime !== '' ? Number(s.machineDowntime) : undefined,
+        laborSavings: s.laborSavings !== '' ? Number(s.laborSavings) : undefined,
+        scrapReduction: s.scrapReduction !== '' ? Number(s.scrapReduction) : undefined,
+        toolingAndEnergy: s.toolingAndEnergy !== '' ? Number(s.toolingAndEnergy) : undefined,
+        logisticsAndFreight: s.logisticsAndFreight !== '' ? Number(s.logisticsAndFreight) : undefined,
+        productionIncrease: s.productionIncrease !== '' ? Number(s.productionIncrease) : undefined,
+        otherSavings: s.otherSavings !== '' ? Number(s.otherSavings) : undefined,
       },
+      gainDetails: s.gainDetails,
       actualCostAvoided: s.totalGrossSavings,
       netSavings: s.netSavings,
       roiPercentage: s.roiPercentage,
@@ -846,19 +854,162 @@ export default function AdminProjectDetailPage() {
     confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
   };
 
+  // Manipulação de Memórias de Cálculo por Tipo de Ganho (Auditoria Controladoria)
+  const handleGainFileUpload = (
+    category: string,
+    categoryLabel: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !action) return;
+
+    const sizeFormatted = file.size > 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const newAttachment: GainProofAttachment = {
+        id: 'att_gain_' + Date.now(),
+        name: file.name,
+        sizeBytes: file.size,
+        sizeFormatted,
+        fileType: file.type || 'application/octet-stream',
+        url: dataUrl,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
+      };
+
+      setGainDetails((prev) => {
+        const current = prev[category] || {
+          category,
+          categoryLabel,
+          value: 0,
+          explanation: '',
+        };
+        const updated = {
+          ...prev,
+          [category]: {
+            ...current,
+            categoryLabel,
+            attachment: newAttachment,
+          },
+        };
+        dataService.updateAction(action.id, { gainDetails: updated });
+        return updated;
+      });
+      refreshData();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveGainFile = (category: string) => {
+    if (!action) return;
+    setGainDetails((prev) => {
+      const current = prev[category];
+      if (!current) return prev;
+      const updated = { ...prev };
+      delete updated[category].attachment;
+      dataService.updateAction(action.id, { gainDetails: updated });
+      return updated;
+    });
+    refreshData();
+  };
+
+  const handleGainExplanationChange = (category: string, categoryLabel: string, text?: string) => {
+    const finalLabel = text !== undefined ? categoryLabel : category;
+    const finalText = text !== undefined ? text : categoryLabel;
+    setGainDetails((prev) => {
+      const current = prev[category] || {
+        category,
+        categoryLabel: finalLabel,
+        value: 0,
+        explanation: '',
+      };
+      return {
+        ...prev,
+        [category]: {
+          ...current,
+          categoryLabel: finalLabel || current.categoryLabel,
+          explanation: finalText,
+        },
+      };
+    });
+  };
+
+  const handleDownloadGainAttachment = (att: GainProofAttachment) => {
+    if (!att.url) return;
+    const a = document.createElement('a');
+    a.href = att.url;
+    a.download = att.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   // Submissão & Governança da Controladoria
   const [submittingControladoria, setSubmittingControladoria] = useState(false);
   const [copiedAuditLink, setCopiedAuditLink] = useState(false);
 
   const handleSubmeterControladoria = async () => {
     if (!action) return;
+
+    // Sincronizar os valores correntes de cada categoria no gainDetails
+    const activeGainsList = [
+      { key: 'machineDowntime', label: 'Redução de Paradas de Máquina / OEE', val: Number(machineDowntime) || 0 },
+      { key: 'laborSavings', label: 'Mão de Obra / Horas Economizadas', val: Number(laborSavings) || 0 },
+      { key: 'scrapReduction', label: 'Redução de Refugo / Matéria-Prima', val: Number(scrapReduction) || 0 },
+      { key: 'toolingAndEnergy', label: 'Ferramental, Energia e Insumos', val: Number(toolingAndEnergy) || 0 },
+      { key: 'productionIncrease', label: 'Aumento de Produção / Capacidade Extra', val: Number(productionIncrease) || 0 },
+      { key: 'logisticsAndFreight', label: 'Fretes Especiais e Estoque', val: Number(logisticsAndFreight) || 0 },
+      { key: 'otherSavings', label: 'Outros Custos Evitados', val: Number(otherSavings) || 0 },
+    ].filter((g) => g.val > 0);
+
+    if (activeGainsList.length === 0) {
+      alert('Atenção: Preencha pelo menos um ganho financeiro antes de submeter à Controladoria.');
+      return;
+    }
+
+    // Validação estrita: O anexo é obrigatório para o Agente em todas as fontes com valor declarado
+    const missingAttachments = activeGainsList.filter((g) => !gainDetails[g.key]?.attachment);
+
+    if (missingAttachments.length > 0) {
+      alert(
+        `⚠️ ANEXO OBRIGATÓRIO PARA ENVIO À CONTROLADORIA!\n\nPara garantir a transparência e auditoria contábil, é OBRIGATÓRIO anexar o arquivo com a memória de cálculo (planilha Excel ou PDF) para cada ganho declarado.\n\nGanhos pendentes de anexo:\n${missingAttachments
+          .map((m) => `• ${m.label} (R$ ${m.val.toLocaleString('pt-BR')})`)
+          .join('\n')}\n\nPor favor, anexe a memória de cálculo nos campos correspondentes abaixo antes de submeter.`
+      );
+      return;
+    }
+
     setSubmittingControladoria(true);
     try {
+      // Atualizar o valor de cada gainDetails com o valor atual do input
+      const finalGainDetails: Record<string, GainProofDetail> = { ...gainDetails };
+      activeGainsList.forEach((g) => {
+        if (!finalGainDetails[g.key]) {
+          finalGainDetails[g.key] = {
+            category: g.key,
+            categoryLabel: g.label,
+            value: g.val,
+            explanation: '',
+          };
+        } else {
+          finalGainDetails[g.key].value = g.val;
+          finalGainDetails[g.key].categoryLabel = g.label;
+        }
+      });
+
       const res = await dataService.submitActionToControladoria(
         action.id,
-        currentUser?.name || action.assignedAgentName || 'Agente Lean'
+        currentUser?.name || action.assignedAgentName || 'Agente Lean',
+        undefined,
+        finalGainDetails
       );
       setAction(res.action);
+      setGainDetails(finalGainDetails);
       refreshData();
       alert(`Projeto submetido com sucesso à Controladoria!\n\nLink seguro gerado para o auditor:\n${res.auditUrl}`);
     } catch (err: any) {
@@ -972,7 +1123,7 @@ export default function AdminProjectDetailPage() {
       a.click();
       document.body.removeChild(a);
     } else {
-      const sampleText = `FLUXOLEAN 4.0 - MEMORIAL DE CÁLCULO\n\nProjeto: ${action?.protocol} - ${action?.title}\nDocumento: ${att.name}\nResponsável: ${att.uploadedBy || 'Agente'}\nData de Emissão: ${formatDateTime(att.uploadedAt)}\n\n--- CUSTOS DO PROJETO (INVESTIMENTO) ---\n- Peças e Equipamentos: R$ ${partsAndEquipment}\n- Serviços de Terceiros: R$ ${thirdPartyServices}\n- Horas Equipe Interna: ${internalLaborHours}h (Taxa: R$ ${laborHourlyRate}/h = R$ ${internalLaborHours * laborHourlyRate})\n- Outras Despesas: R$ ${otherCosts}\nInvestimento Total: R$ ${totalInvestmentCost}\n\n--- GANHOS BRUTOS MAPEADOS (7 FONTES) ---\n- Redução de Paradas (OEE): R$ ${machineDowntime}\n- Mão de Obra Otimizada: R$ ${laborSavings}\n- Redução de Refugo: R$ ${scrapReduction}\n- Ferramental e Energia: R$ ${toolingAndEnergy}\n- Aumento de Produção: R$ ${productionIncrease}\nGanhos Brutos Totais: R$ ${totalGrossSavings}\n\n--- RETORNO FINANCEIRO E INDICADORES ---\n- Lucro Líquido Real: R$ ${netSavings}\n- Retorno sobre Investimento (ROI): ${roiPercentage}%\n- Tempo de Payback: ${paybackMonths} meses\n\nHomologação Técnica Registrada.`;
+      const sampleText = `FLUXOLEAN 4.0 - MEMORIAL DE CÁLCULO\n\nProjeto: ${action?.protocol} - ${action?.title}\nDocumento: ${att.name}\nResponsável: ${att.uploadedBy || 'Agente'}\nData de Emissão: ${formatDateTime(att.uploadedAt)}\n\n--- CUSTOS DO PROJETO (INVESTIMENTO) ---\n- Peças e Equipamentos: R$ ${partsAndEquipment || 0}\n- Serviços de Terceiros: R$ ${thirdPartyServices || 0}\n- Horas Equipe Interna: ${internalLaborHours || 0}h (Taxa: R$ ${laborHourlyRate || 0}/h = R$ ${(Number(internalLaborHours) || 0) * (Number(laborHourlyRate) || 0)})\n- Outras Despesas: R$ ${otherCosts || 0}\nInvestimento Total: R$ ${totalInvestmentCost}\n\n--- GANHOS BRUTOS MAPEADOS (7 FONTES) ---\n- Redução de Paradas (OEE): R$ ${machineDowntime || 0}\n- Mão de Obra Otimizada: R$ ${laborSavings || 0}\n- Redução de Refugo: R$ ${scrapReduction || 0}\n- Ferramental e Energia: R$ ${toolingAndEnergy || 0}\n- Aumento de Produção: R$ ${productionIncrease || 0}\nGanhos Brutos Totais: R$ ${totalGrossSavings}\n\n--- RETORNO FINANCEIRO E INDICADORES ---\n- Lucro Líquido Real: R$ ${netSavings}\n- Retorno sobre Investimento (ROI): ${roiPercentage}%\n- Tempo de Payback: ${paybackMonths} meses\n\nHomologação Técnica Registrada.`;
       const blob = new Blob([sampleText], { type: 'text/plain;charset=utf-8' });
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2698,8 +2849,8 @@ export default function AdminProjectDetailPage() {
                   type="number"
                   className="form-control"
                   style={{ marginTop: '0.35rem', fontWeight: 900, fontSize: '1.2rem', color: '#34d399', backgroundColor: '#090e1a', borderColor: 'rgba(16, 185, 129, 0.4)' }}
-                  placeholder="Ex: 16"
-                  value={achievedValue}
+                  placeholder="0"
+                  value={achievedValue === 0 || achievedValue === '' || achievedValue === undefined ? '' : achievedValue}
                   onChange={(e) => setAchievedValue(e.target.value === '' ? '' : Number(e.target.value))}
                 />
               </div>
@@ -2707,7 +2858,7 @@ export default function AdminProjectDetailPage() {
           </div>
 
           {/* DRE Financeira do Projeto: CUSTOS vs GANHOS */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
             {/* 🔴 COLUNA 1: CUSTOS / INVESTIMENTO DO PROJETO (Capex + Opex) */}
             <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #ef4444', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -2722,14 +2873,15 @@ export default function AdminProjectDetailPage() {
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>🔧 Peças, Dispositivos & Sensores (R$):</label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
-                    value={partsAndEquipment}
-                    onChange={(e) => setPartsAndEquipment(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    value={partsAndEquipment === 0 || partsAndEquipment === '' || partsAndEquipment === undefined ? '' : partsAndEquipment}
+                    onChange={(e) => setPartsAndEquipment(e.target.value === '' ? '' : Number(e.target.value))}
                     style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
@@ -2739,8 +2891,9 @@ export default function AdminProjectDetailPage() {
                   <input
                     type="number"
                     className="form-control form-control-sm"
-                    value={thirdPartyServices}
-                    onChange={(e) => setThirdPartyServices(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    value={thirdPartyServices === 0 || thirdPartyServices === '' || thirdPartyServices === undefined ? '' : thirdPartyServices}
+                    onChange={(e) => setThirdPartyServices(e.target.value === '' ? '' : Number(e.target.value))}
                     style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
@@ -2751,8 +2904,9 @@ export default function AdminProjectDetailPage() {
                     <input
                       type="number"
                       className="form-control form-control-sm"
-                      value={internalLaborHours}
-                      onChange={(e) => setInternalLaborHours(Number(e.target.value) || 0)}
+                      placeholder="0"
+                      value={internalLaborHours === 0 || internalLaborHours === '' || internalLaborHours === undefined ? '' : internalLaborHours}
+                      onChange={(e) => setInternalLaborHours(e.target.value === '' ? '' : Number(e.target.value))}
                       style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     />
                   </div>
@@ -2762,8 +2916,9 @@ export default function AdminProjectDetailPage() {
                     <input
                       type="number"
                       className="form-control form-control-sm"
-                      value={laborHourlyRate}
-                      onChange={(e) => setLaborHourlyRate(Number(e.target.value) || 45)}
+                      placeholder="45"
+                      value={laborHourlyRate === 0 || laborHourlyRate === '' || laborHourlyRate === undefined ? '' : laborHourlyRate}
+                      onChange={(e) => setLaborHourlyRate(e.target.value === '' ? '' : Number(e.target.value))}
                       style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     />
                   </div>
@@ -2774,17 +2929,18 @@ export default function AdminProjectDetailPage() {
                   <input
                     type="number"
                     className="form-control form-control-sm"
-                    value={otherCosts}
-                    onChange={(e) => setOtherCosts(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    value={otherCosts === 0 || otherCosts === '' || otherCosts === undefined ? '' : otherCosts}
+                    onChange={(e) => setOtherCosts(e.target.value === '' ? '' : Number(e.target.value))}
                     style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
               </div>
             </div>
 
-            {/* 🟢 COLUNA 2: GANHOS BRUTOS / CUSTO EVITADO (7 Fontes) */}
+            {/* 🟢 COLUNA 2: GANHOS BRUTOS / CUSTO EVITADO (7 Fontes) COM MEMÓRIA DE CÁLCULO & ANEXOS */}
             <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <TrendingUp size={18} color="#34d399" />
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
@@ -2795,62 +2951,250 @@ export default function AdminProjectDetailPage() {
                   {formatCurrency(totalGrossSavings)}
                 </strong>
               </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+                Ao declarar qualquer ganho financeiro, anexe obrigatoriamente a planilha/memorial de cálculo para auditoria da Controladoria.
+              </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚙️ Redução de Paradas de Máquina / OEE (R$):</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={machineDowntime}
-                    onChange={(e) => setMachineDowntime(Number(e.target.value) || 0)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {[
+                  { key: 'machineDowntime', label: 'Redução de Paradas de Máquina / OEE', val: machineDowntime, setVal: setMachineDowntime, icon: '⚙️' },
+                  { key: 'laborSavings', label: 'Mão de Obra / Horas Economizadas', val: laborSavings, setVal: setLaborSavings, icon: '⏱️' },
+                  { key: 'scrapReduction', label: 'Redução de Refugo / Matéria-Prima', val: scrapReduction, setVal: setScrapReduction, icon: '♻️' },
+                  { key: 'toolingAndEnergy', label: 'Ferramental, Energia & Insumos', val: toolingAndEnergy, setVal: setToolingAndEnergy, icon: '⚡' },
+                  { key: 'productionIncrease', label: 'Aumento de Produção / Capacidade Extra', val: productionIncrease, setVal: setProductionIncrease, icon: '📈' },
+                  { key: 'logisticsAndFreight', label: 'Fretes Especiais e Estoque', val: logisticsAndFreight, setVal: setLogisticsAndFreight, icon: '📦' },
+                  { key: 'otherSavings', label: 'Outros Custos Evitados', val: otherSavings, setVal: setOtherSavings, icon: '💡' },
+                ].map(({ key, label, val, setVal, icon }) => {
+                  const numVal = Number(val) || 0;
+                  const proof = gainDetails[key];
+                  const auditProof = action?.controllershipAudit?.gainDetails?.[key];
+                  const hasFile = Boolean(proof?.attachment);
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⏱️ Mão de Obra / Horas Economizadas (R$):</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={laborSavings}
-                    onChange={(e) => setLaborSavings(Number(e.target.value) || 0)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
+                  return (
+                    <div
+                      key={key}
+                      style={{
+                        backgroundColor: numVal > 0 ? 'rgba(16, 185, 129, 0.04)' : '#090e1a',
+                        borderRadius: '10px',
+                        padding: '0.85rem',
+                        border: numVal > 0
+                          ? hasFile
+                            ? '1px solid rgba(16, 185, 129, 0.35)'
+                            : '1px solid rgba(245, 158, 11, 0.45)'
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.65rem',
+                      }}
+                    >
+                      {/* Linha do Input Principal */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <label className="form-label" style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: 0, fontWeight: 700, flex: 1, minWidth: '180px' }}>
+                          {icon} {label} (R$):
+                        </label>
+                        <div style={{ width: '150px' }}>
+                          <input
+                            type="number"
+                            className="form-control form-control-sm"
+                            placeholder="0"
+                            value={val === 0 || val === '' || val === undefined ? '' : val}
+                            onChange={(e) => setVal(e.target.value === '' ? '' : Number(e.target.value))}
+                            style={{
+                              backgroundColor: '#050811',
+                              borderColor: numVal > 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.12)',
+                              color: numVal > 0 ? '#34d399' : '#ffffff',
+                              fontWeight: 800,
+                              textAlign: 'right',
+                            }}
+                          />
+                        </div>
+                      </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>♻️ Redução de Refugo / Matéria-Prima (R$):</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={scrapReduction}
-                    onChange={(e) => setScrapReduction(Number(e.target.value) || 0)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
+                      {/* Bloco de Memória de Cálculo & Anexo (Obrigatório se ganho > 0) */}
+                      {numVal > 0 && (
+                        <div
+                          style={{
+                            backgroundColor: '#050811',
+                            borderRadius: '8px',
+                            padding: '0.75rem',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                              📐 Memória de Cálculo & Premissas:
+                            </span>
+                            {hasFile ? (
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                                ✓ Planilha Anexada
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                ⚠️ Anexo Obrigatório para Controladoria
+                              </span>
+                            )}
+                          </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚡ Ferramental, Energia & Insumos (R$):</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={toolingAndEnergy}
-                    onChange={(e) => setToolingAndEnergy(Number(e.target.value) || 0)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
+                          <textarea
+                            rows={2}
+                            className="form-control form-control-sm"
+                            placeholder="Descreva a metodologia, fórmula e premissas usadas no cálculo..."
+                            value={proof?.explanation || ''}
+                            onChange={(e) => handleGainExplanationChange(key, label, e.target.value)}
+                            style={{ fontSize: '0.75rem', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                          />
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>📈 Aumento de Produção / Capacidade Extra (R$):</label>
-                  <input
-                    type="number"
-                    className="form-control form-control-sm"
-                    value={productionIncrease}
-                    onChange={(e) => setProductionIncrease(Number(e.target.value) || 0)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
+                          {/* Arquivo Comprobatório do Agente */}
+                          {hasFile && proof?.attachment ? (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '0.45rem 0.75rem',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                gap: '0.5rem',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
+                                <FileSpreadsheet size={16} color="#34d399" />
+                                <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px' }}>
+                                  {proof.attachment.name}
+                                </span>
+                                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({proof.attachment.sizeFormatted})</span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadGainAttachment(proof.attachment!)}
+                                  style={{
+                                    padding: '0.2rem 0.5rem',
+                                    fontSize: '0.7rem',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    color: '#34d399',
+                                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <Download size={12} /> Baixar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveGainFile(key)}
+                                  style={{
+                                    padding: '0.2rem 0.5rem',
+                                    fontSize: '0.7rem',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                    color: '#f87171',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  Remover
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <label
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.45rem',
+                                padding: '0.55rem',
+                                borderRadius: '6px',
+                                border: '1.5px dashed rgba(245, 158, 11, 0.4)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.05)',
+                                color: '#fbbf24',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textAlign: 'center',
+                              }}
+                            >
+                              <Paperclip size={14} />
+                              <span>Anexar Memória de Cálculo (.xlsx, .pdf, .csv)</span>
+                              <input
+                                type="file"
+                                accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,image/*"
+                                onChange={(e) => handleGainFileUpload(key, label, e)}
+                                style={{ display: 'none' }}
+                              />
+                            </label>
+                          )}
+
+                          {/* Parecer do Auditor se houver revisão */}
+                          {auditProof && (auditProof.auditorExplanation || auditProof.auditorAttachment) && (
+                            <div
+                              style={{
+                                marginTop: '0.35rem',
+                                padding: '0.5rem 0.65rem',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderLeft: '3px solid #3b82f6',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#60a5fa' }}>
+                                  🏛️ Parecer da Controladoria:
+                                </span>
+                                {auditProof.auditorValue !== undefined && (
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34d399' }}>
+                                    Aprovado: {formatCurrency(auditProof.auditorValue)}
+                                  </span>
+                                )}
+                              </div>
+                              {auditProof.auditorExplanation && (
+                                <p style={{ fontSize: '0.72rem', color: '#cbd5e1', margin: 0, fontStyle: 'italic' }}>
+                                  &quot;{auditProof.auditorExplanation}&quot;
+                                </p>
+                              )}
+                              {auditProof.auditorAttachment && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadGainAttachment(auditProof.auditorAttachment!)}
+                                  style={{
+                                    alignSelf: 'flex-start',
+                                    padding: '0.2rem 0.5rem',
+                                    fontSize: '0.68rem',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                    color: '#60a5fa',
+                                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <Download size={11} /> Baixar Planilha Revisada ({auditProof.auditorAttachment.name})
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -4542,21 +4886,21 @@ export default function AdminProjectDetailPage() {
               {presentationSlide === 3 && (() => {
                 // Fontes ativas de ganhos (> 0)
                 const activeSources = [
-                  { label: 'Paradas de Máquina / OEE', icon: '⚙️', val: machineDowntime },
-                  { label: 'Mão de Obra / Setup Otimizado', icon: '⏱️', val: laborSavings },
-                  { label: 'Redução de Refugo / Sucata', icon: '♻️', val: scrapReduction },
-                  { label: 'Aumento de Produção / Capacidade', icon: '📈', val: productionIncrease },
-                  { label: 'Energia, Ferramental & Insumos', icon: '⚡', val: toolingAndEnergy },
-                  { label: 'Logística, Frete & Movimentação', icon: '🚚', val: logisticsAndFreight },
-                  { label: 'Outras Economias Operacionais', icon: '💡', val: otherSavings },
+                  { label: 'Paradas de Máquina / OEE', icon: '⚙️', val: Number(machineDowntime) || 0 },
+                  { label: 'Mão de Obra / Setup Otimizado', icon: '⏱️', val: Number(laborSavings) || 0 },
+                  { label: 'Redução de Refugo / Sucata', icon: '♻️', val: Number(scrapReduction) || 0 },
+                  { label: 'Aumento de Produção / Capacidade', icon: '📈', val: Number(productionIncrease) || 0 },
+                  { label: 'Energia, Ferramental & Insumos', icon: '⚡', val: Number(toolingAndEnergy) || 0 },
+                  { label: 'Logística, Frete & Movimentação', icon: '🚚', val: Number(logisticsAndFreight) || 0 },
+                  { label: 'Outras Economias Operacionais', icon: '💡', val: Number(otherSavings) || 0 },
                 ].filter((s) => s.val > 0);
 
                 // Composição dos custos / investimento (> 0)
                 const activeCosts = [
-                  { label: 'Peças, Sensores & Dispositivos', val: partsAndEquipment },
-                  { label: 'Serviços de Terceiros / Usinagem', val: thirdPartyServices },
-                  { label: 'Horas Equipe Interna', val: internalLaborHours * laborHourlyRate, detail: `${internalLaborHours}h @ R$ ${laborHourlyRate}/h` },
-                  { label: 'Outras Despesas Operacionais', val: otherCosts },
+                  { label: 'Peças, Sensores & Dispositivos', val: Number(partsAndEquipment) || 0 },
+                  { label: 'Serviços de Terceiros / Usinagem', val: Number(thirdPartyServices) || 0 },
+                  { label: 'Horas Equipe Interna', val: (Number(internalLaborHours) || 0) * (Number(laborHourlyRate) || 0), detail: `${internalLaborHours || 0}h @ R$ ${laborHourlyRate || 0}/h` },
+                  { label: 'Outras Despesas Operacionais', val: Number(otherCosts) || 0 },
                 ].filter((c) => c.val > 0);
 
                 // Cálculo da melhoria técnica antes vs depois

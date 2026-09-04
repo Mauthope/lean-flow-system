@@ -37,6 +37,7 @@ import {
   PDCALeadTimeStage,
   AgentLeadTimeSummary,
   ExternalSectorBottleneck,
+  GainProofDetail,
 } from '../lib/types';
 import { sendControladoriaAuditInvite } from './emailService';
 import {
@@ -496,7 +497,8 @@ export const dataService = {
   async submitActionToControladoria(
     actionId: string,
     submittedBy: string,
-    originUrl?: string
+    originUrl?: string,
+    gainDetails?: Record<string, GainProofDetail>
   ): Promise<{ action: LeanAction; auditUrl: string; token: string }> {
     const actions = this.getActions();
     const index = actions.findIndex((a) => a.id === actionId);
@@ -544,10 +546,15 @@ export const dataService = {
       originalCostBreakdown: originalBreakdown,
       originalEstimatedCostAvoided: originalEstimated,
       originalProjectCosts: originalCosts,
+      gainDetails: gainDetails || action.gainDetails,
       emailSentTo: controladoriaEmail,
       emailSentAt: new Date().toISOString(),
       emailStatus: emailResult.simulated ? 'simulado' : emailResult.success ? 'enviado' : 'falha',
     };
+
+    if (gainDetails) {
+      action.gainDetails = gainDetails;
+    }
 
     action.controllershipAudit = auditData;
     action.updatedAt = new Date().toISOString();
@@ -573,6 +580,7 @@ export const dataService = {
       approvedBreakdown?: LeanCostBreakdown;
       approvedEstimatedCostAvoided?: number;
       approvedProjectCosts?: ProjectInvestmentCosts;
+      gainDetails?: Record<string, GainProofDetail>;
       reviewerName: string;
       reviewerEmail: string;
       reviewerRole?: string;
@@ -597,6 +605,11 @@ export const dataService = {
     action.controllershipAudit.reviewerRole = review.reviewerRole;
     action.controllershipAudit.auditNotes = review.auditNotes;
     action.controllershipAudit.rejectionReason = review.rejectionReason;
+
+    if (review.gainDetails) {
+      action.controllershipAudit.gainDetails = review.gainDetails;
+      action.gainDetails = review.gainDetails;
+    }
 
     if (review.status === 'aprovado') {
       action.controllershipAudit.approvedCostBreakdown = {
