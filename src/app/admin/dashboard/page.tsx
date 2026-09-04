@@ -49,6 +49,33 @@ export default function AdminDashboardPage() {
     return dataService.getMetrics();
   }, [dataVersion]);
 
+  const [boardFilter, setBoardFilter] = useState<'ativos' | 'expirados' | 'todos'>('ativos');
+
+  const boardFinancials = useMemo(() => {
+    return (
+      metrics.boardFinancials || {
+        activeMonthlyTotal: 0,
+        activeAnnualTotal: 0,
+        activeNetAnnualTotal: 0,
+        activeInvestmentTotal: 0,
+        activeProjectsCount: 0,
+        expiredProjectsCount: 0,
+        expiredAnnualTotal: 0,
+        projects: [],
+      }
+    );
+  }, [metrics]);
+
+  const filteredBoardProjects = useMemo(() => {
+    if (boardFilter === 'ativos') {
+      return boardFinancials.projects.filter((p) => !p.isExpired);
+    }
+    if (boardFilter === 'expirados') {
+      return boardFinancials.projects.filter((p) => p.isExpired);
+    }
+    return boardFinancials.projects;
+  }, [boardFinancials, boardFilter]);
+
   const pendingDemands = useMemo(() => {
     return dataService.getActions().filter((a) => a.isPublicDemand && a.status === 'aberta' && !a.assignedAgentId);
   }, [dataVersion]);
@@ -342,17 +369,490 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ================= 4 CARDS DE MÉTRICAS PRINCIPAIS ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+      {/* ================= 4 CARDS DE MÉTRICAS EXECUTIVAS PARA A DIRETORIA (CICLO 12M) ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
-          title="Custo Evitado Real (ROI)"
-          value={formatCurrency(metrics.totalActualCostAvoided)}
-          subtitle="Economia comprovada em ações homologadas"
+          title="Retorno Mensal Vigente"
+          value={`${formatCurrency(boardFinancials.activeMonthlyTotal)}/mês`}
+          subtitle="Média dos 3 meses somada dos projetos ativos no ano"
           icon={<DollarSign size={22} />}
           accentColor="#10b981"
-          trend={{ value: '+18.4% no mês', isPositive: true }}
+          trend={{ value: `${boardFinancials.activeProjectsCount} projetos ativos no ano`, isPositive: true }}
         />
 
+        <StatsCard
+          title="Retorno Total Anual (12 Meses)"
+          value={`${formatCurrency(boardFinancials.activeAnnualTotal)}/ano`}
+          subtitle="Retorno mensal × 12 meses dos projetos vigentes"
+          icon={<TrendingUp size={22} />}
+          accentColor="#06b6d4"
+          trend={{ value: 'Ciclo de 365 dias', isPositive: true }}
+        />
+
+        <StatsCard
+          title="Retorno Líquido Anual"
+          value={`${formatCurrency(boardFinancials.activeNetAnnualTotal)}/ano`}
+          subtitle={`Lucro real após Capex/Opex (${formatCurrency(boardFinancials.activeInvestmentTotal)} investidos)`}
+          icon={<Award size={22} />}
+          accentColor="#8b5cf6"
+          trend={{ value: 'Líquido comprovado', isPositive: true }}
+        />
+
+        <StatsCard
+          title="Status do Ciclo Anual"
+          value={`${boardFinancials.activeProjectsCount} Ativos`}
+          subtitle={`${boardFinancials.expiredProjectsCount} com ciclo de 1 ano concluído (incorporados à rotina)`}
+          icon={<Clock size={22} />}
+          accentColor="#f59e0b"
+          trend={boardFinancials.expiredProjectsCount > 0 ? { value: `${boardFinancials.expiredProjectsCount} incorporados`, isPositive: true } : undefined}
+        />
+      </div>
+
+      {/* ========================================================================= */}
+      {/* PAINEL EXECUTIVO DIRETORIA: DEMONSTRATIVO DE GANHOS LEAN (CICLO 12 MESES) */}
+      {/* ========================================================================= */}
+      <div
+        className="card"
+        style={{
+          backgroundColor: '#0b1329',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: '18px',
+          overflow: 'hidden',
+          boxShadow: '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(16, 185, 129, 0.1)',
+        }}
+      >
+        {/* Header do Painel da Diretoria */}
+        <div
+          style={{
+            padding: '1.5rem 1.85rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 100%)',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 15px rgba(16, 185, 129, 0.25)',
+                }}
+              >
+                <TrendingUp size={20} color="#34d399" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                    Demonstrativo de Ganhos para a Diretoria (DRE Lean • Ciclo 12 Meses)
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      padding: '0.15rem 0.55rem',
+                      borderRadius: '9999px',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    DIRETORIA EXECUTIVA
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.3rem 0 0', maxWidth: '850px', lineHeight: 1.4 }}>
+                  Prestação de contas do retorno mensal (média dos 3 meses) e anualizado (12 meses). Projetos vigentes computam nos totais até completarem 1 ano (365 dias). Após esse prazo, o ganho é incorporado à rotina base e deixa de pontuar nos totais anuais correntes.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Filtros em Abas */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#090e1a', padding: '0.35rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <button
+              onClick={() => setBoardFilter('ativos')}
+              style={{
+                backgroundColor: boardFilter === 'ativos' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
+                border: boardFilter === 'ativos' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid transparent',
+                color: boardFilter === 'ativos' ? '#34d399' : '#94a3b8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              🟢 Vigentes no Ano ({boardFinancials.activeProjectsCount})
+            </button>
+            <button
+              onClick={() => setBoardFilter('expirados')}
+              style={{
+                backgroundColor: boardFilter === 'expirados' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
+                border: boardFilter === 'expirados' ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid transparent',
+                color: boardFilter === 'expirados' ? '#fbbf24' : '#94a3b8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              ⏰ Ciclo Encerrado (&gt; 12m) ({boardFinancials.expiredProjectsCount})
+            </button>
+            <button
+              onClick={() => setBoardFilter('todos')}
+              style={{
+                backgroundColor: boardFilter === 'todos' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
+                border: boardFilter === 'todos' ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
+                color: boardFilter === 'todos' ? '#22d3ee' : '#94a3b8',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              📋 Todos ({boardFinancials.projects.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Faixa de Totais Vigentes da Diretoria */}
+        <div
+          style={{
+            padding: '0.85rem 1.85rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+            <div>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                Retorno Mensal Vigente:
+              </span>
+              <strong style={{ fontSize: '1.15rem', color: '#34d399', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeMonthlyTotal)}/mês
+              </strong>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                Totalizado do Ano (12m):
+              </span>
+              <strong style={{ fontSize: '1.15rem', color: '#22d3ee', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeAnnualTotal)}/ano
+              </strong>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                Investimento Capex/Opex:
+              </span>
+              <strong style={{ fontSize: '1.15rem', color: '#f87171', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeInvestmentTotal)}
+              </strong>
+            </div>
+
+            <div>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                Retorno Líquido do Ano:
+              </span>
+              <strong style={{ fontSize: '1.15rem', color: '#c084fc', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeNetAnnualTotal)}/ano
+              </strong>
+            </div>
+          </div>
+
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+            Exibindo <strong>{filteredBoardProjects.length}</strong> de {boardFinancials.projects.length} projetos
+          </span>
+        </div>
+
+        {/* Tabela de Projetos da Diretoria */}
+        <div style={{ overflowX: 'auto' }}>
+          {filteredBoardProjects.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+              <Clock size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
+              <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                Nenhum projeto encontrado nesta categoria.
+              </p>
+              <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
+                {boardFilter === 'ativos'
+                  ? 'Não há projetos com homologação recente (< 365 dias) no momento.'
+                  : boardFilter === 'expirados'
+                  ? 'Não há projetos que completaram o ciclo de 1 ano ainda.'
+                  : 'Nenhum projeto homologado disponível.'}
+              </p>
+            </div>
+          ) : (
+            <table style={{ width: '100%', minWidth: '1050px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#070b14', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '0.875rem 1.25rem' }}>Projeto Lean / Setor</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Especialista</th>
+                  <th style={{ padding: '0.875rem 1rem' }}>Homologação</th>
+                  <th style={{ padding: '0.875rem 1.25rem' }}>Vigência no Ano (365d)</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Mensal (3M)</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Total (12M)</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Investimento</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Líquido</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Totalizador</th>
+                  <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBoardProjects.map((p) => {
+                  const progressPct = Math.round((p.monthsElapsed / 12) * 100);
+
+                  return (
+                    <tr
+                      key={p.actionId}
+                      style={{
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                        backgroundColor: p.isExpired ? 'rgba(0, 0, 0, 0.25)' : 'transparent',
+                        opacity: p.isExpired ? 0.85 : 1,
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.03)')}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? 'rgba(0, 0, 0, 0.25)' : 'transparent')}
+                    >
+                      {/* Projeto & Setor */}
+                      <td style={{ padding: '0.875rem 1.25rem' }}>
+                        <div>
+                          <Link
+                            href={`/admin/projetos/${p.actionId}`}
+                            style={{
+                              fontWeight: 800,
+                              color: p.isExpired ? '#cbd5e1' : '#ffffff',
+                              textDecoration: 'none',
+                              fontSize: '0.875rem',
+                              fontFamily: 'var(--font-heading)',
+                              display: 'block',
+                            }}
+                          >
+                            {p.title}
+                          </Link>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                              {p.protocol}
+                            </span>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>{p.sectorName}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Responsável */}
+                      <td style={{ padding: '0.875rem 1rem' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
+                          {p.responsibleName}
+                        </span>
+                      </td>
+
+                      {/* Homologação */}
+                      <td style={{ padding: '0.875rem 1rem' }}>
+                        <div>
+                          <span style={{ fontSize: '0.78125rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
+                            {p.homologatedAt ? formatDate(p.homologatedAt) : 'Recentemente'}
+                          </span>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.1rem' }}>
+                            {p.daysElapsed} dias decorridos
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Vigência no Ano (12 meses) */}
+                      <td style={{ padding: '0.875rem 1.25rem', minWidth: '180px' }}>
+                        {p.isExpired ? (
+                          <div>
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                              }}
+                            >
+                              <Clock size={11} /> 12m Concluído (&gt; 365d)
+                            </span>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>
+                              Incorporado à rotina base
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                              <span
+                                style={{
+                                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                  color: '#34d399',
+                                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.675rem',
+                                  fontWeight: 900,
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              >
+                                Mês {p.monthsElapsed} de 12
+                              </span>
+                              <span style={{ fontSize: '0.675rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                                Restam {p.monthsRemaining}m
+                              </span>
+                            </div>
+                            <div style={{ width: '100%', height: '5px', backgroundColor: '#1e293b', borderRadius: '9999px', overflow: 'hidden' }}>
+                              <div
+                                style={{
+                                  width: `${progressPct}%`,
+                                  height: '100%',
+                                  backgroundColor: '#10b981',
+                                  borderRadius: '9999px',
+                                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Retorno Mensal (3M) */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <strong
+                            style={{
+                              color: p.isExpired ? '#94a3b8' : '#34d399',
+                              fontSize: '0.9375rem',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
+                            {formatCurrency(p.monthlyCostAvoided)}
+                          </strong>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/mês</span>
+                        </div>
+                      </td>
+
+                      {/* Retorno Total (12M) */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <strong
+                            style={{
+                              color: p.isExpired ? '#94a3b8' : '#22d3ee',
+                              fontSize: '0.9375rem',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
+                            {formatCurrency(p.annualCostAvoided)}
+                          </strong>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/ano (× 12m)</span>
+                        </div>
+                      </td>
+
+                      {/* Investimento */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <span style={{ fontSize: '0.8125rem', color: p.totalInvestmentCost > 0 ? '#f87171' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                          {p.totalInvestmentCost > 0 ? `-${formatCurrency(p.totalInvestmentCost)}` : 'R$ 0,00'}
+                        </span>
+                      </td>
+
+                      {/* Retorno Líquido */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <strong
+                            style={{
+                              color: p.isExpired ? '#94a3b8' : '#c084fc',
+                              fontSize: '0.9375rem',
+                              fontFamily: 'var(--font-mono)',
+                            }}
+                          >
+                            {formatCurrency(p.netAnnualSavings)}
+                          </strong>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                            ROI {p.roiPercentage}%
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Status no Totalizador */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                        {p.isExpired ? (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                              color: '#94a3b8',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.675rem',
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            ⚪ Encerrado (Rotina)
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.4)',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.675rem',
+                              fontWeight: 800,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            🟢 Computado no Total
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Ação */}
+                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
+                        <Link
+                          href={`/admin/projetos/${p.actionId}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                        >
+                          <span>DRE</span> <ExternalLink size={12} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ================= 3 CARDS DE APOIO OPERACIONAL ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
           title="Potencial em Andamento"
           value={formatCurrency(metrics.totalEstimatedCostAvoided - metrics.totalActualCostAvoided)}

@@ -262,6 +262,47 @@ export interface LeanAction {
   rootCauseAnalysis?: string;            // Resumo da causa raiz
 }
 
+// Demonstrativo Financeiro Executivo para Diretoria (Ciclo de 12 Meses)
+export interface ExecutiveProjectFinancial {
+  actionId: string;
+  protocol: string;
+  title: string;
+  sectorName: string;
+  responsibleName: string;
+  homologatedAt?: string;
+  // Valores Financeiros
+  monthlyCostAvoided: number;          // Média dos 3 meses de acompanhamento (Retorno Mensal)
+  annualCostAvoided: number;           // Média mensal multiplicada por 12 meses (Retorno Total Anual)
+  totalInvestmentCost: number;         // Custos e investimento do projeto (Capex + Opex)
+  netAnnualSavings: number;            // Retorno Líquido Anual = (Média * 12) - Investimento
+  netMonthlySavings: number;           // Retorno Líquido Mensal = Retorno Líquido Anual / 12
+  roiPercentage: number;               // ROI (%)
+  paybackMonths: number;               // Payback (meses)
+  // Ciclo de Vigência de 1 Ano (Vencimento)
+  daysElapsed: number;                 // Dias decorridos desde a homologação
+  monthsElapsed: number;               // Mês corrente dentro do ciclo de 12 meses (1 a 12)
+  monthsRemaining: number;             // Meses restantes de vigência no ano (12 - monthsElapsed)
+  isExpired: boolean;                  // True quando completa 1 ano (> 365 dias) -> Deixa de computar nos totais
+  expirationDate: string;              // Data exata em que completa 1 ano
+  quarterlyMonthsFilled: number;       // Quantidade de meses aferidos (0 a 3)
+}
+
+export interface ExecutiveBoardFinancials {
+  // Totais Ativos Vigentes (Apenas projetos com menos de 1 ano de homologação)
+  activeMonthlyTotal: number;          // Soma do Retorno Mensal dos projetos ativos (R$/mês)
+  activeAnnualTotal: number;           // Soma do Retorno Total do Ano dos projetos ativos (R$/ano)
+  activeNetAnnualTotal: number;        // Retorno Líquido Anual dos projetos ativos (R$/ano)
+  activeInvestmentTotal: number;       // Investimentos totais dos projetos ativos (R$)
+  activeProjectsCount: number;         // Quantidade de projetos ativos no ciclo de 1 ano
+  
+  // Histórico de Projetos Expirados (> 1 ano de homologação - Não computam nos totais)
+  expiredProjectsCount: number;        // Quantidade de projetos que completaram 1 ano
+  expiredAnnualTotal: number;          // Retorno anual dos projetos incorporados à rotina
+
+  // Lista completa detalhada de projetos para prestação de contas à Diretoria
+  projects: ExecutiveProjectFinancial[];
+}
+
 export interface DashboardMetrics {
   totalActions: number;
   openActions: number;
@@ -272,6 +313,7 @@ export interface DashboardMetrics {
   totalActualCostAvoided: number;
   totalHoursSaved: number;
   costBreakdownTotals?: LeanCostBreakdown;
+  boardFinancials?: ExecutiveBoardFinancials;
   resolutionRate: number; // %
   averageCycleDays: number;
   byWasteCategory: Record<LeanWasteCategory, number>;

@@ -424,6 +424,25 @@ export default function AdminProjectDetailPage() {
   const paybackMonths =
     totalGrossSavings > 0 ? Number(((totalInvestmentCost / totalGrossSavings) * 12).toFixed(1)) : 0;
 
+  // Governança Diretoria: Retorno Mensal (Média 3M) × 12 Meses & Ciclo Anual (365 Dias)
+  const provenMonthlySavings =
+    action?.quarterlyFollowUp?.averageCostAvoided ||
+    (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0);
+  const provenAnnualSavings = provenMonthlySavings * 12;
+  const provenNetAnnualSavings = Math.max(0, provenAnnualSavings - totalInvestmentCost);
+  const provenNetMonthlySavings = Math.round(provenNetAnnualSavings / 12);
+
+  const homologatedAtDate =
+    action?.masterApprovedAt ||
+    action?.completedAt ||
+    (action?.status === 'concluida' ? action?.updatedAt : undefined);
+  const daysSinceHomologation = homologatedAtDate
+    ? Math.max(0, Math.floor((Date.now() - new Date(homologatedAtDate).getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const isCycleExpired = daysSinceHomologation > 365;
+  const currentCycleMonth = isCycleExpired ? 12 : Math.min(12, Math.max(1, Math.ceil(daysSinceHomologation / 30.4375)));
+  const remainingCycleMonths = isCycleExpired ? 0 : Math.max(0, 12 - currentCycleMonth);
+
   // Formatted Attachments list sorted by upload date
   const sortedAttachments = useMemo(() => {
     return [...attachments].sort((a, b) => {
@@ -801,14 +820,15 @@ export default function AdminProjectDetailPage() {
       alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
       return;
     }
-    const finalCostAvoided = action.quarterlyFollowUp?.averageCostAvoided || totalGrossSavings || action.actualCostAvoided || action.estimatedCostAvoided;
+    const monthlyAverage = action.quarterlyFollowUp?.averageCostAvoided || (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0) || action.actualCostAvoided || action.estimatedCostAvoided;
+    const finalAnnualCostAvoided = Math.round(monthlyAverage * 12);
     const updated = dataService.updateAction(action.id, {
       status: 'concluida',
       pdcaStage: 'act',
       masterApproved: true,
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Gestão Master',
-      actualCostAvoided: finalCostAvoided,
+      actualCostAvoided: finalAnnualCostAvoided,
     });
     setAction(updated);
     refreshData();
@@ -2697,47 +2717,89 @@ export default function AdminProjectDetailPage() {
               backgroundColor: '#090e1a',
               color: '#ffffff',
               borderRadius: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
               gap: '1.5rem',
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
             }}
           >
+            {/* 1. Retorno Mensal (Média 3M) */}
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-                💰 RETORNO LÍQUIDO (LUCRO REAL)
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                📅 RETORNO MENSAL (3M)
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {formatCurrency(netSavings)}
+              <strong style={{ fontSize: '1.75rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {formatCurrency(provenMonthlySavings)}
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                Ganhos ({formatCurrency(totalGrossSavings)}) - Custos ({formatCurrency(totalInvestmentCost)})
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                {action.quarterlyFollowUp?.averageCostAvoided ? 'Média aferida dos 3 meses' : 'Estimativa mensal'}
               </span>
             </div>
 
+            {/* 2. Retorno Total Anual (12 Meses) */}
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-                📊 RETORNO SOBRE O INVESTIMENTO (ROI)
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                🚀 RETORNO TOTAL (12 MESES)
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {roiPercentage}%
+              <strong style={{ fontSize: '1.75rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {formatCurrency(provenAnnualSavings)}
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/ano</span>
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                Para cada R$ 1,00 investido, retorno de {formatCurrency(totalInvestmentCost > 0 ? totalGrossSavings / totalInvestmentCost : 0)}.
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                Retorno mensal × 12 meses de vigência
               </span>
             </div>
 
+            {/* 3. Retorno Líquido Anual (Lucro Real) */}
             <div>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-                ⏱️ TEMPO DE PAYBACK
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                💰 RETORNO LÍQUIDO ANUAL
               </span>
-              <strong style={{ fontSize: '1.8rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {paybackMonths} meses
+              <strong style={{ fontSize: '1.75rem', color: '#c084fc', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {formatCurrency(provenNetAnnualSavings)}
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                Recuperação de 100% do valor investido.
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                Ganhos ({formatCurrency(provenAnnualSavings)}) - Custos ({formatCurrency(totalInvestmentCost)})
               </span>
+            </div>
+
+            {/* 4. Vigência do Ciclo de 1 Ano (365 Dias) */}
+            <div>
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                ⏱️ CICLO DE VIGÊNCIA (1 ANO)
+              </span>
+              {action.masterApproved ? (
+                isCycleExpired ? (
+                  <div>
+                    <strong style={{ fontSize: '1.35rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                      12m Concluídos
+                    </strong>
+                    <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                      Incorporado à rotina base da fábrica (Não pontua mais no total acumulado)
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <strong style={{ fontSize: '1.45rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                      Mês {currentCycleMonth} de 12
+                    </strong>
+                    <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                      Restam {remainingCycleMonths} meses ({Math.max(0, 365 - daysSinceHomologation)} dias) de vigência
+                    </span>
+                  </div>
+                )
+              ) : (
+                <div>
+                  <strong style={{ fontSize: '1.25rem', color: '#94a3b8', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                    Pré-Homologação
+                  </strong>
+                  <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                    Inicia contagem de 365 dias após homologação master
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -3400,22 +3462,61 @@ export default function AdminProjectDetailPage() {
                 {/* Actions for Agent vs Supervisor */}
                 <div>
                   {action.masterApproved ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '10px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        color: '#34d399',
-                        border: '1px solid rgba(16, 185, 129, 0.4)',
-                        fontWeight: 800,
-                        fontSize: '0.8125rem',
-                      }}
-                    >
-                      <CheckCircle2 size={16} /> Homologado ✓
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.5rem 1rem',
+                          borderRadius: '10px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          color: '#34d399',
+                          border: '1px solid rgba(16, 185, 129, 0.4)',
+                          fontWeight: 800,
+                          fontSize: '0.8125rem',
+                        }}
+                      >
+                        <CheckCircle2 size={16} /> Homologado ✓
+                      </span>
+
+                      {/* Status de Vigência no Ano (365 Dias) */}
+                      {isCycleExpired ? (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                            color: '#fbbf24',
+                            border: '1px solid rgba(245, 158, 11, 0.35)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <Clock size={11} /> Ciclo 1 Ano Concluído ({daysSinceHomologation}d) • Incorporado à Rotina
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                            color: '#22d3ee',
+                            border: '1px solid rgba(6, 182, 212, 0.35)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          🟢 Mês {currentCycleMonth} de 12 • Faltam {remainingCycleMonths} meses de vigência
+                        </span>
+                      )}
+                    </div>
                   ) : currentUser?.role === 'agent' ? (
                     <button
                       type="button"

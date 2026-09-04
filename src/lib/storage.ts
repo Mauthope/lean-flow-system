@@ -194,6 +194,97 @@ export const INITIAL_USERS: User[] = [
 
 export const INITIAL_ACTIONS: LeanAction[] = [
   {
+    id: 'act_000',
+    protocol: 'RAF-2025-7701',
+    tenantId: 'tenant_rafitec_01',
+    title: 'Padronização de Troca de Bobinas na Fiação de Fitas PP',
+    description: 'Implementação de dispositivo de emenda rápida e procedimento padrão POP-FIA-012 para redução do desperdício de pontas de bobina.',
+    wasteCategory: 'movimentacao',
+    assessmentDimensionId: 'fluxo_jit',
+    originSectorId: 'sec_rafitec_extrusao',
+    originSectorName: 'Extrusão & Fiação PP',
+    targetSectorId: 'sec_rafitec_extrusao',
+    targetSectorName: 'Extrusão & Fiação PP',
+    isPublicDemand: false,
+    assignedAgentId: 'usr_rafitec_agent_04',
+    assignedAgentName: 'Fernanda Lima',
+    assignedAgentAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    leaderName: 'Fernanda Lima (Especialista Lean)',
+    teamMembers: ['Carlos Silva (Operação)', 'Marcos Souza (Manutenção)'],
+    status: 'concluida',
+    priority: 'media',
+    pdcaStage: 'act',
+    problemStatement: 'Desperdício de 2.8% em pontas de fita por trocas de bobina manuais e sem sincronismo.',
+    targetMetricName: 'Desperdício de Pontas de Bobina',
+    targetMetricUnit: '%',
+    baselineValue: 2.8,
+    targetGoalValue: 0.8,
+    achievedValue: 0.7,
+    projectCosts: {
+      partsAndEquipment: 2500,
+      thirdPartyServices: 800,
+      internalLaborHours: 26,
+      laborHourlyRate: 45,
+      otherCosts: 0,
+      totalCost: 4470,
+    },
+    costBreakdown: {
+      scrapReduction: 22000,
+      laborSavings: 6500,
+      machineDowntime: 3500,
+    },
+    estimatedCostAvoided: 30000,
+    actualCostAvoided: 384000, // 32.000/mês * 12 meses
+    hoursSaved: 88,
+    standardWorkUpdated: true,
+    standardWorkDocRef: 'POP-FIA-012 rev 01',
+    masterApproved: true,
+    // Homologado há mais de 1 ano (Jan 2025) -> CICLO DE 1 ANO CONCLUÍDO (Expirado para novos totais)
+    masterApprovedAt: '2025-01-15T14:00:00.000Z',
+    masterApprovedBy: 'Rafitec Master',
+    quarterlyFollowUp: {
+      enabled: true,
+      startedAt: '2025-01-15T14:00:00.000Z',
+      month1: {
+        monthNumber: 1,
+        monthLabel: '1º Mês (Fev/25)',
+        value: 31000,
+        hoursSaved: 28,
+        measuredAt: '2025-02-15',
+        notes: 'Dispositivo instalado na bobinadeira 01. Desperdício reduzido para 0.9%.',
+        registeredBy: 'Fernanda Lima',
+      },
+      month2: {
+        monthNumber: 2,
+        monthLabel: '2º Mês (Mar/25)',
+        value: 32500,
+        hoursSaved: 30,
+        measuredAt: '2025-03-15',
+        notes: 'Operadores treinados no POP-FIA-012.',
+        registeredBy: 'Fernanda Lima',
+      },
+      month3: {
+        monthNumber: 3,
+        monthLabel: '3º Mês (Abr/25)',
+        value: 32500,
+        hoursSaved: 30,
+        measuredAt: '2025-04-15',
+        notes: 'Meta batida no 3º mês consecutivo. Homologação final.',
+        registeredBy: 'Fernanda Lima',
+      },
+      averageCostAvoided: 32000,
+      isCompleted: true,
+      completedAt: '2025-04-15T17:00:00.000Z',
+      status: 'consolidado',
+    },
+    createdAt: '2025-01-02T08:00:00.000Z',
+    updatedAt: '2025-01-15T14:00:00.000Z',
+    completedAt: '2025-01-15T14:00:00.000Z',
+    dueDate: '2025-01-20',
+    notes: [],
+    checklist: [],
+  },
+  {
     id: 'act_001',
     protocol: 'RAF-2026-8801',
     tenantId: 'tenant_rafitec_01',
@@ -711,6 +802,16 @@ export function initializeLocalStorage(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.ACTIONS)) {
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
+  } else {
+    // Garantir que o projeto exemplo de ciclo concluído (act_000) esteja presente no banco de dados local
+    const existingActions = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, []);
+    if (existingActions.length > 0 && !existingActions.some((a) => a.id === 'act_000')) {
+      const act000 = INITIAL_ACTIONS.find((a) => a.id === 'act_000');
+      if (act000) {
+        existingActions.unshift(act000);
+        setStoredData(STORAGE_KEYS.ACTIONS, existingActions);
+      }
+    }
   }
   if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));

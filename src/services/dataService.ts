@@ -28,6 +28,8 @@ import {
   DimensionEvolutionMetric,
   LeanAssessmentCriterion,
   ASSESSMENT_DIMENSIONS_CONFIG,
+  ExecutiveBoardFinancials,
+  ExecutiveProjectFinancial,
 } from '../lib/types';
 import {
   STORAGE_KEYS,
@@ -762,9 +764,12 @@ export const dataService = {
     const rejectedActions = actions.filter((a) => a.status === 'nao_aprovada').length;
 
     const totalEstimatedCostAvoided = actions.reduce((acc, a) => acc + (a.estimatedCostAvoided || 0), 0);
-    const totalActualCostAvoided = actions
-      .filter((a) => a.status === 'concluida')
-      .reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+    const boardFinancials = this.getExecutiveBoardFinancials(tenantId);
+    const totalActualCostAvoided = boardFinancials.activeAnnualTotal > 0
+      ? boardFinancials.activeAnnualTotal
+      : actions
+          .filter((a) => a.status === 'concluida')
+          .reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
     const totalHoursSaved = actions.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
 
     const validActions = totalActions - rejectedActions;
@@ -881,11 +886,128 @@ export const dataService = {
       totalActualCostAvoided,
       totalHoursSaved,
       costBreakdownTotals,
+      boardFinancials,
       resolutionRate,
       averageCycleDays,
       byWasteCategory,
       bySector,
       byAgent,
+    };
+  },
+
+  // ================= EXECUTIVE BOARD FINANCIALS (DRE LEAN 12 MESES) =================
+  getExecutiveBoardFinancials(tenantId?: string): ExecutiveBoardFinancials {
+    const actions = this.getActions(tenantId);
+    // Projetos homologados ou concluídos
+    const homologatedActions = actions.filter(
+      (a) => a.masterApproved || a.status === 'concluida'
+    );
+
+    const now = Date.now();
+
+    const projectFinancials: ExecutiveProjectFinancial[] = homologatedActions.map((action) => {
+      // 1. Cálculo do Retorno Mensal (Média dos 3 meses)
+      let monthlyCostAvoided = 0;
+      if (action.quarterlyFollowUp?.averageCostAvoided && action.quarterlyFollowUp.averageCostAvoided > 0) {
+        monthlyCostAvoided = action.quarterlyFollowUp.averageCostAvoided;
+      } else {
+        const fu = action.quarterlyFollowUp;
+        const validValues = [fu?.month1?.value, fu?.month2?.value, fu?.month3?.value].filter(
+          (v): v is number => typeof v === 'number' && !isNaN(v) && v > 0
+        );
+        if (validValues.length > 0) {
+          monthlyCostAvoided = Math.round(validValues.reduce((a, b) => a + b, 0) / validValues.length);
+        } else if (action.actualCostAvoided && action.actualCostAvoided > 0) {
+          monthlyCostAvoided = Math.round(action.actualCostAvoided / 12);
+        } else if (action.estimatedCostAvoided && action.estimatedCostAvoided > 0) {
+          monthlyCostAvoided = Math.round(action.estimatedCostAvoided / 12);
+        }
+      }
+
+      // 2. Retorno Total Anualizado (12 Meses) = Retorno Mensal * 12
+      const annualCostAvoided = monthlyCostAvoided * 12;
+
+      // 3. Custos Totais de Investimento (Capex + Opex)
+      const totalInvestmentCost = action.projectCosts?.totalCost || 0;
+
+      // 4. Retorno Líquido
+      const netAnnualSavings = annualCostAvoided - totalInvestmentCost;
+      const netMonthlySavings = Math.round(netAnnualSavings / 12);
+
+      const roiPercentage =
+        totalInvestmentCost > 0
+          ? Math.round((netAnnualSavings / totalInvestmentCost) * 100)
+          : annualCostAvoided > 0 ? 100 : 0;
+
+      const paybackMonths =
+        monthlyCostAvoided > 0
+          ? Math.round((totalInvestmentCost / monthlyCostAvoided) * 10) / 10
+          : 0;
+
+      // 5. Ciclo de Vigência de 1 Ano (365 Dias - Vencimento do Projeto)
+      const homologatedAt = action.masterApprovedAt || action.completedAt || action.updatedAt || action.createdAt;
+      const refDate = new Date(homologatedAt).getTime();
+      const daysElapsed = Math.max(0, Math.floor((now - refDate) / (1000 * 60 * 60 * 24)));
+      const isExpired = daysElapsed > 365;
+      const expirationDate = new Date(refDate + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      const monthsElapsed = isExpired ? 12 : Math.min(12, Math.max(1, Math.ceil(daysElapsed / 30.4375)));
+      const monthsRemaining = isExpired ? 0 : Math.max(0, 12 - monthsElapsed);
+
+      const fu = action.quarterlyFollowUp;
+      const quarterlyMonthsFilled = [fu?.month1?.value, fu?.month2?.value, fu?.month3?.value].filter(
+        (v) => v !== undefined && v !== null
+      ).length;
+
+      return {
+        actionId: action.id,
+        protocol: action.protocol,
+        title: action.title,
+        sectorName: action.originSectorName || action.targetSectorName || 'Fábrica',
+        responsibleName: action.assignedAgentName || action.leaderName || 'Especialista Lean',
+        homologatedAt,
+        monthlyCostAvoided,
+        annualCostAvoided,
+        totalInvestmentCost,
+        netAnnualSavings,
+        netMonthlySavings,
+        roiPercentage,
+        paybackMonths,
+        daysElapsed,
+        monthsElapsed,
+        monthsRemaining,
+        isExpired,
+        expirationDate,
+        quarterlyMonthsFilled,
+      };
+    });
+
+    // Ordenação: primeiro projetos ativos (por maior ganho anual), depois os expirados
+    projectFinancials.sort((a, b) => {
+      if (a.isExpired !== b.isExpired) {
+        return a.isExpired ? 1 : -1;
+      }
+      return b.annualCostAvoided - a.annualCostAvoided;
+    });
+
+    const activeProjects = projectFinancials.filter((p) => !p.isExpired);
+    const expiredProjects = projectFinancials.filter((p) => p.isExpired);
+
+    const activeMonthlyTotal = activeProjects.reduce((acc, p) => acc + p.monthlyCostAvoided, 0);
+    const activeAnnualTotal = activeProjects.reduce((acc, p) => acc + p.annualCostAvoided, 0);
+    const activeNetAnnualTotal = activeProjects.reduce((acc, p) => acc + p.netAnnualSavings, 0);
+    const activeInvestmentTotal = activeProjects.reduce((acc, p) => acc + p.totalInvestmentCost, 0);
+    const expiredAnnualTotal = expiredProjects.reduce((acc, p) => acc + p.annualCostAvoided, 0);
+
+    return {
+      activeMonthlyTotal,
+      activeAnnualTotal,
+      activeNetAnnualTotal,
+      activeInvestmentTotal,
+      activeProjectsCount: activeProjects.length,
+      expiredProjectsCount: expiredProjects.length,
+      expiredAnnualTotal,
+      projects: projectFinancials,
     };
   },
 
