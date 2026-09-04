@@ -290,6 +290,24 @@ export const dataService = {
   // ================= LEAN ACTIONS / DEMANDS =================
   getActions(tenantId?: string): LeanAction[] {
     const all = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
+    all.forEach((action) => {
+      if (!action.quarterlyFollowUp) {
+        const initAction = INITIAL_ACTIONS.find((ia) => ia.id === action.id);
+        if (initAction?.quarterlyFollowUp) {
+          action.quarterlyFollowUp = { ...initAction.quarterlyFollowUp };
+        } else {
+          action.quarterlyFollowUp = {
+            enabled: true,
+            startedAt: action.startedAt || action.createdAt || new Date().toISOString(),
+            month1: { monthNumber: 1, monthLabel: '1º Mês' },
+            month2: { monthNumber: 2, monthLabel: '2º Mês' },
+            month3: { monthNumber: 3, monthLabel: '3º Mês' },
+            status: 'aguardando_mes_1',
+            isCompleted: false,
+          };
+        }
+      }
+    });
     if (!tenantId) return all;
     return all.filter((a) => a.tenantId === tenantId);
   },
