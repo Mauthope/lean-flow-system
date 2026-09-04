@@ -771,6 +771,7 @@ export const dataService = {
       const val = a.estimatedCostAvoided || (a.quarterlyFollowUp?.averageCostAvoided ? a.quarterlyFollowUp.averageCostAvoided : 0);
       return acc + val;
     }, 0);
+    const inProgressAnnualCostAvoided = inProgressEstimatedCostAvoided * 12;
     const boardFinancials = this.getExecutiveBoardFinancials(tenantId);
     const totalActualCostAvoided = boardFinancials.activeAnnualTotal > 0
       ? boardFinancials.activeAnnualTotal
@@ -891,6 +892,7 @@ export const dataService = {
       rejectedActions,
       totalEstimatedCostAvoided,
       inProgressEstimatedCostAvoided,
+      inProgressAnnualCostAvoided,
       totalActualCostAvoided,
       totalHoursSaved,
       costBreakdownTotals,

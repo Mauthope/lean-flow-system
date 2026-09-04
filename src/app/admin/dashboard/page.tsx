@@ -983,9 +983,23 @@ export default function AdminDashboardPage() {
       {/* ================= CARDS DE APOIO OPERACIONAL ================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
-          title="Potencial em Andamento"
-          value={formatCurrency(metrics.inProgressEstimatedCostAvoided ?? 0)}
-          subtitle={`${metrics.inProgressActions + metrics.openActions} projetos ativos em execução no pipeline`}
+          title="Potencial em Andamento (Mensal)"
+          value={
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span>{formatCurrency(metrics.inProgressEstimatedCostAvoided ?? 0)}</span>
+              <span style={{ fontSize: '0.95rem', color: '#22d3ee', fontWeight: 800 }}>/mês</span>
+            </div>
+          }
+          subtitle={
+            <div>
+              <span style={{ display: 'block', color: '#cbd5e1', fontWeight: 600 }}>
+                Projeção Anual: <strong style={{ color: '#22d3ee' }}>{formatCurrency((metrics.inProgressEstimatedCostAvoided ?? 0) * 12)}/ano (12m)</strong>
+              </span>
+              <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.15rem' }}>
+                {metrics.inProgressActions + metrics.openActions} projetos ativos em execução no pipeline
+              </span>
+            </div>
+          }
           icon={<TrendingUp size={22} />}
           accentColor="#06b6d4"
         />

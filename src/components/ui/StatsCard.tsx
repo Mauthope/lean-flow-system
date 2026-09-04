@@ -4,8 +4,8 @@ import React from 'react';
 
 interface StatsCardProps {
   title: string;
-  value: string | number;
-  subtitle?: string;
+  value: React.ReactNode;
+  subtitle?: React.ReactNode;
   icon: React.ReactNode;
   trend?: {
     value: string;
