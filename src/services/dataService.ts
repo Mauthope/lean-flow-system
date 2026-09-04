@@ -30,7 +30,11 @@ import {
   ASSESSMENT_DIMENSIONS_CONFIG,
   ExecutiveBoardFinancials,
   ExecutiveProjectFinancial,
+  ControllershipAudit,
+  ControllershipAuditStatus,
+  ProjectInvestmentCosts,
 } from '../lib/types';
+import { sendControladoriaAuditInvite } from './emailService';
 import {
   STORAGE_KEYS,
   getStoredData,
@@ -79,6 +83,9 @@ export const dataService = {
     geminiApiKey?: string;
     preferredVoice?: string;
     model?: string;
+    controladoriaEmail?: string;
+    controladoriaName?: string;
+    autoNotifyControladoria?: boolean;
   }): Tenant {
     const currentTenant = this.getCurrentTenant();
     const updatedTenant: Tenant = {
@@ -475,6 +482,173 @@ export const dataService = {
     actions[index] = action;
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return actions[index];
+  },
+
+  // ===================================================================
+  // AUDITORIA E HOMOLOGAÇÃO PRÉVIA PELA CONTROLADORIA
+  // ===================================================================
+
+  // Submeter ganhos financeiros do projeto à Controladoria
+  async submitActionToControladoria(
+    actionId: string,
+    submittedBy: string,
+    originUrl?: string
+  ): Promise<{ action: LeanAction; auditUrl: string; token: string }> {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.id === actionId);
+    if (index === -1) throw new Error('Ação não encontrada');
+
+    const action = actions[index];
+    const tenant = this.getCurrentTenant();
+
+    // Gerar token escopado único (ex: sec_aud_8f9d7c2a_...)
+    const token = `sec_aud_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
+    const baseUrl =
+      originUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+    const auditUrl = `${baseUrl}/controladoria/auditoria/${token}`;
+
+    const originalBreakdown: LeanCostBreakdown = action.costBreakdown ? { ...action.costBreakdown } : {};
+    const originalEstimated = action.estimatedCostAvoided || 0;
+    const originalCosts = action.projectCosts ? { ...action.projectCosts } : undefined;
+
+    const controladoriaEmail =
+      tenant?.aiSettings?.controladoriaEmail || 'controladoria@empresa.com.br';
+    const controladoriaName =
+      tenant?.aiSettings?.controladoriaName || 'Controladoria & Finanças Corporativas';
+
+    // Disparar notificação por e-mail (Resend / Supabase Edge / Simulado)
+    const emailResult = await sendControladoriaAuditInvite({
+      recipientEmail: controladoriaEmail,
+      recipientName: controladoriaName,
+      projectTitle: action.title,
+      protocol: action.protocol,
+      sectorName: action.originSectorName || action.targetSectorName,
+      leaderName: action.leaderName || action.assignedAgentName || submittedBy,
+      estimatedSavings: originalEstimated,
+      investmentCost: originalCosts?.totalCost,
+      paybackMonths: action.paybackMonths,
+      auditUrl,
+      token,
+    });
+
+    const auditData: ControllershipAudit = {
+      id: generateId('aud'),
+      token,
+      status: 'pendente',
+      submittedAt: new Date().toISOString(),
+      submittedBy,
+      originalCostBreakdown: originalBreakdown,
+      originalEstimatedCostAvoided: originalEstimated,
+      originalProjectCosts: originalCosts,
+      emailSentTo: controladoriaEmail,
+      emailSentAt: new Date().toISOString(),
+      emailStatus: emailResult.simulated ? 'simulado' : emailResult.success ? 'enviado' : 'falha',
+    };
+
+    action.controllershipAudit = auditData;
+    action.updatedAt = new Date().toISOString();
+    actions[index] = action;
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+
+    return { action, auditUrl, token };
+  },
+
+  // Buscar projeto pelo token de auditoria escopado da Controladoria
+  getActionByAuditToken(token: string): LeanAction | null {
+    if (!token) return null;
+    const actions = this.getActions();
+    const action = actions.find((a) => a.controllershipAudit?.token === token);
+    return action || null;
+  },
+
+  // Processar decisão da Controladoria (Aprovar, Ajustar ou Rejeitar)
+  processControllershipAudit(
+    token: string,
+    review: {
+      status: 'aprovado' | 'ajustado_e_aprovado' | 'rejeitado';
+      approvedBreakdown?: LeanCostBreakdown;
+      approvedEstimatedCostAvoided?: number;
+      approvedProjectCosts?: ProjectInvestmentCosts;
+      reviewerName: string;
+      reviewerEmail: string;
+      reviewerRole?: string;
+      auditNotes?: string;
+      rejectionReason?: string;
+    }
+  ): LeanAction {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.controllershipAudit?.token === token);
+    if (index === -1) throw new Error('Projeto não encontrado para este token de auditoria');
+
+    const action = actions[index];
+    if (!action.controllershipAudit) {
+      throw new Error('Registro de auditoria não inicializado');
+    }
+
+    const now = new Date().toISOString();
+    action.controllershipAudit.status = review.status;
+    action.controllershipAudit.reviewedAt = now;
+    action.controllershipAudit.reviewedBy = review.reviewerName;
+    action.controllershipAudit.reviewerEmail = review.reviewerEmail;
+    action.controllershipAudit.reviewerRole = review.reviewerRole;
+    action.controllershipAudit.auditNotes = review.auditNotes;
+    action.controllershipAudit.rejectionReason = review.rejectionReason;
+
+    if (review.status === 'aprovado') {
+      action.controllershipAudit.approvedCostBreakdown = {
+        ...action.controllershipAudit.originalCostBreakdown,
+      };
+      action.controllershipAudit.approvedEstimatedCostAvoided =
+        action.controllershipAudit.originalEstimatedCostAvoided;
+      action.controllershipAudit.approvedProjectCosts =
+        action.controllershipAudit.originalProjectCosts;
+
+      // Habilita automaticamente o acompanhamento trimestral com a baseline homologada
+      if (!action.quarterlyFollowUp) {
+        action.quarterlyFollowUp = {
+          enabled: true,
+          startedAt: now,
+          month1: { monthNumber: 1, monthLabel: '1º Mês' },
+          month2: { monthNumber: 2, monthLabel: '2º Mês' },
+          month3: { monthNumber: 3, monthLabel: '3º Mês' },
+          status: 'aguardando_mes_1',
+          isCompleted: false,
+        };
+      }
+    } else if (review.status === 'ajustado_e_aprovado') {
+      action.controllershipAudit.approvedCostBreakdown = review.approvedBreakdown;
+      action.controllershipAudit.approvedEstimatedCostAvoided = review.approvedEstimatedCostAvoided;
+      action.controllershipAudit.approvedProjectCosts = review.approvedProjectCosts;
+
+      // Atualiza os valores da ação com os números auditados pela Controladoria
+      if (review.approvedBreakdown) {
+        action.costBreakdown = review.approvedBreakdown;
+      }
+      if (typeof review.approvedEstimatedCostAvoided === 'number') {
+        action.estimatedCostAvoided = review.approvedEstimatedCostAvoided;
+      }
+      if (review.approvedProjectCosts) {
+        action.projectCosts = review.approvedProjectCosts;
+      }
+
+      // Habilita acompanhamento trimestral
+      if (!action.quarterlyFollowUp) {
+        action.quarterlyFollowUp = {
+          enabled: true,
+          startedAt: now,
+          month1: { monthNumber: 1, monthLabel: '1º Mês' },
+          month2: { monthNumber: 2, monthLabel: '2º Mês' },
+          month3: { monthNumber: 3, monthLabel: '3º Mês' },
+          status: 'aguardando_mes_1',
+          isCompleted: false,
+        };
+      }
+    }
+
+    action.updatedAt = now;
+    actions[index] = action;
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    return action;
   },
 
   createPublicDemand(demand: {

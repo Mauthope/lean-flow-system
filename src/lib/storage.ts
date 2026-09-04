@@ -39,6 +39,11 @@ export const INITIAL_TENANTS: Tenant[] = [
     cnpjOrCode: '04.892.341/0001-55',
     plan: 'enterprise',
     createdAt: '2026-01-10T08:00:00.000Z',
+    aiSettings: {
+      controladoriaEmail: 'controladoria@rafitec.com.br',
+      controladoriaName: 'Gerência de Controladoria & Custos',
+      autoNotifyControladoria: true,
+    },
   },
 ];
 
@@ -436,6 +441,35 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     masterApproved: true,
     masterApprovedAt: '2026-02-18T17:00:00.000Z',
     masterApprovedBy: 'Rafitec',
+
+    // Auditoria Prévia da Controladoria (Homologada)
+    controllershipAudit: {
+      id: 'aud_001',
+      token: 'sec_aud_rafitec_8801',
+      status: 'aprovado',
+      submittedAt: '2026-02-15T10:00:00.000Z',
+      submittedBy: 'Fernanda Lima',
+      originalCostBreakdown: {
+        laborSavings: 38400,
+        productionIncrease: 948000,
+        scrapReduction: 25200,
+      },
+      originalEstimatedCostAvoided: 1011600,
+      approvedCostBreakdown: {
+        laborSavings: 38400,
+        productionIncrease: 948000,
+        scrapReduction: 25200,
+      },
+      approvedEstimatedCostAvoided: 1011600,
+      reviewedAt: '2026-02-17T14:30:00.000Z',
+      reviewedBy: 'Carlos Drumond (Controladoria)',
+      reviewerEmail: 'controladoria@rafitec.com.br',
+      reviewerRole: 'Gerência de Controladoria & Custos',
+      auditNotes: 'Memória de cálculo conferida com os apontamentos de OEE e SMED da Extrusora 03. Ganhos de capacidade e mão de obra homologados integralmente.',
+      emailSentTo: 'controladoria@rafitec.com.br',
+      emailSentAt: '2026-02-15T10:00:00.000Z',
+      emailStatus: 'simulado',
+    },
 
     // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
     quarterlyFollowUp: {

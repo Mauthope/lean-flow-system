@@ -28,6 +28,9 @@ export interface Tenant {
     geminiApiKey?: string;
     preferredVoice?: string;
     model?: string;
+    controladoriaEmail?: string;
+    controladoriaName?: string;
+    autoNotifyControladoria?: boolean;
     updatedAt?: string;
   };
 }
@@ -167,6 +170,45 @@ export interface QuarterlyFollowUp {
   status: 'aguardando_mes_1' | 'aguardando_mes_2' | 'aguardando_mes_3' | 'consolidado';
 }
 
+// Auditoria e Homologação Prévia de Ganhos pela Controladoria
+export type ControllershipAuditStatus =
+  | 'pendente'
+  | 'aprovado'
+  | 'ajustado_e_aprovado'
+  | 'rejeitado';
+
+export interface ControllershipAudit {
+  id: string;
+  token: string;                       // Token exclusivo para o link seguro escopado
+  status: ControllershipAuditStatus;
+  submittedAt: string;
+  submittedBy: string;
+  submittedByRole?: string;
+  
+  // Proposta original enviada pelo Agente/Líder
+  originalCostBreakdown: LeanCostBreakdown;
+  originalEstimatedCostAvoided: number;
+  originalProjectCosts?: ProjectInvestmentCosts;
+
+  // Valores auditados e certificados pela Controladoria
+  approvedCostBreakdown?: LeanCostBreakdown;
+  approvedEstimatedCostAvoided?: number;
+  approvedProjectCosts?: ProjectInvestmentCosts;
+
+  // Dados e Parecer do Auditor
+  reviewedAt?: string;
+  reviewedBy?: string;                 // Nome do auditor financeiro
+  reviewerEmail?: string;              // E-mail do auditor
+  reviewerRole?: string;               // Cargo (ex: "Controladoria & Finanças")
+  auditNotes?: string;                 // Parecer técnico / notas de validação
+  rejectionReason?: string;            // Motivo da recusa / orientações de revisão
+
+  // Rastreabilidade da notificação
+  emailSentTo?: string;
+  emailSentAt?: string;
+  emailStatus?: 'enviado' | 'simulado' | 'falha';
+}
+
 export interface LeanAction {
   id: string;
   protocol: string; // e.g. "RAF-2026-8801"
@@ -241,6 +283,9 @@ export interface LeanAction {
   masterApproved?: boolean;              // Homologado pela Entidade Master?
   masterApprovedAt?: string;             // Data de homologação
   masterApprovedBy?: string;             // Responsável pela homologação Master
+
+  // Auditoria Prévia da Controladoria (Obrigatória se houver ganhos financeiros)
+  controllershipAudit?: ControllershipAudit;
 
   // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
   quarterlyFollowUp?: QuarterlyFollowUp;

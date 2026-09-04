@@ -23,6 +23,8 @@ import {
   Calendar,
   Layers,
   FileCheck,
+  FileCheck2,
+  ShieldCheck,
   Zap,
   HelpCircle,
   Sparkles,
@@ -833,6 +835,50 @@ export default function AdminProjectDetailPage() {
     setAction(updated);
     refreshData();
     confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+  };
+
+  // Submissão & Governança da Controladoria
+  const [submittingControladoria, setSubmittingControladoria] = useState(false);
+  const [copiedAuditLink, setCopiedAuditLink] = useState(false);
+
+  const handleSubmeterControladoria = async () => {
+    if (!action) return;
+    setSubmittingControladoria(true);
+    try {
+      const res = await dataService.submitActionToControladoria(
+        action.id,
+        currentUser?.name || action.assignedAgentName || 'Agente Lean'
+      );
+      setAction(res.action);
+      refreshData();
+      alert(`Projeto submetido com sucesso à Controladoria!\n\nLink seguro gerado para o auditor:\n${res.auditUrl}`);
+    } catch (err: any) {
+      alert(err.message || 'Erro ao submeter à Controladoria');
+    } finally {
+      setSubmittingControladoria(false);
+    }
+  };
+
+  const handleCopyAuditLink = () => {
+    if (!action?.controllershipAudit?.token) return;
+    const url = `${window.location.origin}/controladoria/auditoria/${action.controllershipAudit.token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedAuditLink(true);
+    setTimeout(() => setCopiedAuditLink(false), 3000);
+  };
+
+  const handleQuickApproveControladoriaTest = () => {
+    if (!action?.controllershipAudit) return;
+    const res = dataService.processControllershipAudit(action.controllershipAudit.token, {
+      status: 'aprovado',
+      reviewerName: currentUser?.name || 'Administrador (Modo Teste)',
+      reviewerEmail: currentUser?.email || 'admin@empresa.com.br',
+      reviewerRole: 'Gestão Master / Controladoria',
+      auditNotes: 'Aprovação executada via atalho rápido de teste local.',
+    });
+    setAction(res);
+    refreshData();
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
   const handleOpenFollowUpModal = (month: 1 | 2 | 3) => {
@@ -3128,6 +3174,163 @@ export default function AdminProjectDetailPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Card 4.2b: Auditoria & Certificação Prévia da Controladoria */}
+          <div
+            className="card"
+            style={{
+              padding: '1.75rem',
+              borderRadius: '16px',
+              backgroundColor: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                ? 'rgba(16, 185, 129, 0.08)'
+                : action.controllershipAudit?.status === 'pendente'
+                ? 'rgba(245, 158, 11, 0.08)'
+                : action.controllershipAudit?.status === 'rejeitado'
+                ? 'rgba(239, 68, 68, 0.08)'
+                : '#0f172a',
+              border: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                ? '2px solid rgba(16, 185, 129, 0.45)'
+                : action.controllershipAudit?.status === 'pendente'
+                ? '2px solid rgba(245, 158, 11, 0.45)'
+                : action.controllershipAudit?.status === 'rejeitado'
+                ? '2px solid rgba(239, 68, 68, 0.45)'
+                : '1px solid rgba(59, 130, 246, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <div
+                  style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    backgroundColor: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                      ? 'rgba(16, 185, 129, 0.2)'
+                      : action.controllershipAudit?.status === 'pendente'
+                      ? 'rgba(245, 158, 11, 0.2)'
+                      : action.controllershipAudit?.status === 'rejeitado'
+                      ? 'rgba(239, 68, 68, 0.2)'
+                      : 'rgba(59, 130, 246, 0.2)',
+                    border: `1px solid ${action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? 'rgba(16, 185, 129, 0.4)' : action.controllershipAudit?.status === 'pendente' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <FileCheck2 size={24} color={action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? '#34d399' : action.controllershipAudit?.status === 'pendente' ? '#fbbf24' : '#60a5fa'} />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      4.2b Governança Financeira & Auditoria da Controladoria
+                    </h3>
+                    {action.controllershipAudit?.status === 'aprovado' ? (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ✓ GANHOS HOMOLOGADOS PELA CONTROLADORIA
+                      </span>
+                    ) : action.controllershipAudit?.status === 'ajustado_e_aprovado' ? (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ✓ HOMOLOGADO COM AJUSTES DA CONTROLADORIA
+                      </span>
+                    ) : action.controllershipAudit?.status === 'pendente' ? (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ⏳ AGUARDANDO PARECER DA CONTROLADORIA
+                      </span>
+                    ) : action.controllershipAudit?.status === 'rejeitado' ? (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ✕ NECESSITA REVISÃO DE PREMISSAS
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        SUBMISSÃO PRÉVIA NECESSÁRIA
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '750px', lineHeight: 1.5 }}>
+                    {action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                      ? `Ganhos certificados por ${action.controllershipAudit.reviewedBy} (${action.controllershipAudit.reviewerRole || 'Controladoria'}) em ${formatDateTime(action.controllershipAudit.reviewedAt)}. Baseline financeiro liberado para o acompanhamento trimestral.`
+                      : action.controllershipAudit?.status === 'pendente'
+                      ? `Notificação com link escopado enviada para ${action.controllershipAudit.emailSentTo} em ${formatDateTime(action.controllershipAudit.submittedAt)}. O auditor analisará as 7 fontes de economia.`
+                      : action.controllershipAudit?.status === 'rejeitado'
+                      ? `Parecer da Controladoria: "${action.controllershipAudit.rejectionReason}". O projeto deve ser reavaliado no Gemba e ressubmetido.`
+                      : 'Antes de iniciar o acompanhamento de 3 meses, projetos com impacto financeiro passam pela homologação prévia da Controladoria via link exclusivo com memorial de cálculo.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Botões de Ação do Card */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {!action.controllershipAudit ? (
+                  <button
+                    type="button"
+                    onClick={handleSubmeterControladoria}
+                    disabled={submittingControladoria}
+                    className="btn btn-primary"
+                    style={{ padding: '0.65rem 1.4rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.45rem', backgroundColor: '#2563eb' }}
+                  >
+                    <Send size={16} />
+                    {submittingControladoria ? 'Enviando Notificação...' : 'Submeter à Controladoria ➔'}
+                  </button>
+                ) : action.controllershipAudit.status === 'pendente' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <Link
+                      href={`/controladoria/auditoria/${action.controllershipAudit.token}`}
+                      target="_blank"
+                      className="btn btn-primary"
+                      style={{ padding: '0.6rem 1.15rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#2563eb' }}
+                    >
+                      <ExternalLink size={15} /> Abrir Portal do Controlador
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyAuditLink}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.6rem 1rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700 }}
+                    >
+                      {copiedAuditLink ? '✓ Link Copiado!' : 'Copiar Link'}
+                    </button>
+
+                    {/* Atalho de Testes para o Usuário */}
+                    <button
+                      type="button"
+                      onClick={handleQuickApproveControladoriaTest}
+                      className="btn btn-secondary"
+                      title="Atalho para testes locais sem precisar abrir o link externo"
+                      style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.78rem', color: '#34d399', border: '1px dashed rgba(52, 211, 153, 0.4)' }}
+                    >
+                      ⚡ Aprovar (Modo Teste)
+                    </button>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/controladoria/auditoria/${action.controllershipAudit.token}`}
+                    target="_blank"
+                    className="btn btn-secondary"
+                    style={{ padding: '0.55rem 1.1rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  >
+                    <FileCheck2 size={15} color="#34d399" /> Ver Parecer da Controladoria
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Comparativo de Valores se Houve Ajuste */}
+            {action.controllershipAudit?.status === 'ajustado_e_aprovado' && (
+              <div style={{ padding: '0.75rem 1rem', borderRadius: '10px', backgroundColor: 'rgba(0,0,0,0.3)', borderLeft: '4px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.8125rem', color: '#cbd5e1' }}>
+                  <strong>Ajuste Homologado:</strong> A proposta original era de <strong>{formatCurrency(action.controllershipAudit.originalEstimatedCostAvoided)}/ano</strong>.
+                </span>
+                <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399' }}>
+                  Valor Oficial Certificado: {formatCurrency(action.controllershipAudit.approvedEstimatedCostAvoided || action.estimatedCostAvoided)}/ano
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Card 4.3: Acompanhamento & Sustentação de Resultados em 3 Meses (Obrigatório para Homologação) */}
