@@ -543,12 +543,12 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
           </div>
         )}
 
-        {/* Conteúdo Principal (Sem rolagem no modo Slide!) */}
+        {/* Conteúdo Principal (Com rolagem segura contra ocultamento) */}
         <div
           style={{
             flex: 1,
             padding: '1rem 1.25rem',
-            overflowY: viewMode === 'all' ? 'auto' : 'hidden',
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',

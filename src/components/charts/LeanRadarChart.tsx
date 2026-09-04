@@ -51,13 +51,34 @@ export const LeanRadarChart: React.FC<LeanRadarChartProps> = ({
     );
   }
 
-  // Geometria do Radar
+  // Helper para dividir rótulos longos em duas linhas para não cortar na borda do card
+  const splitLabel = (str: string): string[] => {
+    if (!str || str.length <= 13) return [str];
+    if (str.includes('&')) {
+      const parts = str.split('&');
+      return [parts[0].trim() + ' &', parts.slice(1).join('&').trim()];
+    }
+    const words = str.split(' ');
+    if (words.length >= 2) {
+      const mid = Math.ceil(words.length / 2);
+      return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+    }
+    return [str];
+  };
+
+  // Geometria do Radar calibrada para acomodar rótulos sem cortes
   const center = size / 2;
-  const radius = (size / 2) * 0.70; // margem para rótulos externos
+  const radius = (size / 2) * 0.58; // margem generosa para rótulos externos
   const count = data.length;
   const angleStep = (Math.PI * 2) / count;
   // Começar no topo (12 horas)
   const startAngle = -Math.PI / 2;
+
+  // Padding do viewBox para que textos externos nunca toquem os limites da SVG
+  const padX = 55;
+  const padY = 25;
+  const viewBoxWidth = size + padX * 2;
+  const viewBoxHeight = size + padY * 2;
 
   // Níveis concêntricos (20%, 40%, 60%, 80%, 100%)
   const levels = [20, 40, 60, 80, 100];
@@ -194,9 +215,9 @@ export const LeanRadarChart: React.FC<LeanRadarChartProps> = ({
         </div>
       )}
 
-      {/* SVG Canvas Principal */}
+      {/* SVG Canvas Principal com margens seguras (Zero corte de textos) */}
       <svg
-        viewBox={`0 0 ${size} ${size}`}
+        viewBox={`-${padX} -${padY} ${viewBoxWidth} ${viewBoxHeight}`}
         style={{
           width: '100%',
           height: 'auto',
@@ -350,10 +371,10 @@ export const LeanRadarChart: React.FC<LeanRadarChartProps> = ({
           </g>
         )}
 
-        {/* 5. Rótulos das Dimensões nas Extremidades Externas */}
+        {/* 5. Rótulos das Dimensões nas Extremidades Externas (Seguros e Multilinhas) */}
         {data.map((d, i) => {
           const angle = startAngle + i * angleStep;
-          const labelDist = radius + 26;
+          const labelDist = radius + 22;
           const lx = center + labelDist * Math.cos(angle);
           const ly = center + labelDist * Math.sin(angle);
 
@@ -363,6 +384,12 @@ export const LeanRadarChart: React.FC<LeanRadarChartProps> = ({
 
           const isHovered = hoveredPoint?.point.dimensionId === d.dimensionId;
           const delta = d.previousValue !== undefined ? d.currentValue - d.previousValue : 0;
+          const labelLines = splitLabel(d.shortLabel || d.label);
+
+          // Ajuste fino do offset Y para equilibrar o rótulo e o score numérico
+          const isTop = Math.sin(angle) < -0.8;
+          const isBottom = Math.sin(angle) > 0.8;
+          const baseOffset = isTop ? -10 : isBottom ? 12 : -3;
 
           return (
             <g
@@ -376,19 +403,27 @@ export const LeanRadarChart: React.FC<LeanRadarChartProps> = ({
             >
               <text
                 x={lx}
-                y={ly - 4}
+                y={ly + baseOffset - (labelLines.length - 1) * 6}
                 textAnchor={textAnchor}
                 fill={isHovered ? '#22d3ee' : '#ffffff'}
                 fontSize="11"
                 fontWeight="800"
                 fontFamily="var(--font-heading)"
               >
-                {d.shortLabel || d.label}
+                {labelLines.map((line, lineIdx) => (
+                  <tspan
+                    key={lineIdx}
+                    x={lx}
+                    dy={lineIdx === 0 ? 0 : 13}
+                  >
+                    {line}
+                  </tspan>
+                ))}
               </text>
 
               <text
                 x={lx}
-                y={ly + 10}
+                y={ly + baseOffset + labelLines.length * 13 - 1}
                 textAnchor={textAnchor}
                 fill={isHovered ? '#34d399' : '#94a3b8'}
                 fontSize="10"

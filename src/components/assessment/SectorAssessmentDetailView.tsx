@@ -521,7 +521,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   ? `Anterior (${comparisonData.previousAssessment.overallScore}%)`
                   : undefined
               }
-              size={390}
+              size={365}
             />
           </div>
 
@@ -572,23 +572,24 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
           </div>
         </div>
 
-        {/* Card 2: Diagnóstico Executivo do Sensei IA */}
+        {/* Card 2: Diagnóstico Executivo do Sensei IA (Sem cortes & Totalmente Visível) */}
         <div
           className="card"
           style={{
-            padding: '1.5rem',
+            padding: '1.25rem 1.5rem',
             backgroundColor: '#0c121e',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: '14px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '0.85rem',
+            overflow: 'visible',
           }}
         >
           {/* Header Sensei */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <div
                   style={{
@@ -624,6 +625,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   border: '1px solid rgba(16, 185, 129, 0.3)',
                   padding: '0.2rem 0.55rem',
                   borderRadius: '6px',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Nível {currentAssessment.overallLevel} ({currentAssessment.overallLevel === 5 ? 'Classe Mundial' : currentAssessment.overallLevel === 4 ? 'Avançado' : currentAssessment.overallLevel === 3 ? 'Padronizado' : currentAssessment.overallLevel === 2 ? 'Básico' : 'Reativo'})
@@ -633,12 +635,12 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             {/* Resumo do Sensei */}
             <p
               style={{
-                fontSize: '0.8rem',
+                fontSize: '0.785rem',
                 color: '#cbd5e1',
-                lineHeight: 1.55,
+                lineHeight: 1.5,
                 backgroundColor: 'rgba(255, 255, 255, 0.03)',
                 borderLeft: '3px solid #22d3ee',
-                padding: '0.65rem 0.85rem',
+                padding: '0.6rem 0.8rem',
                 borderRadius: '0 8px 8px 0',
                 margin: 0,
               }}
@@ -647,20 +649,34 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             </p>
           </div>
 
-          {/* Grid 2x2: Pilares Diagnósticos */}
+          {/* Grid 2x2: Pilares Diagnósticos (Textos Legíveis sem Truncamentos) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
             <div
               style={{
                 backgroundColor: 'rgba(16, 185, 129, 0.08)',
                 border: '1px solid rgba(16, 185, 129, 0.25)',
                 borderRadius: '8px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase' }}>
-                ⭐ Ponto Forte de Destaque
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
+                ⭐ Ponto Forte
               </span>
-              <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  marginTop: '0.2rem',
+                  lineHeight: 1.3,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: '2.1rem',
+                }}
+                title={currentAssessment.senseiDiagnosis.strongestDimension}
+              >
                 {currentAssessment.senseiDiagnosis.strongestDimension}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#34d399', fontFamily: 'var(--font-mono)', fontWeight: 800, marginTop: '0.15rem' }}>
@@ -673,13 +689,27 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 backgroundColor: 'rgba(239, 68, 68, 0.08)',
                 border: '1px solid rgba(239, 68, 68, 0.25)',
                 borderRadius: '8px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 800, textTransform: 'uppercase' }}>
-                ⚠️ Gargalo Crítico Prioritário
+              <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
+                ⚠️ Gargalo Crítico
               </span>
-              <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  marginTop: '0.2rem',
+                  lineHeight: 1.3,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: '2.1rem',
+                }}
+                title={currentAssessment.senseiDiagnosis.criticalBottleneck}
+              >
                 {currentAssessment.senseiDiagnosis.criticalBottleneck}
               </div>
               <div style={{ fontSize: '0.75rem', color: '#f87171', fontFamily: 'var(--font-mono)', fontWeight: 800, marginTop: '0.15rem' }}>
@@ -692,13 +722,27 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 backgroundColor: 'rgba(34, 211, 238, 0.08)',
                 border: '1px solid rgba(34, 211, 238, 0.25)',
                 borderRadius: '8px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase' }}>
-                🎯 Foco de Ataque Recomendado
+              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
+                🎯 Foco de Ataque
               </span>
-              <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#ffffff', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  color: '#ffffff',
+                  marginTop: '0.2rem',
+                  lineHeight: 1.3,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  minHeight: '2.1rem',
+                }}
+                title={currentAssessment.senseiDiagnosis.suggestedKaizenProject.targetDimension}
+              >
                 {currentAssessment.senseiDiagnosis.suggestedKaizenProject.targetDimension}
               </div>
               <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.15rem' }}>
@@ -711,13 +755,25 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 backgroundColor: 'rgba(251, 191, 36, 0.08)',
                 border: '1px solid rgba(251, 191, 36, 0.25)',
                 borderRadius: '8px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase' }}>
-                💰 Custo Evitado Estimado
+              <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
+                💰 Custo Evitado
               </span>
-              <div style={{ fontSize: '0.825rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)', marginTop: '0.2rem' }}>
+              <div
+                style={{
+                  fontSize: '0.825rem',
+                  fontWeight: 900,
+                  color: '#34d399',
+                  fontFamily: 'var(--font-mono)',
+                  marginTop: '0.2rem',
+                  lineHeight: 1.3,
+                  minHeight: '2.1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
                 {senseiActionDetails?.projectedCostAvoidedMonthly
                   ? `${formatCurrency(senseiActionDetails.projectedCostAvoidedMonthly)}/mês`
                   : 'R$ 0'}
@@ -728,7 +784,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             </div>
           </div>
 
-          {/* Destaque Compacto da Ação do Sensei com Chamada para Ação */}
+          {/* Destaque Compacto da Ação do Sensei com Chamada para Ação (Totalmente Desobstruído) */}
           {senseiActionDetails && (
             <div
               style={{
@@ -738,13 +794,14 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 padding: '0.75rem 1rem',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.5rem',
+                gap: '0.45rem',
+                overflow: 'visible',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <span style={{ fontSize: '1rem' }}>💡</span>
-                  <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     Ação Recomendada para Alavancar o Setor:
                   </span>
                 </div>
@@ -755,12 +812,12 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 )}
               </div>
 
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ffffff' }}>
+              <div style={{ fontSize: '0.825rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.35 }}>
                 {senseiActionDetails.title}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(251, 191, 36, 0.15)' }}>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(251, 191, 36, 0.15)', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
                   {senseiActionDetails.criticalPoints?.length || 3} gargalos mapeados • {senseiActionDetails.actionableSuggestions?.length || 3} passos práticos
                 </span>
                 <a
