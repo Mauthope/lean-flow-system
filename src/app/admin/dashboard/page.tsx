@@ -164,6 +164,7 @@ export default function AdminDashboardPage() {
   const totalPipeline = metrics.totalActions || 1;
   const pctOpen = Math.round((metrics.openActions / totalPipeline) * 100);
   const pctInProgress = Math.round((metrics.inProgressActions / totalPipeline) * 100);
+  const pctWaitingApproval = Math.round(((metrics.waitingApprovalActions || 0) / totalPipeline) * 100);
   const pctCompleted = Math.round((metrics.completedActions / totalPipeline) * 100);
   const pctRejected = Math.round((metrics.rejectedActions / totalPipeline) * 100);
 
@@ -996,7 +997,7 @@ export default function AdminDashboardPage() {
                 Projeção Anual: <strong style={{ color: '#22d3ee' }}>{formatCurrency((metrics.inProgressEstimatedCostAvoided ?? 0) * 12)}/ano (12m)</strong>
               </span>
               <span style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.15rem' }}>
-                {metrics.inProgressActions + metrics.openActions} projetos ativos em execução no pipeline
+                {metrics.inProgressActions + metrics.openActions + (metrics.waitingApprovalActions || 0)} projetos no pipeline ({metrics.waitingApprovalActions || 0} homologação, {metrics.inProgressActions} execução, {metrics.openActions} aberta)
               </span>
             </div>
           }
@@ -1007,7 +1008,7 @@ export default function AdminDashboardPage() {
         <StatsCard
           title="Total de Ações & Projetos"
           value={metrics.totalActions}
-          subtitle={`${metrics.completedActions} concluídas | ${metrics.inProgressActions} em andamento`}
+          subtitle={`${metrics.completedActions} concluídas (${boardFinancials.activeProjectsCount} no ano vigente) | ${metrics.inProgressActions + metrics.openActions + (metrics.waitingApprovalActions || 0)} no pipeline`}
           icon={<Kanban size={22} />}
           accentColor="#8b5cf6"
         />
@@ -1074,6 +1075,17 @@ export default function AdminDashboardPage() {
                   }}
                 />
               )}
+              {pctWaitingApproval > 0 && (
+                <div
+                  title={`Aguardando Homologação: ${metrics.waitingApprovalActions || 0} (${pctWaitingApproval}%)`}
+                  style={{
+                    width: `${pctWaitingApproval}%`,
+                    backgroundColor: '#fbbf24',
+                    boxShadow: '0 0 10px rgba(251, 191, 36, 0.5)',
+                    transition: 'width 0.4s ease',
+                  }}
+                />
+              )}
               {pctInProgress > 0 && (
                 <div
                   title={`Em Andamento: ${metrics.inProgressActions} (${pctInProgress}%)`}
@@ -1108,45 +1120,55 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Micro-Badges Indicators */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.625rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {/* Micro-Badges Indicators (Todos os 5 Status do Pipeline) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 6px #10b981' }} />
                   Concluídas
                 </span>
-                <strong style={{ fontSize: '0.875rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.completedActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctCompleted}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.completedActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctCompleted}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#fbbf24', boxShadow: '0 0 6px #fbbf24' }} />
+                  Homologação
+                </span>
+                <strong style={{ fontSize: '0.825rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.waitingApprovalActions || 0} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctWaitingApproval}%)</span>
+                </strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8b5cf6', boxShadow: '0 0 6px #8b5cf6' }} />
-                  Em Andamento
+                  Execução
                 </span>
-                <strong style={{ fontSize: '0.875rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.inProgressActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctInProgress}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.inProgressActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctInProgress}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#06b6d4', boxShadow: '0 0 6px #06b6d4' }} />
-                  Abertas / Novas
+                  Abertas
                 </span>
-                <strong style={{ fontSize: '0.875rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.openActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctOpen}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.openActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctOpen}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
                   Recusadas
                 </span>
-                <strong style={{ fontSize: '0.875rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.rejectedActions} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({pctRejected}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.rejectedActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctRejected}%)</span>
                 </strong>
               </div>
             </div>
@@ -1635,7 +1657,7 @@ export default function AdminDashboardPage() {
                 <th style={{ padding: '0.875rem 1.25rem' }}>Agente</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Atribuídas</th>
-                <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Em Andamento</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>No Pipeline</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Concluídas</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Custo Evitado Gerado</th>
                 <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Eficiência</th>

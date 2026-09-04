@@ -311,12 +311,14 @@ export interface DashboardMetrics {
   totalActions: number;
   openActions: number;
   inProgressActions: number;
+  waitingApprovalActions: number;
   completedActions: number;
   rejectedActions: number;
   totalEstimatedCostAvoided: number;
   inProgressEstimatedCostAvoided: number; // Potencial mensal estimado das ações e projetos em andamento/abertos no pipeline (R$/mês)
   inProgressAnnualCostAvoided?: number;   // Projeção anual de 12 meses do potencial em andamento (R$/ano)
-  totalActualCostAvoided: number;
+  totalActualCostAvoided: number;         // Retorno anual dos projetos vigentes no ciclo de 12 meses (R$/ano)
+  totalCompletedCostAvoided: number;      // Histórico acumulado total de todas as ações concluídas (ativas + expiradas) (R$)
   totalHoursSaved: number;
   costBreakdownTotals?: LeanCostBreakdown;
   boardFinancials?: ExecutiveBoardFinancials;

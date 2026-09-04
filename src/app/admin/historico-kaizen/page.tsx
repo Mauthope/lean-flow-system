@@ -185,7 +185,9 @@ export default function HistoricoKaizenPage() {
         completedAt: dateStr,
         year,
         month,
-        actualCostAvoided: act.actualCostAvoided || 0,
+        actualCostAvoided: act.quarterlyFollowUp?.averageCostAvoided
+          ? act.quarterlyFollowUp.averageCostAvoided * 12
+          : act.actualCostAvoided || 0,
         hoursSaved: act.hoursSaved || 0,
         wasteCategory: act.wasteCategory,
         problemStatement: act.problemStatement,

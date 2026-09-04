@@ -438,8 +438,11 @@ export const dataService = {
       action.quarterlyFollowUp.isCompleted = true;
       action.quarterlyFollowUp.completedAt = new Date().toISOString();
       action.quarterlyFollowUp.status = 'consolidado';
-      // Oficializa a média como ganho consolidado comprovado
-      action.actualCostAvoided = avg;
+      // Oficializa o retorno total anualizado (12 meses) como ganho comprovado do projeto
+      action.actualCostAvoided = avg * 12;
+      if (action.projectCosts?.totalCost) {
+        action.netSavings = (avg * 12) - action.projectCosts.totalCost;
+      }
     } else if (m1 !== undefined && m2 !== undefined) {
       action.quarterlyFollowUp.status = 'aguardando_mes_3';
       action.quarterlyFollowUp.averageCostAvoided = Math.round((m1 + m2) / 2);
@@ -760,6 +763,7 @@ export const dataService = {
     const totalActions = actions.length;
     const openActions = actions.filter((a) => a.status === 'aberta').length;
     const inProgressActions = actions.filter((a) => a.status === 'em_andamento').length;
+    const waitingApprovalActions = actions.filter((a) => a.status === 'aguardando_aprovacao').length;
     const completedActions = actions.filter((a) => a.status === 'concluida').length;
     const rejectedActions = actions.filter((a) => a.status === 'nao_aprovada').length;
 
@@ -777,7 +781,23 @@ export const dataService = {
       ? boardFinancials.activeAnnualTotal
       : actions
           .filter((a) => a.status === 'concluida')
-          .reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+          .reduce((acc, a) => {
+            const val = a.quarterlyFollowUp?.averageCostAvoided
+              ? a.quarterlyFollowUp.averageCostAvoided * 12
+              : a.actualCostAvoided || 0;
+            return acc + val;
+          }, 0);
+    const totalCompletedCostAvoided =
+      (boardFinancials.activeAnnualTotal || 0) + (boardFinancials.expiredAnnualTotal || 0) > 0
+        ? (boardFinancials.activeAnnualTotal || 0) + (boardFinancials.expiredAnnualTotal || 0)
+        : actions
+            .filter((a) => a.status === 'concluida')
+            .reduce((acc, a) => {
+              const val = a.quarterlyFollowUp?.averageCostAvoided
+                ? a.quarterlyFollowUp.averageCostAvoided * 12
+                : a.actualCostAvoided || 0;
+              return acc + val;
+            }, 0);
     const totalHoursSaved = actions.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
 
     const validActions = totalActions - rejectedActions;
@@ -821,7 +841,12 @@ export const dataService = {
       const secActions = actions.filter((a) => a.originSectorId === sec.id || a.targetSectorId === sec.id);
       const cost = secActions
         .filter((a) => a.status === 'concluida')
-        .reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+        .reduce((acc, a) => {
+          const actionCost = a.quarterlyFollowUp?.averageCostAvoided
+            ? a.quarterlyFollowUp.averageCostAvoided * 12
+            : a.actualCostAvoided || 0;
+          return acc + actionCost;
+        }, 0);
       return {
         sectorId: sec.id,
         sectorName: sec.name,
@@ -834,8 +859,16 @@ export const dataService = {
     const byAgent = users.map((agent) => {
       const agentActions = actions.filter((a) => a.assignedAgentId === agent.id);
       const completed = agentActions.filter((a) => a.status === 'concluida');
-      const inProgress = agentActions.filter((a) => a.status === 'em_andamento');
-      const cost = completed.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+      // No pipeline inclui em andamento, aguardando homologação e abertas
+      const inProgress = agentActions.filter(
+        (a) => a.status === 'em_andamento' || a.status === 'aguardando_aprovacao' || a.status === 'aberta'
+      );
+      const cost = completed.reduce((acc, a) => {
+        const actionCost = a.quarterlyFollowUp?.averageCostAvoided
+          ? a.quarterlyFollowUp.averageCostAvoided * 12
+          : a.actualCostAvoided || 0;
+        return acc + actionCost;
+      }, 0);
       const hours = agentActions.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
       const efficiency =
         agentActions.length > 0 ? Math.round((completed.length / agentActions.length) * 100) : 0;
@@ -854,7 +887,7 @@ export const dataService = {
       };
     });
 
-    // Cost Breakdown Totals
+    // Cost Breakdown Totals (Alinhado proporcionalmente com totalActualCostAvoided da carteira vigente)
     const costBreakdownTotals: LeanCostBreakdown = {
       laborSavings: 0,
       productionIncrease: 0,
@@ -865,35 +898,61 @@ export const dataService = {
       otherSavings: 0,
     };
 
-    actions
-      .filter((a) => a.status === 'concluida')
-      .forEach((a) => {
-        if (a.costBreakdown) {
-          costBreakdownTotals.laborSavings! += a.costBreakdown.laborSavings || 0;
-          costBreakdownTotals.productionIncrease! += a.costBreakdown.productionIncrease || 0;
-          costBreakdownTotals.scrapReduction! += a.costBreakdown.scrapReduction || 0;
-          costBreakdownTotals.machineDowntime! += a.costBreakdown.machineDowntime || 0;
-          costBreakdownTotals.toolingAndEnergy! += a.costBreakdown.toolingAndEnergy || 0;
-          costBreakdownTotals.logisticsAndFreight! += a.costBreakdown.logisticsAndFreight || 0;
-          costBreakdownTotals.otherSavings! += a.costBreakdown.otherSavings || 0;
-        } else if (a.actualCostAvoided > 0) {
-          // Default to labor/production if breakdown wasn't specified
-          costBreakdownTotals.laborSavings! += a.actualCostAvoided * 0.4;
-          costBreakdownTotals.productionIncrease! += a.actualCostAvoided * 0.35;
-          costBreakdownTotals.scrapReduction! += a.actualCostAvoided * 0.25;
-        }
-      });
+    // Filtra projetos concluídos vigentes no ano (ou todos caso nenhum esteja ativo)
+    const activeCompletedActions = actions.filter((a) => {
+      if (a.status !== 'concluida') return false;
+      const refDate = new Date(a.masterApprovedAt || a.completedAt || a.updatedAt || a.createdAt).getTime();
+      const days = Math.max(0, Math.floor((Date.now() - refDate) / (1000 * 60 * 60 * 24)));
+      return days <= 365;
+    });
+
+    const targetBreakdownActions = activeCompletedActions.length > 0
+      ? activeCompletedActions
+      : actions.filter((a) => a.status === 'concluida');
+
+    targetBreakdownActions.forEach((a) => {
+      const annualizedCost = a.quarterlyFollowUp?.averageCostAvoided
+        ? a.quarterlyFollowUp.averageCostAvoided * 12
+        : a.actualCostAvoided || 0;
+
+      if (a.costBreakdown) {
+        const rawSum =
+          (a.costBreakdown.laborSavings || 0) +
+          (a.costBreakdown.productionIncrease || 0) +
+          (a.costBreakdown.scrapReduction || 0) +
+          (a.costBreakdown.machineDowntime || 0) +
+          (a.costBreakdown.toolingAndEnergy || 0) +
+          (a.costBreakdown.logisticsAndFreight || 0) +
+          (a.costBreakdown.otherSavings || 0);
+
+        const factor = rawSum > 0 ? annualizedCost / rawSum : 1;
+
+        costBreakdownTotals.laborSavings! += Math.round((a.costBreakdown.laborSavings || 0) * factor);
+        costBreakdownTotals.productionIncrease! += Math.round((a.costBreakdown.productionIncrease || 0) * factor);
+        costBreakdownTotals.scrapReduction! += Math.round((a.costBreakdown.scrapReduction || 0) * factor);
+        costBreakdownTotals.machineDowntime! += Math.round((a.costBreakdown.machineDowntime || 0) * factor);
+        costBreakdownTotals.toolingAndEnergy! += Math.round((a.costBreakdown.toolingAndEnergy || 0) * factor);
+        costBreakdownTotals.logisticsAndFreight! += Math.round((a.costBreakdown.logisticsAndFreight || 0) * factor);
+        costBreakdownTotals.otherSavings! += Math.round((a.costBreakdown.otherSavings || 0) * factor);
+      } else if (annualizedCost > 0) {
+        costBreakdownTotals.laborSavings! += Math.round(annualizedCost * 0.4);
+        costBreakdownTotals.productionIncrease! += Math.round(annualizedCost * 0.35);
+        costBreakdownTotals.scrapReduction! += Math.round(annualizedCost * 0.25);
+      }
+    });
 
     return {
       totalActions,
       openActions,
       inProgressActions,
+      waitingApprovalActions,
       completedActions,
       rejectedActions,
       totalEstimatedCostAvoided,
       inProgressEstimatedCostAvoided,
       inProgressAnnualCostAvoided,
       totalActualCostAvoided,
+      totalCompletedCostAvoided,
       totalHoursSaved,
       costBreakdownTotals,
       boardFinancials,

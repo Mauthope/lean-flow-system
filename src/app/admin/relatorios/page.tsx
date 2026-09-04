@@ -70,14 +70,17 @@ export default function AdminRelatoriosPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
             <span style={{ fontSize: '0.725rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#34d399' }}>
-              Economia Total Homologada (Custo Evitado Real)
+              Economia Homologada no Ano (Custo Evitado Vigente - 12M)
             </span>
             <h1 style={{ fontSize: '2.75rem', fontWeight: 900, marginTop: '0.25rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.totalActualCostAvoided)}
             </h1>
-            <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.5rem' }}>
-              Gerado a partir de {completedActions.length} ações concluídas com sucesso.
+            <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.4rem' }}>
+              Gerado a partir de {metrics.boardFinancials?.activeProjectsCount ?? 1} projeto homologado vigente no exercício de 12 meses.
             </p>
+            <span style={{ display: 'inline-block', fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+              Histórico acumulado geral: <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(metrics.totalCompletedCostAvoided || metrics.totalActualCostAvoided)}</strong> ({completedActions.length} ações concluídas, incluindo projetos incorporados à rotina).
+            </span>
           </div>
 
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
@@ -197,21 +200,22 @@ export default function AdminRelatoriosPage() {
                 borderRadius: '9999px',
               }}
             >
-              {completedActions.length} Projetos Concluídos
+              {completedActions.length} Projetos Concluídos ({metrics.boardFinancials?.activeProjectsCount ?? 1} Vigente + {metrics.boardFinancials?.expiredProjectsCount ?? 1} Ciclo Concluído)
             </span>
           </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+          <table style={{ width: '100%', minWidth: '950px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <th style={{ padding: '0.875rem 1.25rem' }}>Protocolo / Ação</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Desperdício</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Agente</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Vigência (12M)</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Estimado</th>
-                <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Real Homologado</th>
+                <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Real Homologado (12M)</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Data Conclusão</th>
                 <th style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>Ação</th>
               </tr>
@@ -219,17 +223,25 @@ export default function AdminRelatoriosPage() {
             <tbody>
               {completedActions.map((action) => {
                 const waste = WASTE_CATEGORIES[action.wasteCategory];
+                const refDate = new Date(action.masterApprovedAt || action.completedAt || action.updatedAt || action.createdAt).getTime();
+                const days = Math.max(0, Math.floor((Date.now() - refDate) / (1000 * 60 * 60 * 24)));
+                const isExpired = days > 365;
+                const annualizedCost = action.quarterlyFollowUp?.averageCostAvoided
+                  ? action.quarterlyFollowUp.averageCostAvoided * 12
+                  : action.actualCostAvoided || 0;
+
                 return (
                   <tr
                     key={action.id}
                     onClick={() => router.push(`/admin/projetos/${action.id}`)}
                     style={{
                       borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                      backgroundColor: isExpired ? 'rgba(0, 0, 0, 0.2)' : 'transparent',
                       cursor: 'pointer',
                       transition: 'background-color 0.15s ease',
                     }}
-                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
-                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isExpired ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.03)')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = isExpired ? 'rgba(0, 0, 0, 0.2)' : 'transparent')}
                   >
                     <td style={{ padding: '0.875rem 1.25rem' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee' }}>
@@ -258,11 +270,44 @@ export default function AdminRelatoriosPage() {
                         </span>
                       </div>
                     </td>
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                      {isExpired ? (
+                        <span
+                          style={{
+                            fontSize: '0.675rem',
+                            fontWeight: 700,
+                            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                            color: '#94a3b8',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '9999px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          ⚪ Ciclo Concluído (Rotina)
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            fontSize: '0.675rem',
+                            fontWeight: 800,
+                            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                            color: '#34d399',
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '9999px',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          🟢 Vigente no Ano
+                        </span>
+                      )}
+                    </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: '#94a3b8' }}>
                       {formatCurrency(action.estimatedCostAvoided)}
                     </td>
-                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: '#34d399', fontSize: '0.9375rem' }}>
-                      {formatCurrency(action.actualCostAvoided)}
+                    <td style={{ padding: '0.875rem 1rem', textAlign: 'right', fontWeight: 800, color: isExpired ? '#94a3b8' : '#34d399', fontSize: '0.9375rem' }}>
+                      {formatCurrency(annualizedCost)}
                     </td>
                     <td style={{ padding: '0.875rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8125rem' }}>
                       {formatDateTime(action.completedAt)}
@@ -291,6 +336,30 @@ export default function AdminRelatoriosPage() {
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr style={{ backgroundColor: '#070b14', borderTop: '2px solid rgba(255, 255, 255, 0.12)', fontWeight: 800 }}>
+                <td colSpan={6} style={{ padding: '0.875rem 1.25rem', color: '#cbd5e1' }}>
+                  Subtotal Carteira Vigente no Ano (Projetos Ativos no Exercício de 12M):
+                </td>
+                <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: '#34d399', fontSize: '1rem', fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(metrics.totalActualCostAvoided)}
+                </td>
+                <td colSpan={2} style={{ padding: '0.875rem 1rem', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center' }}>
+                  {metrics.boardFinancials?.activeProjectsCount ?? 1} projeto ativo
+                </td>
+              </tr>
+              <tr style={{ backgroundColor: '#090e1a', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: 800 }}>
+                <td colSpan={6} style={{ padding: '0.875rem 1.25rem', color: '#94a3b8' }}>
+                  Total Histórico Acumulado Concluído (Incluindo Projetos Incorporados à Rotina):
+                </td>
+                <td style={{ padding: '0.875rem 1rem', textAlign: 'right', color: '#22d3ee', fontSize: '1rem', fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(metrics.totalCompletedCostAvoided || metrics.totalActualCostAvoided)}
+                </td>
+                <td colSpan={2} style={{ padding: '0.875rem 1rem', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center' }}>
+                  {completedActions.length} projetos no total
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

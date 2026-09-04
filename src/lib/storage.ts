@@ -398,9 +398,9 @@ export const INITIAL_ACTIONS: LeanAction[] = [
       toolingAndEnergy: 6000,
     },
     estimatedCostAvoided: 65000,
-    actualCostAvoided: 74200,
-    netSavings: 64960,
-    roiPercentage: 703,
+    actualCostAvoided: 1011600, // 84.300/mês (média trimestral) * 12 meses
+    netSavings: 1002360,
+    roiPercentage: 10848,
     paybackMonths: 1.5,
     hoursSaved: 194,
     attachments: [
@@ -805,12 +805,24 @@ export function initializeLocalStorage(): void {
   } else {
     // Garantir que o projeto exemplo de ciclo concluído (act_000) esteja presente no banco de dados local
     const existingActions = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, []);
+    let actionsModified = false;
     if (existingActions.length > 0 && !existingActions.some((a) => a.id === 'act_000')) {
       const act000 = INITIAL_ACTIONS.find((a) => a.id === 'act_000');
       if (act000) {
         existingActions.unshift(act000);
-        setStoredData(STORAGE_KEYS.ACTIONS, existingActions);
+        actionsModified = true;
       }
+    }
+    // Sincronizar act_001 com o valor anualizado homologado de 12 meses (R$ 1.011.600)
+    const act001 = existingActions.find((a) => a.id === 'act_001');
+    if (act001 && act001.actualCostAvoided === 74200) {
+      act001.actualCostAvoided = 1011600;
+      act001.netSavings = 1002360;
+      act001.roiPercentage = 10848;
+      actionsModified = true;
+    }
+    if (actionsModified) {
+      setStoredData(STORAGE_KEYS.ACTIONS, existingActions);
     }
   }
   if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
