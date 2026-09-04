@@ -211,3 +211,23 @@ export const PRIORITY_CONFIG: Record<
     badge: 'bg-red-100 text-red-800 border-red-200 font-semibold',
   },
 };
+
+/**
+ * Retorna a quantidade de meses (0 a 3) devidamente preenchidos no acompanhamento
+ */
+export function getFollowUpMonthsFilledCount(action?: { quarterlyFollowUp?: { month1?: { value?: number }; month2?: { value?: number }; month3?: { value?: number } } } | null): number {
+  if (!action || !action.quarterlyFollowUp) return 0;
+  let count = 0;
+  if (action.quarterlyFollowUp.month1?.value !== undefined && action.quarterlyFollowUp.month1?.value !== null) count++;
+  if (action.quarterlyFollowUp.month2?.value !== undefined && action.quarterlyFollowUp.month2?.value !== null) count++;
+  if (action.quarterlyFollowUp.month3?.value !== undefined && action.quarterlyFollowUp.month3?.value !== null) count++;
+  return count;
+}
+
+/**
+ * Valida se todos os 3 meses de acompanhamento foram preenchidos (requisito obrigatório para homologação)
+ */
+export function isThreeMonthsFollowUpCompleted(action?: { quarterlyFollowUp?: { month1?: { value?: number }; month2?: { value?: number }; month3?: { value?: number } } } | null): boolean {
+  return getFollowUpMonthsFilledCount(action) === 3;
+}
+

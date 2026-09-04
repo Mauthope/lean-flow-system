@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
 import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
-import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES } from '@/lib/utils';
+import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeft,
@@ -778,39 +778,41 @@ export default function AdminProjectDetailPage() {
 
   const handleAgentSubmitForApproval = () => {
     if (!action) return;
+    const monthsFilled = getFollowUpMonthsFilledCount(action);
+    if (monthsFilled < 3) {
+      alert(`Atenção: O projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
+      return;
+    }
     const updated = dataService.updateAction(action.id, {
       status: 'aguardando_aprovacao',
       submittedForApproval: true,
       submittedForApprovalAt: new Date().toISOString(),
-      submittedForApprovalBy: currentUser?.name || 'Agente Lean',
+      submittedForApprovalBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
     });
     setAction(updated);
     refreshData();
-    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
   const handleMasterApprove = () => {
     if (!action) return;
+    const monthsFilled = getFollowUpMonthsFilledCount(action);
+    if (monthsFilled < 3) {
+      alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
+      return;
+    }
+    const finalCostAvoided = action.quarterlyFollowUp?.averageCostAvoided || totalGrossSavings || action.actualCostAvoided || action.estimatedCostAvoided;
     const updated = dataService.updateAction(action.id, {
       status: 'concluida',
       pdcaStage: 'act',
       masterApproved: true,
       masterApprovedAt: new Date().toISOString(),
-      masterApprovedBy: currentUser?.name || 'Rafitec',
-      actualCostAvoided: totalGrossSavings > 0 ? totalGrossSavings : action.estimatedCostAvoided,
-      quarterlyFollowUp: action.quarterlyFollowUp || {
-        enabled: true,
-        startedAt: new Date().toISOString(),
-        month1: { monthNumber: 1, monthLabel: '1º Mês' },
-        month2: { monthNumber: 2, monthLabel: '2º Mês' },
-        month3: { monthNumber: 3, monthLabel: '3º Mês' },
-        status: 'aguardando_mes_1',
-        isCompleted: false,
-      },
+      masterApprovedBy: currentUser?.name || 'Gestão Master',
+      actualCostAvoided: finalCostAvoided,
     });
     setAction(updated);
     refreshData();
-    confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+    confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
   };
 
   const handleOpenFollowUpModal = (month: 1 | 2 | 3) => {
@@ -3047,155 +3049,21 @@ export default function AdminProjectDetailPage() {
             </div>
           </div>
 
-          {/* Card: Homologação Final da Entidade Master */}
-          <div
-            className="card"
-            style={{
-              padding: '1.75rem',
-              borderRadius: '16px',
-              border: action.masterApproved
-                ? '2px solid rgba(16, 185, 129, 0.5)'
-                : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                ? '2px solid rgba(168, 85, 247, 0.5)'
-                : '1px dashed rgba(255, 255, 255, 0.15)',
-              backgroundColor: action.masterApproved
-                ? 'rgba(16, 185, 129, 0.1)'
-                : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                ? 'rgba(168, 85, 247, 0.1)'
-                : '#0f172a',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1.25rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
-              <div
-                style={{
-                  width: '52px',
-                  height: '52px',
-                  borderRadius: '14px',
-                  backgroundColor: action.masterApproved
-                    ? '#10b981'
-                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                    ? '#9333ea'
-                    : '#1e293b',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: '1.35rem',
-                  boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none',
-                }}
-              >
-                {action.masterApproved ? '✓' : action.status === 'aguardando_aprovacao' || action.submittedForApproval ? '⏳' : '🏢'}
-              </div>
-
-              <div>
-                <h4
-                  style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 900,
-                    color: action.masterApproved
-                      ? '#34d399'
-                      : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                      ? '#c084fc'
-                      : '#ffffff',
-                    margin: 0,
-                    fontFamily: 'var(--font-heading)',
-                  }}
-                >
-                  {action.masterApproved
-                    ? 'Projeto Homologado pela Entidade Master'
-                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                    ? 'Aguardando Homologação da Entidade Master'
-                    : currentUser?.role === 'agent'
-                    ? 'Submeter Projeto para Homologação Master'
-                    : 'Homologação Pendente pela Gestão Master'}
-                </h4>
-
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
-                  {action.masterApproved
-                    ? `Validado por ${action.masterApprovedBy || 'Rafitec'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos.`
-                    : action.status === 'aguardando_aprovacao' || action.submittedForApproval
-                    ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)}. Sinalizado no Kanban Geral para homologação pelo Supervisor.`
-                    : currentUser?.role === 'agent'
-                    ? 'Finalizou os 4 quadrantes do PDCA? Submeta para que o supervisor homologue no Kanban Geral da Entidade.'
-                    : 'A aprovação oficializa a conclusão do ciclo PDCA e valida o custo evitado na DRE da empresa.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Actions for Agent vs Supervisor */}
-            <div>
-              {action.masterApproved ? (
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    fontWeight: 800,
-                    fontSize: '0.8125rem',
-                  }}
-                >
-                  <CheckCircle2 size={16} /> Homologado ✓
-                </span>
-              ) : currentUser?.role === 'agent' ? (
-                <button
-                  type="button"
-                  onClick={handleAgentSubmitForApproval}
-                  className="btn btn-primary"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    backgroundColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : undefined,
-                    borderColor: action.status === 'aguardando_aprovacao' ? '#7c3aed' : undefined,
-                  }}
-                >
-                  <Send size={15} />
-                  <span>
-                    {action.status === 'aguardando_aprovacao'
-                      ? 'Reenviar para Homologação Master'
-                      : 'Submeter para Homologação Master'}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleMasterApprove}
-                  className="btn btn-success"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                  }}
-                >
-                  <CheckCircle2 size={16} />
-                  <span>Homologar Projeto & Concluir Ciclo PDCA</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Card: 4.4 Sustentação & Comprovação de Resultados em 3 Meses */}
+          {/* Card 4.3: Acompanhamento & Sustentação de Resultados em 3 Meses (Obrigatório para Homologação) */}
           <div
             className="card"
             style={{
               padding: '1.75rem',
               borderRadius: '16px',
               backgroundColor: '#0f172a',
-              border: action.masterApproved
-                ? '2px solid rgba(6, 182, 212, 0.4)'
-                : '1px dashed rgba(255, 255, 255, 0.12)',
-              boxShadow: action.masterApproved ? '0 10px 30px -5px rgba(6, 182, 212, 0.12)' : 'none',
+              border: isThreeMonthsFollowUpCompleted(action)
+                ? '2px solid rgba(16, 185, 129, 0.45)'
+                : getFollowUpMonthsFilledCount(action) > 0
+                ? '1.5px solid rgba(6, 182, 212, 0.4)'
+                : '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: isThreeMonthsFollowUpCompleted(action)
+                ? '0 10px 30px -5px rgba(16, 185, 129, 0.12)'
+                : '0 4px 20px rgba(0, 0, 0, 0.3)',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.5rem',
@@ -3208,22 +3076,22 @@ export default function AdminProjectDetailPage() {
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    backgroundColor: action.masterApproved ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${action.masterApproved ? 'rgba(6, 182, 212, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    backgroundColor: isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                    border: `1px solid ${isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.35)' : 'rgba(6, 182, 212, 0.35)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: action.masterApproved ? '0 0 15px rgba(6, 182, 212, 0.2)' : 'none',
+                    boxShadow: isThreeMonthsFollowUpCompleted(action) ? '0 0 15px rgba(16, 185, 129, 0.2)' : '0 0 15px rgba(6, 182, 212, 0.2)',
                   }}
                 >
-                  <Calendar size={22} color={action.masterApproved ? '#22d3ee' : '#94a3b8'} />
+                  <Calendar size={22} color={isThreeMonthsFollowUpCompleted(action) ? '#34d399' : '#22d3ee'} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      4.4 Comprovação Trimestral de Ganhos Reais (Auditoria de 3 Meses)
+                      4.3 Comprovação Trimestral de Ganhos Reais (Auditoria de 3 Meses pelo Agente)
                     </h3>
-                    {action.masterApproved && action.quarterlyFollowUp?.isCompleted ? (
+                    {isThreeMonthsFollowUpCompleted(action) ? (
                       <span
                         style={{
                           fontSize: '0.7rem',
@@ -3238,230 +3106,378 @@ export default function AdminProjectDetailPage() {
                           gap: '0.25rem',
                         }}
                       >
-                        <CheckCircle2 size={12} /> AUDITORIA CONSOLIDADA (3/3)
-                      </span>
-                    ) : action.masterApproved ? (
-                      <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                          color: '#22d3ee',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          padding: '0.15rem 0.55rem',
-                          borderRadius: '9999px',
-                        }}
-                      >
-                        EM ACOMPANHAMENTO (
-                        {[
-                          action.quarterlyFollowUp?.month1?.value,
-                          action.quarterlyFollowUp?.month2?.value,
-                          action.quarterlyFollowUp?.month3?.value,
-                        ].filter((v) => v !== undefined).length}
-                        /3 MESES)
+                        <CheckCircle2 size={12} /> SUSTENTAÇÃO CONSOLIDADA (3/3 MESES) ✓
                       </span>
                     ) : (
                       <span
                         style={{
                           fontSize: '0.7rem',
-                          fontWeight: 700,
-                          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          color: '#94a3b8',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          fontWeight: 800,
+                          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                          color: '#fbbf24',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
                           padding: '0.15rem 0.55rem',
                           borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
                         }}
                       >
-                        BLOQUEADO ATÉ HOMOLOGAÇÃO
+                        ⏳ EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES — OBRIGATÓRIO P/ HOMOLOGAÇÃO)
                       </span>
                     )}
                   </div>
                   <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '750px', lineHeight: 1.5 }}>
-                    Conforme o padrão de sustentação Lean, após a homologação executiva o agente monitora os resultados operacionais nos 3 primeiros meses. Ao registrar o 3º mês, o sistema calcula e consolida a média definitiva de custo evitado automaticamente.
+                    Conforme a metodologia de sustentação Lean, o <strong>Agente Responsável</strong> deve monitorar e registrar os resultados operacionais reais obtidos nos 3 primeiros meses. <strong>O envio para homologação master só é liberado após o preenchimento dos 3 meses.</strong>
                   </p>
                 </div>
               </div>
             </div>
 
-            {!action.masterApproved ? (
-              <div
-                style={{
-                  padding: '1.25rem',
-                  borderRadius: '12px',
-                  backgroundColor: '#090e1a',
-                  border: '1px dashed rgba(255, 255, 255, 0.12)',
-                  color: '#94a3b8',
-                  fontSize: '0.84375rem',
-                  textAlign: 'center',
-                }}
-              >
-                🔒 <strong>Acompanhamento Bloqueado:</strong> Esta seção é liberada automaticamente para lançamento dos resultados trimestrais assim que o supervisor homologar o projeto no passo acima (4.3).
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Grid dos 3 Meses */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                  {([1, 2, 3] as const).map((mNum) => {
-                    const mKey = `month${mNum}` as 'month1' | 'month2' | 'month3';
-                    const entry = action.quarterlyFollowUp?.[mKey];
-                    const isFilled = entry?.value !== undefined;
+            {/* Grid dos 3 Meses */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                {([1, 2, 3] as const).map((mNum) => {
+                  const mKey = `month${mNum}` as 'month1' | 'month2' | 'month3';
+                  const entry = action.quarterlyFollowUp?.[mKey];
+                  const isFilled = entry?.value !== undefined;
 
-                    return (
-                      <div
-                        key={mNum}
-                        style={{
-                          backgroundColor: '#090e1a',
-                          border: isFilled
-                            ? '1px solid rgba(16, 185, 129, 0.35)'
-                            : '1px solid rgba(255, 255, 255, 0.1)',
-                          borderRadius: '14px',
-                          padding: '1.15rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '0.85rem',
-                          position: 'relative',
-                          boxShadow: isFilled ? '0 4px 20px rgba(16, 185, 129, 0.08)' : 'none',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            {mNum}º Mês de Operação
-                          </span>
-                          {isFilled ? (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                              ✓ Aferido
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                              ⏳ Pendente
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
-                          <p style={{ fontSize: '0.675rem', color: '#64748b', textTransform: 'uppercase', margin: '0 0 0.15rem', fontWeight: 700 }}>
-                            Custo Evitado Real
-                          </p>
-                          <h4 style={{ fontSize: '1.45rem', fontWeight: 900, color: isFilled ? '#34d399' : '#64748b', margin: 0, fontFamily: 'var(--font-mono)' }}>
-                            {isFilled ? formatCurrency(entry.value!) : 'R$ --'}
-                          </h4>
-                        </div>
-
-                        {isFilled ? (
-                          <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '0.3rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.65rem' }}>
-                            {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#cbd5e1' }}>
-                                <Clock size={12} color="#f59e0b" />
-                                <span>{entry.hoursSaved}h salvas no período</span>
-                              </div>
-                            )}
-                            {entry.measuredAt && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8' }}>
-                                <Calendar size={12} color="#06b6d4" />
-                                <span>Data: {formatDate(entry.measuredAt)}</span>
-                              </div>
-                            )}
-                            {entry.notes && (
-                              <p style={{ margin: '0.2rem 0 0', fontStyle: 'italic', color: '#cbd5e1', fontSize: '0.725rem', lineHeight: 1.4 }}>
-                                &ldquo;{entry.notes}&rdquo;
-                              </p>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleOpenFollowUpModal(mNum)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
-                            >
-                              Editar Medição
-                            </button>
-                          </div>
-                        ) : (
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => handleOpenFollowUpModal(mNum)}
-                              className="btn btn-primary btn-sm"
-                              style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                            >
-                              <Plus size={14} /> Lançar Resultado do {mNum}º Mês
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Banner de Média Trimestral e Consolidação */}
-                <div
-                  style={{
-                    backgroundColor: action.quarterlyFollowUp?.isCompleted
-                      ? 'rgba(16, 185, 129, 0.1)'
-                      : 'rgba(6, 182, 212, 0.08)',
-                    border: action.quarterlyFollowUp?.isCompleted
-                      ? '1.5px solid rgba(16, 185, 129, 0.4)'
-                      : '1px solid rgba(6, 182, 212, 0.25)',
-                    borderRadius: '14px',
-                    padding: '1.25rem 1.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '1rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  return (
                     <div
+                      key={mNum}
                       style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '12px',
-                        backgroundColor: action.quarterlyFollowUp?.isCompleted
-                          ? 'rgba(16, 185, 129, 0.2)'
-                          : 'rgba(6, 182, 212, 0.2)',
-                        border: `1px solid ${action.quarterlyFollowUp?.isCompleted ? 'rgba(16, 185, 129, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
+                        backgroundColor: '#090e1a',
+                        border: isFilled
+                          ? '1px solid rgba(16, 185, 129, 0.35)'
+                          : '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '14px',
+                        padding: '1.15rem',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.85rem',
+                        position: 'relative',
+                        boxShadow: isFilled ? '0 4px 20px rgba(16, 185, 129, 0.08)' : 'none',
                       }}
                     >
-                      <Sigma size={24} color={action.quarterlyFollowUp?.isCompleted ? '#34d399' : '#22d3ee'} />
-                    </div>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                          Média Trimestral de Custo Evitado Consolidada
-                        </h4>
-                        {action.quarterlyFollowUp?.isCompleted && (
-                          <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                            OFICIALIZADO NA DRE ✓
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          {mNum}º Mês de Operação
+                        </span>
+                        {isFilled ? (
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                            ✓ Aferido
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                            ⏳ Pendente
                           </span>
                         )}
                       </div>
-                      <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
-                        {action.quarterlyFollowUp?.isCompleted
-                          ? 'A média dos 3 meses de operação estabilizada foi calculada automaticamente e atualizada na DRE de ganhos.'
-                          : 'O cálculo da média final fecha automaticamente ao realizar o preenchimento do 3º mês de acompanhamento.'}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                      Média dos 3 Meses
-                    </span>
-                    <h3 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
-                      {action.quarterlyFollowUp?.averageCostAvoided
-                        ? formatCurrency(action.quarterlyFollowUp.averageCostAvoided)
-                        : formatCurrency(action.actualCostAvoided || 0)}
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
-                    </h3>
+                      <div>
+                        <p style={{ fontSize: '0.675rem', color: '#64748b', textTransform: 'uppercase', margin: '0 0 0.15rem', fontWeight: 700 }}>
+                          Custo Evitado Real
+                        </p>
+                        <h4 style={{ fontSize: '1.45rem', fontWeight: 900, color: isFilled ? '#34d399' : '#64748b', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                          {isFilled ? formatCurrency(entry.value!) : 'R$ --'}
+                        </h4>
+                      </div>
+
+                      {isFilled ? (
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '0.3rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.65rem' }}>
+                          {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#cbd5e1' }}>
+                              <Clock size={12} color="#f59e0b" />
+                              <span>{entry.hoursSaved}h salvas no período</span>
+                            </div>
+                          )}
+                          {entry.measuredAt && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8' }}>
+                              <Calendar size={12} color="#06b6d4" />
+                              <span>Data: {formatDate(entry.measuredAt)}</span>
+                            </div>
+                          )}
+                          {entry.notes && (
+                            <p style={{ margin: '0.2rem 0 0', fontStyle: 'italic', color: '#cbd5e1', fontSize: '0.725rem', lineHeight: 1.4 }}>
+                              &ldquo;{entry.notes}&rdquo;
+                            </p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenFollowUpModal(mNum)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
+                          >
+                            Editar Medição
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenFollowUpModal(mNum)}
+                            className="btn btn-primary btn-sm"
+                            style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                          >
+                            <Plus size={14} /> Lançar Resultado do {mNum}º Mês
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Banner de Média Trimestral e Consolidação */}
+              <div
+                style={{
+                  backgroundColor: isThreeMonthsFollowUpCompleted(action)
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : 'rgba(6, 182, 212, 0.08)',
+                  border: isThreeMonthsFollowUpCompleted(action)
+                    ? '1.5px solid rgba(16, 185, 129, 0.4)'
+                    : '1px solid rgba(6, 182, 212, 0.25)',
+                  borderRadius: '14px',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      backgroundColor: isThreeMonthsFollowUpCompleted(action)
+                        ? 'rgba(16, 185, 129, 0.2)'
+                        : 'rgba(6, 182, 212, 0.2)',
+                      border: `1px solid ${isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Sigma size={24} color={isThreeMonthsFollowUpCompleted(action) ? '#34d399' : '#22d3ee'} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                        Média Trimestral de Custo Evitado
+                      </h4>
+                      {isThreeMonthsFollowUpCompleted(action) ? (
+                        <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                          PRONTO PARA HOMOLOGAÇÃO ✓
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.675rem', fontWeight: 700, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
+                          {getFollowUpMonthsFilledCount(action)}/3 MESES PREENCHIDOS
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                      {isThreeMonthsFollowUpCompleted(action)
+                        ? 'Os 3 meses foram aferidos com sucesso pelo agente! A média definitiva está consolidada para homologação do Gestor Master no passo 4.4 abaixo.'
+                        : `Preencha os ${3 - getFollowUpMonthsFilledCount(action)} mês(es) restante(s) acima para consolidar a média definitiva e habilitar o envio para Homologação Master.`}
+                    </p>
                   </div>
                 </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Média dos 3 Meses
+                  </span>
+                  <h3 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+                    {action.quarterlyFollowUp?.averageCostAvoided
+                      ? formatCurrency(action.quarterlyFollowUp.averageCostAvoided)
+                      : formatCurrency(action.actualCostAvoided || 0)}
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
+                  </h3>
+                </div>
               </div>
-            )}
+            </div>
           </div>
+
+          {/* Card 4.4: Homologação Final da Entidade Master */}
+          {(() => {
+            const monthsFilled = getFollowUpMonthsFilledCount(action);
+            const isThreeMonthsDone = monthsFilled === 3;
+            const isAwaitingApproval = action.status === 'aguardando_aprovacao' || action.submittedForApproval;
+
+            return (
+              <div
+                className="card"
+                style={{
+                  padding: '1.75rem',
+                  borderRadius: '16px',
+                  border: action.masterApproved
+                    ? '2px solid rgba(16, 185, 129, 0.5)'
+                    : isAwaitingApproval
+                    ? '2px solid rgba(168, 85, 247, 0.5)'
+                    : isThreeMonthsDone
+                    ? '2px solid rgba(6, 182, 212, 0.5)'
+                    : '1px dashed rgba(255, 255, 255, 0.15)',
+                  backgroundColor: action.masterApproved
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : isAwaitingApproval
+                    ? 'rgba(168, 85, 247, 0.1)'
+                    : isThreeMonthsDone
+                    ? 'rgba(6, 182, 212, 0.06)'
+                    : '#0f172a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '1.25rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
+                  <div
+                    style={{
+                      width: '52px',
+                      height: '52px',
+                      borderRadius: '14px',
+                      backgroundColor: action.masterApproved
+                        ? '#10b981'
+                        : isAwaitingApproval
+                        ? '#9333ea'
+                        : isThreeMonthsDone
+                        ? '#0284c7'
+                        : '#1e293b',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: '1.35rem',
+                      boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : isThreeMonthsDone ? '0 0 15px rgba(6, 182, 212, 0.3)' : 'none',
+                    }}
+                  >
+                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : isThreeMonthsDone ? '🚀' : '🔒'}
+                  </div>
+
+                  <div>
+                    <h4
+                      style={{
+                        fontSize: '1.1rem',
+                        fontWeight: 900,
+                        color: action.masterApproved
+                          ? '#34d399'
+                          : isAwaitingApproval
+                          ? '#c084fc'
+                          : isThreeMonthsDone
+                          ? '#38bdf8'
+                          : '#94a3b8',
+                        margin: 0,
+                        fontFamily: 'var(--font-heading)',
+                      }}
+                    >
+                      {action.masterApproved
+                        ? '4.4 Projeto Homologado pela Entidade Master'
+                        : isAwaitingApproval
+                        ? '4.4 Aguardando Homologação do Gestor Master'
+                        : isThreeMonthsDone
+                        ? '4.4 Pronto para Envio à Homologação Master'
+                        : '4.4 Homologação Master (Bloqueada: Exige 3 Meses)'}
+                    </h4>
+
+                    <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', lineHeight: 1.4 }}>
+                      {action.masterApproved
+                        ? `Validado por ${action.masterApprovedBy || 'Gestor Master'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos e DRE.`
+                        : isAwaitingApproval
+                        ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)} com a comprovação dos 3 meses de acompanhamento concluída.`
+                        : isThreeMonthsDone
+                        ? 'Os 3 meses de acompanhamento foram preenchidos pelo agente! O projeto está 100% pronto para ser enviado à homologação do Gestor Master.'
+                        : `O agente só pode enviar o projeto para homologação após o preenchimento dos 3 meses de acompanhamento no passo 4.3 acima (Progresso: ${monthsFilled}/3 meses).`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions for Agent vs Supervisor */}
+                <div>
+                  {action.masterApproved ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        color: '#34d399',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        fontWeight: 800,
+                        fontSize: '0.8125rem',
+                      }}
+                    >
+                      <CheckCircle2 size={16} /> Homologado ✓
+                    </span>
+                  ) : currentUser?.role === 'agent' ? (
+                    <button
+                      type="button"
+                      disabled={!isThreeMonthsDone}
+                      onClick={handleAgentSubmitForApproval}
+                      className={`btn ${isThreeMonthsDone ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: isThreeMonthsDone ? 1 : 0.6,
+                        cursor: isThreeMonthsDone ? 'pointer' : 'not-allowed',
+                        backgroundColor: isAwaitingApproval ? '#7c3aed' : undefined,
+                        borderColor: isAwaitingApproval ? '#7c3aed' : undefined,
+                      }}
+                      title={
+                        !isThreeMonthsDone
+                          ? `A submissão só é liberada após o preenchimento dos 3 meses de resultados pelo agente (${monthsFilled}/3 preenchidos).`
+                          : undefined
+                      }
+                    >
+                      {isThreeMonthsDone ? <Send size={15} /> : <AlertTriangle size={15} />}
+                      <span>
+                        {isAwaitingApproval
+                          ? 'Reenviar para Homologação Master'
+                          : isThreeMonthsDone
+                          ? 'Submeter para Homologação Master'
+                          : `Homologação Bloqueada (${monthsFilled}/3 meses)`}
+                      </span>
+                    </button>
+                  ) : (
+                    // Supervisor / Master Manager
+                    <button
+                      type="button"
+                      disabled={!isThreeMonthsDone}
+                      onClick={handleMasterApprove}
+                      className="btn btn-success"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: isThreeMonthsDone ? 1 : 0.6,
+                        cursor: isThreeMonthsDone ? 'pointer' : 'not-allowed',
+                      }}
+                      title={
+                        !isThreeMonthsDone
+                          ? `A homologação master só pode ser realizada após a adição dos resultados de 3 meses pelo agente (${monthsFilled}/3 preenchidos).`
+                          : 'Homologar projeto e concluir ciclo PDCA'
+                      }
+                    >
+                      <CheckCircle2 size={16} />
+                      <span>
+                        {isThreeMonthsDone
+                          ? 'Homologar Projeto & Concluir Ciclo PDCA'
+                          : `Homologação Pendente (${monthsFilled}/3 meses)`}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

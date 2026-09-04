@@ -4,7 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LeanAction } from '@/lib/types';
-import { formatCurrency, formatDate, formatDateTime, WASTE_CATEGORIES } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
 import {
   Printer,
   ArrowLeft,
@@ -668,6 +668,31 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
               <p style={{ fontSize: '0.725rem', color: '#334155', margin: '0.15rem 0 0', lineHeight: 1.3 }}>
                 {action.lessonsLearned || 'Ações de baixo custo com foco nas causas vitais trouxeram os maiores ganhos em OEE.'}
               </p>
+            </div>
+
+            {/* COMPROVAÇÃO DE SUSTENTAÇÃO EM 3 MESES PELO AGENTE */}
+            <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
+                  📅 Acompanhamento de 3 Meses pelo Agente:
+                </span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isThreeMonthsFollowUpCompleted(action) ? '#059669' : '#d97706' }}>
+                  {isThreeMonthsFollowUpCompleted(action) ? '✓ 3/3 Meses Consolidados' : `${getFollowUpMonthsFilledCount(action)}/3 Meses`}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem', textAlign: 'center' }}>
+                {([1, 2, 3] as const).map((m) => {
+                  const entry = action.quarterlyFollowUp?.[`month${m}` as 'month1' | 'month2' | 'month3'];
+                  return (
+                    <div key={m} style={{ backgroundColor: '#f8fafc', padding: '0.25rem 0.35rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '0.6rem', color: '#64748b', display: 'block', fontWeight: 700 }}>{m}º Mês</span>
+                      <strong style={{ fontSize: '0.7rem', color: entry?.value !== undefined ? '#0f172a' : '#94a3b8' }}>
+                        {entry?.value !== undefined ? formatCurrency(entry.value) : 'Pendente'}
+                      </strong>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* OFFICIAL MASTER HOMOLOGATION STAMP BOX */}

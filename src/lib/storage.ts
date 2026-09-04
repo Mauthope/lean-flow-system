@@ -465,6 +465,44 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     roiPercentage: 770,
     paybackMonths: 1.4,
     hoursSaved: 140,
+
+    // Acompanhamento de 3 Meses preenchido pelo Agente antes da submissão
+    quarterlyFollowUp: {
+      enabled: true,
+      startedAt: '2026-02-06T08:00:00.000Z',
+      month1: {
+        monthNumber: 1,
+        monthLabel: '1º Mês (Mar/26)',
+        value: 46800,
+        hoursSaved: 135,
+        measuredAt: '2026-03-06',
+        notes: 'Redução de 75% nas paradas por quebra de fita nos teares 08 e 12.',
+        registeredBy: 'Juliana Mendes',
+      },
+      month2: {
+        monthNumber: 2,
+        monthLabel: '2º Mês (Abr/26)',
+        value: 49200,
+        hoursSaved: 142,
+        measuredAt: '2026-04-06',
+        notes: 'Guias cerâmicas sem desgaste. Estabilidade operacional comprovada.',
+        registeredBy: 'Juliana Mendes',
+      },
+      month3: {
+        monthNumber: 3,
+        monthLabel: '3º Mês (Mai/26)',
+        value: 49500,
+        hoursSaved: 143,
+        measuredAt: '2026-05-06',
+        notes: 'Sustentação plena dos ganhos no gemba. Submetido para homologação master.',
+        registeredBy: 'Juliana Mendes',
+      },
+      averageCostAvoided: 48500,
+      isCompleted: true,
+      completedAt: '2026-05-06T18:00:00.000Z',
+      status: 'consolidado',
+    },
+
     createdAt: '2026-02-05T10:15:00.000Z',
     updatedAt: '2026-02-22T14:30:00.000Z',
     startedAt: '2026-02-06T08:00:00.000Z',
@@ -522,6 +560,25 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     estimatedCostAvoided: 28000,
     actualCostAvoided: 0,
     hoursSaved: 0,
+
+    // Acompanhamento em andamento pelo Agente (1/3 meses preenchidos - submissão bloqueada até 3/3)
+    quarterlyFollowUp: {
+      enabled: true,
+      startedAt: '2026-02-12T09:00:00.000Z',
+      month1: {
+        monthNumber: 1,
+        monthLabel: '1º Mês (Mar/26)',
+        value: 26500,
+        hoursSaved: 48,
+        measuredAt: '2026-03-12',
+        notes: 'Gabarito reduziu retrabalho em alças de 4.8% para 1.2% no primeiro mês.',
+        registeredBy: 'Lucas Antunes',
+      },
+      averageCostAvoided: 26500,
+      status: 'aguardando_mes_2',
+      isCompleted: false,
+    },
+
     createdAt: '2026-02-10T14:00:00.000Z',
     updatedAt: '2026-02-23T11:00:00.000Z',
     startedAt: '2026-02-12T09:00:00.000Z',

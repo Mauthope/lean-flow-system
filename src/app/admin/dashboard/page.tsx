@@ -661,11 +661,11 @@ export default function AdminDashboardPage() {
                 <Calendar size={18} color="#22d3ee" />
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                Comprovação de Ganhos Pós-Homologação (Auditoria de 3 Meses)
+                Sustentação em 3 Meses & Auditoria para Homologação Master
               </h3>
             </div>
             <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
-              Acompanhamento mensal da sustentação dos resultados. Após o 3º mês preenchido, a média real definitiva fecha automaticamente.
+              Acompanhamento mensal dos resultados preenchidos pelo agente. O preenchimento dos 3 meses é pré-requisito para homologação do Gestor Master.
             </p>
           </div>
 
@@ -709,10 +709,10 @@ export default function AdminDashboardPage() {
             <div style={{ padding: '2.5rem', textAlign: 'center', color: '#94a3b8' }}>
               <Award size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
               <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                Nenhum projeto homologado aguardando acompanhamento no momento.
+                Nenhum projeto em sustentação trimestral no momento.
               </p>
               <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
-                Assim que você homologar um projeto concluído no Kanban Geral, ele aparecerá aqui para auditoria trimestral dos ganhos reais.
+                Os projetos com acompanhamento de 3 meses preenchidos pelo agente aparecerão aqui para auditoria e homologação master.
               </p>
             </div>
           ) : (

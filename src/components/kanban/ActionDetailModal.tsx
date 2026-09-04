@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
-import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES } from '@/lib/utils';
+import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -82,9 +82,35 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   if (!action) return null;
 
   const handleStatusChange = (newStatus: ActionStatus) => {
+    if (newStatus === 'aguardando_aprovacao') {
+      const monthsFilled = getFollowUpMonthsFilledCount(action);
+      if (monthsFilled < 3) {
+        alert(
+          `Submissão Bloqueada!\n\nConforme o fluxo Lean, o projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.\n\nAbra a "Página Completa" do projeto para registrar as medições mensais pendentes.`
+        );
+        return;
+      }
+      dataService.updateAction(action.id, {
+        status: 'aguardando_aprovacao',
+        submittedForApproval: true,
+        submittedForApprovalAt: new Date().toISOString(),
+        submittedForApprovalBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
+      });
+      onUpdate();
+      return;
+    }
+
     if (newStatus === 'concluida') {
+      const monthsFilled = getFollowUpMonthsFilledCount(action);
+      if (monthsFilled < 3) {
+        alert(
+          `Homologação / Conclusão Bloqueada!\n\nA homologação master exige a comprovação prévia dos 3 meses de acompanhamento pelo agente (atualmente ${monthsFilled}/3 meses preenchidos).\n\nAbra a "Página Completa" do projeto para lançar as medições.`
+        );
+        return;
+      }
       setShowCompletionForm(true);
-      setActualCostInput(String(action.actualCostAvoided || action.estimatedCostAvoided || ''));
+      const defaultAvg = action.quarterlyFollowUp?.averageCostAvoided || action.actualCostAvoided || action.estimatedCostAvoided || '';
+      setActualCostInput(String(defaultAvg));
       setHoursSavedInput(String(action.hoursSaved || ''));
       setRootCauseInput(action.rootCauseAnalysis || '');
 
@@ -334,10 +360,35 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
               >
                 <option value="aberta">Aberta</option>
                 <option value="em_andamento">Em Andamento</option>
-                <option value="concluida">Concluída (com ROI)</option>
-                {isAdmin && <option value="nao_aprovada">Não Aprovada</option>}
+                <option value="aguardando_aprovacao">🟣 Aguardando Homologação</option>
+                <option value="concluida">🟢 Concluída & Homologada</option>
+                {isAdmin && <option value="nao_aprovada">🔴 Não Aprovada</option>}
               </select>
             </div>
+
+            {(() => {
+              const monthsFilled = getFollowUpMonthsFilledCount(action);
+              if (action.status === 'concluida') return null;
+              return (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: monthsFilled === 3 ? '#15803d' : '#b45309',
+                    backgroundColor: monthsFilled === 3 ? '#dcfce7' : '#fef3c7',
+                    border: `1px solid ${monthsFilled === 3 ? '#86efac' : '#fde68a'}`,
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Acompanhamento obrigatório de 3 meses pelo agente para homologação"
+                >
+                  📅 {monthsFilled}/3 meses {monthsFilled === 3 ? '✓ (Pronto)' : '(Aferição)'}
+                </span>
+              );
+            })()}
           </div>
         </div>
 

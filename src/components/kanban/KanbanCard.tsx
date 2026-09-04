@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { LeanAction } from '@/lib/types';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency, getFollowUpMonthsFilledCount } from '@/lib/utils';
 import { PriorityBadge } from '@/components/ui/Badge';
 import { Calendar } from 'lucide-react';
 
@@ -217,6 +217,31 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               ⏳ Validação Master
             </span>
           )}
+
+          {/* Badge de Acompanhamento de 3 Meses */}
+          {(() => {
+            const monthsFilled = getFollowUpMonthsFilledCount(action);
+            if (monthsFilled === 0 || isCompleted) return null;
+            return (
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  color: monthsFilled === 3 ? '#34d399' : '#fbbf24',
+                  backgroundColor: monthsFilled === 3 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(251, 191, 36, 0.15)',
+                  border: `1px solid ${monthsFilled === 3 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(251, 191, 36, 0.4)'}`,
+                  padding: '0.08rem 0.35rem',
+                  borderRadius: '4px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.2rem',
+                }}
+                title={monthsFilled === 3 ? '3 meses preenchidos: Pronto para homologação master' : `${monthsFilled}/3 meses de acompanhamento preenchidos`}
+              >
+                📅 {monthsFilled}/3m {monthsFilled === 3 ? '✓' : ''}
+              </span>
+            );
+          })()}
         </div>
       )}
 

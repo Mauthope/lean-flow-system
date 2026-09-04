@@ -293,7 +293,19 @@ export const dataService = {
   },
 
   getActionById(id: string): LeanAction | undefined {
-    return this.getActions().find((a) => a.id === id);
+    const action = this.getActions().find((a) => a.id === id);
+    if (action && !action.quarterlyFollowUp) {
+      action.quarterlyFollowUp = {
+        enabled: true,
+        startedAt: action.startedAt || action.createdAt || new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+      };
+    }
+    return action;
   },
 
   getActionByProtocol(protocol: string): LeanAction | undefined {
@@ -353,11 +365,11 @@ export const dataService = {
       merged.paybackMonths = monthlySavings > 0 && totalCost > 0 ? Number((totalCost / monthlySavings).toFixed(1)) : 0;
     }
 
-    // Auto-inicializar acompanhamento trimestral se homologado
-    if (merged.masterApproved && !merged.quarterlyFollowUp) {
+    // Auto-inicializar acompanhamento trimestral para que o agente registre os 3 meses antes da homologação
+    if (!merged.quarterlyFollowUp) {
       merged.quarterlyFollowUp = {
         enabled: true,
-        startedAt: merged.masterApprovedAt || new Date().toISOString(),
+        startedAt: merged.startedAt || merged.createdAt || new Date().toISOString(),
         month1: { monthNumber: 1, monthLabel: '1º Mês' },
         month2: { monthNumber: 2, monthLabel: '2º Mês' },
         month3: { monthNumber: 3, monthLabel: '3º Mês' },
