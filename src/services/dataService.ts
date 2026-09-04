@@ -943,6 +943,7 @@ export const dataService = {
         monthlyCostAvoided > 0
           ? Math.round((totalInvestmentCost / monthlyCostAvoided) * 10) / 10
           : 0;
+      const paybackYears = Number((paybackMonths / 12).toFixed(1));
 
       // 5. Ciclo de Vigência de 1 Ano (365 Dias - Vencimento do Projeto)
       const homologatedAt = action.masterApprovedAt || action.completedAt || action.updatedAt || action.createdAt;
@@ -973,6 +974,7 @@ export const dataService = {
         netMonthlySavings,
         roiPercentage,
         paybackMonths,
+        paybackYears,
         daysElapsed,
         monthsElapsed,
         monthsRemaining,
@@ -995,15 +997,23 @@ export const dataService = {
 
     const activeMonthlyTotal = activeProjects.reduce((acc, p) => acc + p.monthlyCostAvoided, 0);
     const activeAnnualTotal = activeProjects.reduce((acc, p) => acc + p.annualCostAvoided, 0);
-    const activeNetAnnualTotal = activeProjects.reduce((acc, p) => acc + p.netAnnualSavings, 0);
+    const activeNetAnnualTotal = activeProjects.reduce((acc, p) => acc + (p.netAnnualSavings || 0), 0);
     const activeInvestmentTotal = activeProjects.reduce((acc, p) => acc + p.totalInvestmentCost, 0);
     const expiredAnnualTotal = expiredProjects.reduce((acc, p) => acc + p.annualCostAvoided, 0);
+
+    const projectsWithPayback = activeProjects.filter((p) => p.paybackMonths > 0);
+    const averagePaybackMonths = projectsWithPayback.length > 0
+      ? Math.round((projectsWithPayback.reduce((acc, p) => acc + p.paybackMonths, 0) / projectsWithPayback.length) * 10) / 10
+      : 0;
+    const averagePaybackYears = Number((averagePaybackMonths / 12).toFixed(1));
 
     return {
       activeMonthlyTotal,
       activeAnnualTotal,
       activeNetAnnualTotal,
       activeInvestmentTotal,
+      averagePaybackMonths,
+      averagePaybackYears,
       activeProjectsCount: activeProjects.length,
       expiredProjectsCount: expiredProjects.length,
       expiredAnnualTotal,

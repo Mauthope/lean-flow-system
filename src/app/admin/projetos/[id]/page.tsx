@@ -2719,8 +2719,8 @@ export default function AdminProjectDetailPage() {
               borderRadius: '20px',
               border: '1px solid rgba(16, 185, 129, 0.3)',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '1.5rem',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1.25rem',
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
             }}
           >
@@ -2729,7 +2729,7 @@ export default function AdminProjectDetailPage() {
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 📅 RETORNO MENSAL (3M)
               </span>
-              <strong style={{ fontSize: '1.75rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+              <strong style={{ fontSize: '1.65rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrency(provenMonthlySavings)}
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
               </strong>
@@ -2738,65 +2738,84 @@ export default function AdminProjectDetailPage() {
               </span>
             </div>
 
-            {/* 2. Retorno Total Anual (12 Meses) */}
+            {/* 2. Resultado do Ano (12 Meses) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                🚀 RETORNO TOTAL (12 MESES)
+                🚀 RESULTADO DO ANO (12M)
               </span>
-              <strong style={{ fontSize: '1.75rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+              <strong style={{ fontSize: '1.65rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrency(provenAnnualSavings)}
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/ano</span>
               </strong>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                Retorno mensal × 12 meses de vigência
+                Economia operacional gerada (Computada)
               </span>
             </div>
 
-            {/* 3. Retorno Líquido Anual (Lucro Real) */}
+            {/* 3. Investimento Total (Capex) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                💰 RETORNO LÍQUIDO ANUAL
+                💵 INVESTIMENTO (CAPEX)
               </span>
-              <strong style={{ fontSize: '1.75rem', color: '#c084fc', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {formatCurrency(provenNetAnnualSavings)}
+              <strong style={{ fontSize: '1.65rem', color: totalInvestmentCost > 0 ? '#f87171' : '#64748b', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {totalInvestmentCost > 0 ? formatCurrency(totalInvestmentCost) : 'R$ 0,00'}
               </strong>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                Ganhos ({formatCurrency(provenAnnualSavings)}) - Custos ({formatCurrency(totalInvestmentCost)})
+                Informativo de capital (Não abate de 12m)
               </span>
             </div>
 
-            {/* 4. Vigência do Ciclo de 1 Ano (365 Dias) */}
+            {/* 4. Tempo de Payback */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                ⏱️ CICLO DE VIGÊNCIA (1 ANO)
+                ⏱️ TEMPO DE PAYBACK
+              </span>
+              <strong style={{ fontSize: '1.65rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {totalInvestmentCost === 0 ? (
+                  'Imediato'
+                ) : paybackMonths >= 12 ? (
+                  <span>{(paybackMonths / 12).toFixed(1)} <span style={{ fontSize: '0.85rem' }}>anos ({paybackMonths}m)</span></span>
+                ) : (
+                  <span>{paybackMonths} <span style={{ fontSize: '0.85rem' }}>meses</span></span>
+                )}
+              </strong>
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                Amortização total sem penalizar o ganho anual
+              </span>
+            </div>
+
+            {/* 5. Vigência do Ciclo de 1 Ano (365 Dias) */}
+            <div>
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                📆 VIGÊNCIA (1 ANO)
               </span>
               {action.masterApproved ? (
                 isCycleExpired ? (
                   <div>
-                    <strong style={{ fontSize: '1.35rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                    <strong style={{ fontSize: '1.25rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                       12m Concluídos
                     </strong>
                     <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
-                      Incorporado à rotina base da fábrica (Não pontua mais no total acumulado)
+                      Incorporado à rotina base da fábrica
                     </span>
                   </div>
                 ) : (
                   <div>
-                    <strong style={{ fontSize: '1.45rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                    <strong style={{ fontSize: '1.35rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                       Mês {currentCycleMonth} de 12
                     </strong>
                     <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
-                      Restam {remainingCycleMonths} meses ({Math.max(0, 365 - daysSinceHomologation)} dias) de vigência
+                      Restam {remainingCycleMonths}m ({Math.max(0, 365 - daysSinceHomologation)}d)
                     </span>
                   </div>
                 )
               ) : (
                 <div>
-                  <strong style={{ fontSize: '1.25rem', color: '#94a3b8', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                  <strong style={{ fontSize: '1.2rem', color: '#94a3b8', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                     Pré-Homologação
                   </strong>
                   <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
-                    Inicia contagem de 365 dias após homologação master
+                    Inicia 365 dias após homologação master
                   </span>
                 </div>
               )}

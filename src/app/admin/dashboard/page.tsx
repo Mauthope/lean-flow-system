@@ -58,6 +58,8 @@ export default function AdminDashboardPage() {
         activeAnnualTotal: 0,
         activeNetAnnualTotal: 0,
         activeInvestmentTotal: 0,
+        averagePaybackMonths: 0,
+        averagePaybackYears: 0,
         activeProjectsCount: 0,
         expiredProjectsCount: 0,
         expiredAnnualTotal: 0,
@@ -381,30 +383,30 @@ export default function AdminDashboardPage() {
         />
 
         <StatsCard
-          title="Retorno Total Anual (12 Meses)"
+          title="Resultado Total do Ano (12 Meses)"
           value={`${formatCurrency(boardFinancials.activeAnnualTotal)}/ano`}
-          subtitle="Retorno mensal × 12 meses dos projetos vigentes"
+          subtitle="Economia operacional total (Média × 12) computada no resultado"
           icon={<TrendingUp size={22} />}
           accentColor="#06b6d4"
-          trend={{ value: 'Ciclo de 365 dias', isPositive: true }}
+          trend={{ value: 'Diretoria Executiva • Ganho Real', isPositive: true }}
         />
 
         <StatsCard
-          title="Retorno Líquido Anual"
-          value={`${formatCurrency(boardFinancials.activeNetAnnualTotal)}/ano`}
-          subtitle={`Lucro real após Capex/Opex (${formatCurrency(boardFinancials.activeInvestmentTotal)} investidos)`}
+          title="Investimento Total (Capex)"
+          value={formatCurrency(boardFinancials.activeInvestmentTotal)}
+          subtitle="Capital aplicado nos projetos ativos (Informativo • Não abate do resultado)"
           icon={<Award size={22} />}
           accentColor="#8b5cf6"
-          trend={{ value: 'Líquido comprovado', isPositive: true }}
+          trend={{ value: 'Controle de Capex & Opex', isPositive: true }}
         />
 
         <StatsCard
-          title="Status do Ciclo Anual"
-          value={`${boardFinancials.activeProjectsCount} Ativos`}
-          subtitle={`${boardFinancials.expiredProjectsCount} com ciclo de 1 ano concluído (incorporados à rotina)`}
+          title="Tempo Médio de Payback"
+          value={boardFinancials.averagePaybackMonths > 0 ? (boardFinancials.averagePaybackMonths >= 12 ? `${boardFinancials.averagePaybackYears} anos` : `${boardFinancials.averagePaybackMonths} meses`) : 'Imediato'}
+          subtitle={`${boardFinancials.averagePaybackMonths > 0 ? `Amortização em ${boardFinancials.averagePaybackMonths}m • ` : ''}${boardFinancials.activeProjectsCount} ativos | ${boardFinancials.expiredProjectsCount} com 1 ano concluído`}
           icon={<Clock size={22} />}
           accentColor="#f59e0b"
-          trend={boardFinancials.expiredProjectsCount > 0 ? { value: `${boardFinancials.expiredProjectsCount} incorporados`, isPositive: true } : undefined}
+          trend={{ value: 'Payback plurianual suportado', isPositive: true }}
         />
       </div>
 
@@ -556,7 +558,7 @@ export default function AdminDashboardPage() {
 
             <div>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Totalizado do Ano (12m):
+                Resultado do Ano (12m):
               </span>
               <strong style={{ fontSize: '1.15rem', color: '#22d3ee', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(boardFinancials.activeAnnualTotal)}/ano
@@ -565,7 +567,7 @@ export default function AdminDashboardPage() {
 
             <div>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Investimento Capex/Opex:
+                Investimento Total (Capex):
               </span>
               <strong style={{ fontSize: '1.15rem', color: '#f87171', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(boardFinancials.activeInvestmentTotal)}
@@ -574,10 +576,10 @@ export default function AdminDashboardPage() {
 
             <div>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Retorno Líquido do Ano:
+                Payback Médio do Portfólio:
               </span>
-              <strong style={{ fontSize: '1.15rem', color: '#c084fc', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
-                {formatCurrency(boardFinancials.activeNetAnnualTotal)}/ano
+              <strong style={{ fontSize: '1.15rem', color: '#fbbf24', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
+                {boardFinancials.averagePaybackMonths > 0 ? (boardFinancials.averagePaybackMonths >= 12 ? `${boardFinancials.averagePaybackYears} anos (${boardFinancials.averagePaybackMonths}m)` : `${boardFinancials.averagePaybackMonths} meses`) : 'Imediato'}
               </strong>
             </div>
           </div>
@@ -612,9 +614,9 @@ export default function AdminDashboardPage() {
                   <th style={{ padding: '0.875rem 1rem' }}>Homologação</th>
                   <th style={{ padding: '0.875rem 1.25rem' }}>Vigência no Ano (365d)</th>
                   <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Mensal (3M)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Total (12M)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Investimento</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Líquido</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Resultado do Ano (12M)</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Investimento (Capex)</th>
+                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Tempo de Payback</th>
                   <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Totalizador</th>
                   <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação</th>
                 </tr>
@@ -756,7 +758,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </td>
 
-                      {/* Retorno Total (12M) */}
+                      {/* Resultado do Ano (12M) */}
                       <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                           <strong
@@ -768,31 +770,62 @@ export default function AdminDashboardPage() {
                           >
                             {formatCurrency(p.annualCostAvoided)}
                           </strong>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/ano (× 12m)</span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/ano (Computado)</span>
                         </div>
                       </td>
 
-                      {/* Investimento */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <span style={{ fontSize: '0.8125rem', color: p.totalInvestmentCost > 0 ? '#f87171' : '#64748b', fontFamily: 'var(--font-mono)' }}>
-                          {p.totalInvestmentCost > 0 ? `-${formatCurrency(p.totalInvestmentCost)}` : 'R$ 0,00'}
-                        </span>
-                      </td>
-
-                      {/* Retorno Líquido */}
+                      {/* Investimento (Capex) */}
                       <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <strong
-                            style={{
-                              color: p.isExpired ? '#94a3b8' : '#c084fc',
-                              fontSize: '0.9375rem',
-                              fontFamily: 'var(--font-mono)',
-                            }}
-                          >
-                            {formatCurrency(p.netAnnualSavings)}
+                          <strong style={{ fontSize: '0.85rem', color: p.totalInvestmentCost > 0 ? '#f87171' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                            {p.totalInvestmentCost > 0 ? formatCurrency(p.totalInvestmentCost) : 'R$ 0,00'}
                           </strong>
                           <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
-                            ROI {p.roiPercentage}%
+                            {p.totalInvestmentCost > 0 ? 'Capex informado' : 'Custo Zero'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Tempo de Payback */}
+                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          {p.totalInvestmentCost === 0 ? (
+                            <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800 }}>
+                              Imediato (100%)
+                            </span>
+                          ) : p.paybackMonths >= 12 ? (
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                color: '#fbbf24',
+                                border: '1px solid rgba(245, 158, 11, 0.35)',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '8px',
+                                fontWeight: 800,
+                                fontSize: '0.725rem',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              ⏱️ {(p.paybackMonths / 12).toFixed(1)} anos ({p.paybackMonths}m)
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                color: '#34d399',
+                                border: '1px solid rgba(16, 185, 129, 0.35)',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '8px',
+                                fontWeight: 800,
+                                fontSize: '0.725rem',
+                                fontFamily: 'var(--font-mono)',
+                              }}
+                            >
+                              ⚡ {p.paybackMonths} meses
+                            </span>
+                          )}
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                            Amortização
                           </span>
                         </div>
                       </td>

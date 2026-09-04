@@ -270,14 +270,16 @@ export interface ExecutiveProjectFinancial {
   sectorName: string;
   responsibleName: string;
   homologatedAt?: string;
-  // Valores Financeiros
+  // Valores Financeiros Operacionais (Computados no Resultado)
   monthlyCostAvoided: number;          // Média dos 3 meses de acompanhamento (Retorno Mensal)
-  annualCostAvoided: number;           // Média mensal multiplicada por 12 meses (Retorno Total Anual)
+  annualCostAvoided: number;           // Média mensal multiplicada por 12 meses (Resultado Total Anual do Projeto)
+  // Métricas de Investimento e Amortização (Informativos de Capex - Não abatem do resultado anual)
   totalInvestmentCost: number;         // Custos e investimento do projeto (Capex + Opex)
-  netAnnualSavings: number;            // Retorno Líquido Anual = (Média * 12) - Investimento
-  netMonthlySavings: number;           // Retorno Líquido Mensal = Retorno Líquido Anual / 12
-  roiPercentage: number;               // ROI (%)
-  paybackMonths: number;               // Payback (meses)
+  paybackMonths: number;               // Tempo de Payback em meses (ex: 18 meses)
+  paybackYears: number;                // Tempo de Payback em anos (ex: 1.5 anos)
+  roiPercentage: number;               // Retorno percentual do investimento
+  netAnnualSavings?: number;           // Informativo de fluxo de caixa líquido do 1º ano
+  netMonthlySavings?: number;          // Informativo de fluxo de caixa líquido mensal
   // Ciclo de Vigência de 1 Ano (Vencimento)
   daysElapsed: number;                 // Dias decorridos desde a homologação
   monthsElapsed: number;               // Mês corrente dentro do ciclo de 12 meses (1 a 12)
@@ -290,9 +292,11 @@ export interface ExecutiveProjectFinancial {
 export interface ExecutiveBoardFinancials {
   // Totais Ativos Vigentes (Apenas projetos com menos de 1 ano de homologação)
   activeMonthlyTotal: number;          // Soma do Retorno Mensal dos projetos ativos (R$/mês)
-  activeAnnualTotal: number;           // Soma do Retorno Total do Ano dos projetos ativos (R$/ano)
-  activeNetAnnualTotal: number;        // Retorno Líquido Anual dos projetos ativos (R$/ano)
-  activeInvestmentTotal: number;       // Investimentos totais dos projetos ativos (R$)
+  activeAnnualTotal: number;           // Soma do Resultado Total do Ano dos projetos ativos (R$/ano que computa para Diretoria)
+  activeNetAnnualTotal: number;        // Retorno Líquido Informativo do 1º ano (R$/ano)
+  activeInvestmentTotal: number;       // Investimentos totais realizados em melhorias/Capex (Informativo - R$)
+  averagePaybackMonths: number;        // Tempo médio de payback do portfólio ativo (meses)
+  averagePaybackYears: number;         // Tempo médio de payback do portfólio ativo (anos)
   activeProjectsCount: number;         // Quantidade de projetos ativos no ciclo de 1 ano
   
   // Histórico de Projetos Expirados (> 1 ano de homologação - Não computam nos totais)
