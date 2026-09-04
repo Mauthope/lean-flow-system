@@ -533,66 +533,146 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Faixa de Totais Vigentes da Diretoria */}
+        {/* 4 Mini Cards Estruturados de Totais da Diretoria */}
         <div
           style={{
-            padding: '0.85rem 1.85rem',
-            backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+            gap: '0.85rem',
+            padding: '1rem 1.75rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.35)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+          }}
+        >
+          {/* Card 1: Retorno Mensal Vigente */}
+          <div
+            style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+              Retorno Mensal Vigente
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', marginTop: '0.2rem' }}>
+              <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeMonthlyTotal)}
+              </strong>
+              <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700 }}>/mês</span>
+            </div>
+            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+              Média comprovada (3M)
+            </span>
+          </div>
+
+          {/* Card 2: Resultado do Ano (12M) */}
+          <div
+            style={{
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.25)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+              Resultado do Ano (12M)
+            </span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', marginTop: '0.2rem' }}>
+              <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                {formatCurrency(boardFinancials.activeAnnualTotal)}
+              </strong>
+              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>/ano</span>
+            </div>
+            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+              Economia operacional (Computada)
+            </span>
+          </div>
+
+          {/* Card 3: Investimento Total (Capex) */}
+          <div
+            style={{
+              backgroundColor: 'rgba(244, 63, 94, 0.08)',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.675rem', color: '#fb7185', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+              Investimento Total (Capex)
+            </span>
+            <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+              {formatCurrency(boardFinancials.activeInvestmentTotal)}
+            </strong>
+            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+              Informativo • Não abate de 12m
+            </span>
+          </div>
+
+          {/* Card 4: Tempo Médio de Payback */}
+          <div
+            style={{
+              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: '12px',
+              padding: '0.75rem 1rem',
+            }}
+          >
+            <span style={{ fontSize: '0.675rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+              Payback Médio do Portfólio
+            </span>
+            <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+              {boardFinancials.averagePaybackMonths > 0 ? (
+                boardFinancials.averagePaybackMonths >= 12 ? (
+                  <span>{boardFinancials.averagePaybackYears} <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>anos ({boardFinancials.averagePaybackMonths}m)</span></span>
+                ) : (
+                  <span>{boardFinancials.averagePaybackMonths} <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>meses</span></span>
+                )
+              ) : (
+                <span style={{ color: '#34d399' }}>⚡ Imediato</span>
+              )}
+            </strong>
+            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+              Tempo médio de amortização
+            </span>
+          </div>
+        </div>
+
+        {/* Faixa de Contagem e Legenda de Governança */}
+        <div
+          style={{
+            padding: '0.65rem 1.75rem',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '1.25rem',
+            gap: '0.75rem',
+            fontSize: '0.75rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Retorno Mensal Vigente:
-              </span>
-              <strong style={{ fontSize: '1.15rem', color: '#34d399', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
-                {formatCurrency(boardFinancials.activeMonthlyTotal)}/mês
-              </strong>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Resultado do Ano (12m):
-              </span>
-              <strong style={{ fontSize: '1.15rem', color: '#22d3ee', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
-                {formatCurrency(boardFinancials.activeAnnualTotal)}/ano
-              </strong>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Investimento Total (Capex):
-              </span>
-              <strong style={{ fontSize: '1.15rem', color: '#f87171', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
-                {formatCurrency(boardFinancials.activeInvestmentTotal)}
-              </strong>
-            </div>
-
-            <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
-                Payback Médio do Portfólio:
-              </span>
-              <strong style={{ fontSize: '1.15rem', color: '#fbbf24', marginLeft: '0.45rem', fontFamily: 'var(--font-mono)' }}>
-                {boardFinancials.averagePaybackMonths > 0 ? (boardFinancials.averagePaybackMonths >= 12 ? `${boardFinancials.averagePaybackYears} anos (${boardFinancials.averagePaybackMonths}m)` : `${boardFinancials.averagePaybackMonths} meses`) : 'Imediato'}
-              </strong>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1' }}>
+            <span style={{ color: '#34d399', fontWeight: 800 }}>●</span>
+            <span>
+              {boardFilter === 'ativos'
+                ? 'Projetos vigentes com retorno operacional computado no exercício de 12 meses.'
+                : boardFilter === 'expirados'
+                ? 'Projetos com ciclo de 1 ano concluído (ganhos incorporados à rotina base da fábrica).'
+                : 'Visão consolidada de todos os projetos homologados.'}
+            </span>
           </div>
 
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-            Exibindo <strong>{filteredBoardProjects.length}</strong> de {boardFinancials.projects.length} projetos
+          <span style={{ color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+            Exibindo <strong style={{ color: '#ffffff' }}>{filteredBoardProjects.length}</strong> de {boardFinancials.projects.length} projetos
           </span>
         </div>
 
         {/* Tabela de Projetos da Diretoria */}
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {filteredBoardProjects.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>
+            <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#94a3b8' }}>
               <Clock size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
               <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                 Nenhum projeto encontrado nesta categoria.
@@ -606,19 +686,19 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           ) : (
-            <table style={{ width: '100%', minWidth: '1050px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', minWidth: '1300px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#070b14', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '0.875rem 1.25rem' }}>Projeto Lean / Setor</th>
-                  <th style={{ padding: '0.875rem 1rem' }}>Especialista</th>
-                  <th style={{ padding: '0.875rem 1rem' }}>Homologação</th>
-                  <th style={{ padding: '0.875rem 1.25rem' }}>Vigência no Ano (365d)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Retorno Mensal (3M)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Resultado do Ano (12M)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Investimento (Capex)</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Tempo de Payback</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Totalizador</th>
-                  <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação</th>
+                  <th style={{ padding: '0.875rem 1.25rem', minWidth: '260px' }}>Projeto Lean / Setor</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '130px', whiteSpace: 'nowrap' }}>Especialista</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '120px', whiteSpace: 'nowrap' }}>Homologação</th>
+                  <th style={{ padding: '0.875rem 1.25rem', minWidth: '180px', whiteSpace: 'nowrap' }}>Vigência no Ano (365d)</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '140px', textAlign: 'right', whiteSpace: 'nowrap' }}>Retorno Mensal (3M)</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '160px', textAlign: 'right', whiteSpace: 'nowrap' }}>Resultado do Ano (12M)</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '140px', textAlign: 'right', whiteSpace: 'nowrap' }}>Investimento (Capex)</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '140px', textAlign: 'center', whiteSpace: 'nowrap' }}>Tempo de Payback</th>
+                  <th style={{ padding: '0.875rem 1rem', minWidth: '130px', textAlign: 'center', whiteSpace: 'nowrap' }}>Totalizador</th>
+                  <th style={{ padding: '0.875rem 1.25rem', minWidth: '85px', textAlign: 'right', whiteSpace: 'nowrap' }}>DRE</th>
                 </tr>
               </thead>
               <tbody>
@@ -638,7 +718,7 @@ export default function AdminDashboardPage() {
                       onMouseOut={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? 'rgba(0, 0, 0, 0.25)' : 'transparent')}
                     >
                       {/* Projeto & Setor */}
-                      <td style={{ padding: '0.875rem 1.25rem' }}>
+                      <td style={{ padding: '1rem 1.25rem', minWidth: '260px' }}>
                         <div>
                           <Link
                             href={`/admin/projetos/${p.actionId}`}
@@ -649,41 +729,42 @@ export default function AdminDashboardPage() {
                               fontSize: '0.875rem',
                               fontFamily: 'var(--font-heading)',
                               display: 'block',
+                              lineHeight: 1.35,
                             }}
                           >
                             {p.title}
                           </Link>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.35rem', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                               {p.protocol}
                             </span>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
-                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>{p.sectorName}</span>
+                            <span style={{ fontSize: '0.675rem', color: '#475569' }}>•</span>
+                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{p.sectorName}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Responsável */}
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
+                      <td style={{ padding: '1rem 1rem', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap' }}>
                           {p.responsibleName}
                         </span>
                       </td>
 
                       {/* Homologação */}
-                      <td style={{ padding: '0.875rem 1rem' }}>
+                      <td style={{ padding: '1rem 1rem', whiteSpace: 'nowrap' }}>
                         <div>
-                          <span style={{ fontSize: '0.78125rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)' }}>
+                          <span style={{ fontSize: '0.78125rem', color: '#cbd5e1', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', display: 'block' }}>
                             {p.homologatedAt ? formatDate(p.homologatedAt) : 'Recentemente'}
                           </span>
-                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.1rem' }}>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem', whiteSpace: 'nowrap' }}>
                             {p.daysElapsed} dias decorridos
                           </span>
                         </div>
                       </td>
 
-                      {/* Vigência no Ano (12 meses) */}
-                      <td style={{ padding: '0.875rem 1.25rem', minWidth: '180px' }}>
+                      {/* Vigência no Ano (12 meses - SEM SOBREPOSIÇÃO) */}
+                      <td style={{ padding: '1rem 1.25rem', minWidth: '180px', whiteSpace: 'nowrap' }}>
                         {p.isExpired ? (
                           <div>
                             <span
@@ -698,32 +779,34 @@ export default function AdminDashboardPage() {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '0.35rem',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               <Clock size={11} /> 12m Concluído (&gt; 365d)
                             </span>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem', whiteSpace: 'nowrap' }}>
                               Incorporado à rotina base
                             </span>
                           </div>
                         ) : (
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <div style={{ width: '100%', maxWidth: '170px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.35rem', whiteSpace: 'nowrap' }}>
                               <span
                                 style={{
                                   backgroundColor: 'rgba(16, 185, 129, 0.15)',
                                   color: '#34d399',
                                   border: '1px solid rgba(16, 185, 129, 0.35)',
-                                  padding: '0.15rem 0.55rem',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.675rem',
+                                  padding: '0.15rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
                                   fontWeight: 900,
                                   fontFamily: 'var(--font-mono)',
+                                  whiteSpace: 'nowrap',
                                 }}
                               >
                                 Mês {p.monthsElapsed} de 12
                               </span>
-                              <span style={{ fontSize: '0.675rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                 Restam {p.monthsRemaining}m
                               </span>
                             </div>
@@ -734,7 +817,7 @@ export default function AdminDashboardPage() {
                                   height: '100%',
                                   backgroundColor: '#10b981',
                                   borderRadius: '9999px',
-                                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)',
+                                  boxShadow: '0 0 6px rgba(16, 185, 129, 0.5)',
                                 }}
                               />
                             </div>
@@ -743,55 +826,57 @@ export default function AdminDashboardPage() {
                       </td>
 
                       {/* Retorno Mensal (3M) */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <td style={{ padding: '1rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                           <strong
                             style={{
                               color: p.isExpired ? '#94a3b8' : '#34d399',
                               fontSize: '0.9375rem',
                               fontFamily: 'var(--font-mono)',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {formatCurrency(p.monthlyCostAvoided)}
                           </strong>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/mês</span>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>/mês (3M)</span>
                         </div>
                       </td>
 
                       {/* Resultado do Ano (12M) */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <td style={{ padding: '1rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                           <strong
                             style={{
                               color: p.isExpired ? '#94a3b8' : '#22d3ee',
                               fontSize: '0.9375rem',
                               fontFamily: 'var(--font-mono)',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {formatCurrency(p.annualCostAvoided)}
                           </strong>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>/ano (Computado)</span>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>/ano (Computado)</span>
                         </div>
                       </td>
 
                       {/* Investimento (Capex) */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <strong style={{ fontSize: '0.85rem', color: p.totalInvestmentCost > 0 ? '#f87171' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                      <td style={{ padding: '1rem 1rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
+                          <strong style={{ fontSize: '0.875rem', color: p.totalInvestmentCost > 0 ? '#f87171' : '#64748b', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                             {p.totalInvestmentCost > 0 ? formatCurrency(p.totalInvestmentCost) : 'R$ 0,00'}
                           </strong>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                          <span style={{ fontSize: '0.675rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
                             {p.totalInvestmentCost > 0 ? 'Capex informado' : 'Custo Zero'}
                           </span>
                         </div>
                       </td>
 
                       {/* Tempo de Payback */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <td style={{ padding: '1rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', whiteSpace: 'nowrap' }}>
                           {p.totalInvestmentCost === 0 ? (
-                            <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800 }}>
-                              Imediato (100%)
+                            <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                              ⚡ Imediato (0m)
                             </span>
                           ) : p.paybackMonths >= 12 ? (
                             <span
@@ -804,6 +889,7 @@ export default function AdminDashboardPage() {
                                 fontWeight: 800,
                                 fontSize: '0.725rem',
                                 fontFamily: 'var(--font-mono)',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               ⏱️ {(p.paybackMonths / 12).toFixed(1)} anos ({p.paybackMonths}m)
@@ -819,30 +905,32 @@ export default function AdminDashboardPage() {
                                 fontWeight: 800,
                                 fontSize: '0.725rem',
                                 fontFamily: 'var(--font-mono)',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               ⚡ {p.paybackMonths} meses
                             </span>
                           )}
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.1rem' }}>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem', whiteSpace: 'nowrap' }}>
                             Amortização
                           </span>
                         </div>
                       </td>
 
                       {/* Status no Totalizador */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
+                      <td style={{ padding: '1rem 1rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         {p.isExpired ? (
                           <span
                             style={{
                               backgroundColor: 'rgba(255, 255, 255, 0.06)',
                               color: '#94a3b8',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              padding: '0.2rem 0.55rem',
+                              border: '1px solid rgba(255, 255, 255, 0.12)',
+                              padding: '0.25rem 0.6rem',
                               borderRadius: '9999px',
                               fontSize: '0.675rem',
                               fontWeight: 700,
                               whiteSpace: 'nowrap',
+                              display: 'inline-block',
                             }}
                           >
                             ⚪ Encerrado (Rotina)
@@ -850,14 +938,15 @@ export default function AdminDashboardPage() {
                         ) : (
                           <span
                             style={{
-                              backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                              backgroundColor: 'rgba(16, 185, 129, 0.15)',
                               color: '#34d399',
-                              border: '1px solid rgba(16, 185, 129, 0.4)',
-                              padding: '0.2rem 0.55rem',
+                              border: '1px solid rgba(16, 185, 129, 0.35)',
+                              padding: '0.25rem 0.6rem',
                               borderRadius: '9999px',
                               fontSize: '0.675rem',
                               fontWeight: 800,
                               whiteSpace: 'nowrap',
+                              display: 'inline-block',
                             }}
                           >
                             🟢 Computado no Total
@@ -866,11 +955,18 @@ export default function AdminDashboardPage() {
                       </td>
 
                       {/* Ação */}
-                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
+                      <td style={{ padding: '1rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
                         <Link
                           href={`/admin/projetos/${p.actionId}`}
                           className="btn btn-secondary btn-sm"
-                          style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                          style={{
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            whiteSpace: 'nowrap',
+                            padding: '0.35rem 0.65rem',
+                          }}
                         >
                           <span>DRE</span> <ExternalLink size={12} />
                         </Link>
