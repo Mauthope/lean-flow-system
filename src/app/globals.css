@@ -128,8 +128,9 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
 }
 
-strong {
-  color: #f8fafc;
+strong, b {
+  font-weight: 700;
+  color: inherit;
 }
 
 p {
@@ -596,17 +597,12 @@ th, td {
   box-sizing: border-box;
 }
 
-/* ================= RELATÓRIO A3 PRINT STYLES ================= */
+/* ================= GLOBAL PRINT STYLES ================= */
 @media print {
-  @page {
-    size: landscape;
-    margin: 6mm;
-  }
-
   html, body {
     background-color: #ffffff !important;
+    background-image: none !important;
     color: #000000 !important;
-    font-size: 11px !important;
     margin: 0 !important;
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;

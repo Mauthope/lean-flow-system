@@ -63,6 +63,14 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 6mm;
+          }
+        }
+      `}</style>
       {/* Non-printable Action Toolbar */}
       <div
         className="no-print"
