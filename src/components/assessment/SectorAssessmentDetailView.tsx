@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Sector, SectorLeanAssessment, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { LeanRadarChart, RadarDataPoint } from '@/components/charts/LeanRadarChart';
@@ -23,9 +25,56 @@ import {
   FileSpreadsheet,
   ShieldCheck,
   Calculator,
+  ArrowUpRight,
+  Clock,
+  User,
+  Target,
+  FileText,
+  FolderKanban,
+  CheckCircle,
 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  concluida: {
+    label: '🟢 Concluído & Homologado',
+    bg: 'rgba(16, 185, 129, 0.15)',
+    text: '#34d399',
+    border: 'rgba(16, 185, 129, 0.35)',
+  },
+  em_andamento: {
+    label: '🟡 Em Andamento',
+    bg: 'rgba(245, 158, 11, 0.15)',
+    text: '#fbbf24',
+    border: 'rgba(245, 158, 11, 0.35)',
+  },
+  aguardando_aprovacao: {
+    label: '🟣 Aguardando Homologação',
+    bg: 'rgba(168, 85, 247, 0.15)',
+    text: '#c084fc',
+    border: 'rgba(168, 85, 247, 0.35)',
+  },
+  aberta: {
+    label: '🔵 Demanda Aberta',
+    bg: 'rgba(56, 189, 248, 0.15)',
+    text: '#38bdf8',
+    border: 'rgba(56, 189, 248, 0.35)',
+  },
+  nao_aprovada: {
+    label: '🔴 Cancelada / Não Aprovada',
+    bg: 'rgba(239, 68, 68, 0.15)',
+    text: '#f87171',
+    border: 'rgba(239, 68, 68, 0.35)',
+  },
+};
+
+const PDCA_STAGE_CONFIG: Record<string, { label: string; badge: string; color: string; bg: string }> = {
+  plan: { label: 'P - Plan (Diagnóstico & Metas)', badge: 'P', color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.15)' },
+  do: { label: 'D - Do (Execução & Teste Piloto)', badge: 'D', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)' },
+  check: { label: 'C - Check (Medição & Validação)', badge: 'C', color: '#c084fc', bg: 'rgba(168, 85, 247, 0.15)' },
+  act: { label: 'A - Act (Padronização & Yokoten)', badge: 'A', color: '#34d399', bg: 'rgba(16, 185, 129, 0.15)' },
+};
 
 interface SectorAssessmentDetailViewProps {
   sector: Sector;
@@ -40,6 +89,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | undefined>(undefined);
   const [compareAssessmentId, setCompareAssessmentId] = useState<string | undefined>(undefined);
   const [expandedDimensionId, setExpandedDimensionId] = useState<string | null>(null);
+  const { currentUser } = useAuth();
+  const projectBaseUrl = currentUser?.role === 'admin' ? '/admin/projetos' : '/agente/projetos';
+  const kanbanBaseUrl = currentUser?.role === 'admin' ? '/admin/kanban' : '/agente/kanban';
 
   // Carregar histórico de assessments do setor
   const assessments = useMemo(() => {
@@ -1192,7 +1244,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon || '📌'}</span>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                               <span style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</span>
                               <span
                                 style={{
@@ -1209,6 +1261,25 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                                 {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                                 {criteria.length} Critérios
                               </span>
+                              {totalProjects > 0 && (
+                                <span
+                                  style={{
+                                    fontSize: '0.65rem',
+                                    fontWeight: 800,
+                                    color: completedCount > 0 ? '#34d399' : '#fbbf24',
+                                    backgroundColor: completedCount > 0 ? 'rgba(52, 211, 153, 0.12)' : 'rgba(251, 191, 36, 0.12)',
+                                    border: completedCount > 0 ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)',
+                                    padding: '0.1rem 0.45rem',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.2rem',
+                                  }}
+                                  title={`${totalProjects} Projeto(s) Kaizen vinculado(s)`}
+                                >
+                                  🎯 {totalProjects} Kaizen{totalProjects > 1 ? 's' : ''}
+                                </span>
+                              )}
                             </div>
                             <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
                               {dimDetail?.description || 'Auditoria de padrões no Gemba'}
@@ -1288,6 +1359,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                             <div style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
                               {completedCount > 0 ? `${completedCount} concluído(s)` : `${totalProjects} em andamento`}
                             </div>
+                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
+                              {isExpanded ? 'Ocultar detalhes ↑' : 'Ver projetos e critérios ↓'}
+                            </span>
                           </div>
                         ) : totalProjects > 0 ? (
                           <div>
@@ -1297,74 +1371,525 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                             <div style={{ fontSize: '0.675rem', color: '#64748b' }}>
                               Em andamento
                             </div>
+                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
+                              {isExpanded ? 'Ocultar detalhes ↑' : 'Ver projetos e critérios ↓'}
+                            </span>
                           </div>
                         ) : (
-                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
+                          <div>
+                            <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
+                            <div style={{ fontSize: '0.65rem', color: isExpanded ? '#22d3ee' : '#94a3b8', marginTop: '0.15rem' }}>
+                              {isExpanded ? 'Ocultar critérios ↑' : 'Ver critérios ↓'}
+                            </div>
+                          </div>
                         )}
                       </td>
                     </tr>
 
-                    {/* Linha Expansível com os Critérios Mestres e Checkpoints do Gemba */}
+                    {/* Linha Expansível com os Projetos Kaizen e Critérios Mestres do Gemba */}
                     {isExpanded && (
-                      <tr style={{ backgroundColor: 'rgba(2, 6, 23, 0.75)', borderBottom: '1.5px solid rgba(34, 211, 238, 0.3)' }}>
-                        <td colSpan={comparisonData?.previousAssessment ? 7 : 5} style={{ padding: '1rem 1.25rem' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon}</span>
-                                <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>
-                                  Critérios Mestres & Checkpoints Auditados — {item.dimensionName}
-                                </strong>
-                              </div>
-                              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>
-                                ⚖️ {criteria.length} Critérios Mestres de Alta Relevância (Princípio de Pareto TPS)
-                              </span>
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
-                              {criteria.map((crit, cIdx) => (
+                      <tr style={{ backgroundColor: 'rgba(2, 6, 23, 0.85)', borderBottom: '1.5px solid rgba(34, 211, 238, 0.3)' }}>
+                        <td colSpan={comparisonData?.previousAssessment ? 7 : 5} style={{ padding: '1.25rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            {/* ======================================================== */}
+                            {/* BLOCO 1: PROJETOS KAIZEN VINCULADOS A ESTA DIMENSÃO     */}
+                            {/* ======================================================== */}
+                            {totalProjects > 0 ? (
+                              <div
+                                style={{
+                                  backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                                  border: '1px solid rgba(34, 211, 238, 0.25)',
+                                  borderRadius: '10px',
+                                  padding: '1rem 1.15rem',
+                                }}
+                              >
                                 <div
-                                  key={crit.id || cIdx}
                                   style={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                                    borderRadius: '8px',
-                                    padding: '0.75rem',
                                     display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.45rem',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                                    paddingBottom: '0.65rem',
+                                    marginBottom: '0.85rem',
+                                    flexWrap: 'wrap',
+                                    gap: '0.65rem',
                                   }}
                                 >
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                                    <span style={{ fontSize: '1.25rem' }}>🎯</span>
                                     <div>
-                                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                                        Item {cIdx + 1} • Peso {crit.weight}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>
+                                          Projetos Kaizen Vinculados — {item.dimensionName}
+                                        </strong>
+                                        <span
+                                          style={{
+                                            fontSize: '0.7rem',
+                                            fontWeight: 800,
+                                            color: '#22d3ee',
+                                            backgroundColor: 'rgba(34, 211, 238, 0.12)',
+                                            border: '1px solid rgba(34, 211, 238, 0.3)',
+                                            padding: '0.12rem 0.5rem',
+                                            borderRadius: '12px',
+                                          }}
+                                        >
+                                          {totalProjects} {totalProjects === 1 ? 'Projeto Vinculado' : 'Projetos Vinculados'}
+                                        </span>
+                                      </div>
+                                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                        Iniciativas do Gemba que alimentam os ganhos e elevam o nível de maturidade desta dimensão
                                       </span>
-                                      <strong style={{ display: 'block', fontSize: '0.8rem', color: '#ffffff', marginTop: '0.2rem' }}>
-                                        {crit.title}
-                                      </strong>
                                     </div>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: crit.score >= 4 ? '#34d399' : crit.score >= 3 ? '#fbbf24' : '#f87171', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                                      Nota {crit.score}/5
-                                    </span>
                                   </div>
 
-                                  <div style={{ fontSize: '0.725rem', color: '#fef08a', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '0.4rem 0.55rem', borderRadius: '6px', lineHeight: 1.35 }}>
-                                    <strong>Gemba: </strong>{crit.gembaVerificationGuide}
-                                  </div>
+                                  {/* Resumo Financeiro & Horas Salvas */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                    <div
+                                      style={{
+                                        textAlign: 'right',
+                                        padding: '0.35rem 0.65rem',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                                      }}
+                                    >
+                                      <div style={{ fontSize: '0.62rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        Retorno Total do Eixo
+                                      </div>
+                                      <div style={{ color: '#34d399', fontWeight: 900, fontFamily: 'var(--font-mono)', fontSize: '0.95rem' }}>
+                                        {formatCurrency(val)}
+                                      </div>
+                                    </div>
 
-                                  {crit.checkpoints && crit.checkpoints.length > 0 && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
-                                      {crit.checkpoints.map((chk, chkI) => (
-                                        <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
-                                          <span style={{ color: '#22d3ee' }}>✓</span>
-                                          <span>{chk}</span>
+                                    {dimData?.totalHoursSaved > 0 && (
+                                      <div
+                                        style={{
+                                          textAlign: 'right',
+                                          padding: '0.35rem 0.65rem',
+                                          borderRadius: '6px',
+                                          backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                                          border: '1px solid rgba(56, 189, 248, 0.2)',
+                                        }}
+                                      >
+                                        <div style={{ fontSize: '0.62rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                          Horas Recuperadas
                                         </div>
-                                      ))}
+                                        <div style={{ color: '#38bdf8', fontWeight: 900, fontFamily: 'var(--font-mono)', fontSize: '0.95rem' }}>
+                                          {dimData.totalHoursSaved}h
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div
+                                      style={{
+                                        textAlign: 'right',
+                                        padding: '0.35rem 0.65rem',
+                                        borderRadius: '6px',
+                                        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                      }}
+                                    >
+                                      <div style={{ fontSize: '0.62rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        Status das Ações
+                                      </div>
+                                      <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: '0.85rem' }}>
+                                        {completedCount} concluído(s) • {totalProjects - completedCount} andamento
+                                      </div>
                                     </div>
-                                  )}
+                                  </div>
                                 </div>
-                              ))}
+
+                                {/* Grade de Cards dos Projetos Kaizen */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '0.75rem' }}>
+                                  {dimData?.actions.map((action) => {
+                                    const st = STATUS_CONFIG[action.status] || STATUS_CONFIG['aberta'];
+                                    const pdca = action.pdcaStage ? PDCA_STAGE_CONFIG[action.pdcaStage] : null;
+                                    const isActionDone = action.status === 'concluida';
+                                    const actionValue = isActionDone
+                                      ? (action.actualCostAvoided || action.estimatedCostAvoided || 0)
+                                      : (action.estimatedCostAvoided || 0);
+
+                                    return (
+                                      <div
+                                        key={action.id}
+                                        style={{
+                                          backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                                          border: isActionDone
+                                            ? '1px solid rgba(52, 211, 153, 0.3)'
+                                            : '1px solid rgba(255, 255, 255, 0.08)',
+                                          borderRadius: '8px',
+                                          padding: '0.85rem',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          justifyContent: 'space-between',
+                                          gap: '0.65rem',
+                                          boxShadow: isActionDone ? '0 2px 10px rgba(16, 185, 129, 0.05)' : 'none',
+                                        }}
+                                      >
+                                        <div>
+                                          {/* Top: Protocol + Badges */}
+                                          <div
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'space-between',
+                                              gap: '0.5rem',
+                                              marginBottom: '0.45rem',
+                                              flexWrap: 'wrap',
+                                            }}
+                                          >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                              <span
+                                                style={{
+                                                  fontFamily: 'var(--font-mono)',
+                                                  fontSize: '0.72rem',
+                                                  fontWeight: 800,
+                                                  color: '#22d3ee',
+                                                  backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                                                  border: '1px solid rgba(34, 211, 238, 0.25)',
+                                                  padding: '0.12rem 0.45rem',
+                                                  borderRadius: '4px',
+                                                }}
+                                              >
+                                                {action.protocol || action.id.slice(0, 8)}
+                                              </span>
+
+                                              {pdca && (
+                                                <span
+                                                  style={{
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 800,
+                                                    color: pdca.color,
+                                                    backgroundColor: pdca.bg,
+                                                    padding: '0.12rem 0.4rem',
+                                                    borderRadius: '4px',
+                                                  }}
+                                                  title={pdca.label}
+                                                >
+                                                  Fase {pdca.badge}
+                                                </span>
+                                              )}
+                                            </div>
+
+                                            <span
+                                              style={{
+                                                fontSize: '0.68rem',
+                                                fontWeight: 700,
+                                                color: st.text,
+                                                backgroundColor: st.bg,
+                                                border: `1px solid ${st.border}`,
+                                                padding: '0.12rem 0.45rem',
+                                                borderRadius: '4px',
+                                              }}
+                                            >
+                                              {st.label}
+                                            </span>
+                                          </div>
+
+                                          {/* Título do Projeto */}
+                                          <strong
+                                            style={{
+                                              display: 'block',
+                                              fontSize: '0.85rem',
+                                              color: '#ffffff',
+                                              marginBottom: '0.3rem',
+                                              lineHeight: 1.35,
+                                            }}
+                                          >
+                                            {action.title}
+                                          </strong>
+
+                                          {/* Descrição resumida */}
+                                          <p
+                                            style={{
+                                              fontSize: '0.725rem',
+                                              color: '#94a3b8',
+                                              margin: 0,
+                                              lineHeight: 1.4,
+                                              display: '-webkit-box',
+                                              WebkitLineClamp: 2,
+                                              WebkitBoxOrient: 'vertical',
+                                              overflow: 'hidden',
+                                            }}
+                                          >
+                                            {action.description}
+                                          </p>
+
+                                          {/* Meta ou SOP */}
+                                          {(action.targetMetricName || action.standardWorkDocRef) && (
+                                            <div
+                                              style={{
+                                                marginTop: '0.45rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                flexWrap: 'wrap',
+                                              }}
+                                            >
+                                              {action.targetMetricName && (
+                                                <div
+                                                  style={{
+                                                    fontSize: '0.685rem',
+                                                    color: '#cbd5e1',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                    padding: '0.2rem 0.45rem',
+                                                    borderRadius: '4px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.3rem',
+                                                  }}
+                                                >
+                                                  <Target size={11} style={{ color: '#22d3ee' }} />
+                                                  <span>
+                                                    {action.targetMetricName}: {action.baselineValue ?? '-'} → {action.achievedValue ?? action.targetGoalValue ?? '-'} {action.targetMetricUnit || ''}
+                                                  </span>
+                                                </div>
+                                              )}
+
+                                              {action.standardWorkDocRef && (
+                                                <div
+                                                  style={{
+                                                    fontSize: '0.685rem',
+                                                    color: '#34d399',
+                                                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                                                    padding: '0.2rem 0.45rem',
+                                                    borderRadius: '4px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.3rem',
+                                                  }}
+                                                >
+                                                  <FileText size={11} />
+                                                  <span>{action.standardWorkDocRef}</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Bottom: Responsável, Horas, Retorno e Botões */}
+                                        <div
+                                          style={{
+                                            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                                            paddingTop: '0.55rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: '0.5rem',
+                                            flexWrap: 'wrap',
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72rem', color: '#cbd5e1' }}>
+                                              <User size={13} style={{ color: '#94a3b8' }} />
+                                              <span>{action.leaderName || action.assignedAgentName || 'Sem responsável'}</span>
+                                            </div>
+
+                                            {action.hoursSaved > 0 && (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', color: '#38bdf8' }}>
+                                                <Clock size={12} />
+                                                <span>{action.hoursSaved}h salvas</span>
+                                              </div>
+                                            )}
+
+                                            {actionValue > 0 && (
+                                              <div
+                                                style={{
+                                                  fontSize: '0.75rem',
+                                                  fontWeight: 900,
+                                                  fontFamily: 'var(--font-mono)',
+                                                  color: isActionDone ? '#34d399' : '#fbbf24',
+                                                }}
+                                              >
+                                                {isActionDone ? 'Retorno: ' : 'Est: '}
+                                                {formatCurrency(actionValue)}
+                                              </div>
+                                            )}
+                                          </div>
+
+                                          {/* Ações / Links */}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <Link
+                                              href={`${projectBaseUrl}/${action.id}/relatorio-a3`}
+                                              onClick={(e) => e.stopPropagation()}
+                                              style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                color: '#cbd5e1',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '5px',
+                                                textDecoration: 'none',
+                                              }}
+                                              title="Ver Relatório A3 Executivo"
+                                            >
+                                              <FileSpreadsheet size={12} style={{ color: '#c084fc' }} />
+                                              <span>A3</span>
+                                            </Link>
+
+                                            <Link
+                                              href={`${projectBaseUrl}/${action.id}`}
+                                              onClick={(e) => e.stopPropagation()}
+                                              style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                color: '#22d3ee',
+                                                backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                                                border: '1px solid rgba(34, 211, 238, 0.25)',
+                                                padding: '0.25rem 0.55rem',
+                                                borderRadius: '5px',
+                                                textDecoration: 'none',
+                                              }}
+                                            >
+                                              <span>Abrir Projeto</span>
+                                              <ArrowUpRight size={12} />
+                                            </Link>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              /* Estado amigável quando NÃO houver Kaizen vinculado a este eixo */
+                              <div
+                                style={{
+                                  backgroundColor: 'rgba(15, 23, 42, 0.5)',
+                                  border: '1px dashed rgba(255, 255, 255, 0.15)',
+                                  borderRadius: '10px',
+                                  padding: '0.85rem 1.15rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  flexWrap: 'wrap',
+                                  gap: '0.75rem',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                  <span style={{ fontSize: '1.35rem' }}>🎯</span>
+                                  <div>
+                                    <div style={{ fontWeight: 800, color: '#ffffff', fontSize: '0.85rem' }}>
+                                      Nenhum Projeto Kaizen vinculado diretamente a este eixo no momento
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                                      Iniciativas abertas com foco nos desperdícios deste setor alimentarão automaticamente os retornos financeiros e horas economizadas de {item.dimensionName}.
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <Link
+                                  href={kanbanBaseUrl}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    color: '#34d399',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                    padding: '0.35rem 0.75rem',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  <Plus size={13} />
+                                  <span>Registrar Kaizen no Kanban</span>
+                                </Link>
+                              </div>
+                            )}
+
+                            {/* ======================================================== */}
+                            {/* SEPARADOR SUTIL ENTRE KAIZENS E CRITÉRIOS GEMBA          */}
+                            {/* ======================================================== */}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                margin: '0.25rem 0',
+                              }}
+                            >
+                              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)' }} />
+                              <span style={{ fontSize: '0.685rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 800 }}>
+                                Auditoria de Padrões no Gemba • {criteria.length} Critérios Mestres
+                              </span>
+                              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.08)' }} />
+                            </div>
+
+                            {/* ======================================================== */}
+                            {/* BLOCO 2: CRITÉRIOS MESTRES & CHECKPOINTS AUDITADOS       */}
+                            {/* ======================================================== */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                                  <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon}</span>
+                                  <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>
+                                    Critérios Mestres & Checkpoints Auditados — {item.dimensionName}
+                                  </strong>
+                                </div>
+                                <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>
+                                  ⚖️ {criteria.length} Critérios Mestres de Alta Relevância (Princípio de Pareto TPS)
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
+                                {criteria.map((crit, cIdx) => (
+                                  <div
+                                    key={crit.id || cIdx}
+                                    style={{
+                                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                                      borderRadius: '8px',
+                                      padding: '0.75rem',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '0.45rem',
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                      <div>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                          Item {cIdx + 1} • Peso {crit.weight}
+                                        </span>
+                                        <strong style={{ display: 'block', fontSize: '0.8rem', color: '#ffffff', marginTop: '0.2rem' }}>
+                                          {crit.title}
+                                        </strong>
+                                      </div>
+                                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: crit.score >= 4 ? '#34d399' : crit.score >= 3 ? '#fbbf24' : '#f87171', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                        Nota {crit.score}/5
+                                      </span>
+                                    </div>
+
+                                    <div style={{ fontSize: '0.725rem', color: '#fef08a', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '0.4rem 0.55rem', borderRadius: '6px', lineHeight: 1.35 }}>
+                                      <strong>Gemba: </strong>{crit.gembaVerificationGuide}
+                                    </div>
+
+                                    {crit.checkpoints && crit.checkpoints.length > 0 && (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
+                                        {crit.checkpoints.map((chk, chkI) => (
+                                          <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
+                                            <span style={{ color: '#22d3ee' }}>✓</span>
+                                            <span>{chk}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </td>
