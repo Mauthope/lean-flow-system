@@ -21,15 +21,25 @@ import {
   Clock,
   Building2,
   GitPullRequest,
-  Check,
   TrendingUp,
+  Sliders,
+  Calculator,
+  Kanban,
+  MessageSquare,
+  Lightbulb,
+  FileSpreadsheet,
+  CheckSquare,
+  Search,
+  ListOrdered,
+  FileText,
+  User,
+  Activity,
+  Zap,
 } from 'lucide-react';
 
 export default function MemorialDescritivoPage() {
   const router = useRouter();
-  const [currentPage, setCurrentPage] = useState<number>(0);
-
-  const totalPages = 10; // 0 = Capa, 1 = Sumário & Prólogo, 2..8 = Capítulos 1..7, 9 = Bibliografia
+  const [activeChapter, setActiveChapter] = useState<number>(0);
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -37,63 +47,250 @@ export default function MemorialDescritivoPage() {
     }
   };
 
-  const pageTitles = [
-    'Capa Nobre',
-    'Sumário & Prólogo',
-    'Cap. 1: Dashboard & Lead Time',
-    'Cap. 2: Triagem & Matriz GUT',
-    'Cap. 3: Metodologia PDCA',
-    'Cap. 4: Engenharia Financeira',
-    'Cap. 5: Governança Contábil',
-    'Cap. 6: TPM & 5S Autônomo',
-    'Cap. 7: Pessoas & Assessment',
-    'Cap. 8: Bibliografia ABNT',
+  const chapters = [
+    { id: 0, title: 'Capa Nobre & Apresentação do Autor', short: 'Capa & Autor', icon: Award },
+    { id: 1, title: 'Prólogo: A Gênese do FluxoLean e a Visão Sistêmica', short: 'Prólogo & Visão', icon: BookOpen },
+    { id: 2, title: 'Capítulo 1: Dashboard Executivo & Engenharia de Lead Time', short: '1. Dashboard & Lead Time', icon: BarChart3 },
+    { id: 3, title: 'Capítulo 2: Triagem Industrial & Matriz GUT', short: '2. Triagem & Matriz GUT', icon: Filter },
+    { id: 4, title: 'Capítulo 3: Projetos PDCA em 4 Fases & Relatório A3 Executivo', short: '3. Projetos PDCA & A3', icon: Layers },
+    { id: 5, title: 'Capítulo 4: Engenharia Financeira & As 7 Fontes de Custo Evitado', short: '4. Engenharia Financeira', icon: DollarSign },
+    { id: 6, title: 'Capítulo 5: Governança Contábil & Auditoria da Controladoria', short: '5. Controladoria & Auditoria', icon: ShieldCheck },
+    { id: 7, title: 'Capítulo 6: TPM & Gestão Autônoma 5S (OEE e Anomalias)', short: '6. TPM, 5S & OEE', icon: Cpu },
+    { id: 8, title: 'Capítulo 7: Desenvolvimento Humano, Academia Lean & Assessment 360°', short: '7. Pessoas & Academia Lean', icon: GraduationCap },
+    { id: 9, title: 'Capítulo 8: Kanban Operacional & Gestão de Fluxo de Projetos', short: '8. Kanban & Fluxo', icon: Kanban },
+    { id: 10, title: 'Capítulo 9: Canal Kaizen & Participação Ativa da Base Fabril', short: '9. Canal Kaizen', icon: Lightbulb },
+    { id: 11, title: 'Capítulo 10: Bibliografia Acadêmica Rigorosa & Referencial Teórico ABNT', short: '10. Bibliografia ABNT', icon: Library },
   ];
 
   return (
-    <div className="memorial-document-wrapper">
+    <div className="memorial-app-container">
       {/* ========================================================================= */}
-      {/* PRINT-SPECIFIC & SCREEN STYLES                                            */}
+      {/* ESTILOS CSS SCREEN E PRINT                                                */}
       {/* ========================================================================= */}
       <style jsx global>{`
+        /* Reset e Escopo Geral */
+        .memorial-app-container {
+          background-color: #090e17;
+          min-height: 100vh;
+          color: #0f172a;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* TIPOGRAFIA EDITORIAL */
+        .memorial-serif {
+          font-family: 'Merriweather', 'Georgia', 'Cambria', serif;
+        }
+
+        .academic-subtitle {
+          color: #0284c7;
+          font-size: 0.8rem;
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          margin-bottom: 0.4rem;
+          display: block;
+        }
+
+        .academic-section-header {
+          border-bottom: 2px solid #0f172a;
+          padding-bottom: 1.25rem;
+          margin-bottom: 2.25rem;
+        }
+
+        /* CAIXAS DE FÓRMULAS E MEMÓRIA DE CÁLCULO */
+        .formula-card {
+          background-color: #f8fafc;
+          border: 1.5px solid #e2e8f0;
+          border-left: 5px solid #0284c7;
+          border-radius: 8px;
+          padding: 1.5rem 1.75rem;
+          margin: 1.75rem 0;
+        }
+
+        .formula-title {
+          font-size: 0.9rem;
+          font-weight: 800;
+          color: #0f172a;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .formula-expression {
+          background-color: #ffffff;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 0.85rem 1.25rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #0369a1;
+          margin: 0.5rem 0;
+          overflow-x: auto;
+        }
+
+        .formula-variables {
+          margin-top: 0.85rem;
+          padding-top: 0.75rem;
+          border-top: 1px dashed #cbd5e1;
+          font-size: 0.825rem;
+          color: #475569;
+          line-height: 1.6;
+        }
+
+        .formula-example {
+          margin-top: 0.85rem;
+          background-color: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 6px;
+          padding: 0.75rem 1rem;
+          font-size: 0.825rem;
+          color: #1e40af;
+          line-height: 1.6;
+        }
+
+        /* TABELAS TÉCNICAS */
+        .academic-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 1.5rem 0;
+          font-size: 0.85rem;
+        }
+
+        .academic-table th {
+          background-color: #0f172a;
+          color: #ffffff;
+          padding: 0.65rem 0.85rem;
+          font-weight: 700;
+          text-align: left;
+          border: 1px solid #0f172a;
+        }
+
+        .academic-table td {
+          padding: 0.65rem 0.85rem;
+          border: 1px solid #e2e8f0;
+          vertical-align: top;
+          color: #334155;
+          line-height: 1.5;
+        }
+
+        .academic-table tr:nth-child(even) td {
+          background-color: #f8fafc;
+        }
+
+        /* CITAÇÕES E HIGHLIGHTS */
+        .academic-quote-block {
+          border-left: 4px solid #0ea5e9;
+          background-color: #f0fdf4;
+          padding: 1.25rem 1.75rem;
+          border-radius: 0 8px 8px 0;
+          margin: 1.75rem 0;
+          font-style: italic;
+          color: #166534;
+          line-height: 1.7;
+          font-size: 0.95rem;
+        }
+
+        .methodology-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          background-color: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+          padding: 0.25rem 0.65rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          margin-right: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .tech-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          background-color: #f1f5f9;
+          color: #334155;
+          border: 1px solid #cbd5e1;
+          padding: 0.2rem 0.55rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          font-family: monospace;
+          margin-right: 0.4rem;
+          margin-bottom: 0.4rem;
+        }
+
+        /* ESTRUTURA DE TELA */
         @media screen {
-          .memorial-document-wrapper {
-            background-color: #0b1120;
-            min-height: 100vh;
-            color: #0f172a;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          .screen-header-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #0f172a;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            padding: 1.5rem 1rem 4rem 1rem;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
           }
 
-          .memorial-screen-page {
-            width: 100%;
-            max-width: 960px;
+          .screen-main-layout {
+            display: flex;
+            max-width: 1560px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+          }
+
+          /* Menu Lateral de Capítulos na Tela */
+          .screen-sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            background-color: #0b1120;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 1.5rem 1rem;
+            position: sticky;
+            top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            box-sizing: border-box;
+          }
+
+          .screen-content-area {
+            flex: 1;
+            padding: 2.5rem 3.5rem 6rem 3.5rem;
+            background-color: #070b13;
+            overflow-y: auto;
+          }
+
+          .screen-paper-sheet {
             background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            padding: 3.5rem 3.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            padding: 4rem 4.5rem;
             box-sizing: border-box;
-            min-height: 1100px;
-            margin-bottom: 2rem;
-            position: relative;
+            color: #0f172a;
+            max-width: 1080px;
+            margin: 0 auto;
+            min-height: 1050px;
           }
 
-          /* Show only active page on screen */
-          .memorial-section {
+          /* Na tela: exibe apenas o capítulo ativo */
+          .monograph-chapter-section {
             display: none;
           }
-          .memorial-section.active-screen-page {
+          .monograph-chapter-section.active-chapter {
             display: block;
-            animation: fadeInPage 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeInChap 0.2s ease-out;
           }
 
-          @keyframes fadeInPage {
+          @keyframes fadeInChap {
             from {
               opacity: 0;
-              transform: translateY(8px);
+              transform: translateY(6px);
             }
             to {
               opacity: 1;
@@ -102,6 +299,7 @@ export default function MemorialDescritivoPage() {
           }
         }
 
+        /* ESTRUTURA DE IMPRESSÃO (TCC / MONOGRAFIA EM FOLHAS A4) */
         @media print {
           @page {
             size: A4 portrait;
@@ -110,8 +308,8 @@ export default function MemorialDescritivoPage() {
 
           html, body {
             background-color: #ffffff !important;
-            color: #111827 !important;
-            font-size: 11.5pt !important;
+            color: #0f172a !important;
+            font-size: 11pt !important;
             line-height: 1.6 !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -120,32 +318,34 @@ export default function MemorialDescritivoPage() {
           }
 
           .no-print,
-          .memorial-screen-toolbar,
-          .memorial-screen-pagination {
+          .screen-header-bar,
+          .screen-sidebar,
+          .screen-chapter-nav {
             display: none !important;
           }
 
-          .memorial-document-wrapper {
+          .memorial-app-container,
+          .screen-main-layout,
+          .screen-content-area {
             background-color: #ffffff !important;
             padding: 0 !important;
             margin: 0 !important;
+            display: block !important;
             width: 100% !important;
             max-width: 100% !important;
-            display: block !important;
           }
 
-          .memorial-screen-page {
+          .screen-paper-sheet {
             box-shadow: none !important;
             border-radius: 0 !important;
             padding: 0 !important;
             margin: 0 !important;
             max-width: 100% !important;
             width: 100% !important;
-            min-height: auto !important;
           }
 
-          /* Print ALL sections sequentially with clean page breaks */
-          .memorial-section {
+          /* Na impressão: TODOS os capítulos são renderizados em sequência com quebra de página */
+          .monograph-chapter-section {
             display: block !important;
             page-break-before: always !important;
             break-before: page !important;
@@ -153,7 +353,7 @@ export default function MemorialDescritivoPage() {
             padding-bottom: 10mm !important;
           }
 
-          .memorial-section:first-of-type {
+          .monograph-chapter-section:first-of-type {
             page-break-before: avoid !important;
             break-before: avoid !important;
             padding-top: 0 !important;
@@ -163,95 +363,43 @@ export default function MemorialDescritivoPage() {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
           }
-        }
 
-        /* Typography & Editorial Accents */
-        .memorial-serif {
-          font-family: 'Merriweather', 'Georgia', 'Cambria', serif;
-        }
+          .formula-card {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
 
-        .academic-header {
-          border-bottom: 2px solid #0f172a;
-          padding-bottom: 1rem;
-          margin-bottom: 2rem;
-        }
-
-        .formula-box {
-          background-color: #f8fafc;
-          border-left: 4px solid #0ea5e9;
-          border-right: 1px solid #e2e8f0;
-          border-top: 1px solid #e2e8f0;
-          border-bottom: 1px solid #e2e8f0;
-          padding: 1.25rem 1.5rem;
-          border-radius: 0 8px 8px 0;
-          margin: 1.5rem 0;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        }
-
-        .academic-quote {
-          font-style: italic;
-          color: #334155;
-          border-left: 3px solid #cbd5e1;
-          padding-left: 1.25rem;
-          margin: 1.25rem 0;
-          line-height: 1.7;
-        }
-
-        .concept-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-          background-color: #eff6ff;
-          color: #1e40af;
-          border: 1px solid #bfdbfe;
-          font-size: 0.75rem;
-          font-weight: 700;
-          padding: 0.2rem 0.6rem;
-          border-radius: 9999px;
-          margin-right: 0.5rem;
-          margin-bottom: 0.5rem;
+          .academic-table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
         }
       `}</style>
 
       {/* ========================================================================= */}
-      {/* FLOATING ACTION TOOLBAR (SCREEN ONLY)                                     */}
+      {/* HEADER SUPERIOR (APENAS NA TELA)                                          */}
       {/* ========================================================================= */}
-      <div
-        className="memorial-screen-toolbar no-print"
-        style={{
-          width: '100%',
-          maxWidth: '960px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1.25rem',
-          backgroundColor: '#1e293b',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '0.75rem 1.25rem',
-          borderRadius: '12px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <header className="screen-header-bar no-print">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
             type="button"
             onClick={() => router.back()}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.4rem',
+              gap: '0.45rem',
               backgroundColor: 'rgba(255, 255, 255, 0.08)',
               color: '#cbd5e1',
               border: '1px solid rgba(255, 255, 255, 0.15)',
-              padding: '0.45rem 0.85rem',
+              padding: '0.5rem 0.95rem',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '0.8125rem',
-              fontWeight: 600,
+              fontWeight: 700,
               transition: 'all 0.15s ease',
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.16)';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.18)';
               e.currentTarget.style.color = '#ffffff';
             }}
             onMouseOut={(e) => {
@@ -262,14 +410,39 @@ export default function MemorialDescritivoPage() {
             <ArrowLeft size={16} /> Voltar ao FluxoLean
           </button>
 
-          <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.15)', height: '22px' }} />
+          <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.15)', height: '24px' }} />
 
-          <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
-            Documento Técnico & Metodológico • <strong>Autor: Mauricio Grigol</strong>
-          </span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.95rem', color: '#ffffff', letterSpacing: '-0.01em' }}>
+                FluxoLean PRO
+              </span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  backgroundColor: 'rgba(14, 165, 233, 0.25)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(14, 165, 233, 0.4)',
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Trabalho Intelectual & Memorial
+              </span>
+            </div>
+            <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>
+              Autor: <strong>Mauricio Grigol</strong> • Monografia Técnica & Modelagem Matemática Industrial
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+            <span>Capítulo {activeChapter + 1} de {chapters.length}</span>
+          </div>
+
           <button
             type="button"
             onClick={handlePrint}
@@ -277,1091 +450,1409 @@ export default function MemorialDescritivoPage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: '#0ea5e9',
+              backgroundColor: '#0284c7',
               color: '#ffffff',
               border: 'none',
-              padding: '0.5rem 1.15rem',
+              padding: '0.55rem 1.25rem',
               borderRadius: '8px',
               cursor: 'pointer',
               fontSize: '0.85rem',
-              fontWeight: 700,
-              boxShadow: '0 4px 12px rgba(14, 165, 233, 0.35)',
+              fontWeight: 800,
+              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
               transition: 'all 0.15s ease',
             }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#0284c7')}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#0ea5e9')}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#0369a1')}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#0284c7')}
           >
-            <Printer size={16} /> Imprimir Obra Completa (A4 / PDF)
+            <Printer size={16} /> Imprimir Obra Completa (A4 / TCC)
           </button>
         </div>
-      </div>
+      </header>
 
       {/* ========================================================================= */}
-      {/* MAIN DOCUMENT CONTAINER                                                   */}
+      {/* ESTRUTURA PRINCIPAL: SIDEBAR + CONTEÚDO                                    */}
       {/* ========================================================================= */}
-      <main className="memorial-screen-page">
-        {/* ===================================================================== */}
-        {/* PÁGINA 0: CAPA NOBRE EDITORIAL                                        */}
-        {/* ===================================================================== */}
-        <section
-          className={`memorial-section ${currentPage === 0 ? 'active-screen-page' : ''}`}
-          style={{ minHeight: '920px', display: currentPage === 0 ? 'flex' : undefined, flexDirection: 'column', justifyContent: 'space-between' }}
-        >
-          {/* Header Institucional da Capa */}
-          <div style={{ textAlign: 'center', borderBottom: '3px double #cbd5e1', paddingBottom: '2.5rem', paddingTop: '1rem' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                backgroundColor: '#0f172a',
-                color: '#38bdf8',
-                padding: '0.45rem 1.25rem',
-                borderRadius: '8px',
-                fontWeight: 900,
-                fontSize: '0.85rem',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                marginBottom: '1.5rem',
-              }}
-            >
-              <Cpu size={16} color="#38bdf8" /> FLUXOLEAN INDUSTRIAL ECOSYSTEM
-            </div>
-            <p style={{ fontSize: '0.85rem', letterSpacing: '0.25em', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, margin: 0 }}>
-              MEMORIAL DESCRITIVO & FUNDAMENTAÇÃO METODOLÓGICA
-            </p>
-          </div>
-
-          {/* Bloco Central do Título */}
-          <div style={{ textAlign: 'center', margin: '3.5rem 0' }}>
-            <span
-              style={{
-                fontSize: '0.9rem',
-                fontWeight: 800,
-                color: '#0284c7',
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                display: 'block',
-                marginBottom: '1rem',
-              }}
-            >
-              Trabalho Monográfico de Engenharia de Processos
+      <div className="screen-main-layout">
+        {/* SIDEBAR DE CAPÍTULOS NA TELA */}
+        <aside className="screen-sidebar no-print">
+          <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Índice da Monografia
             </span>
-
-            <h1
-              className="memorial-serif"
-              style={{
-                fontSize: '2.35rem',
-                fontWeight: 900,
-                color: '#0f172a',
-                lineHeight: 1.25,
-                margin: '0 auto 1.5rem auto',
-                maxWidth: '820px',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              FLUXOLEAN 4.0: ARQUITETURA DE SINCRONISMO OPERACIONAL, GOVERNANÇA PDCA E ENGENHARIA DE CUSTOS EVITADOS
-            </h1>
-
-            <div style={{ width: '80px', height: '4px', backgroundColor: '#0ea5e9', margin: '1.75rem auto' }} />
-
-            <p
-              style={{
-                fontSize: '1.1rem',
-                color: '#475569',
-                maxWidth: '720px',
-                margin: '0 auto',
-                lineHeight: 1.6,
-                fontStyle: 'italic',
-              }}
-            >
-              Uma Abordagem Estruturada para a Eliminação Sistemática de Desperdícios, Conexão do Chão de Fábrica à Controladoria e Validação Contábil do Retorno sobre o Capital Lean
+            <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: '0.25rem 0 0 0', fontWeight: 600 }}>
+              Navegação pelos Módulos
             </p>
           </div>
 
-          {/* Apresentação Autêntica do Autor */}
-          <div
-            style={{
-              backgroundColor: '#f8fafc',
-              border: '1.5px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '2rem 2.25rem',
-              margin: '2rem 0',
-              position: 'relative',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0f172a 100%)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 900,
-                  fontSize: '1.35rem',
-                  flexShrink: 0,
-                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
-                }}
-              >
-                MG
-              </div>
-              <div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Idealizador & Engenheiro de Software Industrial
-                </span>
-                <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', margin: '0.1rem 0' }}>
-                  Mauricio Grigol
-                </h2>
-                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
-                  Especialista em Melhoria Contínua, Metodologia Lean & Arquitetura de Sistemas Operacionais
-                </p>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.7, margin: '0 0 1rem 0', textAlign: 'justify' }}>
-              A idealização e desenvolvimento da plataforma <strong>FluxoLean</strong> nasceram de uma convicção forjada no dia a dia da indústria:
-              a melhoria contínua só atinge maturidade quando o conhecimento empírico do chão de fábrica encontra o rigor analítico da engenharia e a fé pública da controladoria contábil.
-            </p>
-
-            <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.7, margin: 0, textAlign: 'justify' }}>
-              Tratou-se de conceber não apenas um software de gestão, mas um ecossistema metodológico completo — integrando a simplicidade visual do <em>Gemba</em>
-              à solidez matemática dos memoriais de cálculo de custo evitado e à governança de prazos de ciclo PDCA. Este trabalho é o registro genuíno dos princípios,
-              equações e escolhas estruturais que tornam o FluxoLean uma ferramenta de transformação industrial duradoura.
-            </p>
-          </div>
-
-          {/* Rodapé da Capa */}
-          <div style={{ textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem', marginTop: 'auto' }}>
-            <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.25rem 0' }}>
-              CURITIBA — PARANÁ
-            </p>
-            <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0 }}>
-              Edição Oficial de Engenharia Industrial • Versão 4.0 Multi-Tenant
-            </p>
-          </div>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 1: SUMÁRIO ANALÍTICO & PRÓLOGO                                 */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 1 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Estrutura da Obra
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Sumário Executivo dos Módulos & Prólogo
-            </h2>
-          </div>
-
-          {/* Sumário */}
-          <div style={{ marginBottom: '2.5rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-              ÍNDICE SISTEMÁTICO DOS CAPÍTULOS
-            </h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {[
-                { cap: 'Prólogo', title: 'A Gênese do FluxoLean: Da Fragmentação Fabril à Governança Integrada', page: '01' },
-                { cap: 'Capítulo 1', title: 'Dashboard Executivo & Engenharia de Lead Time: Filosofia Mieruka e Defesa do Agente', page: '02' },
-                { cap: 'Capítulo 2', title: 'Triagem Industrial & Matriz GUT: O Funil Estratégico de Demandas do Chão de Fábrica', page: '03' },
-                { cap: 'Capítulo 3', title: 'Metodologia PDCA em 4 Fases: Investigação de Causa-Raiz (6M, Pareto, 5 Porquês) e Yokoten', page: '04' },
-                { cap: 'Capítulo 4', title: 'Engenharia Financeira & Memoriais de Cálculo: As 7 Fontes de Custo Evitado e Payback Real', page: '05' },
-                { cap: 'Capítulo 5', title: 'Governança Contábil & Auditoria da Controladoria: Homologação Formal e Fé Pública dos Números', page: '06' },
-                { cap: 'Capítulo 6', title: 'TPM & Gestão Autônoma 5S: OEE Fabril, 8 Pilares de Nakajima e Cartões de Anomalia', page: '07' },
-                { cap: 'Capítulo 7', title: 'Desenvolvimento Humano & Assessment 360°: Monozukuri wa Hitozukuri e Radar de Competências', page: '08' },
-                { cap: 'Capítulo 8', title: 'Bibliografia Acadêmica Rigorosa & Referencial Teórico ABNT', page: '09' },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setCurrentPage(idx === 0 ? 1 : idx + 1)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            {chapters.map((chap) => {
+              const Icon = chap.icon;
+              const isActive = activeChapter === chap.id;
+              return (
+                <button
+                  key={chap.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveChapter(chap.id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.6rem 0.85rem',
-                    borderRadius: '6px',
-                    backgroundColor: idx % 2 === 0 ? '#f8fafc' : 'transparent',
+                    gap: '0.65rem',
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: '8px',
+                    textAlign: 'left',
+                    backgroundColor: isActive ? '#0284c7' : 'transparent',
+                    color: isActive ? '#ffffff' : '#94a3b8',
+                    border: 'none',
                     cursor: 'pointer',
-                    transition: 'background-color 0.15s ease',
+                    fontSize: '0.8125rem',
+                    fontWeight: isActive ? 800 : 500,
+                    transition: 'all 0.15s ease',
                   }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#e0f2fe')}
-                  onMouseOut={(e) => (e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#f8fafc' : 'transparent')}
+                  onMouseOver={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+                      e.currentTarget.style.color = '#ffffff';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#94a3b8';
+                    }
+                  }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#0284c7', minWidth: '75px' }}>{item.cap}</span>
-                    <span style={{ fontSize: '0.9rem', color: '#1e293b', fontWeight: 600 }}>{item.title}</span>
-                  </div>
-                  <span style={{ fontSize: '0.8125rem', color: '#94a3b8', fontFamily: 'monospace', fontWeight: 700 }}>Pág. {item.page}</span>
-                </div>
-              ))}
-            </div>
+                  <Icon size={16} color={isActive ? '#ffffff' : '#0ea5e9'} style={{ flexShrink: 0 }} />
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {chap.short}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Prólogo */}
-          <div style={{ borderTop: '2px solid #0f172a', paddingTop: '1.75rem' }}>
-            <h3 className="memorial-serif" style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>
-              Prólogo: A Gênese do FluxoLean
-            </h3>
-
-            <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1.25rem' }}>
-              Ao longo de décadas de aplicação das filosofias da manufatura enxuta herdadas do Sistema Toyota de Produção (TPS), a indústria moderna enfrentou
-              uma dicotomia crônica. Por um lado, o entusiasmo com ferramentas visuais — como quadros brancos com post-its, folhas A3 preenchidas manualmente
-              e reuniões diárias de 5 minutos; por outro lado, o ceticismo corrosivo das diretorias executivas e dos departamentos financeiros em relação
-              aos resultados reais reportados pelas equipes de melhoria contínua.
-            </p>
-
-            <div className="academic-quote">
-              &quot;O desperdício mais perigoso em uma organização é a ilusão do ganho: projetos celebrados no chão de fábrica cujos números evaporam
-              ao serem confrontados com o balanço patrimonial e a DRE contábil.&quot;
-            </div>
-
-            <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1.25rem' }}>
-              O <strong>FluxoLean</strong> foi concebido para erradicar definitivamente essa lacuna estrutural. Ele não é uma mera versão digital de um quadro kanban.
-              Trata-se de uma arquitetura industrial holística, onde a identificação do problema no chão de fábrica (Triagem), o rigor de investigação de causas-raiz
-              (PDCA em 4 Fases), o cálculo padronizado do retorno financeiro (Memoriais de Custo Evitado) e a validação formal contábil (Controladoria) operam
-              como um fluxo contínuo e sem interrupções.
-            </p>
-
-            <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-              Nos capítulos seguintes, decompomos a lógica matemática, operacional e humana que alicerça cada tela e cada fluxo deste sistema,
-              oferecendo aos engenheiros, auditores e gestores o memorial descritivo completo da solução.
-            </p>
-          </div>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 2: CAPÍTULO 1 - DASHBOARD & ENGENHARIA DE LEAD TIME             */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 2 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 1 • Menu Principal & Governança Visual
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Dashboard Executivo & Engenharia de Lead Time dos Projetos
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><Layers size={12} /> Mieruka (Gestão à Vista)</span>
-            <span className="concept-pill"><Clock size={12} /> Lead Time Total de Ciclo</span>
-            <span className="concept-pill"><ShieldCheck size={12} /> Defesa do Agente & Gargalos Externos</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            1.1 O Princípio Mieruka e a Central de Comando Unificada
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Na tradição da engenharia industrial japonesa, <em>Mieruka</em> significa &quot;fazer com que o estado do processo se revele aos olhos instantaneamente&quot;.
-            O Dashboard do FluxoLean transcende a tradicional contabilidade de horas e status binários. Ele atua como o sistema nervoso central da planta fabril,
-            consolidando indicadores vitais: total de projetos ativos em pipeline, valor acumulado de custo evitado aprovado, taxa de conversão de ideias Kaizen
-            e a distribuição dos projetos pelas 4 fases do ciclo PDCA (Plan, Do, Check, Act).
-          </p>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            1.2 Modelagem Matemática do Lead Time de Ciclo PDCA
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O tempo de resposta de um projeto de melhoria contínua é o determinante da capacidade de adaptação da fábrica.
-            No FluxoLean, o Lead Time Total (LT_total) é mensurado a partir da transição da demanda aprovada na Triagem até o momento exato
-            da homologação formal da Controladoria. Não consideramos o período de 3 meses de acompanhamento pós-conclusão como parte do Lead Time ativo de ciclo,
-            pois se trata de uma fase passiva de verificação e auditoria contábil.
-          </p>
-
-          <div className="formula-box">
-            <strong>Equação 1.1 — Composição Temporal do Lead Time de Projeto:</strong><br />
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              LT_total = t_Plan + t_Do + t_Check + t_Controladoria
-            </div>
-            <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '0.5rem' }}>
-              Onde cada parcela representa os dias corridos de permanência do projeto na respectiva fase até sua aprovação.
-            </span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            1.3 A Defesa do Agente: Isolamento Científico das Dependências Externas
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Um dos maiores fatores de desmotivação de agentes e líderes de melhoria contínua em indústrias é serem responsabilizados pelo atraso
-            de projetos cujas ações dependiam de departamentos terceiros — tais como aquisição de peças por <strong>Compras</strong>, intervenções de parada
-            de linha por <strong>Manutenção</strong>, aprovação orçamentária por <strong>Diretoria</strong> ou laudo contábil por <strong>Controladoria</strong>.
-          </p>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Para resolver essa injustiça gerencial, o FluxoLean inovou ao implementar a <strong>Defesa do Agente</strong> na Fase DO: cada ação do plano
-            carrega compulsoriamente o <em>Setor Corresponsável</em>. O motor analítico do sistema decompõe o Lead Time em duas frações:
-          </p>
-
-          <div className="formula-box">
-            <strong>Equação 1.2 — Fracionamento de Lead Time e Índice de Dependência Externa:</strong><br />
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              LT_total = LT_Agente + Σ LT_Setores_Externos
-            </div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0284c7', marginTop: '0.35rem' }}>
-              Taxa de Impacto Externo (Φ) = (Σ LT_Externo / LT_total) × 100%
-            </div>
-          </div>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Dessa forma, os gráficos executivos de Lead Time evidenciam com transparência cirúrgica quando um projeto estendeu seu prazo devido
-            à inércia de setores de suporte, blindando o mérito técnico do agente e gerando dados irrefutáveis para cobrança interdepartamental pela diretoria.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 3: CAPÍTULO 2 - TRIAGEM INDUSTRIAL & MATRIZ GUT                */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 3 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 2 • Gestão de Demandas & Portfólio
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Triagem Industrial & Modelagem da Matriz GUT
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><Filter size={12} /> Funil de Entrada</span>
-            <span className="concept-pill"><BarChart3 size={12} /> Priorização Matemática GUT</span>
-            <span className="concept-pill"><CheckCircle2 size={12} /> Segregação Kaizen vs PDCA</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            2.1 A Democratização do Gemba e o Filtro Anti-Ruído
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O verdadeiro conhecimento sobre gargalos e perdas reside nas mãos dos operadores, mecânicos e supervisores de primeira linha.
-            Contudo, abrir canais de ideias sem um mecanismo de filtragem industrial invariavelmente satura o departamento de engenharia com sugestões
-            de conforto individual, reivindicações sem viabilidade ou ruídos operacionais que não justificam a abertura de um projeto formal.
-          </p>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O módulo de <strong>Triagem do FluxoLean</strong> atua como um funil estratégico bilíngue: permite que o chão de fábrica submeta propostas
-            com linguagem acessível (fotos, descrição de dor e setor), enquanto a coordenação de Lean aplica a avaliação de priorização prévia.
-          </p>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            2.2 A Formulação Matemática da Matriz GUT no FluxoLean
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Para suprimir a subjetividade de preferências pessoais na escolha de quais demandas devem ser atacadas primeiro, o sistema emprega a formulação
-            clássica de Kepner-Tregoe adaptada à manufatura pesada:
-          </p>
-
-          <div className="formula-box">
-            <strong>Equação 2.1 — Índice de Prioridade de Demanda (Score GUT):</strong><br />
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              Score GUT = G × U × T &nbsp;&nbsp;(onde G, U, T ∈ [1, 2, 3, 4, 5])
-            </div>
-            <div style={{ fontSize: '0.875rem', color: '#475569', marginTop: '0.25rem' }}>
-              Intervalo Operacional: 1 ≤ Score GUT ≤ 125
-            </div>
-          </div>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse', margin: '1.25rem 0', fontSize: '0.825rem' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#0f172a', color: '#ffffff', textAlign: 'left' }}>
-                <th style={{ padding: '0.5rem 0.75rem', borderRadius: '4px 0 0 0' }}>Fator</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Conceito Operacional</th>
-                <th style={{ padding: '0.5rem 0.75rem' }}>Critério de Peso Mínimo (1)</th>
-                <th style={{ padding: '0.5rem 0.75rem', borderRadius: '0 4px 0 0' }}>Critério de Peso Máximo (5)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700, color: '#0284c7' }}>Gravidade (G)</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Magnitude do dano fabril</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Sem impacto em custo ou segurança</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Risco fatal, dano ambiental ou perda &gt; R$ 100k</td>
-              </tr>
-              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700, color: '#0284c7' }}>Urgência (U)</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Pressão temporal de resposta</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Pode aguardar ciclo trimestral</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Parada iminente de linha ou cliente desabastecido</td>
-              </tr>
-              <tr style={{ backgroundColor: '#f8fafc' }}>
-                <td style={{ padding: '0.5rem 0.75rem', fontWeight: 700, color: '#0284c7' }}>Tendência (T)</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Propensão de degradação temporal</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Estável, não se agrava com o tempo</td>
-                <td style={{ padding: '0.5rem 0.75rem' }}>Degradação exponencial imediata</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            2.3 Decisão Algorítmica de Encaminhamento
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Demandas com Score GUT ≥ 64 e com complexidade técnica moderada a alta são promovidas automaticamente à categoria de <strong>Projeto PDCA Estruturado</strong>,
-            com alocação de agente responsável e abertura de protocolo com histórico de auditoria. Demandas com pontuação inferior, porém de fácil resolução imediata,
-            são despachadas como <em>Ação Rápida Kaizen</em>, garantindo que a fábrica não paralise recursos de engenharia em problemas triviais.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 4: CAPÍTULO 3 - METODOLOGIA PDCA EM 4 FASES                    */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 4 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 3 • Motor Metodológico Central
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Metodologia PDCA em 4 Fases: Da Causa-Raiz ao Yokoten
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><Award size={12} /> Ciclo de Deming & Shewhart</span>
-            <span className="concept-pill"><Layers size={12} /> Ishikawa 6M & Pareto 80/20</span>
-            <span className="concept-pill"><CheckCircle2 size={12} /> Padronização & Replicação (Yokoten)</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            3.1 A Estrutura Rígida em Quatro Portões de Qualidade (Gates)
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            No FluxoLean, o PDCA não é uma lista de tarefas soltas; é um fluxo de engenharia sequencial protegido por travas de qualidade de dados.
-            Um projeto não pode avançar para a fase DO sem que as ferramentas de diagnóstico de PLAN tenham sido concluídas com evidências fotográficas e métricas.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', margin: '1.25rem 0' }}>
-            {/* PLAN */}
-            <div style={{ backgroundColor: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '8px', padding: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ backgroundColor: '#2563eb', color: '#ffffff', fontWeight: 900, fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                  P
-                </span>
-                <strong style={{ fontSize: '0.95rem', color: '#1e3a8a' }}>PLAN (Planejar & Diagnosticar)</strong>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#1e40af', lineHeight: 1.6 }}>
-                <li>Caracterização do problema e métrica de linha de base.</li>
-                <li>Diagrama de Ishikawa 6M (Método, Máquina, Material, Mão de Obra, Meio Ambiente, Medição).</li>
-                <li>Estratificação de Pareto 80/20 dos principais fatores.</li>
-                <li>Investigação profunda dos <strong>5 Porquês</strong> até a causa-raiz física ou organizacional.</li>
-              </ul>
-            </div>
-
-            {/* DO */}
-            <div style={{ backgroundColor: '#fefce8', border: '1.5px solid #fef08a', borderRadius: '8px', padding: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ backgroundColor: '#ca8a04', color: '#ffffff', fontWeight: 900, fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                  D
-                </span>
-                <strong style={{ fontSize: '0.95rem', color: '#713f12' }}>DO (Executar & Prototipar)</strong>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#854d0e', lineHeight: 1.6 }}>
-                <li>Plano de Ação estruturado sob a matriz <strong>5W2H</strong>.</li>
-                <li>Definição explícita de setor corresponsável por tarefa.</li>
-                <li>Execução de testes piloto controlados no Gemba.</li>
-                <li>Registro de evidências de implementação e custos diretos.</li>
-              </ul>
-            </div>
-
-            {/* CHECK */}
-            <div style={{ backgroundColor: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: '8px', padding: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ backgroundColor: '#7c3aed', color: '#ffffff', fontWeight: 900, fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                  C
-                </span>
-                <strong style={{ fontSize: '0.95rem', color: '#4c1d95' }}>CHECK (Verificar & Confrontar)</strong>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#5b21b6', lineHeight: 1.6 }}>
-                <li>Comparativo direto entre Situação Inicial vs Situação Final.</li>
-                <li>Cálculo de variação percentual de performance (Δ%).</li>
-                <li>Confronto dos custos orçados versus custos reais incorridos.</li>
-                <li>Apuração das 7 fontes de custo evitado e anexação de planilha.</li>
-              </ul>
-            </div>
-
-            {/* ACT */}
-            <div style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '8px', padding: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span style={{ backgroundColor: '#16a34a', color: '#ffffff', fontWeight: 900, fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                  A
-                </span>
-                <strong style={{ fontSize: '0.95rem', color: '#14532d' }}>ACT (Padronizar & Replicar)</strong>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#166534', lineHeight: 1.6 }}>
-                <li>Criação ou revisão de Procedimento Operacional Padrão (POP).</li>
-                <li>Plano de treinamento e qualificação dos operadores de turno.</li>
-                <li>Mecanismos de contenção definitiva (Poka-Yoke).</li>
-                <li>Disseminação horizontal das lições aprendidas (<strong>Yokoten</strong>).</li>
-              </ul>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            3.2 O Relatório A3 Executivo como Artefato Supremo
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Inspirado na célebre metodologia A3 da Toyota, o FluxoLean gera automaticamente uma folha A3 paisagem com toda a síntese do projeto.
-            Em apenas um campo de visão, a diretoria tem acesso ao diagnóstico com Ishikawa, plano 5W2H, fotos de antes/depois, payback detalhado
-            e o selo de homologação da Controladoria — transformando o relatório em um documento auditável de fé pública corporativa.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 5: CAPÍTULO 4 - ENGENHARIA FINANCEIRA & CUSTO EVITADO          */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 5 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 4 • Modelagem Matemática & Retorno do Capital
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Engenharia Financeira & Memoriais de Cálculo de Custo Evitado
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><DollarSign size={12} /> Custo Evitado Real vs Estimado</span>
-            <span className="concept-pill"><TrendingUp size={12} /> Payback Amortizado & ROI</span>
-            <span className="concept-pill"><CheckCircle2 size={12} /> 7 Fontes de Ganhos Industriais</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            4.1 A Ruptura com os &quot;Ganhos Fictícios&quot;
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            A maior patologia de projetos industriais é a apresentação de economias baseadas em premissas frágeis.
-            Afirmar que &quot;economizou-se 15 minutos de um operador&quot; não representa ganho algum se essas horas não foram convertidas em maior produção
-            em um gargalo ou na eliminação direta de horas extras remuneradas.
-          </p>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O FluxoLean exige que cada centavo reportado seja alocado em uma das <strong>7 Fontes Canônicas de Custo Evitado Lean</strong>,
-            acompanhado obrigatoriamente de sua respectiva planilha de memória de cálculo com fórmulas abertas.
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', margin: '1.25rem 0' }}>
-            {[
-              {
-                num: '1',
-                title: 'Mão de Obra Direta (MOD)',
-                eq: 'ΔCusto MOD = (Horas_Antes - Horas_Depois) × Custo_Horário_Com_Encargos',
-                desc: 'Apenas aplicável quando as horas liberadas resultam em realocação comprovada ou eliminação de turnos extras.',
-              },
-              {
-                num: '2',
-                title: 'Perda de Material / Refugo Fabril',
-                eq: 'ΔRefugo = (Qtd_Sucata_Antes - Qtd_Sucata_Depois) × Custo_Médio_MP_Unitária',
-                desc: 'Economia física direta de matéria-prima que deixou de ser descartada ou desvalorizada como sucata.',
-              },
-              {
-                num: '3',
-                title: 'Capacidade Adicional em Gargalo (Throughput)',
-                eq: 'ΔGanho Throughput = ΔPeças_Produzidas_no_Gargalo × Margem_de_Contribuição_Unitária',
-                desc: 'Aumento de faturamento viabilizado pela quebra do gargalo segundo a Teoria das Restrições (TOC).',
-              },
-              {
-                num: '4',
-                title: 'Eficiência Energética & Utilidades',
-                eq: 'ΔEnergia = (Consumo_kWh_Antes - Consumo_kWh_Depois) × Tarifa_Média_kWh',
-                desc: 'Redução mensurada no consumo de eletricidade, vapor, ar comprimido ou gás combustível industrial.',
-              },
-              {
-                num: '5',
-                title: 'Consumíveis & Insumos Operacionais',
-                eq: 'ΔInsumos = ΔQuantidade_Consumida × Custo_Unitário_de_Aquisição',
-                desc: 'Menor consumo de ferramentas de corte, óleos lubrificantes, pallets descartáveis ou filmes de embalagem.',
-              },
-              {
-                num: '6',
-                title: 'Horas Extras Industriais Eliminadas',
-                eq: 'ΔHE = Σ Horas_Extras_Cortadas × [Salário_Hora × (1 + Adicional) × (1 + Encargos)]',
-                desc: 'Impacto direto e imediato no fluxo de caixa pela redução da folha de pagamento de finais de semana.',
-              },
-              {
-                num: '7',
-                title: 'Retrabalho Interno & Não-Conformidades',
-                eq: 'ΔRetrabalho = Lotes_Reprocessados_Evitados × (Custo_Desmontagem + Custo_Reoperação)',
-                desc: 'Eliminação dos custos ocultos de reprocessamento, reinspeção e perdas de embalagem associadas.',
-              },
-            ].map((f, i) => (
-              <div key={i} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.75rem 1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                  <strong style={{ fontSize: '0.85rem', color: '#0f172a' }}>
-                    {f.num}. {f.title}
-                  </strong>
-                  <code style={{ fontSize: '0.75rem', backgroundColor: '#e2e8f0', padding: '0.1rem 0.4rem', borderRadius: '4px', color: '#0369a1' }}>
-                    {f.eq}
-                  </code>
-                </div>
-                <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            4.2 Modelagem de Payback Amortizado e ROI Líquido
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O FluxoLean não aceita indicadores de retorno bruto. Todo projeto que demanda investimentos (seja em aquisição de equipamentos,
-            serviços de terceiros ou custos internos) tem seus desembolsos subtraídos para obtenção da Economia Líquida:
-          </p>
-
-          <div className="formula-box">
-            <strong>Equação 4.1 — ROI Líquido e Payback Amortizado:</strong><br />
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              Economia Líquida (R$) = Custo Evitado Total - Custos Totais de Implementação
-            </div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              ROI (%) = (Economia Líquida / Custos Totais de Implementação) × 100%
-            </div>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              Payback (Meses) = Custos Totais de Implementação / Economia Mensal Média Auditada
-            </div>
-          </div>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 6: CAPÍTULO 5 - GOVERNANÇA CONTÁBIL & CONTROLADORIA            */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 6 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 5 • Auditoria & Fé Pública dos Resultados
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Governança Contábil & Homologação pela Controladoria
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><ShieldCheck size={12} /> Fé Pública Contábil</span>
-            <span className="concept-pill"><GitPullRequest size={12} /> Token Escopado de Auditoria</span>
-            <span className="concept-pill"><Clock size={12} /> Ciclo dos 3 Meses de Validação</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            5.1 A Ponte entre o Engenheiro de Processos e o Auditor Financeiro
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Historicamente, a engenharia de processos e a controladoria operavam em universos paralelos.
-            O engenheiro apresentava números entusiastas de melhoria; o auditor contábil, não encontrando reflexo imediato nas contas contábeis,
-            desconsiderava os relatórios nos comitês de diretoria.
-          </p>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O FluxoLean resolveu esse atrito através de um <strong>Portal de Auditoria Dedicado da Controladoria</strong>.
-            Quando um projeto é concluído na fase CHECK com ganhos financeiros, o sistema despacha automaticamente uma notificação por e-mail
-            com link contendo token escopado de segurança (sem exigir criação de contas desnecessárias para o auditor externo).
-          </p>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            5.2 O Triplo Poder do Auditor e a Contra-Memória de Cálculo
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Ao acessar o portal, o auditor da Controladoria tem acesso irrestrito à memória de cálculo anexada pelo agente e possui três caminhos institucionais:
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', margin: '1.25rem 0' }}>
-            <div style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', color: '#16a34a', marginBottom: '0.5rem' }}>✓</div>
-              <strong style={{ fontSize: '0.85rem', color: '#14532d', display: 'block', marginBottom: '0.25rem' }}>Homologação Integral</strong>
-              <p style={{ fontSize: '0.75rem', color: '#166534', margin: 0 }}>
-                O auditor valida as premissas e chancela o valor integral com carimbo de fé pública no Relatório A3.
-              </p>
-            </div>
-
-            <div style={{ backgroundColor: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', color: '#2563eb', marginBottom: '0.5rem' }}>✎</div>
-              <strong style={{ fontSize: '0.85rem', color: '#1e3a8a', display: 'block', marginBottom: '0.25rem' }}>Ajuste com Parecer</strong>
-              <p style={{ fontSize: '0.75rem', color: '#1e40af', margin: 0 }}>
-                O auditor corrige valores por fonte de ganho, anexa uma contra-memória e emite parecer técnico formal.
-              </p>
-            </div>
-
-            <div style={{ backgroundColor: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '1.5rem', color: '#dc2626', marginBottom: '0.5rem' }}>✕</div>
-              <strong style={{ fontSize: '0.85rem', color: '#7f1d1d', display: 'block', marginBottom: '0.25rem' }}>Rejeição Justificada</strong>
-              <p style={{ fontSize: '0.75rem', color: '#991b1b', margin: 0 }}>
-                O projeto é reprovado por inconsistência metodológica, retornando ao agente para revisão mandatória.
-              </p>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            5.3 A Regra de Ouro dos 3 Meses de Acompanhamento
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Para garantir que a melhoria não sofra efeito ricochete após a entrega do projeto, o FluxoLean institui a <strong>Fase de Estabilização</strong>:
-            durante os 3 meses subsequentes à homologação contábil, o agente deve registrar mensalmente os dados reais de produção para comprovar que o novo padrão
-            se sustentou no chão de fábrica, completando o ciclo com excelência e auditoria impecável.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 7: CAPÍTULO 6 - TPM & GESTÃO AUTÔNOMA 5S                       */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 7 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 6 • Confiabilidade Operacional & Manutenção
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              TPM, Gestão Autônoma 5S e Maximização do OEE
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><Cpu size={12} /> 8 Pilares de Nakajima</span>
-            <span className="concept-pill"><BarChart3 size={12} /> OEE Fabril (D × P × Q)</span>
-            <span className="concept-pill"><CheckCircle2 size={12} /> Cartões de Anomalia 5S</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            6.1 A Filosofia do Operador Mantenedor
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            A Manutenção Produtiva Total (TPM), sistematizada pelo Japan Institute of Plant Maintenance (JIPM), preconiza que o equipamento
-            não pertence ao mecânico, mas ao operador que com ele convive durante todo o seu turno.
-            O FluxoLean materializa esse conceito transformando o celular do operador em uma ferramenta de detecção precoce de microfalhas.
-          </p>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            6.2 O Ciclo de Cartões de Anomalia Integrado ao Kanban
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Na detecção de qualquer anomalia física — vazamento, ruído anormal, folga mecânica ou desorganização —, o operador abre um <strong>Cartão 5S</strong>:
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', margin: '1.25rem 0' }}>
-            <div style={{ backgroundColor: '#fef2f2', border: '1.5px solid #f87171', borderRadius: '8px', padding: '1rem' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#991b1b', display: 'block', marginBottom: '0.35rem' }}>
-                🔴 Etiqueta Vermelha (Manutenção Especializada)
-              </strong>
-              <p style={{ fontSize: '0.8rem', color: '#7f1d1d', margin: 0, lineHeight: 1.5 }}>
-                Anomalias que exigem desenergização (LOTO), desmontagem mecânica complexa ou intervenção de eletrotécnicos habilitados.
-                Dispara chamado prioritário para a equipe de Manutenção Corretiva Planejada.
-              </p>
-            </div>
-
-            <div style={{ backgroundColor: '#eff6ff', border: '1.5px solid #60a5fa', borderRadius: '8px', padding: '1rem' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#1e40af', display: 'block', marginBottom: '0.35rem' }}>
-                🔵 Etiqueta Azul (Manutenção Autônoma 5S)
-              </strong>
-              <p style={{ fontSize: '0.8rem', color: '#1e3a8a', margin: 0, lineHeight: 1.5 }}>
-                Ações de reaperto, limpeza de sensores, organização de ferramental e lubrificação básica executadas pelo próprio operador
-                sob supervisão do líder de produção durante os primeiros 10 minutos de turno.
-              </p>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            6.3 Modelagem Matemática do OEE e Combate às 6 Grandes Perdas
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            A eficiência global dos ativos industriais é regida pela equação canônica do OEE (Overall Equipment Effectiveness):
-          </p>
-
-          <div className="formula-box">
-            <strong>Equação 6.1 — OEE Fabril e Fatores Constituintes:</strong><br />
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0369a1', margin: '0.4rem 0' }}>
-              OEE = Disponibilidade (D) × Desempenho (P) × Qualidade (Q)
-            </div>
-            <div style={{ fontSize: '0.85rem', color: '#334155', marginTop: '0.4rem', lineHeight: 1.6 }}>
-              D = Tempo Operacional / Tempo de Carga &nbsp;|&nbsp; P = Produção Real / Capacidade Teórica &nbsp;|&nbsp; Q = Peças Conformes / Total Produzido
-            </div>
-          </div>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Ao conectar as anomalias do chão de fábrica diretamente aos projetos PDCA, o FluxoLean ataca cirurgicamente as <strong>6 Grandes Perdas do TPM</strong>:
-            quebras repentinas, perdas em setup/ajustes, pequenas paradas/ociosidade, velocidade reduzida, defeitos no processo e perdas na inicialização de linha.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 8: CAPÍTULO 7 - DESENVOLVIMENTO HUMANO & ASSESSMENT            */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 8 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 7 • Cultura, Competências & Pessoas
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Desenvolvimento Humano: Monozukuri wa Hitozukuri
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><GraduationCap size={12} /> Academia Lean</span>
-            <span className="concept-pill"><Award size={12} /> Certificações Belt</span>
-            <span className="concept-pill"><TrendingUp size={12} /> Radar de Maturidade 360°</span>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            7.1 O Pilar Máximo: Desenvolver Pessoas para Desenvolver Processos
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            Uma das maiores lições da cultura industrial japonesa sintetiza-se no aforismo <em>&quot;Monozukuri wa Hitozukuri&quot;</em> —
-            antes de fabricar produtos de classe mundial, devemos formar pessoas de classe mundial.
-            Qualquer sistema digital desprovido de uma trilha de elevação do ser humano torna-se uma casca burocrática inútil.
-          </p>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O FluxoLean integra em sua espinha dorsal o módulo da <strong>Academia Lean</strong> e o <strong>Assessment de Competências 360°</strong>,
-            garantindo que o agente e os operadores sejam formalmente capacitados, avaliados e reconhecidos à medida que entregam projetos bem-sucedidos.
-          </p>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            7.2 A Trilha de Belts e Gamificação de Mérito Industrial
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
-            O progresso do profissional no sistema segue critérios objetivos de aprovação teórica e entrega prática de retorno financeiro:
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', margin: '1.25rem 0' }}>
-            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.85rem', textAlign: 'center' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#e2e8f0', border: '2px solid #94a3b8', margin: '0 auto 0.5rem auto' }} />
-              <strong style={{ fontSize: '0.8rem', color: '#0f172a', display: 'block' }}>White Belt</strong>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Consciência de desperdícios e abertura de Kaizens 5S no chão de fábrica.</span>
-            </div>
-
-            <div style={{ backgroundColor: '#fefce8', border: '1px solid #fef08a', borderRadius: '8px', padding: '0.85rem', textAlign: 'center' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#facc15', margin: '0 auto 0.5rem auto' }} />
-              <strong style={{ fontSize: '0.8rem', color: '#854d0e', display: 'block' }}>Yellow Belt</strong>
-              <span style={{ fontSize: '0.7rem', color: '#713f12' }}>Domínio de Ishikawa, 5W2H e participação ativa em planos de ação.</span>
-            </div>
-
-            <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '0.85rem', textAlign: 'center' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#22c55e', margin: '0 auto 0.5rem auto' }} />
-              <strong style={{ fontSize: '0.8rem', color: '#166534', display: 'block' }}>Green Belt</strong>
-              <span style={{ fontSize: '0.7rem', color: '#14532d' }}>Liderança de projetos PDCA complexos e cálculo de ROI auditado.</span>
-            </div>
-
-            <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.85rem', textAlign: 'center' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#000000', border: '2px solid #38bdf8', margin: '0 auto 0.5rem auto' }} />
-              <strong style={{ fontSize: '0.8rem', color: '#38bdf8', display: 'block' }}>Black Belt</strong>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Mentoria de agentes, Yokoten corporativo e governança estratégica.</span>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
-            7.3 O Radar de Maturidade Industrial e Avaliação 360°
-          </h3>
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
-            Complementando as certificações de belt, o <strong>Radar de Maturidade</strong> mensura 5 eixos fundamentais:
-            1. Rigor Metodológico na Causa-Raiz; 2. Cumprimento de Prazos e Lead Time; 3. Precisão dos Memoriais Contábeis;
-            4. Presença e Postura de Liderança no Gemba; e 5. Replicação de Boas Práticas (Yokoten).
-            Essa matriz orienta os planos individuais de desenvolvimento (PDI), transformando o sistema em uma fábrica de líderes industriais.
-          </p>
-        </section>
-
-        {/* ===================================================================== */}
-        {/* PÁGINA 9: CAPÍTULO 8 - BIBLIOGRAFIA ACADÊMICA ABNT                     */}
-        {/* ===================================================================== */}
-        <section className={`memorial-section ${currentPage === 9 ? 'active-screen-page' : ''}`}>
-          <div className="academic-header">
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Capítulo 8 • Fundamentação Teórica
-            </span>
-            <h2 className="memorial-serif" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
-              Bibliografia Acadêmica & Referencial Teórico Rigoroso (ABNT)
-            </h2>
-          </div>
-
-          <div>
-            <span className="concept-pill"><Library size={12} /> Referencial Clássico Lean</span>
-            <span className="concept-pill"><Award size={12} /> Padrão ABNT NBR 6023</span>
-          </div>
-
-          <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginTop: '1.25rem', marginBottom: '1.5rem' }}>
-            A concepção metodológica e arquitetural do <strong>FluxoLean</strong> não é fruto de especulação empírica isolada, mas sim da fusão direta
-            entre os ensinamentos clássicos da engenharia de produção japonesa e os modernos preceitos da governança corporativa e contábil.
-            Abaixo estão registradas as obras fundamentais consultadas e homenageadas nesta solução:
-          </p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {[
-              {
-                ref: 'OHNO, Taiichi. Toyota Production System: Beyond Large-Scale Production. Portland: Productivity Press, 1988.',
-                nota: 'Obra fundamental que introduz a eliminação dos 7 grandes desperdícios (Muda), a produção Just-in-Time e o conceito de autonomia com toque humano (Jidoka).',
-              },
-              {
-                ref: 'SHINGO, Shigeo. A Study of the Toyota Production System from an Industrial Engineering Viewpoint. Tokyo: Japan Management Association, 1981.',
-                nota: 'Balanço magistral entre teoria de engenharia de tempos/métodos, troca rápida de ferramentas (SMED) e dispositivos à prova de falhas (Poka-Yoke).',
-              },
-              {
-                ref: 'WOMACK, James P.; JONES, Daniel T. Lean Thinking: Banish Waste and Create Wealth in Your Corporation. New York: Free Press, 2003.',
-                nota: 'Sistematização dos 5 princípios Lean: Valor, Fluxo de Valor, Fluxo Contínuo, Puxar a Produção e Perfeição.',
-              },
-              {
-                ref: 'LIKER, Jeffrey K. O Modelo Toyota: 14 Princípios de Gestão do Maior Fabricante do Mundo. Porto Alegre: Bookman, 2005.',
-                nota: 'Apresenta a arquitetura cultural e filosófica que sustenta a melhoria contínua, conectando liderança Gemba e desenvolvimento de parceiros.',
-              },
-              {
-                ref: 'SHOOK, John. Gerenciando para Aprender: O Uso do Processo de Gestão A3 para Resolver Problemas, Promover Alinhamento e Desenvolver Pessoas. São Paulo: Lean Institute Brasil, 2008.',
-                nota: 'Referência direta para o motor PDCA em folha única A3 implementado como artefato central no FluxoLean.',
-              },
-              {
-                ref: 'ROTHER, Mike; SHOOK, John. Aprendendo a Enxergar: Mapeando o Fluxo de Valor para Agregar Valor e Eliminar o Desperdício. São Paulo: Lean Institute Brasil, 2003.',
-                nota: 'Inspiração analítica para o cálculo de Lead Time Total e a segregação de tempos de agregação e não-agregação de valor.',
-              },
-              {
-                ref: 'IMAI, Masaaki. Kaizen: A Estratégia para o Sucesso Competitivo. São Paulo: IMAM, 1994.',
-                nota: 'Trata da mentalidade do Kaizen diário no chão de fábrica e da valorização contínua das pequenas contribuições do operador.',
-              },
-              {
-                ref: 'NAKAJIMA, Seiichi. Introduction to TPM: Total Productive Maintenance. Cambridge: Productivity Press, 1988.',
-                nota: 'Balanço seminal que define os 8 pilares do TPM, a Manutenção Autônoma e a modelagem matemática do OEE implementada no sistema.',
-              },
-              {
-                ref: 'GOLDRATT, Eliyahu M.; COX, Jeff. A Meta: Um Processo de Aprimoramento Contínuo. São Paulo: Nobel, 2002.',
-                nota: 'Inspiração para o módulo de Throughput e a identificação de restrições de fluxo fabril abordadas no cálculo de Custo Evitado.',
-              },
-              {
-                ref: 'MONDEN, Yasuhiro. Toyota Production System: An Integrated Approach to Just-In-Time. 4th ed. Boca Raton: CRC Press, 2011.',
-                nota: 'Tratado completo sobre contabilidade de gestão Lean, amortização de investimentos em melhoria e sincronismo operacional.',
-              },
-            ].map((item, idx) => (
-              <div key={idx} style={{ backgroundColor: '#f8fafc', borderLeft: '3px solid #0f172a', padding: '0.85rem 1.15rem', borderRadius: '0 6px 6px 0' }}>
-                <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', margin: '0 0 0.35rem 0', lineHeight: 1.5 }}>
-                  {item.ref}
-                </p>
-                <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0, fontStyle: 'italic' }}>
-                  {item.nota}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: '2.5rem', textAlign: 'center', borderTop: '2px dashed #cbd5e1', paddingTop: '1.75rem' }}>
-            <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 0.25rem 0' }}>
-              FIM DO MEMORIAL DESCRITIVO & CONCEPÇÃO INTELECTUAL
-            </p>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
-              FluxoLean 4.0 • Idealizado, Arquitetado e Documentado por <strong>Mauricio Grigol</strong>
-            </p>
-          </div>
-        </section>
-      </main>
-
-      {/* ========================================================================= */}
-      {/* SCREEN PAGINATION CONTROLLER (BOTTOM NAVIGATION BAR)                     */}
-      {/* ========================================================================= */}
-      <nav
-        aria-label="Paginação do memorial"
-        className="memorial-screen-pagination no-print"
-        style={{
-          position: 'sticky',
-          bottom: '1.25rem',
-          backgroundColor: '#0f172a',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          padding: '0.65rem 1rem',
-          borderRadius: '9999px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
-          maxWidth: '960px',
-          width: 'calc(100% - 2rem)',
-          justifyContent: 'space-between',
-          zIndex: 50,
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-          disabled={currentPage === 0}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            backgroundColor: currentPage === 0 ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.12)',
-            color: currentPage === 0 ? '#475569' : '#ffffff',
-            border: 'none',
-            padding: '0.45rem 0.85rem',
-            borderRadius: '9999px',
-            fontSize: '0.8125rem',
-            fontWeight: 700,
-            cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          <ChevronLeft size={16} /> Anterior
-        </button>
-
-        {/* Numeric Page Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', overflowX: 'auto', padding: '0 0.25rem' }}>
-          <button
-            type="button"
-            onClick={() => setCurrentPage(0)}
+          <div
             style={{
-              padding: '0.4rem 0.75rem',
-              borderRadius: '9999px',
-              fontSize: '0.78125rem',
-              fontWeight: 800,
-              backgroundColor: currentPage === 0 ? '#0ea5e9' : 'rgba(255, 255, 255, 0.06)',
-              color: currentPage === 0 ? '#ffffff' : '#94a3b8',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
+              marginTop: '2rem',
+              padding: '1rem',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              fontSize: '0.75rem',
+              color: '#64748b',
+              lineHeight: 1.5,
             }}
           >
-            Capa
-          </button>
+            <strong style={{ color: '#cbd5e1', display: 'block', marginBottom: '0.25rem' }}>Dica de Leitura:</strong>
+            Use este índice lateral para alternar rapidamente entre a lógica de cada tela, seus memoriais de cálculo e os conceitos Lean aplicados.
+          </div>
+        </aside>
 
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((pageNum) => {
-            const isActive = currentPage === pageNum;
-            return (
-              <button
-                key={pageNum}
-                type="button"
-                onClick={() => setCurrentPage(pageNum)}
+        {/* ÁREA CENTRAL DO DOCUMENTO */}
+        <main className="screen-content-area">
+          <div className="screen-paper-sheet">
+            {/* ================================================================= */}
+            {/* CAPÍTULO 0: CAPA NOBRE & APRESENTAÇÃO DO AUTOR                     */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 0 ? 'active-chapter' : ''}`}>
+              <div style={{ textAlign: 'center', borderBottom: '3px double #cbd5e1', paddingBottom: '2.5rem', paddingTop: '1.5rem' }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    backgroundColor: '#0f172a',
+                    color: '#38bdf8',
+                    padding: '0.5rem 1.5rem',
+                    borderRadius: '8px',
+                    fontWeight: 900,
+                    fontSize: '0.85rem',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    marginBottom: '1.75rem',
+                  }}
+                >
+                  <Cpu size={18} color="#38bdf8" /> FLUXOLEAN INDUSTRIAL ECOSYSTEM
+                </div>
+                <p style={{ fontSize: '0.85rem', letterSpacing: '0.25em', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, margin: 0 }}>
+                  MEMORIAL DESCRITIVO & CONCEPÇÃO METODOLÓGICA DA PLATAFORMA
+                </p>
+              </div>
+
+              <div style={{ textAlign: 'center', margin: '3.5rem 0' }}>
+                <span className="academic-subtitle">
+                  Trabalho Monográfico de Engenharia de Processos & Governança Lean
+                </span>
+
+                <h1
+                  className="memorial-serif"
+                  style={{
+                    fontSize: '2.35rem',
+                    fontWeight: 900,
+                    color: '#0f172a',
+                    lineHeight: 1.25,
+                    margin: '0 auto 1.5rem auto',
+                    maxWidth: '860px',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  FLUXOLEAN 4.0: ARQUITETURA DE SINCRONISMO OPERACIONAL, GOVERNANÇA PDCA E ENGENHARIA DE CUSTOS EVITADOS
+                </h1>
+
+                <div style={{ width: '80px', height: '4px', backgroundColor: '#0ea5e9', margin: '1.75rem auto' }} />
+
+                <p
+                  style={{
+                    fontSize: '1.1rem',
+                    color: '#475569',
+                    maxWidth: '760px',
+                    margin: '0 auto',
+                    lineHeight: 1.6,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  Uma Abordagem Estruturada para a Eliminação Sistemática de Desperdícios, Conexão do Chão de Fábrica à Controladoria e Validação Contábil do Retorno sobre o Capital Lean
+                </p>
+              </div>
+
+              {/* Apresentação Autêntica do Autor */}
+              <div
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  fontSize: '0.8125rem',
-                  fontWeight: 800,
-                  backgroundColor: isActive ? '#0ea5e9' : 'rgba(255, 255, 255, 0.06)',
-                  color: isActive ? '#ffffff' : '#94a3b8',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s ease',
+                  backgroundColor: '#f8fafc',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '2.25rem 2.5rem',
+                  margin: '2.5rem 0',
                 }}
-                title={pageTitles[pageNum]}
               >
-                {pageNum}
-              </button>
-            );
-          })}
-        </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                  <div
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0f172a 100%)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: '1.45rem',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.25)',
+                    }}
+                  >
+                    MG
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      Idealizador & Engenheiro de Software Industrial
+                    </span>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: '0.1rem 0' }}>
+                      Mauricio Grigol
+                    </h2>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, fontWeight: 600 }}>
+                      Especialista em Melhoria Contínua, Metodologia Lean & Arquitetura de Sistemas Operacionais
+                    </p>
+                  </div>
+                </div>
 
-        <button
-          type="button"
-          onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
-          disabled={currentPage === totalPages - 1}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            backgroundColor: currentPage === totalPages - 1 ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.12)',
-            color: currentPage === totalPages - 1 ? '#475569' : '#ffffff',
-            border: 'none',
-            padding: '0.45rem 0.85rem',
-            borderRadius: '9999px',
-            fontSize: '0.8125rem',
-            fontWeight: 700,
-            cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s ease',
-          }}
-        >
-          Próximo <ChevronRight size={16} />
-        </button>
-      </nav>
+                <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, margin: '0 0 1rem 0', textAlign: 'justify' }}>
+                  A idealização e o desenvolvimento do <strong>FluxoLean</strong> não surgiram em gabinetes teóricos, mas da experiência direta
+                  nas trincheiras da manufatura. Conviver com o ruído das máquinas, a pressão por prazos de entrega e a constante busca pela eliminação
+                  de perdas me ensinou uma verdade indelével: <em>a melhoria contínua só tem valor real se fizer a vida do operador mais digna,
+                  o processo mais estável e os resultados contábeis auditáveis perante a diretoria executiva</em>.
+                </p>
+
+                <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, margin: 0, textAlign: 'justify' }}>
+                  Esta obra foi redigida para documentar com absoluta transparência a engenharia intelectual por trás de cada tela do sistema.
+                  Não se trata apenas de código e telas; é a formalização de métodos de cálculo de Lead Time, filtragem de demandas operacionais,
+                  rigor no método PDCA e conciliação de custos evitados que transformam o Lean de um ideal filosófico em uma disciplina matemática irrefutável.
+                </p>
+              </div>
+
+              <div style={{ textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '1.75rem', marginTop: '3.5rem' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.25rem 0' }}>
+                  CURITIBA — PARANÁ
+                </p>
+                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                  Publicação Monográfica Oficial de Engenharia Industrial • Versão 4.0 Multi-Tenant
+                </p>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 1: PRÓLOGO & A GÊNESE DO FLUXOLEAN                       */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 1 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Fundamentação & Motivação</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Prólogo: A Gênese do FluxoLean e a Visão Sistêmica
+                </h2>
+              </div>
+
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                1. A Falácia da Melhoria Contínua Desconectada
+              </h3>
+              <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1.25rem' }}>
+                Ao longo de mais de três décadas desde a difusão global do Sistema Toyota de Produção (TPS), a indústria mundial acumulou um histórico agridoce.
+                De um lado, a inquestionável superioridade dos conceitos de fluxo contínuo, manutenção produtiva e respeito pelas pessoas; de outro,
+                uma taxa alarmante de mortalidade de iniciativas Lean dentro de organizações maduras.
+              </p>
+
+              <div className="academic-quote-block">
+                &quot;O maior gargalo de um sistema de manufatura enxuta não é a falta de ferramentas técnicas, mas a erosão da confiança provocada
+                por relatórios de ganhos financeiros que nunca aparecem na DRE contábil da empresa.&quot;
+              </div>
+
+              <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1.25rem' }}>
+                O diagnóstico desse fenômeno revela causas estruturais bem conhecidas por quem atua no chão de fábrica:
+              </p>
+
+              <ul style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.8, paddingLeft: '1.5rem', marginBottom: '1.5rem' }}>
+                <li>
+                  <strong>Planilhas Excel Descentralizadas:</strong> Cada engenheiro ou agente de melhoria cria suas próprias fórmulas de cálculo de ROI.
+                  As taxas horárias, encargos trabalhistas e critérios de sucata divergem, gerando desconfiança imediata da Controladoria.
+                </li>
+                <li>
+                  <strong>O Abandono dos 3 Meses Pós-Projeto:</strong> Projetos comemorados com fotos e troféus internos sofrem o efeito ricochete:
+                  assim que o agente de melhoria foca no próximo projeto, os operadores voltam ao método antigo por falta de padronização viva.
+                </li>
+                <li>
+                  <strong>A Injustiça da Inércia Interdepartamental:</strong> Projetos com prazos estourados nos quais o agente é culpabilizado,
+                  quando na verdade a ação estava paralisada há 45 dias aguardando compra de peças pelo setor de Suprimentos ou liberação de parada pela Manutenção.
+                </li>
+              </ul>
+
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                2. A Visão do FluxoLean: Da Operação ao Balanço Contábil
+              </h3>
+              <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
+                O <strong>FluxoLean</strong> foi concebido para fechar essas lacunas de forma irreversível.
+                Ele é o elo digital que integra a simplicidade de quem detecta uma trinca mecânica na linha de produção à segurança contábil
+                do auditor que precisa comprovar a economia perante o Conselho de Administração.
+                Nos capítulos a seguir, cada tela do sistema é dessecada metodologicamente, detalhando seus indicadores, métodos Lean e formulação matemática.
+              </p>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 2: DASHBOARD EXECUTIVO & LEAD TIME                      */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 2 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Menu Principal • Módulo 1</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 1: Dashboard Executivo & Engenharia de Lead Time
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><BarChart3 size={12} /> Filosofia Mieruka (Gestão à Vista)</span>
+                <span className="methodology-pill"><Clock size={12} /> Engenharia de Lead Time Total</span>
+                <span className="methodology-pill"><ShieldCheck size={12} /> Defesa do Agente (Gargalos Externos)</span>
+                <span className="tech-badge">Next.js App Router</span>
+                <span className="tech-badge">SVG Vector Graphs</span>
+                <span className="tech-badge">Reactivity Hooks</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                1.1 Lógica da Tela e Arquitetura de Informação
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                A tela do <strong>Dashboard Executivo</strong> é o centro nervoso da organização Lean.
+                Ao entrar no sistema, o gestor não é inundado por tabelas frias; ele é recepcionado por um cockpit de comando estruturado em 3 blocos lógicos:
+              </p>
+              <ol style={{ fontSize: '0.9rem', color: '#334155', lineHeight: 1.8, paddingLeft: '1.5rem', marginBottom: '1.25rem' }}>
+                <li>
+                  <strong>Barra Superior de Métricas Cardinais:</strong> Exibe os 4 pilares vitais: Total de Projetos em Andamento, Custo Evitado Aprovado Acumulado,
+                  Taxa Média de Retorno sobre Investimento (ROI Líquido) e a Eficiência de Triagem de Demandas.
+                </li>
+                <li>
+                  <strong>Pipeline do Fluxo PDCA:</strong> Um funil horizontal que quantifica visualmente os projetos nas 4 fases (Plan, Do, Check, Act)
+                  e sua etapa final de Homologação pela Controladoria.
+                </li>
+                <li>
+                  <strong>Painel Duplo de Engenharia de Lead Time:</strong>
+                  Substituindo a antiga análise estática de retorno, o painel exibe:
+                  (a) <em>Gráfico de Lead Time por Etapa do PDCA</em> (Plan, Do, Check, Controladoria), permitindo visualizar a média geral e a média de cada agente;
+                  (b) <em>Gráfico de Impacto de Dependências Externas (Defesa do Agente)</em>, segregando quanto tempo o projeto gastou em mãos de setores parceiros
+                  (Compras, Manutenção, T.I., Engenharia, Controladoria).
+                </li>
+              </ol>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                1.2 Indicadores Apresentados e Sua Finalidade Estratégica
+              </h3>
+              <table className="academic-table">
+                <thead>
+                  <tr>
+                    <th>Indicador (KPI)</th>
+                    <th>Unidade</th>
+                    <th>Finalidade Estratégica</th>
+                    <th>Decisão Habilitada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Custo Evitado Consolidado</strong></td>
+                    <td>R$ (BRL)</td>
+                    <td>Demonstrar o valor financeiro real gerado por melhorias que passaram pelo crivo formal da Controladoria.</td>
+                    <td>Prestação de contas para diretoria e alocação de bônus por desempenho de melhoria contínua.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lead Time Médio Geral</strong></td>
+                    <td>Dias Corridos</td>
+                    <td>Avaliar a velocidade de resposta da fábrica em transformar um problema diagnosticado em solução implementada e auditada.</td>
+                    <td>Identificar lentidão burocrática no ciclo de inovação de processos da planta.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Lead Time por Agente</strong></td>
+                    <td>Dias Corridos</td>
+                    <td>Medir a agilidade de condução de projetos de cada líder Lean individualmente.</td>
+                    <td>Reconhecimento de mérito e direcionamento de mentoria individual.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Índice de Dependência Externa (Φ)</strong></td>
+                    <td>Percentual (%)</td>
+                    <td>Medir a parcela do tempo do projeto em que a ação esteve travada por departamentos terceiros.</td>
+                    <td><strong>Defesa do Agente:</strong> Cobrança interdepartamental da Diretoria sobre setores que atrasam o Lean.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                1.3 Metodologia Lean & Conceitos Empregados
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O Dashboard incorpora os princípios do <strong>Mieruka</strong> (Gestão à Vista) e do <strong>Andon</strong> executivo.
+                Um problema não pode permanecer oculto em relatórios semanais. Ao decompor o tempo por fase do PDCA, o sistema aplica
+                a lógica do <em>Value Stream Mapping (VSM)</em> ao próprio processo de melhoria: o tempo em que o projeto está parado aguardando
+                uma cotação de compras é um <strong>Muda de Espera</strong> do sistema de gestão.
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                1.4 Memorial de Cálculo Minucioso dos Indicadores do Dashboard
+              </h3>
+
+              {/* Formula 1.1 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 1.1 — Lead Time Ativo de Ciclo do Projeto (LT_ativo)
+                </div>
+                <div className="formula-expression">
+                  LT_ativo = t_Plan + t_Do + t_Check + t_Controladoria
+                </div>
+                <div className="formula-variables">
+                  <strong>Definição das Variáveis:</strong><br />
+                  • <code>t_Plan</code>: Intervalo em dias corridos desde a aprovação na Triagem até o encerramento do diagnóstico e plano de ação.<br />
+                  • <code>t_Do</code>: Dias em execução do plano 5W2H e testes piloto no chão de fábrica.<br />
+                  • <code>t_Check</code>: Dias de coleta de métricas de capabilidade e apuração preliminar das 7 fontes de custo evitado.<br />
+                  • <code>t_Controladoria</code>: Dias corridos entre o envio formal à Controladoria e a decisão (homologação ou parecer).<br />
+                  <span style={{ color: '#0369a1', fontWeight: 700 }}>
+                    * Observação Metodológica: O período de 3 meses de acompanhamento pós-conclusão é estritamente passivo e NÃO compõe o Lead Time ativo de ciclo.
+                  </span>
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Prático Industrial:</strong><br />
+                  Projeto de Otimização de Setup da Linha de Tecelagem:<br />
+                  t_Plan = 12 dias | t_Do = 20 dias | t_Check = 8 dias | t_Controladoria = 4 dias.<br />
+                  <strong>LT_ativo = 12 + 20 + 8 + 4 = 44 dias corridos.</strong>
+                </div>
+              </div>
+
+              {/* Formula 1.2 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 1.2 — Defesa do Agente e Taxa de Impacto Externo (Φ)
+                </div>
+                <div className="formula-expression">
+                  LT_ativo = LT_Agente + Σ LT_Setores_Externos
+                  <br />
+                  Taxa de Impacto Externo (Φ) = ( Σ LT_Setores_Externos / LT_ativo ) × 100%
+                </div>
+                <div className="formula-variables">
+                  <strong>Desdobramento da Equação:</strong><br />
+                  • <code>LT_Agente</code>: Tempo efetivo gasto em tarefas sob governança direta do líder do projeto (investigação, Ishikawa, POP).<br />
+                  • <code>Σ LT_Setores_Externos</code>: Somatório dos tempos em que ações do 5W2H estiveram atribuídas a outros departamentos.<br />
+                  • <code>Φ</code>: Percentual de dilatação temporal imposta por gargalos externos ao agente.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo de Aplicação Real:</strong><br />
+                  Dos 44 dias totais do projeto acima:<br />
+                  - Ação de Usinagem de Guia (Setor Manutenção Mecânica): demorou 18 dias.<br />
+                  - Cotação e Compra de Cilindro Pneumático (Setor Compras): demorou 14 dias.<br />
+                  - Tempo em governança pura do Agente Lean: 12 dias.<br />
+                  Σ LT_Setores_Externos = 18 + 14 = 32 dias.<br />
+                  <strong>Φ = (32 / 44) × 100% = 72,7% de dependência externa.</strong><br />
+                  <em>Conclusão do Relatório:</em> O agente conduziu sua parte em apenas 12 dias (27,3% do tempo). O atraso de 32 dias decorreu da fila dos setores de suporte.
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 3: TRIAGEM INDUSTRIAL & MATRIZ GUT                       */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 3 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Menu de Entrada • Módulo 2</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 2: Triagem Industrial & Matriz GUT
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Filter size={12} /> Funil Estratégico de Demandas</span>
+                <span className="methodology-pill"><BarChart3 size={12} /> Matriz GUT de Priorização</span>
+                <span className="methodology-pill"><Lightbulb size={12} /> Segregação Kaizen vs PDCA</span>
+                <span className="tech-badge">Image Compression</span>
+                <span className="tech-badge">Multi-Criteria Sorting</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                2.1 Lógica da Tela e Arquitetura de Entrada
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                A tela de <strong>Triagem</strong> resolve o desafio de democratizar as contribuições sem afogar a engenharia.
+                A interface apresenta uma lista de cartões com as sugestões submetidas pelos colaboradores através do Canal Kaizen e formulários de chão de fábrica.
+                Cada cartão exibe a foto do problema, o setor fabril de origem, o relato da dor e a data de submissão.
+              </p>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O coordenador Lean abre o modal de análise de triagem e atribui as notas de Gravidade, Urgência e Tendência.
+                O sistema calcula em tempo real o <strong>Score GUT</strong> e sugere o direcionamento:
+                (a) <em>Aprovar como Projeto PDCA</em> (alocando agente e abrindo protocolo auditável);
+                (b) <em>Despachar como Ação Rápida Kaizen</em> (resolução direta sem necessidade de 4 fases);
+                (c) <em>Arquivar com Feedback Construtivo</em> (evitando desmotivar o colaborador).
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                2.2 Critérios de Pontuação e Escala da Matriz GUT
+              </h3>
+              <table className="academic-table">
+                <thead>
+                  <tr>
+                    <th>Nota</th>
+                    <th>Gravidade (G) — Magnitude do Dano</th>
+                    <th>Urgência (U) — Pressão Temporal</th>
+                    <th>Tendência (T) — Propensão de Piora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>1</strong></td>
+                    <td>Sem impacto perceptível em custo, segurança ou entrega.</td>
+                    <td>Pode aguardar ciclo anual sem prejuízo.</td>
+                    <td>Estável; não irá se agravar ao longo do tempo.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>2</strong></td>
+                    <td>Dano leve; desconforto operacional sem perda financeira.</td>
+                    <td>Pode ser avaliado no próximo trimestre.</td>
+                    <td>Degradação lenta e quase imperceptível.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>3</strong></td>
+                    <td>Dano moderado; retrabalho interno pontual &lt; R$ 5.000.</td>
+                    <td>Exige ação em até 30 dias para evitar acúmulo.</td>
+                    <td>Piora gradual previsível se nada for feito.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>4</strong></td>
+                    <td>Dano grave; quebra recorrente, perda de matéria-prima.</td>
+                    <td>Exige ação nas próximas 48 a 72 horas.</td>
+                    <td>Piora acelerada com risco de parada parcial de linha.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>5</strong></td>
+                    <td>Dano gravíssimo; risco à vida humana, passivo ambiental ou perda &gt; R$ 50k.</td>
+                    <td>Parada total imediata de linha ou cliente desabastecido.</td>
+                    <td>Degradação exponencial imediata e catastrófica.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                2.3 Memorial de Cálculo do Score GUT e Algoritmo de Decisão
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 2.1 — Índice de Prioridade de Demanda (Score GUT)
+                </div>
+                <div className="formula-expression">
+                  Score GUT = G × U × T &nbsp;&nbsp;&nbsp;&nbsp;(onde G, U, T ∈ [1, 2, 3, 4, 5])
+                  <br />
+                  Intervalo Numérico: 1 ≤ Score GUT ≤ 125
+                </div>
+                <div className="formula-variables">
+                  <strong>Regra de Classificação Algorítmica no FluxoLean:</strong><br />
+                  • <code>Score GUT ≥ 64</code>: <strong>Alta Prioridade</strong> ➔ Recomendação automática de abertura de <em>Projeto PDCA Estruturado</em>.<br />
+                  • <code>27 ≤ Score GUT &lt; 64</code>: <strong>Média Prioridade</strong> ➔ Avaliação de viabilidade técnica ou encaminhamento como <em>Ação Kaizen de Setor</em>.<br />
+                  • <code>Score GUT &lt; 27</code>: <strong>Baixa Prioridade</strong> ➔ Manutenção rotineira ou arquivamento com devolutiva ao autor.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Comparativo Real:</strong><br />
+                  <em>Demanda A (Vazamento de óleo na prensa principal com risco de queda de operador):</em><br />
+                  G = 5 (risco à integridade física) | U = 5 (imediato) | T = 4 (risco constante de expansão).<br />
+                  <strong>Score GUT = 5 × 5 × 4 = 100 ➔ Abertura Imediata de Projeto PDCA.</strong><br /><br />
+                  <em>Demanda B (Sugestão de troca de modelo de lixeira do refeitório):</em><br />
+                  G = 1 | U = 1 | T = 1 ➔ <strong>Score GUT = 1 ➔ Encaminhamento ao setor de Facilities.</strong>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 4: PROJETOS PDCA EM 4 FASES & RELATÓRIO A3               */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 4 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Motor Metodológico Central • Módulo 3</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 3: Projetos PDCA em 4 Fases & Relatório A3 Executivo
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Layers size={12} /> Ciclo PDCA Rigoroso</span>
+                <span className="methodology-pill"><Award size={12} /> Ishikawa 6M & Pareto 80/20</span>
+                <span className="methodology-pill"><FileText size={12} /> Relatório A3 Toyota Paisagem</span>
+                <span className="methodology-pill"><CheckCircle2 size={12} /> Replicação Lateral Yokoten</span>
+                <span className="tech-badge">Gated Workflow</span>
+                <span className="tech-badge">Print CSS Landscape</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                3.1 Lógica da Tela e Estrutura dos Portões de Qualidade (Gates)
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O workspace do projeto no FluxoLean é blindado contra superficialidades. O agente não pode avançar etapas
+                sem o preenchimento comprovado de cada ferramenta essencial. A navegação ocorre por 4 abas estruturadas:
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', margin: '1.25rem 0' }}>
+                <div style={{ backgroundColor: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: '8px', padding: '1.15rem' }}>
+                  <strong style={{ color: '#1d4ed8', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <Search size={16} /> 1. PLAN (Planejar & Diagnosticar)
+                  </strong>
+                  <p style={{ fontSize: '0.825rem', color: '#1e40af', lineHeight: 1.6, margin: 0 }}>
+                    Linha de base temporal e métrica inicial. Construção do Diagrama de Ishikawa 6M interativo,
+                    estratificação de Pareto 80/20 com cálculo cumulativo e encadeamento dos 5 Porquês até a causa-raiz inescapável.
+                  </p>
+                </div>
+
+                <div style={{ backgroundColor: '#fefce8', border: '1.5px solid #fde047', borderRadius: '8px', padding: '1.15rem' }}>
+                  <strong style={{ color: '#a16207', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <Zap size={16} /> 2. DO (Executar & Prototipar)
+                  </strong>
+                  <p style={{ fontSize: '0.825rem', color: '#854d0e', lineHeight: 1.6, margin: 0 }}>
+                    Matriz 5W2H com What, Why, Where, When, Who, How e How Much. Obrigatoriedade de atribuição do <em>Setor Corresponsável</em>
+                    (suporte para Defesa do Agente), acompanhamento de despesas reais incorridas e registro de testes pilotos.
+                  </p>
+                </div>
+
+                <div style={{ backgroundColor: '#f5f3ff', border: '1.5px solid #c4b5fd', borderRadius: '8px', padding: '1.15rem' }}>
+                  <strong style={{ color: '#6d28d9', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <CheckSquare size={16} /> 3. CHECK (Verificar & Auditar)
+                  </strong>
+                  <p style={{ fontSize: '0.825rem', color: '#5b21b6', lineHeight: 1.6, margin: 0 }}>
+                    Confronto fotográfico de Antes vs Depois, cálculo de variação percentual de performance (Δ%),
+                    apuração nas 7 fontes de custo evitado e upload mandatório de planilha com a memória de cálculo para a Controladoria.
+                  </p>
+                </div>
+
+                <div style={{ backgroundColor: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', padding: '1.15rem' }}>
+                  <strong style={{ color: '#15803d', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                    <Award size={16} /> 4. ACT (Padronizar & Replicar)
+                  </strong>
+                  <p style={{ fontSize: '0.825rem', color: '#166534', lineHeight: 1.6, margin: 0 }}>
+                    Formalização de Procedimento Operacional Padrão (POP), registro de treinamento de operadores, dispositivos à prova de erros (Poka-Yoke)
+                    e catálogo de lições aprendidas para disseminação horizontal (Yokoten).
+                  </p>
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                3.2 O Relatório A3 Executivo como Síntese de Fé Pública
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                Em qualquer fase do projeto, o sistema gera o <strong>Relatório A3 PDCA</strong> em visualização paisagem.
+                Em conformidade com a tradição da Toyota e de John Shook, a folha A3 reúne o título, protocolo, problema no Gemba, diagrama de Ishikawa,
+                plano de ação 5W2H, memória financeira de ROI e o selo de homologação contábil — permitindo que o Diretor Industrial compreenda
+                um projeto multimilionário em menos de 3 minutos de leitura.
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                3.3 Memorial de Cálculo do Pareto 80/20 e Variação de Performance
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 3.1 — Frequência Relativa e Acumulada de Pareto (Princípio 80/20)
+                </div>
+                <div className="formula-expression">
+                  Frequência Relativa (fr_i) = ( Ocorrências_i / Σ Total_Ocorrências ) × 100%
+                  <br />
+                  Frequência Acumulada (Fa_k) = Σ_&#123;i=1&#125;^&#123;k&#125; fr_i
+                </div>
+                <div className="formula-variables">
+                  <strong>Critério de Corte Pareto no FluxoLean:</strong><br />
+                  O sistema ordena automaticamente as causas do Ishikawa por ordem decrescente de ocorrências.
+                  As causas cuja <code>Fa_k ≤ 80%</code> são demarcadas com tag vermelha <em>&quot;Poucos Vitais (Ataque Mandatório no 5W2H)&quot;</em>,
+                  enquanto as causas acima de 80% são classificadas como <em>&quot;Muitos Triviais&quot;</em>.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real em Tecelagem (Total de 250 paradas analisadas no mês):</strong><br />
+                  1. Quebra de Fio na Guia: 140 paradas (56%) ➔ Acumulado = 56%<br />
+                  2. Desalinhamento do Rolete: 65 paradas (26%) ➔ Acumulado = 82%<br />
+                  3. Falha de Sensor Óptico: 25 paradas (10%) ➔ Acumulado = 92%<br />
+                  4. Outros ruídos menores: 20 paradas (8%) ➔ Acumulado = 100%<br />
+                  <em>Ação do FluxoLean:</em> O plano 5W2H concentra 100% dos recursos nas Causas 1 e 2, que representam 82% das perdas da linha.
+                </div>
+              </div>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 3.2 — Variação Percentual de Eficiência do Processo (Δ%)
+                </div>
+                <div className="formula-expression">
+                  Δ% = ( [ Métrica_Depois - Métrica_Antes ] / Métrica_Antes ) × 100%
+                </div>
+                <div className="formula-variables">
+                  Para métricas onde menor é melhor (ex: refugo, tempo de parada, quebras), o ganho real de redução é invertido para expressar a melhoria percentual positiva conquistada.
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 5: ENGENHARIA FINANCEIRA & CUSTOS EVITADOS               */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 5 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Modelagem Matemática & ROI • Módulo 4</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 4: Engenharia Financeira & As 7 Fontes de Custo Evitado
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><DollarSign size={12} /> Lean Accounting</span>
+                <span className="methodology-pill"><Calculator size={12} /> 7 Fontes Canônicas de Custo Evitado</span>
+                <span className="methodology-pill"><TrendingUp size={12} /> Payback Amortizado & ROI Líquido</span>
+                <span className="tech-badge">Clean Numeric Inputs</span>
+                <span className="tech-badge">Mandatory Proof Upload</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                4.1 A Ruptura com os &quot;Ganhos Fictícios&quot; e a Exigência de Memória de Cálculo
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                A maior patologia de projetos industriais é a apresentação de economias baseadas em premissas frágeis.
+                Afirmar que &quot;economizou-se 15 minutos de um operador&quot; não representa ganho algum se essas horas não foram convertidas em maior produção
+                em um gargalo ou na eliminação direta de horas extras remuneradas.
+              </p>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                No FluxoLean, cada centavo reportado deve ser categorizado em uma das <strong>7 Fontes Canônicas de Custo Evitado Lean</strong>.
+                Além disso, para qualquer ganho superior a zero, o sistema exige compulsoriamente a descrição das premissas e o anexo
+                do arquivo de planilha eletrônica (Excel, CSV ou PDF) contendo a memória de cálculo detalhada com fórmulas abertas.
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                4.2 Formulação Matemática Detalhada das 7 Fontes de Custo Evitado
+              </h3>
+
+              {/* Fonte 1 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  1. Mão de Obra Direta (MOD)
+                </div>
+                <div className="formula-expression">
+                  ΔCusto MOD = ( Horas_Reduzidas_Ano ) × [ Salário_Hora_Base × ( 1 + Encargos_Sociais ) ]
+                </div>
+                <div className="formula-variables">
+                  <strong>Regra Contábil Estrita:</strong> Só pode ser contabilizado se as horas liberadas resultarem em:
+                  (a) eliminação física de turnos ou contratos temporários; ou (b) realocação comprovada do operador para posto vago que exigiria nova contratação.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real:</strong> Liberação de 1 operador que realizava embalagem manual, realocado para posto vago na extrusão.<br />
+                  Horas ano = 2.200 h | Salário base = R$ 15,00/h | Encargos = 80% (fator 1,80).<br />
+                  <strong>ΔCusto MOD = 2.200 × (15 × 1,80) = R$ 59.400,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 2 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  2. Perda de Material / Refugo Fabril
+                </div>
+                <div className="formula-expression">
+                  ΔRefugo = ( Qtd_Sucata_Antes - Qtd_Sucata_Depois ) × [ Custo_Unit_MP - Valor_Residual_Venda_Sucata ]
+                </div>
+                <div className="formula-variables">
+                  Mede a economia líquida de matéria-prima que deixou de ser destruída ou degradada no processo produtivo.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real em Extrusão de Plástico:</strong> Redução de 1.500 kg/mês para 300 kg/mês de aparas contaminadas.<br />
+                  Economia anual = (1.500 - 300) × 12 = 14.400 kg/ano.<br />
+                  Custo da resina virgem = R$ 8,50/kg | Venda como sucata moída = R$ 1,50/kg.<br />
+                  <strong>ΔRefugo = 14.400 × (8,50 - 1,50) = R$ 100.800,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 3 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  3. Capacidade Adicional no Gargalo (Throughput / Teoria das Restrições)
+                </div>
+                <div className="formula-expression">
+                  ΔThroughput = ΔPeças_Gargalo_Ano × [ Preço_Venda_Unitário - Custo_Totalmente_Variável (TVC) ]
+                </div>
+                <div className="formula-variables">
+                  Baseado na Teoria das Restrições (TOC - Eliyahu Goldratt). Apenas melhorias executadas no <strong>Gargalo Operacional</strong> geram ganho de Throughput,
+                  pois aumentam o faturamento total da fábrica sem acréscimo de despesas operacionais fixas.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real no Tear Circular (Restrição da Fábrica):</strong> Aumento de 50.000 metros de tecido/ano.<br />
+                  Preço de venda = R$ 4,00/m | Custo de matéria-prima e insumos diretos (TVC) = R$ 2,20/m.<br />
+                  Margem de contribuição líquida = R$ 1,80/m.<br />
+                  <strong>ΔThroughput = 50.000 × 1,80 = R$ 90.000,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 4 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  4. Eficiência Energética & Utilidades
+                </div>
+                <div className="formula-expression">
+                  ΔEnergia = ( ΔConsumo_kWh_Ano × Tarifa_Efetiva_kWh ) + ( ΔVazão_Ar_Comprimido × Custo_m3_Ar )
+                </div>
+                <div className="formula-variables">
+                  Mede a redução no consumo de energia elétrica de motores, compressores de ar comprimido, vapor de caldeiras ou gás natural.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real em Inversor de Frequência de Exaustor:</strong> Redução de 35 kW de potência contínua em regime 24/7 (8.000 h/ano).<br />
+                  Consumo evitado = 35 × 8.000 = 280.000 kWh/ano.<br />
+                  Tarifa média industrial com bandeira e impostos = R$ 0,65/kWh.<br />
+                  <strong>ΔEnergia = 280.000 × 0,65 = R$ 182.000,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 5 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  5. Consumíveis & Insumos Operacionais
+                </div>
+                <div className="formula-expression">
+                  ΔConsumíveis = ( Consumo_Unit_Antes - Consumo_Unit_Depois ) × Produção_Anual × Preço_Unit_Insumo
+                </div>
+                <div className="formula-variables">
+                  Aplica-se a ferramentas de corte, óleos lubrificantes, pallets, fita adesiva, filme stretch e embalagens.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real em Embalagem com Filme Stretch:</strong> Redução de 120g para 80g de filme por pallet.<br />
+                  Produção da fábrica = 80.000 pallets/ano | Redução = 0,040 kg/pallet = 3.200 kg de filme/ano.<br />
+                  Preço do filme stretch = R$ 16,00/kg.<br />
+                  <strong>ΔConsumíveis = 3.200 × 16,00 = R$ 51.200,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 6 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  6. Horas Extras Fabris Eliminadas
+                </div>
+                <div className="formula-expression">
+                  ΔHoras_Extras = Σ Horas_Extras_Eliminadas × [ Salário_Hora × ( 1 + Adicional_HE ) × ( 1 + Encargos ) ]
+                </div>
+                <div className="formula-variables">
+                  Impacto imediato e direto no fluxo de caixa pela eliminação de turnos extras de sábado e domingo para compensar ineficiências.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real:</strong> Eliminação de 2 finais de semana de hora extra no mês (16 horas/mês × 10 operadores = 1.920 horas extras/ano).<br />
+                  Salário hora = R$ 14,00 | Adicional 50% (fator 1,5) | Encargos 80% (fator 1,8).<br />
+                  Custo da hora extra = 14 × 1,5 × 1,8 = R$ 37,80/h.<br />
+                  <strong>ΔHoras_Extras = 1.920 × 37,80 = R$ 72.576,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Fonte 7 */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  7. Retrabalho Interno & Não-Conformidades
+                </div>
+                <div className="formula-expression">
+                  ΔRetrabalho = Lotes_Reprocessados_Evitados × [ Horas_Desmontagem × Custo_HH + Insumos_Perdidos ]
+                </div>
+                <div className="formula-variables">
+                  Elimina o custo oculto da &quot;fábrica fantasma&quot;: operadores dedicados exclusivamente a consertar produtos defeituosos.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real:</strong> Redução de 40 lotes retrabalhados/ano para zero por meio de Poka-Yoke de montagem.<br />
+                  Cada lote demandava 25 horas de reoperação (Custo R$ 25,00/h) + R$ 300,00 de componentes descartados.<br />
+                  Custo por lote = (25 × 25) + 300 = R$ 925,00.<br />
+                  <strong>ΔRetrabalho = 40 × 925,00 = R$ 37.000,00 / ano.</strong>
+                </div>
+              </div>
+
+              {/* Payback e ROI */}
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 4.2 — Economia Líquida, Retorno sobre Investimento (ROI) e Payback
+                </div>
+                <div className="formula-expression">
+                  Custo_Evitado_Bruto = Σ_&#123;i=1&#125;^7 Fonte_i
+                  <br />
+                  Economia Líquida (R$) = Custo_Evitado_Bruto - Investimento_Total_Projeto
+                  <br />
+                  ROI (%) = ( Economia Líquida / Investimento_Total_Projeto ) × 100%
+                  <br />
+                  Payback Simples (Meses) = ( Investimento_Total_Projeto / [ Custo_Evitado_Bruto / 12 ] )
+                </div>
+                <div className="formula-example">
+                  <strong>Demonstração Consolidada do Caso Real:</strong><br />
+                  Soma dos Ganhos Brutos Anuais = R$ 59.400 + R$ 100.800 + R$ 90.000 + R$ 182.000 + R$ 51.200 + R$ 72.576 + R$ 37.000 = <strong>R$ 592.976,00 / ano</strong>.<br />
+                  Investimento Total (Aquisição de Inversor + Dispositivos Poka-Yoke + Treinamentos) = <strong>R$ 85.000,00</strong>.<br />
+                  • <strong>Economia Líquida no 1º Ano = R$ 592.976 - R$ 85.000 = R$ 507.976,00.</strong><br />
+                  • <strong>ROI Líquido = (507.976 / 85.000) × 100% = 597,6%.</strong><br />
+                  • <strong>Payback Amortizado = 85.000 / (592.976 / 12) = 1,72 meses (~52 dias de retorno total do capital).</strong>
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 6: GOVERNANÇA CONTÁBIL & AUDITORIA CONTROLADORIA        */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 6 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Auditoria & Fé Pública • Módulo 5</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 5: Governança Contábil & Auditoria da Controladoria
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><ShieldCheck size={12} /> Fé Pública Contábil</span>
+                <span className="methodology-pill"><GitPullRequest size={12} /> Token Criptográfico Escopado</span>
+                <span className="methodology-pill"><Clock size={12} /> Ciclo de Validação dos 3 Meses</span>
+                <span className="tech-badge">Public Token Portal</span>
+                <span className="tech-badge">Audit Trail Logs</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                5.1 Lógica da Tela do Portal de Auditoria
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                A rota pública e segura <code>/controladoria/auditoria/[token]</code> foi desenvolvida para desatar o nó entre
+                a engenharia e a controladoria. Quando o agente submete o projeto concluído na fase CHECK, o sistema gera
+                um token de acesso único criptografado e dispara notificação automática por e-mail para a equipe financeira.
+              </p>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                No portal, o auditor acessa:
+                (a) Tabela comparativa com os valores propostos em cada uma das 7 fontes;
+                (b) Botão de download direto da planilha de memória de cálculo enviada pelo agente;
+                (c) Campos numéricos limpos para digitação dos valores homologados pelo auditor;
+                (d) Botão para anexo opcional de contra-memória de cálculo corrigida pela Controladoria;
+                (e) Campo de parecer técnico mandatório quando houver alteração ou rejeição.
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                5.2 O Triplo Poder do Auditor da Controladoria
+              </h3>
+              <table className="academic-table">
+                <thead>
+                  <tr>
+                    <th>Decisão do Auditor</th>
+                    <th>Ação no Sistema</th>
+                    <th>Impacto no Projeto</th>
+                    <th>Regra de Anexo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Homologação Integral (1 Clique)</strong></td>
+                    <td>O auditor concorda 100% com a memória apresentada e chancela os números.</td>
+                    <td>Projeto promovido ao status <em>Homologado Master</em> com carimbo contábil no A3.</td>
+                    <td>Anexo dispensado; aproveita-se integralmente a planilha do agente.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Homologação com Ajustes</strong></td>
+                    <td>O auditor altera valores pontuais (ex: adota taxa horária mais conservadora).</td>
+                    <td>Os valores da DRE são corrigidos automaticamente; parecer é gravado no histórico.</td>
+                    <td>O auditor pode opcionalmente anexar uma nova planilha revisada pela Controladoria.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Rejeição com Devolução</strong></td>
+                    <td>O auditor identifica erro metodológico grave e recusa a chancelar os ganhos.</td>
+                    <td>O projeto volta para a fase CHECK do agente com parecer detalhado de correção.</td>
+                    <td>O agente é obrigado a retificar as fórmulas e submeter novamente.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                5.3 A Regra dos 3 Meses de Acompanhamento (Sustentação do Padrão)
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', margin: 0 }}>
+                Para evitar que a economia seja um &quot;fogo de palha&quot;, o FluxoLean institui a <strong>Fase de Estabilização</strong>.
+                Após a homologação contábil, o projeto permanece aberto durante 90 dias em monitoramento.
+                A cada 30 dias (Mês 1, Mês 2 e Mês 3), o agente deve coletar e registrar a produção e refugo reais do Gemba.
+                Somente após a consolidação dos 3 meses sem desvios, o projeto recebe o selo ouro de <em>Conclusão Definitiva de Ciclo</em>.
+              </p>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 7: TPM, 5S & MAXIMIZAÇÃO DE OEE                          */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 7 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Confiabilidade & Manutenção • Módulo 6</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 6: TPM & Gestão Autônoma 5S (OEE e Anomalias)
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Cpu size={12} /> 8 Pilares de Nakajima (TPM)</span>
+                <span className="methodology-pill"><BarChart3 size={12} /> Eficiência Global (OEE)</span>
+                <span className="methodology-pill"><CheckCircle2 size={12} /> Cartões de Anomalia 5S</span>
+                <span className="tech-badge">Mobile-Ready Camera</span>
+                <span className="tech-badge">MTBF & MTTR Engines</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                6.1 Lógica da Tela e a Filosofia do Operador Mantenedor
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O módulo de TPM conecta a manutenção especializada à operação diária. O operador de linha abre a tela no celular
+                ou quiosque da fábrica e registra microanomalias com foto e geolocalização da máquina.
+                O sistema gerencia as etiquetas físicas e digitais através de um quadro kanban de anomalias:
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', margin: '1.25rem 0' }}>
+                <div style={{ backgroundColor: '#fef2f2', border: '1.5px solid #f87171', borderRadius: '8px', padding: '1rem' }}>
+                  <strong style={{ color: '#991b1b', fontSize: '0.9rem', display: 'block', marginBottom: '0.25rem' }}>
+                    🔴 Etiqueta Vermelha (Manutenção Mecânica/Elétrica)
+                  </strong>
+                  <p style={{ fontSize: '0.8rem', color: '#7f1d1d', margin: 0, lineHeight: 1.5 }}>
+                    Falhas que demandam desenergização de segurança (LOTO), reposição de peças de desgaste ou ferramentas de precisão.
+                    Gera ordem de serviço preventiva com prioridade alta.
+                  </p>
+                </div>
+
+                <div style={{ backgroundColor: '#eff6ff', border: '1.5px solid #60a5fa', borderRadius: '8px', padding: '1rem' }}>
+                  <strong style={{ color: '#1e40af', fontSize: '0.9rem', display: 'block', marginBottom: '0.25rem' }}>
+                    🔵 Etiqueta Azul (Manutenção Autônoma 5S)
+                  </strong>
+                  <p style={{ fontSize: '0.8rem', color: '#1e3a8a', margin: 0, lineHeight: 1.5 }}>
+                    Ações de limpeza profunda, reaperto de conexões, lubrificação básica e 5S resolvidas pelo próprio operador de máquina
+                    em reuniões de 10 minutos de início de turno.
+                  </p>
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                6.2 Memorial de Cálculo do OEE Fabril e as 6 Grandes Perdas
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 6.1 — Índice de Eficiência Global do Equipamento (OEE)
+                </div>
+                <div className="formula-expression">
+                  OEE = Disponibilidade (D) × Desempenho (P) × Qualidade (Q)
+                  <br /><br />
+                  D = Tempo_Operacional / Tempo_Carga = ( Tempo_Carga - Paradas ) / Tempo_Carga
+                  <br />
+                  P = ( Tempo_Ciclo_Ideal × Produção_Total ) / Tempo_Operacional
+                  <br />
+                  Q = Peças_Boas / Produção_Total = ( Produção_Total - Refugos ) / Produção_Total
+                </div>
+                <div className="formula-variables">
+                  <strong>Relação com as 6 Grandes Perdas do TPM:</strong><br />
+                  • <em>Perdas de Disponibilidade:</em> 1. Quebras Mecânicas; 2. Troca de Ferramental e Setup.<br />
+                  • <em>Perdas de Desempenho:</em> 3. Pequenas Paradas (&lt; 5 min); 4. Operação em Velocidade Reduzida.<br />
+                  • <em>Perdas de Qualidade:</em> 5. Defeitos no Processo e Refugo; 6. Perdas de Inicialização de Turno.
+                </div>
+                <div className="formula-example">
+                  <strong>Exemplo Real em Linha de Produção Contínua (Turno de 8 horas = 480 minutos):</strong><br />
+                  - Tempo de Carga = 480 min | Paradas de Manutenção e Setup = 60 min ➔ Tempo Operacional = 420 min.<br />
+                  ➔ <strong>Disponibilidade (D) = 420 / 480 = 0,875 (87,5%)</strong>.<br />
+                  - Ritmo ideal = 10 peças/minuto. Em 420 min, capacidade teórica = 4.200 peças. Produção real = 3.780 peças.<br />
+                  ➔ <strong>Desempenho (P) = 3.780 / 4.200 = 0,900 (90,0%)</strong>.<br />
+                  - Das 3.780 peças produzidas, 189 peças foram refugadas por defeito ➔ Peças boas = 3.591 peças.<br />
+                  ➔ <strong>Qualidade (Q) = 3.591 / 3.780 = 0,950 (95,0%)</strong>.<br />
+                  <strong>OEE Final = 0,875 × 0,900 × 0,950 = 0,748 (74,8%).</strong>
+                </div>
+              </div>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 6.2 — Confiabilidade Operacional (MTBF e MTTR)
+                </div>
+                <div className="formula-expression">
+                  MTBF (Tempo Médio Entre Falhas) = Tempo_Total_Operando / Número_de_Falhas
+                  <br />
+                  MTTR (Tempo Médio de Reparo) = Tempo_Total_em_Reparo / Número_de_Falhas
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 8: DESENVOLVIMENTO HUMANO & ACADEMIA LEAN                */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 8 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Pessoas & Cultura • Módulo 7</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 7: Desenvolvimento Humano, Academia Lean & Assessment 360°
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><GraduationCap size={12} /> Monozukuri wa Hitozukuri</span>
+                <span className="methodology-pill"><Award size={12} /> Trilha de Belts Progressiva</span>
+                <span className="methodology-pill"><TrendingUp size={12} /> Radar de Maturidade 360°</span>
+                <span className="tech-badge">Online Exam Engine</span>
+                <span className="tech-badge">Radar Chart SVG</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                7.1 O Princípio &quot;Antes de Construir Produtos, Formamos Pessoas&quot;
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O aforismo japonês <em>&quot;Monozukuri wa Hitozukuri&quot;</em> sintetiza a convicção de que nenhuma fábrica supera
+                a capacidade mental de seus operadores e líderes. O FluxoLean integra uma plataforma nativa de capacitação
+                (<strong>Academia Lean</strong>) e um motor de avaliação contínua (<strong>Assessment 360°</strong>).
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                7.2 A Trilha de Belts e Critérios de Concessão
+              </h3>
+              <table className="academic-table">
+                <thead>
+                  <tr>
+                    <th>Graduação</th>
+                    <th>Perfil Funcional</th>
+                    <th>Escopo de Ferramentas Dominadas</th>
+                    <th>Exigência para Certificação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>White Belt</strong></td>
+                    <td>Operadores de Máquina e Auxiliares</td>
+                    <td>Conceito dos 8 Desperdícios, 5S e abertura de cartões de anomalia.</td>
+                    <td>Exame online (acerto ≥ 70%) + 2 ideias Kaizen abertas.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Yellow Belt</strong></td>
+                    <td>Líderes de Turno e Mecânicos</td>
+                    <td>Ishikawa 6M, 5W2H, Cronoanálise e participação em projetos.</td>
+                    <td>Exame online (acerto ≥ 75%) + 1 projeto PDCA concluído como membro.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Green Belt</strong></td>
+                    <td>Engenheiros de Processo e Supervisores</td>
+                    <td>Liderança de projetos PDCA, Pareto, Capabilidade e Cálculo de ROI.</td>
+                    <td>Exame avançado (acerto ≥ 80%) + 1 projeto liderado com ROI auditado.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Black Belt</strong></td>
+                    <td>Coordenadores e Especialistas Lean</td>
+                    <td>Gestão de portfólio, Hoshin Kanri, VSM e mentoria de agentes.</td>
+                    <td>Banca técnica executiva + ROI consolidado &gt; R$ 200k/ano.</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                7.3 Memorial de Cálculo do Radar de Maturidade 360°
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 7.1 — Score Pentagonal de Maturidade Industrial
+                </div>
+                <div className="formula-expression">
+                  Score Maturidade (S_mat) = ( 1 / 5 ) × Σ_&#123;k=1&#125;^5 Eixo_k &nbsp;&nbsp;&nbsp;&nbsp;(onde Eixo_k ∈ [0, 100])
+                </div>
+                <div className="formula-variables">
+                  <strong>Os 5 Eixos Avaliados no Gráfico Radar:</strong><br />
+                  1. <em>Rigor Metodológico:</em> Qualidade de preenchimento de Ishikawa, 5W2H e testes piloto.<br />
+                  2. <em>Disciplina de Lead Time:</em> Cumprimento dos prazos de cada fase do PDCA sem atrasos internos.<br />
+                  3. <em>Precisão Contábil:</em> Qualidade e consistência das planilhas de memória de custo evitado anexadas.<br />
+                  4. <em>Presença no Gemba:</em> Interações físicas registradas em auditorias 5S e suporte a operadores.<br />
+                  5. <em>Disseminação (Yokoten):</em> Capacidade de replicar soluções implementadas para outras linhas e setores.
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 9: KANBAN OPERACIONAL & GESTÃO DE FLUXO                  */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 9 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Gestão Visual & Ritmo • Módulo 8</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 8: Kanban Operacional & Gestão de Fluxo de Projetos
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Kanban size={12} /> Fluxo Puxado de Projetos</span>
+                <span className="methodology-pill"><Clock size={12} /> Lei de Little Aplicada ao Lean</span>
+                <span className="methodology-pill"><Activity size={12} /> Limite de WIP (Work In Progress)</span>
+                <span className="tech-badge">Drag & Drop HTML5</span>
+                <span className="tech-badge">Live Aging Counter</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                8.1 Lógica da Tela do Kanban de Projetos
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O quadro <strong>Kanban Operacional</strong> organiza todo o fluxo produtivo de melhorias em colunas canônicas:
+                <em>Triagem, Plan, Do, Check, Controladoria e Homologado</em>.
+                Cada cartão representa um protocolo e exibe o título, o agente responsável, o setor, a tag de urgência e o tempo de permanência na fase (Aging).
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                8.2 Modelagem Matemática: Lei de Little e Eficiência de Ciclo (PCE)
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 8.1 — Aplicação da Lei de Little ao Gerenciamento de Projetos
+                </div>
+                <div className="formula-expression">
+                  WIP (Trabalho em Andamento) = Throughput (Vazão) × Lead Time Médio
+                  <br /><br />
+                  Lead Time = WIP / Throughput
+                </div>
+                <div className="formula-variables">
+                  <strong>Princípio Lean de Limitação de WIP:</strong><br />
+                  Quando uma equipe de engenharia inicia 20 projetos simultaneamente sem concluir os anteriores, o WIP quadruplica.
+                  Pela Lei de Little, o Lead Time de cada projeto quadruplica proporcionalmente, gerando lentidão e sobrecarga (Muri).
+                  O FluxoLean alerta quando um agente ultrapassa o limite saudável de 3 projetos ativos simultâneos.
+                </div>
+              </div>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 8.2 — Eficiência de Ciclo do Processo de Melhoria (PCE)
+                </div>
+                <div className="formula-expression">
+                  PCE (%) = ( Tempo_Agregação_Valor_Efetivo / Lead_Time_Total_Projeto ) × 100%
+                </div>
+                <div className="formula-variables">
+                  Mede a porcentagem do tempo do projeto em que trabalho técnico real foi executado versus o tempo total em que o projeto esteve aberto aguardando aprovações.
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 10: CANAL KAIZEN & PARTICIPAÇÃO FABRIL                   */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 10 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Inovação da Base • Módulo 9</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 9: Canal Kaizen & Participação Ativa da Base Fabril
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Lightbulb size={12} /> Teian Kaizen (Sugestões de Operadores)</span>
+                <span className="methodology-pill"><CheckCircle2 size={12} /> Círculos de Controle de Qualidade (CCQ)</span>
+                <span className="methodology-pill"><Award size={12} /> Reconhecimento & Mérito Operacional</span>
+                <span className="tech-badge">Mobile First Form</span>
+                <span className="tech-badge">Community Feed</span>
+              </div>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                9.1 Lógica da Tela do Canal Kaizen
+              </h3>
+              <p style={{ fontSize: '0.925rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginBottom: '1rem' }}>
+                O <strong>Canal Kaizen</strong> é a porta de entrada para quem vive a realidade do chão de fábrica.
+                Projetado com interface mobile-first de extrema simplicidade, permite que o operador registre sua ideia em menos de 60 segundos,
+                inserindo apenas: título da melhoria, setor, o problema que incomoda seu dia a dia e uma foto tirada na hora.
+                A tela de feed público exibe as ideias aprovadas, promovendo o orgulho profissional e o reconhecimento entre turnos.
+              </p>
+
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+                9.2 Indicadores de Engajamento e Memorial de Retorno Médio
+              </h3>
+
+              <div className="formula-card">
+                <div className="formula-title">
+                  <Calculator size={16} color="#0284c7" /> Equação 9.1 — Taxa de Engajamento Fabril (IE) e Retorno Médio por Ideia
+                </div>
+                <div className="formula-expression">
+                  Índice de Engajamento (IE) = ( Total_Ideias_Submetidas_Mês / Total_Colaboradores_Fabril ) × 100%
+                  <br /><br />
+                  Retorno Médio por Kaizen (R_kaizen) = Custo_Evitado_Total_Kaizen / Total_de_Ideias_Implementadas
+                </div>
+                <div className="formula-variables">
+                  Conforme a tradição das montadoras japonesas de classe mundial, uma fábrica saudável gera pelo menos 1 a 2 sugestões implementadas por colaborador ao ano,
+                  criando uma barreira intransponível de eficiência contra concorrentes.
+                </div>
+              </div>
+            </section>
+
+            {/* ================================================================= */}
+            {/* CAPÍTULO 11: BIBLIOGRAFIA ACADÊMICA RIGOROSA (ABNT)               */}
+            {/* ================================================================= */}
+            <section className={`monograph-chapter-section ${activeChapter === 11 ? 'active-chapter' : ''}`}>
+              <div className="academic-section-header">
+                <span className="academic-subtitle">Referencial Teórico Consagrado</span>
+                <h2 className="memorial-serif" style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0f172a', margin: '0.25rem 0 0 0' }}>
+                  Capítulo 10: Bibliografia Acadêmica Rigorosa & Referencial ABNT
+                </h2>
+              </div>
+
+              <div>
+                <span className="methodology-pill"><Library size={12} /> ABNT NBR 6023</span>
+                <span className="methodology-pill"><Award size={12} /> Obras Seminais do Lean Manufacturing</span>
+              </div>
+
+              <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.75, textAlign: 'justify', marginTop: '1.25rem', marginBottom: '1.75rem' }}>
+                A arquitetura conceitual e computacional do <strong>FluxoLean</strong> é respaldada pelos maiores clássicos
+                da literatura mundial de engenharia de produção e administração industrial. Abaixo registram-se as obras fundamentais
+                utilizadas na modelagem das telas e equações desta plataforma:
+              </p>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {[
+                  {
+                    obra: 'OHNO, Taiichi. Toyota Production System: Beyond Large-Scale Production. Portland: Productivity Press, 1988.',
+                    aplicacao: 'Origem dos 7 grandes desperdícios (Muda), da produção puxada por cartões (Kanban) e da filosofia de respeito às pessoas no Gemba que alicerçam os Módulos 1, 4 e 8 do FluxoLean.',
+                  },
+                  {
+                    obra: 'SHINGO, Shigeo. A Study of the Toyota Production System from an Industrial Engineering Viewpoint. Tokyo: Japan Management Association, 1981.',
+                    aplicacao: 'Fundamentação dos dispositivos à prova de falhas (Poka-Yoke) e dos portões de qualidade do PDCA (Módulo 3) e TPM (Módulo 6).',
+                  },
+                  {
+                    obra: 'WOMACK, James P.; JONES, Daniel T. Lean Thinking: Banish Waste and Create Wealth in Your Corporation. New York: Free Press, 2003.',
+                    aplicacao: 'Sistematização dos 5 princípios da manufatura enxuta e da conexão entre valor para o cliente e fluxo contínuo de projetos de melhoria.',
+                  },
+                  {
+                    obra: 'LIKER, Jeffrey K. O Modelo Toyota: 14 Princípios de Gestão do Maior Fabricante do Mundo. Porto Alegre: Bookman, 2005.',
+                    aplicacao: 'Referencial para o princípio &quot;Monozukuri wa Hitozukuri&quot; e para a trilha de capacitação de Belts da Academia Lean (Módulo 7).',
+                  },
+                  {
+                    obra: 'SHOOK, John. Gerenciando para Aprender: O Uso do Processo de Gestão A3 para Resolver Problemas, Promover Alinhamento e Desenvolver Pessoas. São Paulo: Lean Institute Brasil, 2008.',
+                    aplicacao: 'Projeto visual e metodológico do Relatório A3 Executivo em folha única paisagem gerado automaticamente pelo FluxoLean (Módulo 3).',
+                  },
+                  {
+                    obra: 'ROTHER, Mike; SHOOK, John. Aprendendo a Enxergar: Mapeando o Fluxo de Valor para Agregar Valor e Eliminar o Desperdício. São Paulo: Lean Institute Brasil, 2003.',
+                    aplicacao: 'Modelagem analítica do Lead Time Total de Ciclo e do isolamento de tempos de agregação e não-agregação de valor (Módulo 1).',
+                  },
+                  {
+                    obra: 'IMAI, Masaaki. Kaizen: A Estratégia para o Sucesso Competitivo. São Paulo: IMAM, 1994.',
+                    aplicacao: 'Arquitetura do Canal Kaizen e da escuta contínua de pequenas melhorias originadas nos operadores de linha (Módulo 9).',
+                  },
+                  {
+                    obra: 'NAKAJIMA, Seiichi. Introduction to TPM: Total Productive Maintenance. Cambridge: Productivity Press, 1988.',
+                    aplicacao: 'Modelagem matemática do OEE (Disponibilidade × Desempenho × Qualidade) e sistematização da Manutenção Autônoma 5S (Módulo 6).',
+                  },
+                  {
+                    obra: 'GOLDRATT, Eliyahu M.; COX, Jeff. A Meta: Um Processo de Aprimoramento Contínuo. São Paulo: Nobel, 2002.',
+                    aplicacao: 'Inspiração analítica para a Fonte 3 de Custo Evitado (Throughput em Gargalos Operacionais) segundo a Teoria das Restrições (Módulo 4).',
+                  },
+                  {
+                    obra: 'MONDEN, Yasuhiro. Toyota Production System: An Integrated Approach to Just-In-Time. 4th ed. Boca Raton: CRC Press, 2011.',
+                    aplicacao: 'Tratado completo de contabilidade de gestão Lean, amortização de investimentos e governança financeira industrial (Módulos 4 e 5).',
+                  },
+                ].map((ref, idx) => (
+                  <div key={idx} style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0f172a', padding: '1rem 1.25rem', borderRadius: '0 8px 8px 0' }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.35rem 0', lineHeight: 1.5 }}>
+                      {ref.obra}
+                    </p>
+                    <p style={{ fontSize: '0.8rem', color: '#475569', margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>
+                      <strong>Conexão com o FluxoLean:</strong> {ref.aplicacao}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: '3.5rem', textAlign: 'center', borderTop: '2px dashed #cbd5e1', paddingTop: '2rem' }}>
+                <p style={{ fontSize: '0.875rem', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 0.35rem 0' }}>
+                  FIM DA MONOGRAFIA TÉCNICA & MEMORIAL DESCRITIVO
+                </p>
+                <p style={{ fontSize: '0.825rem', color: '#64748b', margin: 0 }}>
+                  FluxoLean 4.0 • Idealizado, Modelado e Codificado por <strong>Mauricio Grigol</strong>
+                </p>
+              </div>
+            </section>
+
+            {/* BARRA DE NAVEGAÇÃO ENTRE CAPÍTULOS NO RODAPÉ (APENAS NA TELA) */}
+            <div
+              className="screen-chapter-nav no-print"
+              style={{
+                marginTop: '3.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveChapter((prev) => Math.max(0, prev - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={activeChapter === 0}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: activeChapter === 0 ? '#f1f5f9' : '#0f172a',
+                  color: activeChapter === 0 ? '#94a3b8' : '#ffffff',
+                  border: 'none',
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '8px',
+                  cursor: activeChapter === 0 ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.825rem',
+                }}
+              >
+                <ChevronLeft size={16} /> Capítulo Anterior
+              </button>
+
+              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                {chapters[activeChapter].title}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveChapter((prev) => Math.min(chapters.length - 1, prev + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={activeChapter === chapters.length - 1}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: activeChapter === chapters.length - 1 ? '#f1f5f9' : '#0284c7',
+                  color: activeChapter === chapters.length - 1 ? '#94a3b8' : '#ffffff',
+                  border: 'none',
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '8px',
+                  cursor: activeChapter === chapters.length - 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: 700,
+                  fontSize: '0.825rem',
+                }}
+              >
+                Próximo Capítulo <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
