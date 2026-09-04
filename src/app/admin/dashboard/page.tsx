@@ -1678,8 +1678,8 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        {/* Tabela de Projetos */}
-        <div style={{ overflowX: 'auto' }}>
+        {/* Lista de Projetos em Cards Estruturados (Título com largura plena e régua financeira) */}
+        <div style={{ padding: '1.25rem 1.65rem', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
           {filteredFollowUpActions.length === 0 ? (
             <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
               <Award size={40} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
@@ -1691,488 +1691,398 @@ export default function AdminDashboardPage() {
               </p>
             </div>
           ) : (
-            <table style={{ width: '100%', minWidth: '1060px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '0.875rem 1.25rem' }}>Projeto Lean / Setor</th>
-                  <th style={{ padding: '0.875rem 1rem' }}>Responsável</th>
-                  <th style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>1º Mês</th>
-                  <th style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>2º Mês</th>
-                  <th style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>3º Mês</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>Média Aferida</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Status de Homologação</th>
-                  <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Impacto no DRE (12M)</th>
-                  <th style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>Ação Master</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFollowUpActions.map((act) => {
-                  const m1 = act.m1;
-                  const m2 = act.m2;
-                  const m3 = act.m3;
-                  const avg = act.avg;
-                  const isAguardando = act.classification === 'aguardando';
-                  const isHomologado = act.classification === 'homologado_ativo';
-                  const isExpirado = act.classification === 'expirado';
+            filteredFollowUpActions.map((act) => {
+              const m1 = act.m1;
+              const m2 = act.m2;
+              const m3 = act.m3;
+              const avg = act.avg;
+              const isAguardando = act.classification === 'aguardando';
+              const isHomologado = act.classification === 'homologado_ativo';
+              const isExpirado = act.classification === 'expirado';
 
-                  // Estilo de linha contextual
-                  const rowBg = isAguardando
-                    ? 'rgba(245, 158, 11, 0.04)'
-                    : isHomologado
-                    ? 'rgba(16, 185, 129, 0.02)'
-                    : 'transparent';
+              return (
+                <div
+                  key={act.id}
+                  style={{
+                    backgroundColor: isAguardando
+                      ? 'rgba(245, 158, 11, 0.03)'
+                      : isHomologado
+                      ? 'rgba(16, 185, 129, 0.02)'
+                      : 'rgba(255, 255, 255, 0.02)',
+                    border: isAguardando
+                      ? '1px solid rgba(245, 158, 11, 0.35)'
+                      : isHomologado
+                      ? '1px solid rgba(16, 185, 129, 0.28)'
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderLeft: isAguardando
+                      ? '5px solid #f59e0b'
+                      : isHomologado
+                      ? '5px solid #10b981'
+                      : isExpirado
+                      ? '5px solid #64748b'
+                      : '5px solid #06b6d4',
+                    borderRadius: '14px',
+                    padding: '1.25rem 1.45rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* LINHA 1: Cabeçalho com Status, Protocolo, Setor e Botão de Ação */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.85rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                      {/* Status de Homologação */}
+                      {isAguardando ? (
+                        <span
+                          style={{
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            color: '#fbbf24',
+                            border: '1px solid rgba(245, 158, 11, 0.5)',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <Clock size={13} /> Aguardando Homologação Master (3/3)
+                        </span>
+                      ) : isHomologado ? (
+                        <span
+                          style={{
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            color: '#34d399',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <CheckCircle2 size={13} /> Homologado Master (Ativo no DRE)
+                        </span>
+                      ) : isExpirado ? (
+                        <span
+                          style={{
+                            backgroundColor: 'rgba(148, 163, 184, 0.15)',
+                            color: '#cbd5e1',
+                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          ⚪ Ciclo 12M Concluído (Rotina)
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                            color: '#22d3ee',
+                            border: '1px solid rgba(6, 182, 212, 0.35)',
+                            padding: '0.25rem 0.75rem',
+                            borderRadius: '9999px',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          ⏳ Em Acompanhamento ({act.quarterlyMonthsFilled}/3)
+                        </span>
+                      )}
 
-                  const rowBorderLeft = isAguardando
-                    ? '3px solid #f59e0b'
-                    : isHomologado
-                    ? '3px solid #10b981'
-                    : isExpirado
-                    ? '3px solid #64748b'
-                    : '3px solid #06b6d4';
+                      {/* Protocolo */}
+                      <span style={{ fontSize: '0.775rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                        {act.protocol}
+                      </span>
+                      <span style={{ fontSize: '0.675rem', color: '#64748b' }}>•</span>
+                      {/* Setor */}
+                      <span style={{ fontSize: '0.775rem', color: '#cbd5e1', fontWeight: 600 }}>
+                        {act.originSectorName || 'Fábrica'}
+                      </span>
+                    </div>
 
-                  return (
-                    <tr
-                      key={act.id}
+                    {/* Botão de Ação Master à Direita */}
+                    <div>
+                      {isAguardando ? (
+                        <Link
+                          href={`/admin/projetos/${act.id}`}
+                          style={{
+                            backgroundColor: '#f59e0b',
+                            color: '#000000',
+                            fontWeight: 900,
+                            fontSize: '0.8125rem',
+                            padding: '0.5rem 1.15rem',
+                            borderRadius: '8px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.45rem',
+                            textDecoration: 'none',
+                            boxShadow: '0 0 16px rgba(245, 158, 11, 0.4)',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <span>Auditar & Homologar</span>
+                          <ArrowRight size={14} />
+                        </Link>
+                      ) : isHomologado ? (
+                        <Link
+                          href={`/admin/projetos/${act.id}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.78125rem', padding: '0.45rem 0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+                        >
+                          <span>Ver no DRE</span>
+                          <ExternalLink size={13} />
+                        </Link>
+                      ) : isExpirado ? (
+                        <Link
+                          href={`/admin/projetos/${act.id}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.78125rem', padding: '0.45rem 0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+                        >
+                          <span>Ver Histórico</span>
+                          <ExternalLink size={13} />
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/admin/projetos/${act.id}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.78125rem', padding: '0.45rem 0.95rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}
+                        >
+                          <span>Acompanhar</span>
+                          <ExternalLink size={13} />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* LINHA 2: Título do Projeto em Largura Total + Responsável */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                    <Link
+                      href={`/admin/projetos/${act.id}`}
                       style={{
-                        backgroundColor: rowBg,
-                        borderLeft: rowBorderLeft,
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        transition: 'background-color 0.15s ease',
+                        fontSize: '1.1rem',
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        fontFamily: 'var(--font-heading)',
+                        flex: 1,
+                        minWidth: '300px',
+                        lineHeight: '1.45',
                       }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = isAguardando
-                          ? 'rgba(245, 158, 11, 0.08)'
+                      onMouseOver={(e) => (e.currentTarget.style.color = '#38bdf8')}
+                      onMouseOut={(e) => (e.currentTarget.style.color = '#ffffff')}
+                    >
+                      {act.title}
+                    </Link>
+
+                    {/* Responsável */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0, backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <img
+                        src={
+                          act.assignedAgentAvatar ||
+                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                        }
+                        alt={act.assignedAgentName || 'Agente'}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: isAguardando ? '2px solid #f59e0b' : '2px solid rgba(6, 182, 212, 0.4)',
+                        }}
+                      />
+                      <div>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', display: 'block', lineHeight: '1.2' }}>
+                          {act.assignedAgentName || 'Especialista Lean'}
+                        </span>
+                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>Responsável Gemba</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divisor Sutil */}
+                  <div style={{ height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.06)' }} />
+
+                  {/* LINHA 3: Régua Financeira de Governança (3 Meses ➔ Média ➔ Impacto no DRE) */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                      gap: '1.15rem',
+                      backgroundColor: '#090e1a',
+                      borderRadius: '10px',
+                      padding: '0.9rem 1.25rem',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {/* Bloco 1: Aferição Mensal no Gemba (1º, 2º e 3º Mês) */}
+                    <div>
+                      <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.4rem' }}>
+                        Aferição dos 3 Meses no Gemba
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {/* 1º Mês */}
+                        <div
+                          style={{
+                            padding: '0.3rem 0.65rem',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.8125rem',
+                            fontWeight: 800,
+                            backgroundColor: m1 !== undefined ? (isAguardando ? 'rgba(245, 158, 11, 0.12)' : isHomologado ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)') : 'rgba(255, 255, 255, 0.03)',
+                            color: m1 !== undefined ? (isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1') : '#64748b',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginRight: '0.3rem' }}>1º Mês:</span>
+                          {m1 !== undefined ? formatCurrency(m1) : 'Pendente'}
+                        </div>
+
+                        {/* 2º Mês */}
+                        <div
+                          style={{
+                            padding: '0.3rem 0.65rem',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.8125rem',
+                            fontWeight: 800,
+                            backgroundColor: m2 !== undefined ? (isAguardando ? 'rgba(245, 158, 11, 0.12)' : isHomologado ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)') : 'rgba(255, 255, 255, 0.03)',
+                            color: m2 !== undefined ? (isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1') : '#64748b',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginRight: '0.3rem' }}>2º Mês:</span>
+                          {m2 !== undefined ? formatCurrency(m2) : 'Pendente'}
+                        </div>
+
+                        {/* 3º Mês */}
+                        <div
+                          style={{
+                            padding: '0.3rem 0.65rem',
+                            borderRadius: '6px',
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '0.8125rem',
+                            fontWeight: 800,
+                            backgroundColor: m3 !== undefined ? (isAguardando ? 'rgba(245, 158, 11, 0.12)' : isHomologado ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)') : 'rgba(255, 255, 255, 0.03)',
+                            color: m3 !== undefined ? (isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1') : '#64748b',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginRight: '0.3rem' }}>3º Mês:</span>
+                          {m3 !== undefined ? formatCurrency(m3) : 'Pendente'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bloco 2: Média Aferida */}
+                    <div style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.08)', paddingLeft: '1.25rem' }}>
+                      <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.2rem' }}>
+                        Média Trimestral
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <strong
+                          style={{
+                            fontSize: '1.15rem',
+                            fontWeight: 900,
+                            fontFamily: 'var(--font-mono)',
+                            color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : isExpirado ? '#cbd5e1' : '#22d3ee',
+                          }}
+                        >
+                          {formatCurrency(avg)}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>/mês</span>
+                      </div>
+                      <span style={{ fontSize: '0.65rem', color: isAguardando ? '#fde68a' : isHomologado ? '#6ee7b7' : '#94a3b8', marginTop: '0.15rem', display: 'block' }}>
+                        {isAguardando
+                          ? '● apontamento pelo especialista'
                           : isHomologado
-                          ? 'rgba(16, 185, 129, 0.06)'
-                          : 'rgba(255, 255, 255, 0.03)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = rowBg;
+                          ? '● validado no DRE'
+                          : isExpirado
+                          ? '● histórico consolidado'
+                          : '● medição piloto em curso'}
+                      </span>
+                    </div>
+
+                    {/* Bloco 3: Impacto Contábil no DRE (12 Meses) */}
+                    <div
+                      style={{
+                        borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+                        paddingLeft: '1.25rem',
                       }}
                     >
-                      {/* Projeto / Setor */}
-                      <td style={{ padding: '0.875rem 1.25rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.675rem',
+                          fontWeight: 800,
+                          color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          marginBottom: '0.2rem',
+                        }}
+                      >
+                        {isAguardando ? <AlertTriangle size={12} /> : isHomologado ? <CheckCircle2 size={12} /> : null}
+                        Impacto no DRE (12 Meses)
+                      </span>
+
+                      {isAguardando ? (
                         <div>
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            style={{
-                              fontWeight: 800,
-                              color: '#ffffff',
-                              textDecoration: 'none',
-                              fontSize: '0.875rem',
-                              fontFamily: 'var(--font-heading)',
-                              display: 'block',
-                            }}
-                          >
-                            {act.title}
-                          </Link>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                              {act.protocol}
-                            </span>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
-                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
-                              {act.originSectorName || 'Fábrica'}
-                            </span>
-                            {isAguardando && (
-                              <span
-                                style={{
-                                  fontSize: '0.65rem',
-                                  fontWeight: 800,
-                                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                                  color: '#fbbf24',
-                                  padding: '0.1rem 0.45rem',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(245, 158, 11, 0.35)',
-                                }}
-                              >
-                                Requer Aprovação
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Responsável */}
-                      <td style={{ padding: '0.875rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <img
-                            src={
-                              act.assignedAgentAvatar ||
-                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                            }
-                            alt={act.assignedAgentName || 'Agente'}
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: isAguardando ? '1px solid #f59e0b' : '1px solid rgba(6, 182, 212, 0.4)',
-                            }}
-                          />
-                          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
-                            {act.assignedAgentName || 'Especialista Lean'}
+                          <strong style={{ fontSize: '1.05rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)', display: 'block' }}>
+                            R$ 0,00 no DRE
+                          </strong>
+                          <span style={{ fontSize: '0.6875rem', color: '#fde68a', fontWeight: 600 }}>
+                            ⚠️ Não computa até aprovação do Master
                           </span>
                         </div>
-                      </td>
-
-                      {/* 1º Mês */}
-                      <td style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>
-                        {m1 !== undefined ? (
-                          <span
-                            style={{
-                              backgroundColor: isAguardando
-                                ? 'rgba(245, 158, 11, 0.12)'
-                                : isHomologado
-                                ? 'rgba(16, 185, 129, 0.15)'
-                                : 'rgba(148, 163, 184, 0.12)',
-                              color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1',
-                              border: isAguardando
-                                ? '1px solid rgba(245, 158, 11, 0.3)'
-                                : isHomologado
-                                ? '1px solid rgba(16, 185, 129, 0.35)'
-                                : '1px solid rgba(148, 163, 184, 0.25)',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '7px',
-                              fontWeight: 800,
-                              fontSize: '0.8rem',
-                              fontFamily: 'var(--font-mono)',
-                              display: 'inline-block',
-                            }}
-                          >
-                            {formatCurrency(m1)}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
-                            Pendente
-                          </span>
-                        )}
-                      </td>
-
-                      {/* 2º Mês */}
-                      <td style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>
-                        {m2 !== undefined ? (
-                          <span
-                            style={{
-                              backgroundColor: isAguardando
-                                ? 'rgba(245, 158, 11, 0.12)'
-                                : isHomologado
-                                ? 'rgba(16, 185, 129, 0.15)'
-                                : 'rgba(148, 163, 184, 0.12)',
-                              color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1',
-                              border: isAguardando
-                                ? '1px solid rgba(245, 158, 11, 0.3)'
-                                : isHomologado
-                                ? '1px solid rgba(16, 185, 129, 0.35)'
-                                : '1px solid rgba(148, 163, 184, 0.25)',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '7px',
-                              fontWeight: 800,
-                              fontSize: '0.8rem',
-                              fontFamily: 'var(--font-mono)',
-                              display: 'inline-block',
-                            }}
-                          >
-                            {formatCurrency(m2)}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
-                            Pendente
-                          </span>
-                        )}
-                      </td>
-
-                      {/* 3º Mês */}
-                      <td style={{ padding: '0.875rem 0.75rem', textAlign: 'center' }}>
-                        {m3 !== undefined ? (
-                          <span
-                            style={{
-                              backgroundColor: isAguardando
-                                ? 'rgba(245, 158, 11, 0.12)'
-                                : isHomologado
-                                ? 'rgba(16, 185, 129, 0.15)'
-                                : 'rgba(148, 163, 184, 0.12)',
-                              color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : '#cbd5e1',
-                              border: isAguardando
-                                ? '1px solid rgba(245, 158, 11, 0.3)'
-                                : isHomologado
-                                ? '1px solid rgba(16, 185, 129, 0.35)'
-                                : '1px solid rgba(148, 163, 184, 0.25)',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '7px',
-                              fontWeight: 800,
-                              fontSize: '0.8rem',
-                              fontFamily: 'var(--font-mono)',
-                              display: 'inline-block',
-                            }}
-                          >
-                            {formatCurrency(m3)}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: '0.725rem', color: '#64748b', fontStyle: 'italic' }}>
-                            Pendente
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Média Aferida */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                          <span
-                            style={{
-                              fontWeight: 900,
-                              color: isAguardando ? '#fbbf24' : isHomologado ? '#34d399' : isExpirado ? '#cbd5e1' : '#22d3ee',
-                              fontSize: '0.9375rem',
-                              fontFamily: 'var(--font-mono)',
-                              backgroundColor: isAguardando
-                                ? 'rgba(245, 158, 11, 0.12)'
-                                : isHomologado
-                                ? 'rgba(16, 185, 129, 0.12)'
-                                : 'rgba(148, 163, 184, 0.12)',
-                              padding: '0.2rem 0.55rem',
-                              borderRadius: '6px',
-                              border: isAguardando
-                                ? '1px solid rgba(245, 158, 11, 0.3)'
-                                : isHomologado
-                                ? '1px solid rgba(16, 185, 129, 0.3)'
-                                : '1px solid rgba(148, 163, 184, 0.25)',
-                            }}
-                          >
-                            {formatCurrency(avg)}
-                          </span>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem' }}>
-                            {isAguardando
-                              ? 'aferido pelo agente'
-                              : isHomologado
-                              ? 'homologado no DRE'
-                              : isExpirado
-                              ? 'histórico consolidado'
-                              : 'parcial / piloto'}
+                      ) : isHomologado ? (
+                        <div>
+                          <strong style={{ fontSize: '1.05rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)', display: 'block' }}>
+                            + {formatCurrency(avg * 12)}/ano
+                          </strong>
+                          <span style={{ fontSize: '0.6875rem', color: '#6ee7b7', fontWeight: 600 }}>
+                            ✅ ({formatCurrency(avg)}/mês ativo somando na meta)
                           </span>
                         </div>
-                      </td>
-
-                      {/* Status de Homologação */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        {isAguardando ? (
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                              color: '#fbbf24',
-                              border: '1px solid rgba(245, 158, 11, 0.45)',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '9999px',
-                              fontWeight: 800,
-                              fontSize: '0.725rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                            }}
-                          >
-                            <Clock size={12} /> Aguardando Master (3/3)
+                      ) : isExpirado ? (
+                        <div>
+                          <strong style={{ fontSize: '1.05rem', fontWeight: 800, color: '#94a3b8', fontFamily: 'var(--font-mono)', display: 'block' }}>
+                            R$ 0,00 no DRE Vigente
+                          </strong>
+                          <span style={{ fontSize: '0.6875rem', color: '#64748b' }}>
+                            Ciclo de 1 ano concluído • Na rotina fabril
                           </span>
-                        ) : isHomologado ? (
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                              color: '#34d399',
-                              border: '1px solid rgba(16, 185, 129, 0.4)',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '9999px',
-                              fontWeight: 800,
-                              fontSize: '0.725rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                            }}
-                          >
-                            <CheckCircle2 size={12} /> Homologado Master (Ativo)
+                        </div>
+                      ) : (
+                        <div>
+                          <strong style={{ fontSize: '1.05rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)', display: 'block' }}>
+                            R$ 0,00 no DRE
+                          </strong>
+                          <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
+                            Em teste piloto no Gemba
                           </span>
-                        ) : isExpirado ? (
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(148, 163, 184, 0.15)',
-                              color: '#cbd5e1',
-                              border: '1px solid rgba(148, 163, 184, 0.3)',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '9999px',
-                              fontWeight: 700,
-                              fontSize: '0.725rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                            }}
-                          >
-                            ⚪ Ciclo 12M Concluído
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                              color: '#22d3ee',
-                              border: '1px solid rgba(6, 182, 212, 0.35)',
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '9999px',
-                              fontWeight: 700,
-                              fontSize: '0.725rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.35rem',
-                            }}
-                          >
-                            ⏳ Em Acompanhamento ({act.quarterlyMonthsFilled}/3)
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Impacto no DRE (12M) - Coluna Chave de Governança */}
-                      <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                        {isAguardando ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span
-                              style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 800,
-                                color: '#fbbf24',
-                                backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                border: '1px solid rgba(245, 158, 11, 0.35)',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--font-mono)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                              }}
-                            >
-                              <AlertTriangle size={11} /> R$ 0,00 no DRE
-                            </span>
-                            <span style={{ fontSize: '0.675rem', color: '#fde68a', marginTop: '0.2rem', textAlign: 'center', fontWeight: 600 }}>
-                              Não computa até homologar
-                            </span>
-                          </div>
-                        ) : isHomologado ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span
-                              style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 800,
-                                color: '#34d399',
-                                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                                border: '1px solid rgba(16, 185, 129, 0.35)',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--font-mono)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.3rem',
-                              }}
-                            >
-                              <CheckCircle2 size={11} /> + {formatCurrency(avg)}/mês
-                            </span>
-                            <span style={{ fontSize: '0.675rem', color: '#6ee7b7', marginTop: '0.2rem', textAlign: 'center', fontWeight: 600 }}>
-                              {formatCurrency(avg * 12)}/ano somando no DRE
-                            </span>
-                          </div>
-                        ) : isExpirado ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span
-                              style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                color: '#94a3b8',
-                                backgroundColor: 'rgba(148, 163, 184, 0.12)',
-                                border: '1px solid rgba(148, 163, 184, 0.25)',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--font-mono)',
-                              }}
-                            >
-                              R$ 0,00 no DRE Vigente
-                            </span>
-                            <span style={{ fontSize: '0.675rem', color: '#64748b', marginTop: '0.2rem', textAlign: 'center' }}>
-                              Incorporado à rotina fabril
-                            </span>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <span
-                              style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                color: '#22d3ee',
-                                backgroundColor: 'rgba(6, 182, 212, 0.12)',
-                                border: '1px solid rgba(6, 182, 212, 0.25)',
-                                padding: '0.2rem 0.6rem',
-                                borderRadius: '6px',
-                                fontFamily: 'var(--font-mono)',
-                              }}
-                            >
-                              R$ 0,00 no DRE
-                            </span>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8', marginTop: '0.2rem', textAlign: 'center' }}>
-                              Em teste piloto no Gemba
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Ação */}
-                      <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
-                        {isAguardando ? (
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            style={{
-                              backgroundColor: '#f59e0b',
-                              color: '#000000',
-                              fontWeight: 900,
-                              fontSize: '0.75rem',
-                              padding: '0.45rem 0.85rem',
-                              borderRadius: '8px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.4rem',
-                              textDecoration: 'none',
-                              boxShadow: '0 0 12px rgba(245, 158, 11, 0.35)',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            <span>Auditar & Homologar</span>
-                            <ArrowRight size={13} />
-                          </Link>
-                        ) : isHomologado ? (
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
-                          >
-                            <span>Ver no DRE</span>
-                            <ExternalLink size={12} />
-                          </Link>
-                        ) : isExpirado ? (
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
-                          >
-                            <span>Ver Histórico</span>
-                            <ExternalLink size={12} />
-                          </Link>
-                        ) : (
-                          <Link
-                            href={`/admin/projetos/${act.id}`}
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
-                          >
-                            <span>Acompanhar</span>
-                            <ExternalLink size={12} />
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
 
