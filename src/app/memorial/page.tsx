@@ -353,10 +353,12 @@ export default function MemorialDescritivoPage() {
             min-height: 1050px;
           }
 
-          .monograph-chapter-section {
+          .monograph-chapter-section,
+          .monograph-cover-section {
             display: none;
           }
-          .monograph-chapter-section.active-chapter {
+          .monograph-chapter-section.active-chapter,
+          .monograph-cover-section.active-chapter {
             display: block;
             animation: fadeInChap 0.15s ease-out;
           }
@@ -371,6 +373,154 @@ export default function MemorialDescritivoPage() {
               transform: translateY(0);
             }
           }
+
+          .cover-header-block {
+            text-align: center;
+            padding-bottom: 2.25rem;
+            border-bottom: 3px double #0f172a;
+            margin-bottom: 2rem;
+          }
+          .cover-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 1rem;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 9999px;
+            margin-bottom: 1.25rem;
+          }
+          .cover-title-h1 {
+            font-size: 2.35rem;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.18;
+            max-width: 840px;
+            margin: 0 auto 0.75rem auto;
+            letter-spacing: -0.03em;
+          }
+          .cover-divider-line {
+            width: 80px;
+            height: 4px;
+            background-color: #0ea5e9;
+            margin: 1.25rem auto;
+            border-radius: 2px;
+          }
+          .cover-subtitle-p {
+            font-size: 1.05rem;
+            color: #475569;
+            max-width: 760px;
+            margin: 0 auto;
+            line-height: 1.6;
+            font-style: italic;
+          }
+          .cover-card-quadro1 {
+            margin: 1.5rem 0;
+          }
+          .cover-quadro1-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0;
+          }
+          .cover-quadro1-intro {
+            font-size: 0.9rem;
+            color: #1e293b;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+          }
+          .cover-quadro1-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+          }
+          .cover-quadro1-item {
+            background-color: #ffffff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+          }
+          .cover-card-quadro2 {
+            margin: 1.5rem 0;
+            background-color: #ffffff;
+            border: 1.5px solid #cbd5e1;
+          }
+          .cover-author-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.85rem;
+            margin-bottom: 1rem;
+          }
+          .cover-author-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+          }
+          .cover-author-badge-sub {
+            font-size: 0.725rem;
+            font-weight: 800;
+            color: #0284c7;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
+          .cover-author-name {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0.1rem 0;
+          }
+          .cover-author-title {
+            font-size: 0.825rem;
+            color: #475569;
+            margin: 0;
+            font-weight: 600;
+          }
+          .cover-author-city {
+            text-align: right;
+          }
+          .cover-author-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-bottom: 1.15rem;
+          }
+          .cover-author-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.85rem;
+            margin-bottom: 1rem;
+          }
+          .cover-author-col {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.85rem;
+          }
+          .cover-author-footer {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.775rem;
+            color: #64748b;
+          }
+          .cover-footer-block {
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+            margin-top: 2.25rem;
+          }
         }
 
         /* ========================================================================= */
@@ -379,7 +529,7 @@ export default function MemorialDescritivoPage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 12mm 12mm 12mm 12mm;
+            margin: 10mm 12mm 10mm 12mm;
           }
 
           :root,
@@ -432,6 +582,10 @@ export default function MemorialDescritivoPage() {
           p, span, li, td, em, i {
             color: #1e293b !important;
           }
+          p {
+            orphans: 3 !important;
+            widows: 3 !important;
+          }
           strong, b {
             color: #000000 !important;
             font-weight: 800 !important;
@@ -439,6 +593,8 @@ export default function MemorialDescritivoPage() {
           h1, h2, h3, h4, h5, h6 {
             color: #000000 !important;
             font-weight: 800 !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
           }
 
           .no-print,
@@ -448,20 +604,294 @@ export default function MemorialDescritivoPage() {
             display: none !important;
           }
 
-          /* CAPA FICA ISOLADA NA PRIMEIRA PÁGINA */
+          /* ========================================================================= */
+          /* CAPA NOBRE STRICTAMENTE CONFINADA NA FOLHA 1 (SEM VAZAR PARA PÁGINA 2)    */
+          /* ========================================================================= */
           .monograph-cover-section {
-            display: block !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            height: 258mm !important;
+            max-height: 258mm !important;
+            page-break-before: avoid !important;
+            break-before: avoid !important;
             page-break-after: always !important;
             break-after: page !important;
-            padding-bottom: 10mm !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
           }
 
-          /* DEMAIS CAPÍTULOS FLUEM CONTINUAMENTE SEM FORÇAR PÁGINAS MEIO VAZIAS */
+          .cover-header-block {
+            text-align: center !important;
+            padding-bottom: 2mm !important;
+            border-bottom: 2px solid #0f172a !important;
+            margin-bottom: 2mm !important;
+          }
+
+          .cover-badge-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding: 1px 7px !important;
+            background-color: #f1f5f9 !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 9999px !important;
+            margin-bottom: 1.5mm !important;
+          }
+          .cover-badge-pill span {
+            font-size: 0.63rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+          }
+
+          .cover-title-h1 {
+            font-size: 1.35rem !important;
+            font-weight: 900 !important;
+            color: #0f172a !important;
+            line-height: 1.15 !important;
+            max-width: 96% !important;
+            margin: 0 auto 1.5mm auto !important;
+            letter-spacing: -0.02em !important;
+          }
+
+          .cover-divider-line {
+            width: 45px !important;
+            height: 2.5px !important;
+            background-color: #0ea5e9 !important;
+            margin: 1.5mm auto !important;
+          }
+
+          .cover-subtitle-p {
+            font-size: 0.74rem !important;
+            color: #334155 !important;
+            max-width: 94% !important;
+            margin: 0 auto !important;
+            line-height: 1.25 !important;
+            font-style: italic !important;
+          }
+
+          .cover-card-quadro1 {
+            margin: 1.5mm 0 !important;
+            padding: 2.5mm 3.5mm !important;
+            border: 1px solid #bae6fd !important;
+            border-left: 4px solid #0284c7 !important;
+            background-color: #f8fafc !important;
+            border-radius: 6px !important;
+          }
+
+          .cover-quadro1-title {
+            font-size: 0.82rem !important;
+            font-weight: 900 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+          }
+
+          .cover-quadro1-intro {
+            font-size: 0.7rem !important;
+            color: #1e293b !important;
+            line-height: 1.25 !important;
+            margin-bottom: 1.5mm !important;
+          }
+
+          .cover-quadro1-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 1.5mm !important;
+          }
+
+          .cover-quadro1-item {
+            background-color: #ffffff !important;
+            border: 1px solid #bae6fd !important;
+            border-radius: 4px !important;
+            padding: 1.5mm 2.5mm !important;
+          }
+
+          .cover-quadro1-item strong {
+            font-size: 0.69rem !important;
+            color: #0369a1 !important;
+            display: block !important;
+            margin-bottom: 1px !important;
+          }
+
+          .cover-quadro1-item span {
+            font-size: 0.64rem !important;
+            color: #475569 !important;
+            line-height: 1.2 !important;
+            display: block !important;
+          }
+
+          .cover-card-quadro2 {
+            margin: 1.5mm 0 !important;
+            background-color: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-left: 4px solid #475569 !important;
+            border-radius: 6px !important;
+            padding: 2.5mm 3.5mm !important;
+          }
+
+          .cover-author-header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            padding-bottom: 1.5mm !important;
+            margin-bottom: 1.5mm !important;
+          }
+
+          .cover-author-avatar {
+            width: 30px !important;
+            height: 30px !important;
+            border-radius: 5px !important;
+            background: #0f172a !important;
+            color: #ffffff !important;
+            font-size: 0.9rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+          }
+
+          .cover-author-badge-sub {
+            font-size: 0.62rem !important;
+            font-weight: 800 !important;
+            color: #0284c7 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.08em !important;
+          }
+
+          .cover-author-name {
+            font-size: 1.05rem !important;
+            font-weight: 900 !important;
+            color: #0f172a !important;
+            margin: 0 !important;
+            line-height: 1.1 !important;
+          }
+
+          .cover-author-title {
+            font-size: 0.66rem !important;
+            color: #475569 !important;
+            margin: 0 !important;
+            font-weight: 600 !important;
+          }
+
+          .cover-author-city {
+            text-align: right !important;
+          }
+          .cover-author-city span:first-child {
+            font-size: 0.67rem !important;
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            display: block !important;
+          }
+          .cover-author-city span:last-child {
+            font-size: 0.62rem !important;
+            color: #64748b !important;
+          }
+
+          .cover-author-badges {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 1.5mm !important;
+            margin-bottom: 1.5mm !important;
+          }
+
+          .cover-author-badges span {
+            font-size: 0.64rem !important;
+            font-weight: 700 !important;
+            padding: 1px 4px !important;
+            border-radius: 3px !important;
+            border: 1px solid #cbd5e1 !important;
+            background-color: #f8fafc !important;
+          }
+
+          .cover-author-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 1.5mm !important;
+            margin-bottom: 1.5mm !important;
+          }
+
+          .cover-author-col {
+            background-color: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 4px !important;
+            padding: 1.5mm 2mm !important;
+          }
+
+          .cover-author-col strong {
+            font-size: 0.68rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 2px !important;
+            margin-bottom: 1px !important;
+          }
+
+          .cover-author-col p {
+            font-size: 0.63rem !important;
+            line-height: 1.2 !important;
+            color: #475569 !important;
+            margin: 0 !important;
+          }
+
+          .cover-author-footer {
+            border-top: 1px solid #f1f5f9 !important;
+            padding-top: 1.2mm !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            font-size: 0.63rem !important;
+            color: #64748b !important;
+          }
+
+          .cover-footer-block {
+            text-align: center !important;
+            border-top: 1px solid #cbd5e1 !important;
+            padding-top: 1.5mm !important;
+            margin-top: 1mm !important;
+          }
+
+          .cover-footer-block p:first-child {
+            font-size: 0.72rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            margin: 0 0 1px 0 !important;
+          }
+
+          .cover-footer-block p:last-child {
+            font-size: 0.65rem !important;
+            color: #64748b !important;
+            margin: 0 !important;
+          }
+
+          /* ========================================================================= */
+          /* CAPÍTULOS SUBSEQUENTES FLUEM COM CONTINUIDADE E TRANSIÇÕES LIMPAS         */
+          /* ========================================================================= */
           .monograph-chapter-section {
             display: block !important;
-            margin-top: 15mm !important;
-            padding-top: 10mm !important;
+            margin-top: 12mm !important;
+            padding-top: 8mm !important;
             border-top: 2px solid #0f172a !important;
+          }
+
+          .monograph-chapter-section:first-of-type {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            border-top: none !important;
+          }
+
+          .chapter-header-box {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            padding-bottom: 2mm !important;
+            margin-bottom: 4mm !important;
           }
 
           /* EVITA QUEBRAR CARDS E TABELAS AO MEIO */
@@ -476,7 +906,8 @@ export default function MemorialDescritivoPage() {
 
           .colored-card {
             border: 1px solid #cbd5e1 !important;
-            margin: 6mm 0 !important;
+            margin: 4mm 0 !important;
+            padding: 3mm 4mm !important;
           }
           .card-blue {
             background-color: #f8fafc !important;
@@ -495,11 +926,16 @@ export default function MemorialDescritivoPage() {
             border-left: 4px solid #9333ea !important;
           }
 
+          .lean-pedagogy-box {
+            margin: 4mm 0 !important;
+            padding: 3mm 4mm !important;
+          }
+
           .lean-formula-container {
             border: 1px solid #cbd5e1 !important;
             box-shadow: none !important;
-            margin: 5mm 0 !important;
-            padding: 4mm 5mm !important;
+            margin: 4mm 0 !important;
+            padding: 3mm 4mm !important;
           }
           .formula-pill {
             background-color: #f1f5f9 !important;
@@ -709,82 +1145,72 @@ export default function MemorialDescritivoPage() {
             {/* ================================================================= */}
             <section className={`monograph-cover-section ${activeChapter === 0 ? 'active-chapter' : ''}`}>
               {/* Topo da Capa */}
-              <div style={{ textAlign: 'center', paddingBottom: '2.5rem', borderBottom: '3px double #0f172a', marginBottom: '2.25rem' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 1rem', backgroundColor: '#f1f5f9', borderRadius: '9999px', marginBottom: '1.25rem' }}>
+              <div className="cover-header-block">
+                <div className="cover-badge-pill">
                   <Award size={16} color="#0284c7" />
-                  <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  <span>
                     Trabalho Intelectual • Tratado de Engenharia de Processos & Governança Lean
                   </span>
                 </div>
 
-                <h1
-                  style={{
-                    fontSize: '2.35rem',
-                    fontWeight: 900,
-                    color: '#0f172a',
-                    lineHeight: 1.18,
-                    maxWidth: '840px',
-                    margin: '0 auto 0.75rem auto',
-                    letterSpacing: '-0.03em',
-                  }}
-                >
+                <h1 className="cover-title-h1">
                   FLUXOLEAN 4.0: ARQUITETURA DE SINCRONISMO OPERACIONAL, GOVERNANÇA PDCA E ENGENHARIA DE CUSTOS EVITADOS
                 </h1>
 
-                <div style={{ width: '80px', height: '4px', backgroundColor: '#0ea5e9', margin: '1.25rem auto' }} />
+                <div className="cover-divider-line" />
 
-                <p style={{ fontSize: '1.05rem', color: '#475569', maxWidth: '760px', margin: '0 auto', lineHeight: 1.6, fontStyle: 'italic' }}>
+                <p className="cover-subtitle-p">
                   Uma Abordagem Estruturada para a Eliminação Sistemática de Desperdícios, Conexão do Chão de Fábrica à Controladoria e Validação Contábil do Retorno sobre o Capital Lean
                 </p>
               </div>
 
               {/* QUADRO I: ESCOPO CONCEITUAL */}
-              <div className="colored-card card-blue" style={{ margin: '1.5rem 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.75rem' }}>
+              <div className="colored-card card-blue cover-card-quadro1">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.5rem' }}>
                   <Building2 size={20} color="#0284c7" />
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>
+                  <h3 className="cover-quadro1-title">
                     Quadro I • Escopo da Plataforma & Arquitetura de Módulos
                   </h3>
                 </div>
 
-                <p style={{ fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.7, marginBottom: '1rem' }}>
+                <p className="cover-quadro1-intro">
                   O <strong>FluxoLean 4.0</strong> unifica as 4 grandes dimensões de uma indústria de alta performance:
                   a visão executiva da liderança, o desenvolvimento técnico dos colaboradores, a inteligência preditiva de dados e a governança contábil irrefutável perante a Controladoria.
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
-                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                    <strong style={{ color: '#0369a1', fontSize: '0.85rem', display: 'block', marginBottom: '0.2rem' }}>
+                <div className="cover-quadro1-grid">
+                  <div className="cover-quadro1-item">
+                    <strong>
                       ⚙️ Visão Geral & Gestão de Fluxo
                     </strong>
-                    <span style={{ fontSize: '0.78125rem', color: '#475569' }}>
+                    <span>
                       Cockpit executivo com Lead Time segregado, Kanban puxado com limite de WIP e funil inteligente de Triagem GUT.
                     </span>
                   </div>
 
-                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                    <strong style={{ color: '#0369a1', fontSize: '0.85rem', display: 'block', marginBottom: '0.2rem' }}>
+                  <div className="cover-quadro1-item">
+                    <strong>
                       👥 Pessoas, Belts & Setores
                     </strong>
-                    <span style={{ fontSize: '0.78125rem', color: '#475569' }}>
+                    <span>
                       Trilha de maturidade (White a Black Belt) e Assessment 360° em radar pentagonal por setor produtivo.
                     </span>
                   </div>
 
-                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                    <strong style={{ color: '#0369a1', fontSize: '0.85rem', display: 'block', marginBottom: '0.2rem' }}>
+                  <div className="cover-quadro1-item">
+                    <strong>
                       🧠 Inteligência, IA & Academia
                     </strong>
-                    <span style={{ fontSize: '0.78125rem', color: '#475569' }}>
+                    <span>
                       Sensei IA para co-criação e refinamento de artigos, telemetria de leitura, 50 questões dinâmicas e cronoanálise de tempos.
                     </span>
                   </div>
 
-                  <div style={{ backgroundColor: '#ffffff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '0.75rem 1rem' }}>
-                    <strong style={{ color: '#0369a1', fontSize: '0.85rem', display: 'block', marginBottom: '0.2rem' }}>
+                  <div className="cover-quadro1-item">
+                    <strong>
                       🏛️ Governança, A3 & Controladoria
                     </strong>
-                    <span style={{ fontSize: '0.78125rem', color: '#475569' }}>
+                    <span>
                       PDCA de 4 portões com geração de Relatório A3 paisagem, 7 fontes de custo evitado e validação com Fé Pública Contábil.
                     </span>
                   </div>
@@ -792,94 +1218,80 @@ export default function MemorialDescritivoPage() {
               </div>
 
               {/* QUADRO II: APRESENTAÇÃO TÉCNICA DO AUTOR */}
-              <div className="colored-card card-slate" style={{ margin: '1.5rem 0', backgroundColor: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #0f172a 0%, #0284c7 100%)',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 900,
-                        fontSize: '1.35rem',
-                        flexShrink: 0,
-                      }}
-                    >
+              <div className="colored-card card-slate cover-card-quadro2">
+                <div className="cover-author-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <div className="cover-author-avatar">
                       MG
                     </div>
                     <div>
-                      <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#0284c7', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      <span className="cover-author-badge-sub">
                         Quadro II • Credenciais Técnicas & Autoria do Projeto
                       </span>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: '0.1rem 0' }}>
+                      <h2 className="cover-author-name">
                         Mauricio Prestes Grigol
                       </h2>
-                      <p style={{ fontSize: '0.825rem', color: '#475569', margin: 0, fontWeight: 600 }}>
+                      <p className="cover-author-title">
                         Engenheiro Bioenergético • Pós-Graduado em Engenharia de Segurança do Trabalho • Arquiteto Full Stack & IA
                       </p>
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', display: 'block' }}>
+                  <div className="cover-author-city">
+                    <span>
                       📍 Xaxim — Santa Catarina
                     </span>
-                    <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
+                    <span>
                       Brasil
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginBottom: '1.15rem' }}>
-                  <span style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#0f172a' }}>
+                <div className="cover-author-badges">
+                  <span>
                     🎓 Bacharel em Engenharia Bioenergética
                   </span>
-                  <span style={{ backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#0f172a' }}>
+                  <span>
                     🦺 Especialização em Eng. de Segurança do Trabalho
                   </span>
-                  <span style={{ backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#0369a1' }}>
+                  <span style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd', color: '#0369a1' }}>
                     💻 Desenvolvedor Full-Stack Sênior & IA Aplicada
                   </span>
-                  <span style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, color: '#15803d' }}>
+                  <span style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#15803d' }}>
                     ⚙️ Especialista em Lean, VSM & Cronoanálise
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.85rem', marginBottom: '1rem' }}>
-                  <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem' }}>
-                    <strong style={{ fontSize: '0.8rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem' }}>
+                <div className="cover-author-grid">
+                  <div className="cover-author-col">
+                    <strong>
                       <HardHat size={15} color="#d97706" /> Engenharia & Processos
                     </strong>
-                    <p style={{ fontSize: '0.775rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                    <p>
                       Domínio prático no Gemba fabril, Mapeamento de Fluxo de Valor (VSM), cronoanálise de ciclos, balanceamento de linhas, OEE, SMED e modelagem matemática de custos evitados.
                     </p>
                   </div>
 
-                  <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem' }}>
-                    <strong style={{ fontSize: '0.8rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem' }}>
+                  <div className="cover-author-col">
+                    <strong>
                       <ShieldCheck size={15} color="#16a34a" /> Segurança & Ergonomia
                     </strong>
-                    <p style={{ fontSize: '0.775rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                    <p>
                       Aplicação das Normas Regulamentadoras (NR-12, NR-17), mitigação do <em>Muri</em> (sobrecarga biomecânica) como condição de estabilidade operacional e simbiose entre segurança e 5S/TPM.
                     </p>
                   </div>
 
-                  <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem' }}>
-                    <strong style={{ fontSize: '0.8rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem' }}>
+                  <div className="cover-author-col">
+                    <strong>
                       <Code size={15} color="#0284c7" /> Software & IA Industrial
                     </strong>
-                    <p style={{ fontSize: '0.775rem', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                    <p>
                       Arquiteto de sistemas em Next.js, React, TypeScript, Node.js, Python, Supabase (PostgreSQL, RLS). Criador do <strong>Akiom.ai</strong> e fundador da suíte <strong>CalcForgeTools</strong>.
                     </p>
                   </div>
                 </div>
 
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.775rem', color: '#64748b' }}>
+                <div className="cover-author-footer">
                   <span>
                     <strong>Currículo & Portfólio Oficial:</strong> calcforgetools.com • Akiom.ai • GitHub: Mauthope
                   </span>
@@ -890,11 +1302,11 @@ export default function MemorialDescritivoPage() {
               </div>
 
               {/* Rodapé da Capa */}
-              <div style={{ textAlign: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem', marginTop: '2.25rem' }}>
-                <p style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.25rem 0' }}>
+              <div className="cover-footer-block">
+                <p>
                   XAXIM — SANTA CATARINA
                 </p>
-                <p style={{ fontSize: '0.78125rem', color: '#64748b', margin: 0 }}>
+                <p>
                   Publicação Oficial de Engenharia de Processos Industriais • Versão 4.0 Multi-Tenant
                 </p>
               </div>
@@ -904,7 +1316,7 @@ export default function MemorialDescritivoPage() {
             {/* PRÓLOGO: A GÊNESE DO FLUXOLEAN E A VISÃO SISTÊMICA                */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 1 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Fundamentação Teórica & Diagnóstico Fabril
                 </span>
@@ -993,7 +1405,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 1: DASHBOARD LEAN                                        */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 2 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Visão Geral • Rota: /admin/dashboard
                 </span>
@@ -1109,7 +1521,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 2: KANBAN GERAL                                          */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 3 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Visão Geral • Rota: /admin/kanban & /agente/kanban
                 </span>
@@ -1169,7 +1581,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 3: TRIAGEM DE DEMANDAS & MATRIZ GUT                      */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 4 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Visão Geral • Rota: /admin/triagem & /nova-demanda
                 </span>
@@ -1279,7 +1691,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 4: GESTÃO DE AGENTES & BELTS                             */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 5 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Cadastros & Equipe • Rota: /admin/agentes
                 </span>
@@ -1352,7 +1764,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 5: SETORES & ASSESSMENT COM RADAR 360°                   */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 6 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Cadastros & Equipe • Rota: /admin/setores & /agente/setores
                 </span>
@@ -1410,7 +1822,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 6: HISTÓRICO KAIZEN & YOKOTEN                            */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 7 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Inteligência & Métodos • Rota: /admin/historico-kaizen
                 </span>
@@ -1446,7 +1858,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 7: INTEGRAÇÕES DE IA & SENSEI CORPORATIVO                */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 8 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Inteligência & Métodos • Rota: /admin/integracoes-ia
                 </span>
@@ -1480,7 +1892,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 8: CUSTO EVITADO & ROI (AS 7 FONTES CANÔNICAS)           */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 9 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Inteligência & Métodos • Rota: /admin/relatorios & /agente/relatorio-pessoal
                 </span>
@@ -1708,7 +2120,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 9: ACADEMIA LEAN & CRIAÇÃO DE ARTIGOS COM IA             */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 10 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Inteligência & Métodos • Rota: /agente/ferramentas
                 </span>
@@ -1792,7 +2204,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 10: ESTUDO DE TEMPOS & CRONOANÁLISE                      */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 11 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Inteligência & Métodos • Rota: /agente/ferramentas/cronoanalise
                 </span>
@@ -1852,7 +2264,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 11: TPM & GESTÃO AUTÔNOMA                                */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 12 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Fábrica & Comunicação • Rota: /admin/tpm & /agente/tpm
                 </span>
@@ -1910,7 +2322,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 12: CANAL KAIZEN                                         */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 13 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Fábrica & Comunicação • Rota: /admin/canal-kaizen & /canal-kaizen/nova-ideia
                 </span>
@@ -1944,7 +2356,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 13: PROJETOS PDCA EM 4 PORTÕES & RELATÓRIO A3            */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 14 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Núcleo Metodológico • Rota: /admin/projetos/[id] & /relatorio-a3
                 </span>
@@ -2017,7 +2429,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 14: PORTAL DE AUDITORIA DA CONTROLADORIA & FÉ PÚBLICA    */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 15 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Governança & Compliance • Rota: /controladoria/auditoria/[token]
                 </span>
@@ -2061,7 +2473,7 @@ export default function MemorialDescritivoPage() {
             {/* CAPÍTULO 15: BIBLIOGRAFIA ACADÊMICA RIGOROSA (ABNT NBR 6023)      */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 16 ? 'active-chapter' : ''}`}>
-              <div style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
+              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Referencial Teórico Consagrado
                 </span>
