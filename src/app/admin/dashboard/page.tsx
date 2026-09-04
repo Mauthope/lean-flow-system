@@ -50,6 +50,21 @@ export default function AdminDashboardPage() {
   }, [dataVersion]);
 
   const [boardFilter, setBoardFilter] = useState<'ativos' | 'expirados' | 'todos'>('ativos');
+  const [leadTimeTab, setLeadTimeTab] = useState<'pdca' | 'agentes' | 'gargalos'>('pdca');
+
+  const leadTimeMetrics = useMemo(() => {
+    return (
+      metrics.leadTimeMetrics || {
+        overallAvgDays: 0,
+        overallDirectDays: 0,
+        overallExternalWaitDays: 0,
+        controladoriaAvgResponseDays: 0,
+        pdcaStages: [],
+        agentSummaries: [],
+        sectorBottlenecks: [],
+      }
+    );
+  }, [metrics]);
 
   const boardFinancials = useMemo(() => {
     return (
@@ -119,41 +134,7 @@ export default function AdminDashboardPage() {
     return { overdueCount: ov, nearDueCount: nr };
   }, [dataVersion]);
 
-  // Breakdown calculations for the executive financial sources
-  const breakdownList = useMemo(() => {
-    const total = metrics.totalActualCostAvoided || 1;
-    const b = metrics.costBreakdownTotals || {};
-    return [
-      {
-        label: 'Mão de Obra & Tempo de Ciclo',
-        value: b.laborSavings || 0,
-        pct: Math.round(((b.laborSavings || 0) / total) * 100),
-        color: '#06b6d4',
-        icon: '👷‍♂️',
-      },
-      {
-        label: 'Aumento de Produção & Capacidade',
-        value: b.productionIncrease || 0,
-        pct: Math.round(((b.productionIncrease || 0) / total) * 100),
-        color: '#10b981',
-        icon: '🚀',
-      },
-      {
-        label: 'Redução de Sucata & Refugo',
-        value: b.scrapReduction || 0,
-        pct: Math.round(((b.scrapReduction || 0) / total) * 100),
-        color: '#ec4899',
-        icon: '♻️',
-      },
-      {
-        label: 'Paradas de Máquina & Insumos',
-        value: (b.machineDowntime || 0) + (b.toolingAndEnergy || 0) + (b.logisticsAndFreight || 0),
-        pct: Math.round((((b.machineDowntime || 0) + (b.toolingAndEnergy || 0) + (b.logisticsAndFreight || 0)) / total) * 100),
-        color: '#f59e0b',
-        icon: '⚙️',
-      },
-    ].filter((item) => item.value > 0 || total > 1);
-  }, [metrics]);
+
 
   const totalPipeline = metrics.totalActions || 1;
   const pctOpen = Math.round((metrics.openActions / totalPipeline) * 100);
@@ -1184,85 +1165,282 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Painel 2: Composição Financeira do Custo Evitado */}
+        {/* Painel 2: Lead Time dos Projetos Lean & Eficiência de Fluxo */}
         <div
           className="card"
           style={{
             backgroundColor: '#0f172a',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
             borderRadius: '16px',
             padding: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            gap: '1.25rem',
-            boxShadow: '0 8px 30px -10px rgba(16, 185, 129, 0.12)',
+            gap: '1.15rem',
+            boxShadow: '0 8px 30px -10px rgba(56, 189, 248, 0.12)',
           }}
         >
+          {/* Header */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Zap size={18} color="#34d399" />
+                <Clock size={18} color="#38bdf8" />
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
-                  Composição do Retorno Lean
+                  Lead Time dos Projetos Lean
                 </h3>
               </div>
               <span
                 style={{
                   fontSize: '0.725rem',
                   fontWeight: 800,
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
                   padding: '0.15rem 0.55rem',
                   borderRadius: '9999px',
                 }}
               >
-                ROI Homologado
+                Ciclo até Controladoria
               </span>
             </div>
             <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: 0 }}>
-              Fontes reais de geração de valor financeiro validadas em fábrica
+              Média temporal por etapa do PDCA e auditoria de dependências externas (sem os 3 meses de acompanhamento).
             </p>
           </div>
 
-          {/* Breakdown Items with Progress Gauges */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            {breakdownList.map((item, idx) => (
-              <div key={idx}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem', fontSize: '0.8125rem' }}>
-                  <span style={{ color: '#cbd5e1', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span>{item.icon}</span> {item.label}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-                      {formatCurrency(item.value)}
-                    </strong>
-                    <span style={{ fontSize: '0.725rem', fontWeight: 800, color: item.color, fontFamily: 'var(--font-mono)' }}>
-                      ({item.pct}%)
-                    </span>
-                  </div>
-                </div>
-                <div style={{ width: '100%', height: '6px', backgroundColor: '#090e1a', borderRadius: '9999px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          {/* KPI Totalizadores Rápidos (Média Geral da Fábrica vs Tempo Próprio vs Espera Externa) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+              <div style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Média Geral</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                {leadTimeMetrics.overallAvgDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Tempo Agente</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                {leadTimeMetrics.overallDirectDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+              <div style={{ fontSize: '0.675rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <span>🛡️</span> Espera Ext.
+              </div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+                {leadTimeMetrics.overallExternalWaitDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Abas de Navegação */}
+          <div style={{ display: 'flex', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <button
+              type="button"
+              onClick={() => setLeadTimeTab('pdca')}
+              style={{
+                flex: 1,
+                padding: '0.4rem 0.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: leadTimeTab === 'pdca' ? '#1e293b' : 'transparent',
+                color: leadTimeTab === 'pdca' ? '#ffffff' : '#94a3b8',
+                fontSize: '0.75rem',
+                fontWeight: leadTimeTab === 'pdca' ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              📊 Fases PDCA
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeadTimeTab('agentes')}
+              style={{
+                flex: 1,
+                padding: '0.4rem 0.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: leadTimeTab === 'agentes' ? '#1e293b' : 'transparent',
+                color: leadTimeTab === 'agentes' ? '#ffffff' : '#94a3b8',
+                fontSize: '0.75rem',
+                fontWeight: leadTimeTab === 'agentes' ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              👤 Especialistas
+            </button>
+            <button
+              type="button"
+              onClick={() => setLeadTimeTab('gargalos')}
+              style={{
+                flex: 1,
+                padding: '0.4rem 0.5rem',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: leadTimeTab === 'gargalos' ? '#1e293b' : 'transparent',
+                color: leadTimeTab === 'gargalos' ? '#fbbf24' : '#94a3b8',
+                fontSize: '0.75rem',
+                fontWeight: leadTimeTab === 'gargalos' ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              🛡️ Gargalos Ext.
+            </button>
+          </div>
+
+          {/* Conteúdo Aba 1: Fases PDCA */}
+          {leadTimeTab === 'pdca' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {/* Barra Segmentada PDCA */}
+              <div
+                style={{
+                  width: '100%',
+                  height: '10px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#090e1a',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  overflow: 'hidden',
+                }}
+              >
+                {leadTimeMetrics.pdcaStages.map((stage) => (
                   <div
+                    key={stage.stage}
+                    title={`${stage.label}: ${stage.avgDays} dias (${stage.pctOfTotal}%)`}
                     style={{
-                      width: `${Math.min(100, Math.max(8, item.pct))}%`,
-                      height: '100%',
-                      backgroundColor: item.color,
-                      borderRadius: '9999px',
-                      boxShadow: `0 0 8px ${item.color}80`,
+                      width: `${stage.pctOfTotal}%`,
+                      backgroundColor: stage.color,
+                      boxShadow: `0 0 6px ${stage.color}80`,
                       transition: 'width 0.3s ease',
                     }}
                   />
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
+              {/* Lista dos Estágios */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {leadTimeMetrics.pdcaStages.map((stg) => (
+                  <div key={stg.stage} style={{ backgroundColor: '#090e1a', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>{stg.icon}</span> {stg.label}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <strong style={{ fontSize: '0.85rem', color: stg.color, fontFamily: 'var(--font-mono)' }}>
+                          {stg.avgDays} d
+                        </strong>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                          ({stg.pctOfTotal}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      {stg.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Conteúdo Aba 2: Por Especialista Lean */}
+          {leadTimeTab === 'agentes' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '250px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+              {leadTimeMetrics.agentSummaries.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                  Nenhum especialista com projetos calculados.
+                </div>
+              ) : (
+                leadTimeMetrics.agentSummaries.map((ag) => (
+                  <div key={ag.agentId} style={{ backgroundColor: '#090e1a', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {ag.avatarUrl ? (
+                          <img src={ag.avatarUrl} alt={ag.agentName} style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#fff' }}>
+                            {ag.agentName.charAt(0)}
+                          </span>
+                        )}
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>
+                          {ag.agentName}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.1rem 0.45rem', borderRadius: '6px' }}>
+                        {ag.totalProjects} {ag.totalProjects === 1 ? 'proj.' : 'proj.'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Lead Time Médio:</span>
+                      <strong style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{ag.avgTotalDays} dias</strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.725rem', color: '#cbd5e1' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <span style={{ color: '#34d399' }}>● Tempo Próprio: {ag.agentDirectDays}d</span>
+                      </span>
+                      <span style={{ color: '#fbbf24' }}>
+                        ● Espera Externa: {ag.avgExternalWaitDays}d
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.7rem' }}>
+                      <span style={{ color: '#94a3b8' }}>Eficiência de Fluxo Direto:</span>
+                      <span style={{ fontWeight: 800, color: ag.efficiencyPercentage >= 70 ? '#34d399' : '#fbbf24' }}>
+                        {ag.efficiencyPercentage}%
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Conteúdo Aba 3: Gargalos Setoriais (Defesa do Agente) */}
+          {leadTimeTab === 'gargalos' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              <div style={{ fontSize: '0.725rem', color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <ShieldCheck size={16} color="#fbbf24" style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>Defesa do Agente:</strong> Audita o impacto de setores terceiros no cronograma, demonstrando atrasos alheios ao Especialista Lean.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.2rem' }}>
+                {leadTimeMetrics.sectorBottlenecks.map((sec, idx) => (
+                  <div key={idx} style={{ backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                      <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#ffffff' }}>
+                        🏢 {sec.sectorName}
+                      </span>
+                      <strong style={{ fontSize: '0.8rem', color: sec.color, fontFamily: 'var(--font-mono)' }}>
+                        +{sec.avgWaitDays} dias / tarefa
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: '#94a3b8' }}>
+                      <span>Demandas terceiras: {sec.totalTasks}</span>
+                      <span>Total de retenção: <strong style={{ color: '#ffffff' }}>{sec.totalWaitDays} dias</strong></span>
+                      {sec.pendingTasks > 0 && (
+                        <span style={{ color: '#f87171', fontWeight: 700 }}>{sec.pendingTasks} em fila</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer Card */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Total Homologado:</span>
-            <strong style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-              {formatCurrency(metrics.totalActualCostAvoided)}
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Média de Resposta Controladoria:</span>
+            <strong style={{ fontSize: '0.95rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+              {leadTimeMetrics.controladoriaAvgResponseDays} dias
             </strong>
           </div>
         </div>

@@ -158,8 +158,17 @@ export default function AdminProjectDetailPage() {
   const [checklistItems, setChecklistItems] = useState<ActionChecklistItem[]>([]);
   const [newActionLabel, setNewActionLabel] = useState('');
   const [newActionResp, setNewActionResp] = useState('');
+  const [newActionSector, setNewActionSector] = useState('');
   const [newActionStart, setNewActionStart] = useState('');
   const [newActionEnd, setNewActionEnd] = useState('');
+
+  const availableSectors = useMemo(() => {
+    try {
+      return dataService.getSectors(action?.tenantId);
+    } catch {
+      return [];
+    }
+  }, [action?.tenantId]);
 
   // Acompanhamento Trimestral pós-homologação (3 Meses)
   const [followUpModalMonth, setFollowUpModalMonth] = useState<1 | 2 | 3 | null>(null);
@@ -999,12 +1008,27 @@ export default function AdminProjectDetailPage() {
     e.preventDefault();
     if (!newActionLabel.trim() || !action) return;
 
+    const chosenSector = newActionSector.trim() || action.originSectorName || 'Setor do Projeto';
+    const foundSector = availableSectors.find((s) => s.name.toLowerCase() === chosenSector.toLowerCase());
+
+    let calcDurationDays: number | undefined = undefined;
+    if (newActionStart && newActionEnd) {
+      const s = new Date(newActionStart).getTime();
+      const e = new Date(newActionEnd).getTime();
+      if (e >= s) {
+        calcDurationDays = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)));
+      }
+    }
+
     const newItem: ActionChecklistItem = {
       id: 'ck_' + Date.now(),
       label: newActionLabel.trim(),
       responsibleName: newActionResp.trim() || action.assignedAgentName || 'Agente',
+      responsibleSectorName: chosenSector,
+      responsibleSectorId: foundSector?.id,
       startDate: newActionStart.trim() || undefined,
       endDate: newActionEnd.trim() || undefined,
+      durationDays: calcDurationDays,
       status: 'pendente',
       completed: false,
     };
@@ -1014,6 +1038,7 @@ export default function AdminProjectDetailPage() {
     dataService.updateAction(action.id, { checklist: nextList });
     setNewActionLabel('');
     setNewActionResp('');
+    setNewActionSector('');
     setNewActionStart('');
     setNewActionEnd('');
     refreshData();
@@ -2339,70 +2364,119 @@ export default function AdminProjectDetailPage() {
                   Nenhuma atividade cadastrada no plano de ação. Adicione no formulário abaixo.
                 </div>
               ) : (
-                checklistItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '1rem',
-                      borderRadius: '12px',
-                      border: item.completed ? '1.5px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
-                      backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.12)' : '#090e1a',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '0.75rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
-                      <input
-                        type="checkbox"
-                        checked={item.completed}
-                        onChange={() => handleToggleChecklistItem(item.id)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10b981' }}
-                      />
-                      <div>
-                        <strong style={{ fontSize: '0.9rem', color: item.completed ? '#34d399' : '#ffffff', textDecoration: item.completed ? 'line-through' : 'none', fontFamily: 'var(--font-heading)' }}>
-                          {index + 1}. {item.label}
-                        </strong>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-                          <span>👤 {item.responsibleName || 'Agente'}</span>
-                          {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
-                          {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
-                        </div>
-                      </div>
-                    </div>
+                checklistItems.map((item, index) => {
+                  const isExternal =
+                    Boolean(item.responsibleSectorName &&
+                    action?.originSectorName &&
+                    item.responsibleSectorName.trim().toLowerCase() !== action.originSectorName.trim().toLowerCase());
 
-                    <span
+                  return (
+                    <div
+                      key={item.id}
                       style={{
-                        fontSize: '0.725rem',
-                        fontWeight: 800,
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '6px',
-                        backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                        color: item.completed ? '#34d399' : '#94a3b8',
-                        border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        padding: '1rem',
+                        borderRadius: '12px',
+                        border: item.completed
+                          ? '1.5px solid rgba(16, 185, 129, 0.35)'
+                          : isExternal
+                          ? '1.5px solid rgba(245, 158, 11, 0.4)'
+                          : '1px solid rgba(255, 255, 255, 0.08)',
+                        backgroundColor: item.completed
+                          ? 'rgba(16, 185, 129, 0.12)'
+                          : isExternal
+                          ? 'rgba(245, 158, 11, 0.06)'
+                          : '#090e1a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '0.75rem',
                       }}
                     >
-                      {item.completed ? 'Concluída ✓' : 'Pendente'}
-                    </span>
-                  </div>
-                ))
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '280px' }}>
+                        <input
+                          type="checkbox"
+                          checked={item.completed}
+                          onChange={() => handleToggleChecklistItem(item.id)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10b981' }}
+                        />
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: '0.9rem', color: item.completed ? '#34d399' : '#ffffff', textDecoration: item.completed ? 'line-through' : 'none', fontFamily: 'var(--font-heading)' }}>
+                              {index + 1}. {item.label}
+                            </strong>
+                            {item.responsibleSectorName && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  backgroundColor: isExternal ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                                  color: isExternal ? '#fbbf24' : '#94a3b8',
+                                  border: `1px solid ${isExternal ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255, 255, 255, 0.12)'}`,
+                                }}
+                                title={isExternal ? 'Dependência externa fora do setor do projeto (Impacta Lead Time do Agente)' : 'Setor de Origem do Projeto'}
+                              >
+                                🏢 {item.responsibleSectorName}
+                                {isExternal && (
+                                  <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 900 }}>
+                                    [Dependência Externa]
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: '#94a3b8', flexWrap: 'wrap' }}>
+                            <span>👤 {item.responsibleName || 'Agente'}</span>
+                            {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
+                            {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
+                            {item.durationDays && item.durationDays > 0 && (
+                              <span style={{ color: '#38bdf8', fontWeight: 600 }}>⏱️ {item.durationDays} dias</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.725rem',
+                          fontWeight: 800,
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '6px',
+                          backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                          color: item.completed ? '#34d399' : '#94a3b8',
+                          border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        }}
+                      >
+                        {item.completed ? 'Concluída ✓' : 'Pendente'}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
 
             {/* Add Action Form */}
-            <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'block', marginBottom: '0.6rem' }}>
-                ➕ Adicionar Nova Atividade 5W2H:
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'end' }}>
+            <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  ➕ Adicionar Nova Atividade 5W2H (Com Setor Responsável & Mapeamento de Dependências):
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                  Setores terceiros alimentam o indicador de Gargalos Externos para defesa do agente
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: '0.65rem', alignItems: 'end' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>O que fazer (Ação): *</label>
                   <input
                     type="text"
                     className="form-control form-control-sm"
-                    placeholder="Ex: Instalar engates rápidos"
+                    placeholder="Ex: Cotação de engates rápidos"
                     value={newActionLabel}
                     onChange={(e) => setNewActionLabel(e.target.value)}
                     style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
@@ -2423,6 +2497,31 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 700 }}>Setor Responsável (Onde):</label>
+                  <input
+                    type="text"
+                    list="action-sectors-list"
+                    className="form-control form-control-sm"
+                    placeholder={action?.originSectorName || 'Ex: Compras, Manutenção'}
+                    value={newActionSector}
+                    onChange={(e) => setNewActionSector(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#ffffff' }}
+                  />
+                  <datalist id="action-sectors-list">
+                    {action?.originSectorName && <option value={action.originSectorName} label="Setor do Projeto" />}
+                    <option value="Compras / Suprimentos" label="Dependência Externa" />
+                    <option value="Manutenção Preditiva & TPM" label="Dependência Externa" />
+                    <option value="Controladoria & Finanças" label="Dependência Externa" />
+                    <option value="Qualidade & Processos" label="Dependência Externa" />
+                    <option value="Engenharia / Ferramentaria" label="Dependência Externa" />
+                    <option value="TI & Automação" label="Dependência Externa" />
+                    {availableSectors.map((s) => (
+                      <option key={s.id} value={s.name} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Início:</label>
                   <input
                     type="date"
@@ -2434,7 +2533,7 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Fim:</label>
+                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Fim (Previsão):</label>
                   <input
                     type="date"
                     className="form-control form-control-sm"
@@ -2444,7 +2543,7 @@ export default function AdminProjectDetailPage() {
                   />
                 </div>
 
-                <button type="submit" className="btn btn-primary btn-sm" style={{ height: '36px' }}>
+                <button type="submit" className="btn btn-primary btn-sm" style={{ height: '36px', whiteSpace: 'nowrap' }}>
                   Adicionar
                 </button>
               </div>

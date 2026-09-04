@@ -33,6 +33,10 @@ import {
   ControllershipAudit,
   ControllershipAuditStatus,
   ProjectInvestmentCosts,
+  LeadTimeDashboardMetrics,
+  PDCALeadTimeStage,
+  AgentLeadTimeSummary,
+  ExternalSectorBottleneck,
 } from '../lib/types';
 import { sendControladoriaAuditInvite } from './emailService';
 import {
@@ -1153,6 +1157,268 @@ export const dataService = {
       byWasteCategory,
       bySector,
       byAgent,
+      leadTimeMetrics: this.getProjectLeadTimeMetrics(tenantId),
+    };
+  },
+
+  // ================= LEAD TIME DOS PROJETOS LEAN & GARGALOS INTERSETORIAIS =================
+  getProjectLeadTimeMetrics(tenantId?: string): LeadTimeDashboardMetrics {
+    const actions = this.getActions(tenantId);
+    const now = Date.now();
+
+    // Setores externos para monitoramento de gargalos
+    const sectorBottlenecksMap: Record<
+      string,
+      { totalTasks: number; pendingTasks: number; totalWaitDays: number; color: string }
+    > = {
+      'Compras / Suprimentos': { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#f59e0b' },
+      'Manutenção Preditiva & TPM': { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#d97706' },
+      'Controladoria & Finanças': { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#fbbf24' },
+      'Qualidade & Laboratório': { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#06b6d4' },
+      'TI & Automação': { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#8b5cf6' },
+    };
+
+    let totalProjectsAnalyzed = 0;
+    let sumPlanDays = 0;
+    let sumDoDays = 0;
+    let sumCheckDays = 0;
+    let sumTotalDays = 0;
+    let sumExternalWaitDays = 0;
+    let sumControladoriaDays = 0;
+    let controladoriaCount = 0;
+
+    // Métricas por Agente
+    const agentMap: Record<
+      string,
+      {
+        agentId: string;
+        agentName: string;
+        avatarUrl?: string;
+        totalProjects: number;
+        sumTotalDays: number;
+        sumPlanDays: number;
+        sumDoDays: number;
+        sumCheckDays: number;
+        sumExternalWaitDays: number;
+      }
+    > = {};
+
+    actions.forEach((a) => {
+      // Data de Início (Plan): createdAt
+      const createdTime = new Date(a.createdAt).getTime();
+
+      // Data Final do Ciclo de Desenvolvimento (Aprovação da Controladoria ou Término da Solução)
+      // Exclui estritamente os 3 meses de sustentação pós-homologação conforme diretriz do usuário
+      let cycleEndTime: number;
+      if (a.controllershipAudit?.reviewedAt) {
+        cycleEndTime = new Date(a.controllershipAudit.reviewedAt).getTime();
+      } else if (a.controllershipAudit?.submittedAt && a.status !== 'concluida') {
+        cycleEndTime = now; // Aguardando
+      } else if (a.status === 'concluida') {
+        // Se já concluída sem data de auditoria, usa data de homologação prévia
+        const refCompleted = a.controllershipAudit?.submittedAt || a.startedAt
+          ? new Date(a.startedAt || a.createdAt).getTime() + (22 * 86400000)
+          : new Date(a.completedAt || a.updatedAt).getTime();
+        cycleEndTime = Math.min(new Date(a.completedAt || a.updatedAt).getTime(), refCompleted);
+      } else {
+        cycleEndTime = now;
+      }
+
+      // Total de Dias do Projeto até Aprovação da Controladoria
+      const totalLeadDays = Math.max(1, Math.round((cycleEndTime - createdTime) / (1000 * 60 * 60 * 24)));
+
+      // 1. Tempo Plan (P): Concepção até início do plano 5W2H
+      const firstTaskStart = a.checklist?.[0]?.startDate ? new Date(a.checklist[0].startDate).getTime() : null;
+      let planDays = firstTaskStart && firstTaskStart > createdTime
+        ? Math.max(1, Math.round((firstTaskStart - createdTime) / (1000 * 60 * 60 * 24)))
+        : Math.max(2, Math.round(totalLeadDays * 0.20));
+
+      // 2. Tempo Check & Controladoria (C): Envio até aprovação da Controladoria
+      let checkDays = 0;
+      let actionControladoriaDays = 0;
+      if (a.controllershipAudit?.submittedAt) {
+        const subTime = new Date(a.controllershipAudit.submittedAt).getTime();
+        const revTime = a.controllershipAudit.reviewedAt ? new Date(a.controllershipAudit.reviewedAt).getTime() : now;
+        actionControladoriaDays = Math.max(1, Math.round((revTime - subTime) / (1000 * 60 * 60 * 24)));
+        checkDays = actionControladoriaDays;
+        sumControladoriaDays += actionControladoriaDays;
+        controladoriaCount++;
+
+        // Registrar no gargalo da Controladoria
+        sectorBottlenecksMap['Controladoria & Finanças'].totalTasks++;
+        sectorBottlenecksMap['Controladoria & Finanças'].totalWaitDays += actionControladoriaDays;
+        if (a.controllershipAudit.status === 'pendente') {
+          sectorBottlenecksMap['Controladoria & Finanças'].pendingTasks++;
+        }
+      } else {
+        checkDays = Math.max(1, Math.round(totalLeadDays * 0.15));
+      }
+
+      // 3. Tempo Do (D): Execução e Testes no Gemba
+      let doDays = Math.max(1, totalLeadDays - planDays - checkDays);
+      if (doDays <= 0) {
+        doDays = Math.max(1, Math.round(totalLeadDays * 0.65));
+        planDays = Math.max(1, Math.round(totalLeadDays * 0.20));
+        checkDays = Math.max(1, totalLeadDays - planDays - doDays);
+      }
+
+      // 4. Analisar tarefas 5W2H e identificar dependências de outros setores
+      let externalWaitDays = 0;
+      if (a.checklist && a.checklist.length > 0) {
+        a.checklist.forEach((item) => {
+          let secName = item.responsibleSectorName;
+          if (!secName) {
+            // Inferir setor se a ação for de compras ou manutenção
+            const lbl = item.label.toLowerCase();
+            if (lbl.includes('comprar') || lbl.includes('adquirir') || lbl.includes('cotar') || lbl.includes('orçamento')) {
+              secName = 'Compras / Suprimentos';
+            } else if (lbl.includes('usinagem') || lbl.includes('manutenção') || lbl.includes('peça') || lbl.includes('carrinho')) {
+              secName = 'Manutenção Preditiva & TPM';
+            }
+          }
+
+          if (secName && secName !== a.originSectorName) {
+            // Duração da dependência externa
+            let taskDays = item.durationDays || 0;
+            if (!taskDays && item.startDate && item.endDate) {
+              const s = new Date(item.startDate).getTime();
+              const e = new Date(item.endDate).getTime();
+              taskDays = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)));
+            }
+            if (!taskDays) {
+              taskDays = item.durationHours ? Math.max(1, Math.round(item.durationHours / 8)) : 3;
+            }
+
+            externalWaitDays += taskDays;
+
+            if (!sectorBottlenecksMap[secName]) {
+              sectorBottlenecksMap[secName] = { totalTasks: 0, pendingTasks: 0, totalWaitDays: 0, color: '#38bdf8' };
+            }
+            sectorBottlenecksMap[secName].totalTasks++;
+            sectorBottlenecksMap[secName].totalWaitDays += taskDays;
+            if (!item.completed) {
+              sectorBottlenecksMap[secName].pendingTasks++;
+            }
+          }
+        });
+      }
+
+      // Limitar externalWaitDays para não ultrapassar 80% do total
+      externalWaitDays = Math.min(externalWaitDays, Math.round(totalLeadDays * 0.75));
+
+      totalProjectsAnalyzed++;
+      sumTotalDays += totalLeadDays;
+      sumPlanDays += planDays;
+      sumDoDays += doDays;
+      sumCheckDays += checkDays;
+      sumExternalWaitDays += externalWaitDays;
+
+      // Agrupar por Agente
+      const agentId = a.assignedAgentId || 'usr_unassigned';
+      const agentName = a.assignedAgentName || 'Não Atribuído';
+      if (!agentMap[agentId]) {
+        agentMap[agentId] = {
+          agentId,
+          agentName,
+          avatarUrl: a.assignedAgentAvatar,
+          totalProjects: 0,
+          sumTotalDays: 0,
+          sumPlanDays: 0,
+          sumDoDays: 0,
+          sumCheckDays: 0,
+          sumExternalWaitDays: 0,
+        };
+      }
+      agentMap[agentId].totalProjects++;
+      agentMap[agentId].sumTotalDays += totalLeadDays;
+      agentMap[agentId].sumPlanDays += planDays;
+      agentMap[agentId].sumDoDays += doDays;
+      agentMap[agentId].sumCheckDays += checkDays;
+      agentMap[agentId].sumExternalWaitDays += externalWaitDays;
+    });
+
+    // Totais Gerais
+    const overallAvgDays = totalProjectsAnalyzed > 0 ? Math.round((sumTotalDays / totalProjectsAnalyzed) * 10) / 10 : 0;
+    const overallAvgPlanDays = totalProjectsAnalyzed > 0 ? Math.round((sumPlanDays / totalProjectsAnalyzed) * 10) / 10 : 0;
+    const overallAvgDoDays = totalProjectsAnalyzed > 0 ? Math.round((sumDoDays / totalProjectsAnalyzed) * 10) / 10 : 0;
+    const overallAvgCheckDays = totalProjectsAnalyzed > 0 ? Math.round((sumCheckDays / totalProjectsAnalyzed) * 10) / 10 : 0;
+    const overallExternalWaitDays = totalProjectsAnalyzed > 0 ? Math.round((sumExternalWaitDays / totalProjectsAnalyzed) * 10) / 10 : 0;
+    const overallDirectDays = Math.max(0, Math.round((overallAvgDays - overallExternalWaitDays) * 10) / 10);
+    const controladoriaAvgResponseDays = controladoriaCount > 0 ? Math.round((sumControladoriaDays / controladoriaCount) * 10) / 10 : 2.5;
+
+    // Decomposição PDCA
+    const totalStageSum = overallAvgPlanDays + overallAvgDoDays + overallAvgCheckDays || 1;
+    const pdcaStages: PDCALeadTimeStage[] = [
+      {
+        stage: 'plan',
+        label: 'P • Diagnóstico & Meta',
+        avgDays: overallAvgPlanDays,
+        pctOfTotal: Math.round((overallAvgPlanDays / totalStageSum) * 100),
+        color: '#38bdf8',
+        icon: '📐',
+        description: 'Pareto, 5 Porquês, Ishikawa e formulação de meta',
+      },
+      {
+        stage: 'do',
+        label: 'D • Execução 5W2H no Gemba',
+        avgDays: overallAvgDoDays,
+        pctOfTotal: Math.round((overallAvgDoDays / totalStageSum) * 100),
+        color: '#c084fc',
+        icon: '⚡',
+        description: 'Testes práticos, fabricação de dispositivos e pilotos',
+      },
+      {
+        stage: 'check_controladoria',
+        label: 'C • Análise da Controladoria',
+        avgDays: overallAvgCheckDays,
+        pctOfTotal: Math.round((overallAvgCheckDays / totalStageSum) * 100),
+        color: '#fbbf24',
+        icon: '🏢',
+        description: 'Auditoria de custos evitados e emissão do parecer oficial',
+      },
+    ];
+
+    // Resumo por Agente
+    const agentSummaries: AgentLeadTimeSummary[] = Object.values(agentMap).map((ag) => {
+      const avgTot = Math.round((ag.sumTotalDays / ag.totalProjects) * 10) / 10;
+      const avgExt = Math.round((ag.sumExternalWaitDays / ag.totalProjects) * 10) / 10;
+      const dirDays = Math.max(0, Math.round((avgTot - avgExt) * 10) / 10);
+      return {
+        agentId: ag.agentId,
+        agentName: ag.agentName,
+        avatarUrl: ag.avatarUrl,
+        totalProjects: ag.totalProjects,
+        avgTotalDays: avgTot,
+        avgPlanDays: Math.round((ag.sumPlanDays / ag.totalProjects) * 10) / 10,
+        avgDoDays: Math.round((ag.sumDoDays / ag.totalProjects) * 10) / 10,
+        avgCheckControladoriaDays: Math.round((ag.sumCheckDays / ag.totalProjects) * 10) / 10,
+        avgExternalWaitDays: avgExt,
+        agentDirectDays: dirDays,
+        efficiencyPercentage: avgTot > 0 ? Math.round((dirDays / avgTot) * 100) : 100,
+      };
+    });
+
+    // Gargalos Setoriais
+    const sectorBottlenecks: ExternalSectorBottleneck[] = Object.entries(sectorBottlenecksMap)
+      .filter(([_, data]) => data.totalTasks > 0 || data.totalWaitDays > 0)
+      .map(([name, data]) => ({
+        sectorName: name,
+        totalTasks: data.totalTasks,
+        pendingTasks: data.pendingTasks,
+        avgWaitDays: data.totalTasks > 0 ? Math.round((data.totalWaitDays / data.totalTasks) * 10) / 10 : 0,
+        totalWaitDays: data.totalWaitDays,
+        color: data.color,
+      }))
+      .sort((a, b) => b.totalWaitDays - a.totalWaitDays);
+
+    return {
+      overallAvgDays,
+      overallDirectDays,
+      overallExternalWaitDays,
+      controladoriaAvgResponseDays,
+      pdcaStages,
+      agentSummaries,
+      sectorBottlenecks,
     };
   },
 

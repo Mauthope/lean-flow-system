@@ -355,31 +355,37 @@ export const INITIAL_ACTIONS: LeanAction[] = [
         endDate: '2026-02-04',
         status: 'concluida',
         responsibleName: 'Fernanda Lima',
+        responsibleSectorName: 'Extrusão & Fiação PP',
         durationHours: 12,
+        durationDays: 2,
         observations: 'Gravados 3 setups com 2 câmeras sincronizadas.',
         completed: true,
         completedAt: '2026-02-04T10:00:00.000Z',
       },
       {
         id: 'ck_2',
-        label: 'Separar setup interno do setup externo',
+        label: 'Separar setup interno do setup externo e confeccionar suportes',
         startDate: '2026-02-05',
         endDate: '2026-02-08',
         status: 'concluida',
-        responsibleName: 'Fernanda Lima',
+        responsibleName: 'Marcos Souza',
+        responsibleSectorName: 'Manutenção Preditiva & TPM',
         durationHours: 16,
+        durationDays: 3,
         observations: 'Pré-aquecimento do cabeçote transferido para operação externa.',
         completed: true,
         completedAt: '2026-02-08T11:30:00.000Z',
       },
       {
         id: 'ck_3',
-        label: 'Padronizar ferramentas e criar carrinho SMED dedicado',
+        label: 'Adquirir engates rápidos pneumáticos e ferramentas do carrinho SMED',
         startDate: '2026-02-09',
         endDate: '2026-02-14',
         status: 'concluida',
-        responsibleName: 'Juliana Mendes',
+        responsibleName: 'Compras / Suprimentos',
+        responsibleSectorName: 'Compras / Suprimentos',
         durationHours: 24,
+        durationDays: 5,
         observations: 'Carrinho com ferramentas etiquetadas e engates rápidos.',
         completed: true,
         completedAt: '2026-02-14T15:00:00.000Z',
@@ -642,11 +648,50 @@ export const INITIAL_ACTIONS: LeanAction[] = [
         endDate: '2026-02-12',
         status: 'concluida',
         responsibleName: 'Juliana Mendes',
+        responsibleSectorName: 'Tecelagem Circular & Planos',
         durationHours: 18,
+        durationDays: 6,
         completed: true,
         completedAt: '2026-02-12T16:00:00.000Z',
       },
+      {
+        id: 'ck_202',
+        label: 'Cotação e aquisição de lote de guias cerâmicas especiais',
+        startDate: '2026-02-06',
+        endDate: '2026-02-10',
+        status: 'concluida',
+        responsibleName: 'Equipe de Suprimentos',
+        responsibleSectorName: 'Compras / Suprimentos',
+        durationHours: 16,
+        durationDays: 4,
+        completed: true,
+        completedAt: '2026-02-10T14:00:00.000Z',
+      },
     ],
+    controllershipAudit: {
+      id: 'aud_002',
+      token: 'sec_aud_rafitec_8802',
+      status: 'aprovado',
+      submittedAt: '2026-02-18T10:00:00.000Z',
+      submittedBy: 'Juliana Mendes',
+      originalCostBreakdown: {
+        scrapReduction: 24500,
+        machineDowntime: 18000,
+        laborSavings: 6000,
+      },
+      originalEstimatedCostAvoided: 48500,
+      approvedCostBreakdown: {
+        scrapReduction: 24500,
+        machineDowntime: 18000,
+        laborSavings: 6000,
+      },
+      approvedEstimatedCostAvoided: 48500,
+      reviewedAt: '2026-02-21T15:00:00.000Z',
+      reviewedBy: 'Carlos Drumond (Controladoria)',
+      reviewerEmail: 'controladoria@rafitec.com.br',
+      reviewerRole: 'Gerência de Controladoria & Custos',
+      auditNotes: 'ROI e custos evitados com redução de quebra de fita devidamente validados e aprovados.',
+    },
   },
   {
     id: 'act_003',
@@ -712,11 +757,14 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     checklist: [
       {
         id: 'ck_301',
-        label: 'Fabricar protótipo de gabarito magnético',
+        label: 'Fabricar protótipo de gabarito magnético na Ferramentaria',
         startDate: '2026-02-12',
         endDate: '2026-02-18',
         status: 'concluida',
         responsibleName: 'Lucas Antunes',
+        responsibleSectorName: 'Manutenção Preditiva & TPM',
+        durationHours: 24,
+        durationDays: 6,
         completed: true,
         completedAt: '2026-02-18T17:00:00.000Z',
       },
@@ -727,9 +775,24 @@ export const INITIAL_ACTIONS: LeanAction[] = [
         endDate: '2026-02-28',
         status: 'em_andamento',
         responsibleName: 'Lucas Antunes',
+        responsibleSectorName: 'Acabamento & Costura Big Bags',
+        durationHours: 36,
+        durationDays: 9,
         completed: false,
       },
     ],
+    controllershipAudit: {
+      id: 'aud_003',
+      token: 'sec_aud_rafitec_8803',
+      status: 'pendente',
+      submittedAt: '2026-02-22T09:00:00.000Z',
+      submittedBy: 'Lucas Antunes',
+      originalCostBreakdown: {
+        laborSavings: 14500,
+        scrapReduction: 12000,
+      },
+      originalEstimatedCostAvoided: 26500,
+    },
   },
   {
     id: 'act_004',
@@ -855,6 +918,24 @@ export function initializeLocalStorage(): void {
       act001.roiPercentage = 10848;
       actionsModified = true;
     }
+
+    // Sincronizar itens de checklist e controllershipAudit com INITIAL_ACTIONS para alimentar métricas de Lead Time
+    INITIAL_ACTIONS.forEach((initAct) => {
+      const stored = existingActions.find((a) => a.id === initAct.id);
+      if (stored) {
+        if (initAct.checklist && initAct.checklist.length > 0) {
+          if (!stored.checklist || stored.checklist.length === 0 || !stored.checklist[0]?.responsibleSectorName) {
+            stored.checklist = initAct.checklist;
+            actionsModified = true;
+          }
+        }
+        if (initAct.controllershipAudit && !stored.controllershipAudit) {
+          stored.controllershipAudit = initAct.controllershipAudit;
+          actionsModified = true;
+        }
+      }
+    });
+
     if (actionsModified) {
       setStoredData(STORAGE_KEYS.ACTIONS, existingActions);
     }

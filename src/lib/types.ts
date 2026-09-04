@@ -85,8 +85,11 @@ export interface ActionChecklistItem {
   status?: ActivityStatus;
   responsibleName?: string;
   responsible?: string;
+  responsibleSectorId?: string;   // Setor responsável (ex: Compras, Manutenção, Produção)
+  responsibleSectorName?: string; // Nome do setor responsável
   observations?: string; // Notas de padronização / lições aprendidas
   durationHours?: number; // Tempo em horas
+  durationDays?: number;  // Tempo decorrido em dias
   completed: boolean;
   completedAt?: string;
 }
@@ -383,6 +386,51 @@ export interface DashboardMetrics {
     hoursSaved: number;
     efficiencyRate: number;
   }[];
+  leadTimeMetrics?: LeadTimeDashboardMetrics;
+}
+
+// ================= LEAD TIME DOS PROJETOS LEAN (CICLO ATÉ CONTROLADORIA) =================
+export interface PDCALeadTimeStage {
+  stage: 'plan' | 'do' | 'check_controladoria';
+  label: string;
+  avgDays: number;
+  pctOfTotal: number;
+  color: string;
+  icon: string;
+  description: string;
+}
+
+export interface AgentLeadTimeSummary {
+  agentId: string;
+  agentName: string;
+  avatarUrl?: string;
+  totalProjects: number;
+  avgTotalDays: number;
+  avgPlanDays: number;
+  avgDoDays: number;
+  avgCheckControladoriaDays: number;
+  avgExternalWaitDays: number;
+  agentDirectDays: number;
+  efficiencyPercentage: number;
+}
+
+export interface ExternalSectorBottleneck {
+  sectorName: string;
+  totalTasks: number;
+  pendingTasks: number;
+  avgWaitDays: number;
+  totalWaitDays: number;
+  color: string;
+}
+
+export interface LeadTimeDashboardMetrics {
+  overallAvgDays: number;
+  overallDirectDays: number;
+  overallExternalWaitDays: number;
+  controladoriaAvgResponseDays: number;
+  pdcaStages: PDCALeadTimeStage[];
+  agentSummaries: AgentLeadTimeSummary[];
+  sectorBottlenecks: ExternalSectorBottleneck[];
 }
 
 // ================= CANAL KAIZEN (BANCO DE IDEIAS DO CHÃO DE FÁBRICA) =================
