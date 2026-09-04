@@ -504,7 +504,7 @@ export const Sidebar: React.FC = () => {
                       alignItems: 'center',
                       gap: '0.25rem',
                     }}
-                    title="Acessar Memorial Descritivo e Trabalho Intelectual"
+                    title="Acessar Memorial Descritivo Metodológico"
                   >
                     <BookOpen size={10} /> Obra
                   </Link>
@@ -661,7 +661,7 @@ export const Sidebar: React.FC = () => {
             }}
           >
             <BookOpen size={18} />
-            <span>Abrir Memorial Descritivo & Obra Intelectual</span>
+            <span>Abrir Memorial Metodológico & Engenharia Lean</span>
           </Link>
 
           <button

@@ -1012,7 +1012,7 @@ export default function MemorialDescritivoPage() {
                   textTransform: 'uppercase',
                 }}
               >
-                Trabalho Intelectual & Concepção Lean
+                Memorial Metodológico & Concepção Lean
               </span>
             </div>
             <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>
@@ -1149,7 +1149,7 @@ export default function MemorialDescritivoPage() {
                 <div className="cover-badge-pill">
                   <Award size={16} color="#0284c7" />
                   <span>
-                    Trabalho Intelectual • Tratado de Engenharia de Processos & Governança Lean
+                    Tratado de Engenharia de Processos & Governança Lean
                   </span>
                 </div>
 
