@@ -80,15 +80,14 @@ export default function MemorialDescritivoPage() {
     { id: 7, title: 'Capítulo 6: Histórico Kaizen & Repositório de Aprendizado (Yokoten)', short: '6. Histórico Kaizen', icon: Sparkles },
     { id: 8, title: 'Capítulo 7: Integrações de IA & O Sensei Corporativo', short: '7. Integrações de IA', icon: Bot },
     { id: 9, title: 'Capítulo 8: Custo Evitado & ROI (As 7 Fontes Canônicas)', short: '8. Custo Evitado & ROI', icon: TrendingUp },
-    { id: 10, title: 'Capítulo 9: Academia Lean, Co-Criação de Artigos com IA & Certificação', short: '9. Academia & Artigos', icon: BookOpen },
-    { id: 11, title: 'Capítulo 10: Estudo de Tempos & Cronoanálise Industrial', short: '10. Cronoanálise', icon: Timer },
+    { id: 10, title: 'Capítulo 9: Academia Lean & Ferramentas Operacionais: Cronoanálise, Artigos IA e Exames', short: '9. Academia & Ferramentas', icon: BookOpen },
     // SEÇÃO 4: FÁBRICA & COMUNICAÇÃO
-    { id: 12, title: 'Capítulo 11: TPM (Manutenção Produtiva Total) & Gestão Autônoma', short: '11. TPM & 5S', icon: Settings },
-    { id: 13, title: 'Capítulo 12: Canal Kaizen & Democratização da Inovação na Base', short: '12. Canal Kaizen', icon: Lightbulb },
+    { id: 11, title: 'Capítulo 10: TPM (Manutenção Produtiva Total) & Gestão Autônoma', short: '10. TPM & 5S', icon: Settings },
+    { id: 12, title: 'Capítulo 11: Canal Kaizen & Democratização da Inovação na Base', short: '11. Canal Kaizen', icon: Lightbulb },
     // SEÇÃO 5: NÚCLEO EXECUTIVO & GOVERNANÇA
-    { id: 14, title: 'Capítulo 13: Projetos PDCA em 4 Portões Rígidos & Relatório A3', short: '13. PDCA & A3 Executivo', icon: Layers },
-    { id: 15, title: 'Capítulo 14: Portal de Auditoria da Controladoria & Fé Pública Contábil', short: '14. Controladoria & Fé Pública', icon: ShieldCheck },
-    { id: 16, title: 'Capítulo 15: Bibliografia Acadêmica Rigorosa & Referencial Teórico ABNT', short: '15. Bibliografia ABNT', icon: Library },
+    { id: 13, title: 'Capítulo 12: Projetos PDCA em 4 Portões Rígidos & Relatório A3', short: '12. PDCA & A3 Executivo', icon: Layers },
+    { id: 14, title: 'Capítulo 13: Portal de Auditoria da Controladoria & Fé Pública Contábil', short: '13. Controladoria & Fé Pública', icon: ShieldCheck },
+    { id: 15, title: 'Capítulo 14: Bibliografia Acadêmica Rigorosa & Referencial Teórico ABNT', short: '14. Bibliografia ABNT', icon: Library },
   ];
 
   return (
@@ -2117,21 +2116,22 @@ export default function MemorialDescritivoPage() {
             </section>
 
             {/* ================================================================= */}
-            {/* CAPÍTULO 9: ACADEMIA LEAN & CRIAÇÃO DE ARTIGOS COM IA             */}
+            {/* CAPÍTULO 9: ACADEMIA LEAN & FERRAMENTAS OPERACIONAIS              */}
             {/* ================================================================= */}
             <section className={`monograph-chapter-section ${activeChapter === 10 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Menu: Inteligência & Métodos • Rota: /agente/ferramentas
+                  Menu: Inteligência & Métodos • Rota: /agente/ferramentas & /agente/ferramentas/cronoanalise
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 9: Academia Lean, Co-Criação de Artigos com IA & Certificação
+                  Capítulo 9: Academia Lean & Ferramentas Operacionais: Cronoanálise, Artigos IA e Exames
                 </h2>
               </div>
 
+              {/* PARTE 1: A ACADEMIA LEAN E EDUCAÇÃO CORPORATIVA */}
               <div className="lean-pedagogy-box">
                 <div className="lean-pedagogy-title">
-                  <BookmarkCheck size={20} color="#0f172a" /> Momento de Aprendizado Lean: A Gestão do Conhecimento Vivo
+                  <BookmarkCheck size={20} color="#0f172a" /> Momento de Aprendizado Lean: A Gestão do Conhecimento Vivo & IA Generativa
                 </div>
                 <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: '#334155', lineHeight: 1.7 }}>
                   Na fábrica tradicional, os manuais de treinamento são apostilas pesadas em PDF que ficam arquivadas em armários e que ninguém lê.
@@ -2198,24 +2198,11 @@ export default function MemorialDescritivoPage() {
                   </p>
                 </div>
               </div>
-            </section>
 
-            {/* ================================================================= */}
-            {/* CAPÍTULO 10: ESTUDO DE TEMPOS & CRONOANÁLISE                      */}
-            {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 11 ? 'active-chapter' : ''}`}>
-              <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
-                <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Menu: Inteligência & Métodos • Rota: /agente/ferramentas/cronoanalise
-                </span>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 10: Estudo de Tempos & Cronoanálise Industrial
-                </h2>
-              </div>
-
-              <div className="lean-pedagogy-box">
+              {/* PARTE 2: INSTRUMENTAÇÃO OPERACIONAL DO GEMBA & CRONOANÁLISE */}
+              <div className="lean-pedagogy-box" style={{ marginTop: '1.75rem' }}>
                 <div className="lean-pedagogy-title">
-                  <BookmarkCheck size={20} color="#0f172a" /> Momento de Aprendizado Lean: A Engenharia de Tempos de Shigeo Shingo
+                  <BookmarkCheck size={20} color="#0f172a" /> Momento de Aprendizado Lean: A Engenharia de Tempos de Shigeo Shingo e a NR-17
                 </div>
                 <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: '#334155', lineHeight: 1.7 }}>
                   Não existe melhoria contínua sem a medição objetiva dos ciclos de trabalho.
@@ -2231,7 +2218,7 @@ export default function MemorialDescritivoPage() {
                   <Timer size={18} /> A Lógica da Ferramenta de Cronoanálise no FluxoLean
                 </strong>
                 <p style={{ margin: 0, fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.7 }}>
-                  O agente cronometra cada elemento com voltas parciais digitais.
+                  Integrada ao hub de Ferramentas Operacionais, o agente cronometra cada elemento da tarefa com voltas parciais digitais.
                   O sistema calcula a média amostral, permite atribuir o fator de velocidade do operador e a porcentagem de concessões de tolerância, entregando automaticamente o Tempo Padrão com memória auditável.
                 </p>
               </div>
@@ -2239,7 +2226,7 @@ export default function MemorialDescritivoPage() {
               <div className="lean-formula-container">
                 <div className="formula-header">
                   <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Calculator size={16} color="#0284c7" /> Equação 10.1 — Determinação Matemática do Tempo Padrão (TP)
+                    <Calculator size={16} color="#0284c7" /> Equação 9.1 — Determinação Matemática do Tempo Padrão (TP)
                   </span>
                 </div>
 
@@ -2261,15 +2248,15 @@ export default function MemorialDescritivoPage() {
 
             {/* ================================================================= */}
             {/* SEÇÃO 4: FÁBRICA & COMUNICAÇÃO                                    */}
-            {/* CAPÍTULO 11: TPM & GESTÃO AUTÔNOMA                                */}
+            {/* CAPÍTULO 10: TPM & GESTÃO AUTÔNOMA                                */}
             {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 12 ? 'active-chapter' : ''}`}>
+            <section className={`monograph-chapter-section ${activeChapter === 11 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Fábrica & Comunicação • Rota: /admin/tpm & /agente/tpm
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 11: TPM (Manutenção Produtiva Total) & Gestão Autônoma
+                  Capítulo 10: TPM (Manutenção Produtiva Total) & Gestão Autônoma
                 </h2>
               </div>
 
@@ -2299,7 +2286,7 @@ export default function MemorialDescritivoPage() {
               <div className="lean-formula-container">
                 <div className="formula-header">
                   <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <BarChart3 size={16} color="#0284c7" /> Equação 11.1 — Índice de Eficiência Global do Equipamento (OEE)
+                    <BarChart3 size={16} color="#0284c7" /> Equação 10.1 — Índice de Eficiência Global do Equipamento (OEE)
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Meta Classe Mundial: ≥ 85%
@@ -2319,15 +2306,15 @@ export default function MemorialDescritivoPage() {
             </section>
 
             {/* ================================================================= */}
-            {/* CAPÍTULO 12: CANAL KAIZEN                                         */}
+            {/* CAPÍTULO 11: CANAL KAIZEN                                         */}
             {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 13 ? 'active-chapter' : ''}`}>
+            <section className={`monograph-chapter-section ${activeChapter === 12 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Menu: Fábrica & Comunicação • Rota: /admin/canal-kaizen & /canal-kaizen/nova-ideia
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 12: Canal Kaizen & Democratização da Inovação na Base
+                  Capítulo 11: Canal Kaizen & Democratização da Inovação na Base
                 </h2>
               </div>
 
@@ -2353,15 +2340,15 @@ export default function MemorialDescritivoPage() {
 
             {/* ================================================================= */}
             {/* SEÇÃO 5: NÚCLEO EXECUTIVO & GOVERNANÇA                            */}
-            {/* CAPÍTULO 13: PROJETOS PDCA EM 4 PORTÕES & RELATÓRIO A3            */}
+            {/* CAPÍTULO 12: PROJETOS PDCA EM 4 PORTÕES & RELATÓRIO A3            */}
             {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 14 ? 'active-chapter' : ''}`}>
+            <section className={`monograph-chapter-section ${activeChapter === 13 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Núcleo Metodológico • Rota: /admin/projetos/[id] & /relatorio-a3
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 13: Projetos PDCA em 4 Portões Rígidos & Relatório A3
+                  Capítulo 12: Projetos PDCA em 4 Portões Rígidos & Relatório A3
                 </h2>
               </div>
 
@@ -2426,15 +2413,15 @@ export default function MemorialDescritivoPage() {
             </section>
 
             {/* ================================================================= */}
-            {/* CAPÍTULO 14: PORTAL DE AUDITORIA DA CONTROLADORIA & FÉ PÚBLICA    */}
+            {/* CAPÍTULO 13: PORTAL DE AUDITORIA DA CONTROLADORIA & FÉ PÚBLICA    */}
             {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 15 ? 'active-chapter' : ''}`}>
+            <section className={`monograph-chapter-section ${activeChapter === 14 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Governança & Compliance • Rota: /controladoria/auditoria/[token]
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 14: Portal de Auditoria da Controladoria & Fé Pública Contábil
+                  Capítulo 13: Portal de Auditoria da Controladoria & Fé Pública Contábil
                 </h2>
               </div>
 
@@ -2470,15 +2457,15 @@ export default function MemorialDescritivoPage() {
             </section>
 
             {/* ================================================================= */}
-            {/* CAPÍTULO 15: BIBLIOGRAFIA ACADÊMICA RIGOROSA (ABNT NBR 6023)      */}
+            {/* CAPÍTULO 14: BIBLIOGRAFIA ACADÊMICA RIGOROSA (ABNT NBR 6023)      */}
             {/* ================================================================= */}
-            <section className={`monograph-chapter-section ${activeChapter === 16 ? 'active-chapter' : ''}`}>
+            <section className={`monograph-chapter-section ${activeChapter === 15 ? 'active-chapter' : ''}`}>
               <div className="chapter-header-box" style={{ borderBottom: '2px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.5rem' }}>
                 <span style={{ color: '#0284c7', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   Referencial Teórico Consagrado
                 </span>
                 <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0f172a', margin: '0.2rem 0 0 0' }}>
-                  Capítulo 15: Bibliografia Acadêmica Rigorosa & Referencial ABNT
+                  Capítulo 14: Bibliografia Acadêmica Rigorosa & Referencial ABNT
                 </h2>
               </div>
 
