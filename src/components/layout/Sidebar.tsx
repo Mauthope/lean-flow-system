@@ -484,9 +484,31 @@ export const Sidebar: React.FC = () => {
                     Desenvolvido por:
                   </span>
                 </div>
-                <strong style={{ fontSize: '0.78125rem', color: '#ffffff', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Mauricio Grigol
-                </strong>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.1rem' }}>
+                  <strong style={{ fontSize: '0.78125rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Mauricio Grigol
+                  </strong>
+                  <Link
+                    href="/memorial"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      fontSize: '0.625rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(14, 165, 233, 0.4)',
+                      padding: '0.1rem 0.4rem',
+                      borderRadius: '4px',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                    title="Acessar Memorial Descritivo e Trabalho Intelectual"
+                  >
+                    <BookOpen size={10} /> Obra
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -607,13 +629,48 @@ export const Sidebar: React.FC = () => {
             </div>
           </div>
 
+          {/* Destaque para o Memorial Descritivo & Obra Intelectual */}
+          <Link
+            href="/memorial"
+            onClick={() => setShowAuthorModal(false)}
+            style={{
+              width: '100%',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.65rem',
+              backgroundColor: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              background: '#0284c7',
+              color: '#ffffff',
+              padding: '0.8rem 1rem',
+              borderRadius: '10px',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              boxShadow: '0 4px 16px rgba(2, 132, 199, 0.35)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#0369a1';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#0284c7';
+              e.currentTarget.style.transform = 'none';
+            }}
+          >
+            <BookOpen size={18} />
+            <span>Abrir Memorial Descritivo & Obra Intelectual</span>
+          </Link>
+
           <button
             type="button"
             onClick={() => setShowAuthorModal(false)}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.6rem' }}
+            className="btn btn-secondary"
+            style={{ width: '100%', padding: '0.55rem', fontSize: '0.8125rem' }}
           >
-            Fechar Informações
+            Fechar
           </button>
         </div>
       </Modal>
