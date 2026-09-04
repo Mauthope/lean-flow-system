@@ -764,6 +764,13 @@ export const dataService = {
     const rejectedActions = actions.filter((a) => a.status === 'nao_aprovada').length;
 
     const totalEstimatedCostAvoided = actions.reduce((acc, a) => acc + (a.estimatedCostAvoided || 0), 0);
+    const inProgressList = actions.filter(
+      (a) => a.status === 'em_andamento' || a.status === 'aberta' || a.status === 'aguardando_aprovacao'
+    );
+    const inProgressEstimatedCostAvoided = inProgressList.reduce((acc, a) => {
+      const val = a.estimatedCostAvoided || (a.quarterlyFollowUp?.averageCostAvoided ? a.quarterlyFollowUp.averageCostAvoided : 0);
+      return acc + val;
+    }, 0);
     const boardFinancials = this.getExecutiveBoardFinancials(tenantId);
     const totalActualCostAvoided = boardFinancials.activeAnnualTotal > 0
       ? boardFinancials.activeAnnualTotal
@@ -883,6 +890,7 @@ export const dataService = {
       completedActions,
       rejectedActions,
       totalEstimatedCostAvoided,
+      inProgressEstimatedCostAvoided,
       totalActualCostAvoided,
       totalHoursSaved,
       costBreakdownTotals,

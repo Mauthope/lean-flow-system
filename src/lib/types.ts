@@ -314,6 +314,7 @@ export interface DashboardMetrics {
   completedActions: number;
   rejectedActions: number;
   totalEstimatedCostAvoided: number;
+  inProgressEstimatedCostAvoided: number; // Potencial estimado das ações e projetos em andamento/abertos no pipeline
   totalActualCostAvoided: number;
   totalHoursSaved: number;
   costBreakdownTotals?: LeanCostBreakdown;

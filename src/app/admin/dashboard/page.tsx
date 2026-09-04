@@ -884,12 +884,12 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ================= 3 CARDS DE APOIO OPERACIONAL ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+      {/* ================= CARDS DE APOIO OPERACIONAL ================= */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
           title="Potencial em Andamento"
-          value={formatCurrency(metrics.totalEstimatedCostAvoided - metrics.totalActualCostAvoided)}
-          subtitle="Projeção ativa nos ciclos em execução"
+          value={formatCurrency(metrics.inProgressEstimatedCostAvoided ?? 0)}
+          subtitle={`${metrics.inProgressActions + metrics.openActions} projetos ativos em execução no pipeline`}
           icon={<TrendingUp size={22} />}
           accentColor="#06b6d4"
         />
@@ -900,14 +900,6 @@ export default function AdminDashboardPage() {
           subtitle={`${metrics.completedActions} concluídas | ${metrics.inProgressActions} em andamento`}
           icon={<Kanban size={22} />}
           accentColor="#8b5cf6"
-        />
-
-        <StatsCard
-          title="Horas de Trabalho Salvas"
-          value={`${metrics.totalHoursSaved}h`}
-          subtitle="Ganho de capacidade operacional"
-          icon={<Clock size={22} />}
-          accentColor="#f59e0b"
         />
       </div>
 
