@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ================= 4 CARDS DE MÉTRICAS EXECUTIVAS PARA A DIRETORIA (CICLO 12M) ================= */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
         <StatsCard
           title="Retorno Mensal Vigente"
           value={`${formatCurrency(boardFinancials.activeMonthlyTotal)}/mês`}
