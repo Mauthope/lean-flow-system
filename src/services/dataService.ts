@@ -3704,11 +3704,21 @@ export const dataService = {
     return result;
   },
 
-  // Reset to default seed
+  // Reset to default seed (preserva configurações de IA e chaves já configuradas)
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(INITIAL_TENANTS));
-    localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(INITIAL_TENANT));
+    const currentTenant = this.getCurrentTenant();
+    const existingAiSettings = currentTenant?.aiSettings;
+
+    const tenantsToRestore = existingAiSettings
+      ? INITIAL_TENANTS.map((t) => (t.id === INITIAL_TENANT.id ? { ...t, aiSettings: { ...t.aiSettings, ...existingAiSettings } } : t))
+      : INITIAL_TENANTS;
+    const currentTenantToRestore = existingAiSettings
+      ? { ...INITIAL_TENANT, aiSettings: { ...INITIAL_TENANT.aiSettings, ...existingAiSettings } }
+      : INITIAL_TENANT;
+
+    localStorage.setItem(STORAGE_KEYS.TENANTS, JSON.stringify(tenantsToRestore));
+    localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(currentTenantToRestore));
     localStorage.setItem(STORAGE_KEYS.SECTORS, JSON.stringify(INITIAL_SECTORS));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));

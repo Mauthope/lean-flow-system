@@ -28,6 +28,7 @@ import {
   SENSEI_PROFILE,
   saveGeminiApiKey,
   saveVoicePreference,
+  getGeminiApiKey,
 } from '@/services/geminiService';
 
 export default function IntegracoesIaPage() {
@@ -58,8 +59,9 @@ export default function IntegracoesIaPage() {
   // Carrega configurações da Entidade
   useEffect(() => {
     const tenant = dataService.getCurrentTenant();
-    if (tenant?.aiSettings?.geminiApiKey) {
-      setApiKey(tenant.aiSettings.geminiApiKey);
+    const effectiveKey = tenant?.aiSettings?.geminiApiKey || getGeminiApiKey();
+    if (effectiveKey) {
+      setApiKey(effectiveKey);
     }
     if (tenant?.aiSettings?.preferredVoice) {
       setSelectedVoice(tenant.aiSettings.preferredVoice);
