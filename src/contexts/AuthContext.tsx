@@ -10,9 +10,11 @@ interface AuthContextType {
   currentTenant: Tenant | null;
   allUsers: User[];
   allAgents: User[];
+  allTenants: Tenant[];
   isLoading: boolean;
   loginAs: (userId: string) => void;
   switchUser: (userId: string) => void;
+  switchTenant: (tenantId: string) => void;
   logout: () => void;
   refreshData: () => void;
   dataVersion: number;
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allAgents, setAllAgents] = useState<User[]>([]);
+  const [allTenants, setAllTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dataVersion, setDataVersion] = useState(1);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,11 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const user = dataService.getCurrentUser();
     const users = dataService.getUsers();
     const agents = dataService.getAgents();
+    const tenants = dataService.getTenants();
 
     setCurrentTenant(tenant);
     setCurrentUser(user);
     setAllUsers(users);
     setAllAgents(agents);
+    setAllTenants(tenants);
 
     if (typeof window !== 'undefined') {
       const savedCollapsed = localStorage.getItem('leanflow_sidebar_collapsed');
@@ -73,6 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchUser = (userId: string) => {
     loginAs(userId);
+  };
+
+  const switchTenant = (tenantId: string) => {
+    const tenant = dataService.getTenantById(tenantId);
+    if (tenant) {
+      dataService.setCurrentTenant(tenant);
+      setCurrentTenant(tenant);
+
+      // Sincroniza o usuário se o atual não pertencer à nova entidade
+      const usersInTenant = dataService.getUsers(tenantId);
+      const adminInTenant = usersInTenant.find((u) => u.role === 'admin') || usersInTenant[0];
+      if (adminInTenant && currentUser?.tenantId !== tenantId) {
+        dataService.setCurrentUser(adminInTenant);
+        setCurrentUser(adminInTenant);
+      }
+      setDataVersion((v) => v + 1);
+    }
   };
 
   const logout = () => {
@@ -110,9 +132,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentTenant,
         allUsers,
         allAgents,
+        allTenants,
         isLoading,
         loginAs,
         switchUser,
+        switchTenant,
         logout,
         refreshData,
         dataVersion,

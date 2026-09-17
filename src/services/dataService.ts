@@ -186,6 +186,30 @@ export const dataService = {
   deleteTenant(id: string): void {
     const tenants = this.getTenants().filter((t) => t.id !== id);
     setStoredData(STORAGE_KEYS.TENANTS, tenants);
+    const current = this.getCurrentTenant();
+    if (current.id === id && tenants.length > 0) {
+      this.setCurrentTenant(tenants[0]);
+    }
+  },
+
+  getTenantStats(tenantId: string) {
+    const sectors = this.getSectors(tenantId);
+    const users = this.getUsers(tenantId);
+    const agents = users.filter((u) => u.role === 'agent' && u.active !== false);
+    const actions = this.getActions(tenantId);
+    const activeActions = actions.filter((a) => a.status !== 'concluida' && a.status !== 'nao_aprovada');
+    const completedActions = actions.filter((a) => a.status === 'concluida');
+    const totalCostAvoided = actions.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+
+    return {
+      sectorsCount: sectors.length,
+      usersCount: users.length,
+      agentsCount: agents.length,
+      actionsCount: actions.length,
+      activeActionsCount: activeActions.length,
+      completedActionsCount: completedActions.length,
+      totalCostAvoided,
+    };
   },
 
   // ================= SECTORS =================

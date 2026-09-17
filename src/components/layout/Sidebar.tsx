@@ -35,6 +35,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Target,
+  Factory,
 } from 'lucide-react';
 
 interface NavItem {
@@ -69,6 +70,7 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Cadastros & Equipe',
       items: [
+        { href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas' },
         { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
         { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
       ],
@@ -281,7 +283,9 @@ export const Sidebar: React.FC = () => {
 
           {/* Tenant Pill when Expanded */}
           {!isSidebarCollapsed && (
-            <div
+            <Link
+              href="/admin/entidades"
+              onClick={() => setIsMobileMenuOpen(false)}
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -290,10 +294,22 @@ export const Sidebar: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+                cursor: 'pointer',
               }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              }}
+              title="Clique para alternar ou gerenciar plantas fabris"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
-                <Building2 size={13} color="#22d3ee" />
+                <Factory size={13} color="#22d3ee" />
                 <span
                   style={{
                     fontSize: '0.725rem',
@@ -303,12 +319,14 @@ export const Sidebar: React.FC = () => {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}
-                  title={currentTenant?.name}
                 >
                   {currentTenant?.name || 'Organização Lean'}
                 </span>
               </div>
-            </div>
+              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800 }}>
+                Mudar
+              </span>
+            </Link>
           )}
         </div>
 
