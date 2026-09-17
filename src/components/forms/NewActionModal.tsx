@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LeanWasteCategory, ActionPriority, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
+import {
+  LeanWasteCategory,
+  ActionPriority,
+  LeanAssessmentDimensionId,
+  ASSESSMENT_DIMENSIONS_CONFIG,
+  STRATEGIC_PILLARS_CONFIG,
+  StrategicObjective,
+} from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { WASTE_CATEGORIES } from '@/lib/utils';
-import { PlusCircle, DollarSign, UserCheck, Building } from 'lucide-react';
+import { PlusCircle, DollarSign, UserCheck, Building, Target, Sparkles } from 'lucide-react';
 
 interface NewActionModalProps {
   isOpen: boolean;
@@ -21,9 +28,11 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 }) => {
   const { currentTenant, allAgents } = useAuth();
   const sectors = React.useMemo(() => dataService.getSectors(), [isOpen]);
+  const strategicObjectives = React.useMemo(() => dataService.getStrategicObjectives(), [isOpen]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [strategicObjectiveId, setStrategicObjectiveId] = useState('');
   const [wasteCategory, setWasteCategory] = useState<LeanWasteCategory>('espera');
   const [assessmentDimensionId, setAssessmentDimensionId] = useState<LeanAssessmentDimensionId>('tpm_oee');
   const [originSectorId, setOriginSectorId] = useState('');
@@ -35,8 +44,10 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       const currentSectors = dataService.getSectors();
+      const currentObjectives = dataService.getStrategicObjectives();
       setTitle('');
       setDescription('');
+      setStrategicObjectiveId(currentObjectives[0]?.id || '');
       setWasteCategory('espera');
       setAssessmentDimensionId('tpm_oee');
       setOriginSectorId(currentSectors[0]?.id || '');
@@ -56,12 +67,20 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
     e.preventDefault();
     if (!currentTenant) return;
 
+    const selectedObj = strategicObjectives.find((o) => o.id === strategicObjectiveId);
+    if (!selectedObj) {
+      alert('Selecione obrigatoriamente um Objetivo Estratégico da Alta Gerência (Hoshin Kanri).');
+      return;
+    }
+
     const estCost = parseFloat(estimatedCostAvoided.replace(/[^0-9.]/g, '')) || 0;
 
     dataService.createActionByAdmin({
       tenantId: currentTenant.id,
       title,
       description,
+      strategicObjectiveId: selectedObj.id,
+      strategicObjectiveName: `${selectedObj.code} - ${selectedObj.title}`,
       wasteCategory,
       assessmentDimensionId,
       originSectorId,
@@ -116,6 +135,59 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
             onChange={(e) => setDescription(e.target.value)}
             required
           />
+        </div>
+
+        {/* Diretriz da Alta Gerência (Hoshin Kanri) - Vínculo Obrigatório */}
+        <div
+          style={{
+            backgroundColor: 'rgba(59, 130, 246, 0.06)',
+            border: '1.5px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '10px',
+            padding: '0.85rem 1rem',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.4rem' }}>
+            <label className="form-label" style={{ color: '#60a5fa', margin: 0, fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Target size={15} style={{ color: '#3b82f6' }} />
+              Objetivo Estratégico da Alta Gerência (Hoshin Kanri) *
+            </label>
+            <span style={{ fontSize: '0.7rem', color: '#93c5fd', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+              Vínculo Mandatório
+            </span>
+          </div>
+
+          <select
+            className="form-select"
+            value={strategicObjectiveId}
+            onChange={(e) => setStrategicObjectiveId(e.target.value)}
+            required
+            style={{ backgroundColor: '#020617', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#f8fafc' }}
+          >
+            <option value="">Selecione a diretriz corporativa da Alta Gerência...</option>
+            {strategicObjectives.map((obj) => {
+              const pillarConfig = STRATEGIC_PILLARS_CONFIG[obj.pillar];
+              return (
+                <option key={obj.id} value={obj.id}>
+                  {obj.code} • {obj.title} ({pillarConfig?.shortLabel || obj.pillar}) — Meta: {obj.unitLabel} {obj.targetValue.toLocaleString('pt-BR')}
+                </option>
+              );
+            })}
+          </select>
+
+          {strategicObjectiveId && (() => {
+            const selected = strategicObjectives.find((o) => o.id === strategicObjectiveId);
+            if (!selected) return null;
+            const pConfig = STRATEGIC_PILLARS_CONFIG[selected.pillar];
+            return (
+              <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: '#94a3b8', flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: pConfig?.color || '#38bdf8', fontWeight: 600 }}>
+                  {pConfig?.icon} {pConfig?.label}
+                </span>
+                <span>• Patrocinador: <strong style={{ color: '#e2e8f0' }}>{selected.sponsor}</strong></span>
+                <span>• Meta 2026: <strong style={{ color: '#22c55e' }}>{selected.unitLabel} {selected.targetValue.toLocaleString('pt-BR')}</strong></span>
+              </div>
+            );
+          })()}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

@@ -248,6 +248,9 @@ export interface LeanAction {
   description: string;
   wasteCategory: LeanWasteCategory;
   assessmentDimensionId?: LeanAssessmentDimensionId; // Eixo do Lean Assessment que este projeto alavanca
+  strategicObjectiveId?: string;                     // ID do Objetivo Estratégico da Alta Gerência (Hoshin Kanri)
+  strategicObjectiveName?: string;                   // Título/Nome do Objetivo Estratégico da Alta Gerência
+  senseiStrategicAudit?: SenseiStrategicAudit;       // Parecer e Justificativa de Alinhamento do Sensei IA
   originSectorId: string;
   originSectorName?: string;
   targetSectorId?: string;
@@ -861,5 +864,126 @@ export interface SectorEvolutionComparison {
     overallScore: number;
     evaluatorName: string;
   }[];
+}
+
+// =============================================================================
+// ALTA GERÊNCIA & HOSHIN KANRI (DESDOBRAMENTO DE DIRETRIZES ESTRATÉGICAS)
+// =============================================================================
+
+export type StrategicPillar =
+  | 'financeiro_custos'
+  | 'produtividade_oee'
+  | 'qualidade_refugo'
+  | 'seguranca_ergonomia'
+  | 'lead_time_cliente'
+  | 'sustentabilidade_esg';
+
+export const STRATEGIC_PILLARS_CONFIG: Record<
+  StrategicPillar,
+  { label: string; shortLabel: string; icon: string; color: string; bg: string; border: string; description: string }
+> = {
+  financeiro_custos: {
+    label: 'Financeiro & Custos de Transformação',
+    shortLabel: 'Financeiro & Custos',
+    icon: '💰',
+    color: '#34d399',
+    bg: 'rgba(16, 185, 129, 0.12)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    description: 'Redução de custos operacionais, aumento de margem bruta e mitigação de perdas de capital',
+  },
+  produtividade_oee: {
+    label: 'Produtividade Industrial & OEE',
+    shortLabel: 'Produtividade & OEE',
+    icon: '⚡',
+    color: '#38bdf8',
+    bg: 'rgba(56, 189, 248, 0.12)',
+    border: 'rgba(56, 189, 248, 0.3)',
+    description: 'Elevação da eficiência global das máquinas, combate a paradas não planejadas e SMED',
+  },
+  qualidade_refugo: {
+    label: 'Qualidade na Fonte & Zero Refugo',
+    shortLabel: 'Qualidade & Refugo',
+    icon: '🎯',
+    color: '#c084fc',
+    bg: 'rgba(168, 85, 247, 0.12)',
+    border: 'rgba(168, 85, 247, 0.3)',
+    description: 'Qualidade na origem, dispositivos Poka-Yoke e erradicação de sucatas de matéria-prima',
+  },
+  seguranca_ergonomia: {
+    label: 'Segurança Operacional & Ergonomia NR-17',
+    shortLabel: 'Segurança & Ergonomia',
+    icon: '🛡️',
+    color: '#fbbf24',
+    bg: 'rgba(251, 191, 36, 0.12)',
+    border: 'rgba(251, 191, 36, 0.3)',
+    description: 'Conformidade rígida NR-12 e NR-17, proteção à integridade dos operadores e zero acidentes',
+  },
+  lead_time_cliente: {
+    label: 'Lead Time & Atendimento JIT (Fluxo Puxado)',
+    shortLabel: 'Lead Time & JIT',
+    icon: '⏱️',
+    color: '#f43f5e',
+    bg: 'rgba(244, 63, 94, 0.12)',
+    border: 'rgba(244, 63, 94, 0.3)',
+    description: 'Redução drástica do Lead Time de ponta a ponta, giro de estoque WIP e pontualidade OTIF',
+  },
+  sustentabilidade_esg: {
+    label: 'Sustentabilidade Fabril & Economia Circular',
+    shortLabel: 'Sustentabilidade & ESG',
+    icon: '🌱',
+    color: '#a3e635',
+    bg: 'rgba(163, 230, 53, 0.12)',
+    border: 'rgba(163, 230, 53, 0.3)',
+    description: 'Eficiência energética fabril, regeneração de polímeros e responsabilidade socioambiental',
+  },
+};
+
+export interface StrategicObjective {
+  id: string;
+  tenantId: string;
+  code: string;               // Ex: "HOSHIN-2026-01"
+  title: string;              // Ex: "Redução de Custo de Transformação na Fiação PP"
+  description: string;        // Detalhamento do desafio corporativo fixado pela Alta Gerência
+  pillar: StrategicPillar;
+  sponsor: string;            // Ex: "Diretoria Industrial & Controladoria"
+  year: number;               // Ex: 2026
+  targetValue: number;        // Meta quantitativa
+  targetUnit: 'currency' | 'percentage' | 'hours' | 'days';
+  unitLabel: string;          // Ex: "R$", "%", "horas", "dias"
+  baselineValue?: number;     // Valor de partida antes do ciclo
+  status: 'ativo' | 'atingido' | 'em_revisao';
+  deadlineDate?: string;      // Prazo final da meta (ex: 2026-12-31)
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SenseiStrategicAudit {
+  justification: string;        // Justificativa executiva do porquê o projeto converge com a meta
+  alignmentScore: number;       // Score de 1 a 100 de impacto/convergência
+  contributionSummary: string;  // Resumo conciso da contribuição prática no chão de fábrica
+  evaluatedAt: string;          // Timestamp ISO da avaliação
+  modelUsed?: string;           // Modelo neural utilizado (Gemini ou Heurística do Sensei)
+}
+
+export interface MacroStrategicDashboardMetrics {
+  year: number;
+  overallFulfillmentPercent: number;    // % macro consolidado de atendimento das diretrizes
+  totalAvoidedCostAligned: number;       // R$ total gerado por projetos alinhados
+  totalHoursSavedAligned: number;        // Horas totais salvas convergentes
+  projectCoveragePercent: number;        // % de projetos do portfólio conectados a metas da diretoria
+  totalObjectivesCount: number;
+  activeObjectivesCount: number;
+  achievedObjectivesCount: number;
+  totalAlignedProjectsCount: number;
+  completedAlignedProjectsCount: number;
+  objectivesWithMetrics: Array<{
+    objective: StrategicObjective;
+    currentRealizedValue: number;
+    fulfillmentPercent: number;
+    linkedProjects: LeanAction[];
+    completedProjectsCount: number;
+    inProgressProjectsCount: number;
+    senseiExecutiveSynthesis: string;
+  }>;
 }
 

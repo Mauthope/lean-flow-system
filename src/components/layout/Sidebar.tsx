@@ -34,6 +34,7 @@ import {
   BookOpen,
   PanelLeftClose,
   PanelLeftOpen,
+  Target,
 } from 'lucide-react';
 
 interface NavItem {
@@ -60,6 +61,7 @@ export const Sidebar: React.FC = () => {
       label: 'Visão Geral',
       items: [
         { href: '/admin/dashboard', label: 'Dashboard Lean', icon: LayoutDashboard },
+        { href: '/admin/alta-gerencia', label: 'Alta Gerência', icon: Target, badge: 'Hoshin' },
         { href: '/admin/kanban', label: 'Kanban Geral', icon: Kanban },
         { href: '/admin/triagem', label: 'Triagem de Demandas', icon: Inbox, badge: 'Público' },
       ],

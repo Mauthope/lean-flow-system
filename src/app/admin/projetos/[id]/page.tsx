@@ -61,11 +61,12 @@ import {
   Maximize2,
   Users,
   Bot,
+  Target,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SenseiVoiceAssistant from '@/components/presentation/SenseiVoiceAssistant';
 import SenseiCopilotModal from '@/components/presentation/SenseiCopilotModal';
-import { SenseiProjectRefinement } from '@/services/geminiService';
+import { SenseiProjectRefinement, evaluateProjectStrategicAlignment } from '@/services/geminiService';
 
 export default function AdminProjectDetailPage() {
   const params = useParams();
@@ -814,11 +815,48 @@ export default function AdminProjectDetailPage() {
     reader.readAsDataURL(file);
   };
 
+  const handleUpdateStrategicObjective = async (objectiveId: string) => {
+    if (!action) return;
+    const allObjectives = dataService.getStrategicObjectives();
+    const targetObj = allObjectives.find((o) => o.id === objectiveId);
+    if (targetObj) {
+      try {
+        const audit = await evaluateProjectStrategicAlignment(action, targetObj);
+        const updated = dataService.updateAction(action.id, {
+          strategicObjectiveId: targetObj.id,
+          strategicObjectiveName: `${targetObj.code} - ${targetObj.title}`,
+          senseiStrategicAudit: audit,
+        });
+        setAction(updated);
+        refreshData();
+      } catch {
+        const updated = dataService.updateAction(action.id, {
+          strategicObjectiveId: targetObj.id,
+          strategicObjectiveName: `${targetObj.code} - ${targetObj.title}`,
+        });
+        setAction(updated);
+        refreshData();
+      }
+    } else {
+      const updated = dataService.updateAction(action.id, {
+        strategicObjectiveId: undefined,
+        strategicObjectiveName: undefined,
+        senseiStrategicAudit: undefined,
+      });
+      setAction(updated);
+      refreshData();
+    }
+  };
+
   const handleAgentSubmitForApproval = () => {
     if (!action) return;
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: O projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
+      return;
+    }
+    if (!action.strategicObjectiveId) {
+      alert(`Atenção: Vínculo Estratégico Mandatório!\n\nTodo projeto Kaizen deve convergir compulsoriamente para uma diretriz da Alta Gerência (Hoshin Kanri).\n\nSelecione o Objetivo da Diretoria no card de Alinhamento Estratégico para liberar a submissão.`);
       return;
     }
     const updated = dataService.updateAction(action.id, {
@@ -832,15 +870,33 @@ export default function AdminProjectDetailPage() {
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
-  const handleMasterApprove = () => {
+  const handleMasterApprove = async () => {
     if (!action) return;
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
       return;
     }
+    if (!action.strategicObjectiveId) {
+      alert(`Atenção: Vínculo Estratégico Mandatório!\n\nNão é possível homologar o projeto sem que ele esteja conectado a um Objetivo Estratégico da Alta Gerência (Hoshin Kanri).\n\nPor favor, vincule uma diretriz da diretoria.`);
+      return;
+    }
+
     const monthlyAverage = action.quarterlyFollowUp?.averageCostAvoided || (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0) || action.actualCostAvoided || action.estimatedCostAvoided;
     const finalAnnualCostAvoided = Math.round(monthlyAverage * 12);
+
+    let audit = action.senseiStrategicAudit;
+    if (!audit && action.strategicObjectiveId) {
+      const obj = dataService.getStrategicObjectiveById(action.strategicObjectiveId);
+      if (obj) {
+        try {
+          audit = await evaluateProjectStrategicAlignment(action, obj);
+        } catch {
+          // fallback
+        }
+      }
+    }
+
     const updated = dataService.updateAction(action.id, {
       status: 'concluida',
       pdcaStage: 'act',
@@ -848,6 +904,7 @@ export default function AdminProjectDetailPage() {
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Gestão Master',
       actualCostAvoided: finalAnnualCostAvoided,
+      senseiStrategicAudit: audit || action.senseiStrategicAudit,
     });
     setAction(updated);
     refreshData();
@@ -1298,6 +1355,25 @@ export default function AdminProjectDetailPage() {
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
                 METODOLOGIA PDCA
               </span>
+              {action.strategicObjectiveName && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: '#60a5fa',
+                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: '9999px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Objetivo da Alta Gerência (Hoshin Kanri)"
+                >
+                  <Target size={11} /> Hoshin: {action.strategicObjectiveName}
+                </span>
+              )}
               <PriorityBadge priority={action.priority} />
             </div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
@@ -4027,6 +4103,147 @@ export default function AdminProjectDetailPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Card 4.3.5: Alinhamento com a Alta Gerência (Hoshin Kanri 2026) */}
+          <div
+            className="card"
+            style={{
+              padding: '1.75rem',
+              borderRadius: '16px',
+              border: action.strategicObjectiveId
+                ? '1.5px solid rgba(59, 130, 246, 0.4)'
+                : '1.5px dashed rgba(239, 68, 68, 0.5)',
+              backgroundColor: action.strategicObjectiveId
+                ? 'rgba(15, 23, 42, 0.75)'
+                : 'rgba(239, 68, 68, 0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    backgroundColor: action.strategicObjectiveId ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    border: `1px solid ${action.strategicObjectiveId ? 'rgba(59, 130, 246, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Target size={22} color={action.strategicObjectiveId ? '#60a5fa' : '#f87171'} />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      Convergência Estratégica: Alta Gerência (Hoshin Kanri)
+                    </h4>
+                    {action.strategicObjectiveId ? (
+                      <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#60a5fa', backgroundColor: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.1rem 0.5rem', borderRadius: '9999px' }}>
+                        ALINHADO COM A DIRETORIA ✓
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#f87171', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.1rem 0.5rem', borderRadius: '9999px' }}>
+                        VÍNCULO OBRIGATÓRIO PENDENTE
+                      </span>
+                    )}
+                    {action.senseiStrategicAudit?.alignmentScore && (
+                      <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.1rem 0.5rem', borderRadius: '9999px' }}>
+                        Aderência Sensei: {action.senseiStrategicAudit.alignmentScore}%
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                    Todo projeto Kaizen deve convergir mandatoriamente para as metas globais da empresa.
+                  </p>
+                </div>
+              </div>
+
+              {/* Seletor de Objetivo para Master / Supervisor */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <select
+                  value={action.strategicObjectiveId || ''}
+                  onChange={(e) => handleUpdateStrategicObjective(e.target.value)}
+                  style={{
+                    backgroundColor: '#020617',
+                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                    borderRadius: '8px',
+                    padding: '0.4rem 0.75rem',
+                    color: '#f8fafc',
+                    fontSize: '0.8rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  <option value="">Selecione o Objetivo da Alta Gerência...</option>
+                  {dataService.getStrategicObjectives().map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.code} • {o.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Parecer do Sensei IA */}
+            {action.senseiStrategicAudit ? (
+              <div
+                style={{
+                  backgroundColor: 'rgba(2, 6, 23, 0.8)',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#38bdf8', fontSize: '0.8rem', fontWeight: 800 }}>
+                    <Sparkles size={15} />
+                    <span>Parecer do Sensei IA: Justificativa de Alinhamento Estratégico</span>
+                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                    {action.senseiStrategicAudit.modelUsed || 'Sensei IA'} • Avaliado em {formatDate(action.senseiStrategicAudit.evaluatedAt)}
+                  </span>
+                </div>
+                <p style={{ margin: 0, color: '#e2e8f0', fontSize: '0.85rem', lineHeight: 1.5, fontStyle: 'italic' }}>
+                  "{action.senseiStrategicAudit.justification}"
+                </p>
+                {action.senseiStrategicAudit.contributionSummary && (
+                  <div style={{ fontSize: '0.78125rem', color: '#4ade80', fontWeight: 700, marginTop: '0.25rem' }}>
+                    Impacto Quantificado: {action.senseiStrategicAudit.contributionSummary}
+                  </div>
+                )}
+              </div>
+            ) : action.strategicObjectiveId ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(2, 6, 23, 0.6)', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  O projeto está conectado à diretriz <strong>{action.strategicObjectiveName}</strong>. O Sensei IA emitirá o parecer na homologação.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const obj = dataService.getStrategicObjectiveById(action.strategicObjectiveId!);
+                    if (obj) {
+                      evaluateProjectStrategicAlignment(action, obj).then((res) => {
+                        const updated = dataService.updateAction(action.id, { senseiStrategicAudit: res });
+                        setAction(updated);
+                        refreshData();
+                      });
+                    }
+                  }}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.75rem', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}
+                >
+                  <Sparkles size={13} /> Gerar Parecer Agora
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {/* Card 4.4: Homologação Final da Entidade Master */}

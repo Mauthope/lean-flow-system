@@ -38,6 +38,9 @@ import {
   AgentLeadTimeSummary,
   ExternalSectorBottleneck,
   GainProofDetail,
+  StrategicObjective,
+  MacroStrategicDashboardMetrics,
+  SenseiStrategicAudit,
 } from '../lib/types';
 import { sendControladoriaAuditInvite } from './emailService';
 import {
@@ -57,6 +60,7 @@ import {
   INITIAL_AGENT_ARTICLES,
   INITIAL_AGENT_EXAMS,
   INITIAL_SECTOR_ASSESSMENTS,
+  INITIAL_STRATEGIC_OBJECTIVES,
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '../data/leanExamQuestions';
@@ -720,6 +724,12 @@ export const dataService = {
       agent = this.getUserById(actionData.assignedAgentId);
     }
 
+    let stratObjName = actionData.strategicObjectiveName;
+    if (actionData.strategicObjectiveId && !stratObjName) {
+      const obj = this.getStrategicObjectiveById(actionData.strategicObjectiveId);
+      if (obj) stratObjName = `${obj.code} - ${obj.title}`;
+    }
+
     const newAction: LeanAction = {
       ...actionData,
       id: generateId('act'),
@@ -727,6 +737,7 @@ export const dataService = {
       originSectorName: originSector?.name || actionData.originSectorName,
       assignedAgentName: agent?.name || actionData.assignedAgentName,
       assignedAgentAvatar: agent?.avatarUrl || actionData.assignedAgentAvatar,
+      strategicObjectiveName: stratObjName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -3704,6 +3715,173 @@ export const dataService = {
     return result;
   },
 
+  // ================= ALTA GERÊNCIA & OBJETIVOS ESTRATÉGICOS (HOSHIN KANRI) =================
+  getStrategicObjectives(tenantId?: string): StrategicObjective[] {
+    const tenant = tenantId || this.getCurrentTenant().id;
+    const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
+    return all.filter((o) => o.tenantId === tenant);
+  },
+
+  getStrategicObjectiveById(id: string): StrategicObjective | undefined {
+    const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
+    return all.find((o) => o.id === id);
+  },
+
+  saveStrategicObjective(objective: Partial<StrategicObjective> & { title: string; pillar: StrategicObjective['pillar']; targetValue: number; targetUnit: StrategicObjective['targetUnit']; unitLabel: string }): StrategicObjective {
+    const currentTenant = this.getCurrentTenant();
+    const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
+    const now = new Date().toISOString();
+
+    if (objective.id) {
+      const index = all.findIndex((o) => o.id === objective.id);
+      if (index !== -1) {
+        const updated: StrategicObjective = {
+          ...all[index],
+          ...objective,
+          updatedAt: now,
+        };
+        all[index] = updated;
+        setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, all);
+        return updated;
+      }
+    }
+
+    const currentYear = objective.year || new Date().getFullYear();
+    const countSameYear = all.filter((o) => o.year === currentYear).length;
+    const code = objective.code?.trim() || `HOSHIN-${currentYear}-${String(countSameYear + 1).padStart(2, '0')}`;
+
+    const newObj: StrategicObjective = {
+      id: objective.id || generateId('obj'),
+      tenantId: objective.tenantId || currentTenant.id,
+      code,
+      title: objective.title,
+      description: objective.description || '',
+      pillar: objective.pillar,
+      sponsor: objective.sponsor || 'Alta Gerência & Diretoria',
+      year: currentYear,
+      targetValue: objective.targetValue,
+      targetUnit: objective.targetUnit,
+      unitLabel: objective.unitLabel,
+      baselineValue: objective.baselineValue ?? 0,
+      status: objective.status || 'ativo',
+      deadlineDate: objective.deadlineDate || `${currentYear}-12-31`,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    all.push(newObj);
+    setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, all);
+    return newObj;
+  },
+
+  deleteStrategicObjective(id: string): boolean {
+    const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
+    const filtered = all.filter((o) => o.id !== id);
+    if (filtered.length !== all.length) {
+      setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, filtered);
+      return true;
+    }
+    return false;
+  },
+
+  getMacroStrategicDashboardMetrics(year?: number): MacroStrategicDashboardMetrics {
+    const targetYear = year || new Date().getFullYear();
+    const objectives = this.getStrategicObjectives().filter((o) => o.year === targetYear);
+    const effectiveObjectives = objectives.length > 0 ? objectives : this.getStrategicObjectives();
+
+    const allActions = this.getActions();
+    const alignedActions = allActions.filter((a) => a.strategicObjectiveId);
+
+    const totalAvoidedCostAligned = alignedActions.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+    const totalHoursSavedAligned = alignedActions.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
+    const completedAlignedProjects = alignedActions.filter((a) => a.status === 'concluida');
+
+    const projectCoveragePercent = allActions.length > 0
+      ? Math.round((alignedActions.length / allActions.length) * 100)
+      : 0;
+
+    const objectivesWithMetrics = effectiveObjectives.map((obj) => {
+      const linkedProjects = allActions.filter((a) => a.strategicObjectiveId === obj.id);
+      const completedProjectsCount = linkedProjects.filter((a) => a.status === 'concluida').length;
+      const inProgressProjectsCount = linkedProjects.filter((a) => a.status !== 'concluida').length;
+
+      let currentRealizedValue = 0;
+      let fulfillmentPercent = 0;
+
+      if (obj.targetUnit === 'currency') {
+        currentRealizedValue = linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+        fulfillmentPercent = obj.targetValue > 0
+          ? Math.min(100, Math.round((currentRealizedValue / obj.targetValue) * 100))
+          : 0;
+      } else if (obj.targetUnit === 'hours') {
+        currentRealizedValue = linkedProjects.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
+        fulfillmentPercent = obj.targetValue > 0
+          ? Math.min(100, Math.round((currentRealizedValue / obj.targetValue) * 100))
+          : 0;
+      } else if (obj.targetUnit === 'days') {
+        const baseline = obj.baselineValue ?? 16;
+        const target = obj.targetValue;
+        const reductionNeeded = Math.max(1, baseline - target);
+        const estimatedReduction = completedProjectsCount > 0
+          ? Math.min(reductionNeeded, completedProjectsCount * (reductionNeeded / Math.max(1, linkedProjects.length)))
+          : (inProgressProjectsCount > 0 ? 1 : 0);
+        currentRealizedValue = Math.max(target, baseline - estimatedReduction);
+        fulfillmentPercent = Math.min(100, Math.round((estimatedReduction / reductionNeeded) * 100));
+      } else {
+        const baseline = obj.baselineValue ?? 0;
+        const target = obj.targetValue;
+        const delta = Math.abs(target - baseline);
+        const ratio = linkedProjects.length > 0 ? completedProjectsCount / linkedProjects.length : 0;
+        const realizedGain = delta * ratio;
+        currentRealizedValue = Number((baseline + realizedGain).toFixed(1));
+        fulfillmentPercent = delta > 0 ? Math.min(100, Math.round((realizedGain / delta) * 100)) : 0;
+      }
+
+      let senseiExecutiveSynthesis = '';
+      if (linkedProjects.length === 0) {
+        senseiExecutiveSynthesis = 'Nenhum projeto Kaizen/PDCA vinculado a esta diretriz corporativa. Risco de dispersão estratégica no Gemba.';
+      } else if (fulfillmentPercent >= 100) {
+        senseiExecutiveSynthesis = `Meta corporativa atingida com excelência operacional através de ${completedProjectsCount} projeto(s) concluído(s) no chão de fábrica.`;
+      } else if (fulfillmentPercent >= 60) {
+        senseiExecutiveSynthesis = `Trajetória consistente de convergência: ${completedProjectsCount} projeto(s) concluído(s) e ${inProgressProjectsCount} em andamento sustentando os resultados.`;
+      } else {
+        senseiExecutiveSynthesis = `Diretriz em fase inicial de implantação (${fulfillmentPercent}% atingido). Recomenda-se priorizar ações rápidas (Kaizen Blitz) para acelerar a captura de resultados.`;
+      }
+
+      return {
+        objective: obj,
+        currentRealizedValue,
+        fulfillmentPercent,
+        linkedProjects,
+        completedProjectsCount,
+        inProgressProjectsCount,
+        senseiExecutiveSynthesis,
+      };
+    });
+
+    const activeObjectives = effectiveObjectives.filter((o) => o.status === 'ativo');
+    const totalFulfillmentSum = objectivesWithMetrics.reduce((acc, om) => acc + om.fulfillmentPercent, 0);
+    const overallFulfillmentPercent = objectivesWithMetrics.length > 0
+      ? Math.round(totalFulfillmentSum / objectivesWithMetrics.length)
+      : 0;
+
+    const achievedCount = objectivesWithMetrics.filter((om) => om.fulfillmentPercent >= 100).length;
+
+    return {
+      year: targetYear,
+      overallFulfillmentPercent,
+      totalAvoidedCostAligned,
+      totalHoursSavedAligned,
+      projectCoveragePercent,
+      totalObjectivesCount: effectiveObjectives.length,
+      activeObjectivesCount: activeObjectives.length,
+      achievedObjectivesCount: achievedCount,
+      totalAlignedProjectsCount: alignedActions.length,
+      completedAlignedProjectsCount: completedAlignedProjects.length,
+      objectivesWithMetrics,
+    };
+  },
+
   // Reset to default seed (preserva configurações de IA e chaves já configuradas)
   resetToDefaults(): void {
     if (typeof window === 'undefined') return;
@@ -3731,5 +3909,6 @@ export const dataService = {
     localStorage.setItem(STORAGE_KEYS.AGENT_ARTICLES, JSON.stringify(INITIAL_AGENT_ARTICLES));
     localStorage.setItem(STORAGE_KEYS.AGENT_EXAMS, JSON.stringify(INITIAL_AGENT_EXAMS));
     localStorage.setItem(STORAGE_KEYS.SECTOR_ASSESSMENTS, JSON.stringify(INITIAL_SECTOR_ASSESSMENTS));
+    localStorage.setItem(STORAGE_KEYS.STRATEGIC_OBJECTIVES, JSON.stringify(INITIAL_STRATEGIC_OBJECTIVES));
   },
 };

@@ -11,6 +11,7 @@ import {
   AgentArticleProgress,
   AgentExamResult,
   SectorLeanAssessment,
+  StrategicObjective,
 } from './types';
 import { LEAN_ARTICLES } from '@/data/leanArticlesData';
 
@@ -29,6 +30,7 @@ export const STORAGE_KEYS = {
   AGENT_EXAMS: 'lean_flow_agent_exams',
   LEAN_ARTICLES: 'lean_flow_lean_articles',
   SECTOR_ASSESSMENTS: 'lean_flow_sector_assessments',
+  STRATEGIC_OBJECTIVES: 'lean_flow_strategic_objectives',
 };
 
 export const INITIAL_TENANTS: Tenant[] = [
@@ -197,11 +199,113 @@ export const INITIAL_USERS: User[] = [
   },
 ];
 
+export const INITIAL_STRATEGIC_OBJECTIVES: StrategicObjective[] = [
+  {
+    id: 'obj_rafitec_01',
+    tenantId: 'tenant_rafitec_01',
+    code: 'HOSHIN-2026-01',
+    title: 'Redução de Custo de Transformação na Fiação & Extrusão',
+    description: 'Eliminar perdas de matéria-prima (pontas de bobina, aparas de PP) e tempos de parada nas extrusoras, visando R$ 1.5M em custos evitados anualizados.',
+    pillar: 'financeiro_custos',
+    sponsor: 'Diretoria Industrial & Controladoria',
+    year: 2026,
+    targetValue: 1500000,
+    targetUnit: 'currency',
+    unitLabel: 'R$',
+    baselineValue: 0,
+    status: 'ativo',
+    deadlineDate: '2026-12-31',
+    createdAt: '2026-01-05T08:00:00.000Z',
+    updatedAt: '2026-01-10T10:00:00.000Z',
+  },
+  {
+    id: 'obj_rafitec_02',
+    tenantId: 'tenant_rafitec_01',
+    code: 'HOSHIN-2026-02',
+    title: 'Elevação da Eficiência Global de Equipamentos (OEE para 85%)',
+    description: 'Atingir padrão World Class Manufacturing nos teares circulares e extrusoras principais através de SMED, manutenção autônoma TPM e eliminação de microparadas.',
+    pillar: 'produtividade_oee',
+    sponsor: 'Gerência Geral de Operações',
+    year: 2026,
+    targetValue: 85,
+    targetUnit: 'percentage',
+    unitLabel: '%',
+    baselineValue: 71.5,
+    status: 'ativo',
+    deadlineDate: '2026-12-31',
+    createdAt: '2026-01-05T08:00:00.000Z',
+    updatedAt: '2026-01-10T10:00:00.000Z',
+  },
+  {
+    id: 'obj_rafitec_03',
+    tenantId: 'tenant_rafitec_01',
+    code: 'HOSHIN-2026-03',
+    title: 'Zero Defeito & Qualidade Assegurada em Big Bags e Sacarias',
+    description: 'Implementação de dispositivos Poka-Yoke e controle estatístico para manter conformidade acima de 99.2% e refugo de tecido abaixo de 0.8%.',
+    pillar: 'qualidade_refugo',
+    sponsor: 'Diretoria de Qualidade & Engenharia',
+    year: 2026,
+    targetValue: 99.2,
+    targetUnit: 'percentage',
+    unitLabel: '%',
+    baselineValue: 96.8,
+    status: 'ativo',
+    deadlineDate: '2026-12-31',
+    createdAt: '2026-01-05T08:00:00.000Z',
+    updatedAt: '2026-01-10T10:00:00.000Z',
+  },
+  {
+    id: 'obj_rafitec_04',
+    tenantId: 'tenant_rafitec_01',
+    code: 'HOSHIN-2026-04',
+    title: 'Redução do Lead Time Total de Pedidos para 7 Dias Úteis',
+    description: 'Sincronizar fluxo puxado com kanban entre Fiação, Tecelagem e Acabamento, reduzindo estoque intermediário (WIP) e tempo total porta-a-porta.',
+    pillar: 'lead_time_cliente',
+    sponsor: 'Diretoria Comercial & Supply Chain',
+    year: 2026,
+    targetValue: 7,
+    targetUnit: 'days',
+    unitLabel: 'dias',
+    baselineValue: 16,
+    status: 'ativo',
+    deadlineDate: '2026-12-31',
+    createdAt: '2026-01-05T08:00:00.000Z',
+    updatedAt: '2026-01-10T10:00:00.000Z',
+  },
+  {
+    id: 'obj_rafitec_05',
+    tenantId: 'tenant_rafitec_01',
+    code: 'HOSHIN-2026-05',
+    title: 'Zero Acidentes & Excelência Ergonômica no Gemba (NR-12 / NR-17)',
+    description: 'Adequação ergonômica de postos de costura, movimentação segura de bobinas/fardos e eliminação de condições de risco no chão de fábrica.',
+    pillar: 'seguranca_ergonomia',
+    sponsor: 'Diretoria de Gente & Segurança',
+    year: 2026,
+    targetValue: 0,
+    targetUnit: 'hours',
+    unitLabel: 'horas perdidas',
+    baselineValue: 48,
+    status: 'ativo',
+    deadlineDate: '2026-12-31',
+    createdAt: '2026-01-05T08:00:00.000Z',
+    updatedAt: '2026-01-10T10:00:00.000Z',
+  },
+];
+
 export const INITIAL_ACTIONS: LeanAction[] = [
   {
     id: 'act_000',
     protocol: 'RAF-2025-7701',
     tenantId: 'tenant_rafitec_01',
+    strategicObjectiveId: 'obj_rafitec_01',
+    strategicObjectiveName: 'Redução de Custo de Transformação na Fiação & Extrusão',
+    senseiStrategicAudit: {
+      justification: 'A padronização na emenda de bobinas (POP-FIA-012) ataca a principal causa de perda de matéria-prima nobre, gerando R$ 384.000 em custos evitados homologados e suportando diretamente a meta de redução de custos de transformação da diretoria.',
+      alignmentScore: 96,
+      contributionSummary: 'R$ 384.000/ano em custos evitados e 88 horas operacionais resgatadas.',
+      evaluatedAt: '2025-01-15T14:30:00.000Z',
+      modelUsed: 'Sensei IA Cognitivo v2.6',
+    },
     title: 'Padronização de Troca de Bobinas na Fiação de Fitas PP',
     description: 'Implementação de dispositivo de emenda rápida e procedimento padrão POP-FIA-012 para redução do desperdício de pontas de bobina.',
     wasteCategory: 'movimentacao',
@@ -293,6 +397,15 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     id: 'act_001',
     protocol: 'RAF-2026-8801',
     tenantId: 'tenant_rafitec_01',
+    strategicObjectiveId: 'obj_rafitec_02',
+    strategicObjectiveName: 'Elevação da Eficiência Global de Equipamentos (OEE para 85%)',
+    senseiStrategicAudit: {
+      justification: 'A redução do setup de matriz de 52 para 16 minutos na Extrusora 03 elimina 194 horas de parada improdutiva por mês, desbloqueando capacidade instalada e alavancando a disponibilidade operacional necessária para o OEE corporativo.',
+      alignmentScore: 98,
+      contributionSummary: 'Ganho anualizado de R$ 1.011.600 homologado e resgate de 240 horas anuais de máquina disponível.',
+      evaluatedAt: '2026-02-18T17:15:00.000Z',
+      modelUsed: 'Gemini Pro Sensei Engine',
+    },
     title: 'Otimização de Setup Rápido (SMED) na Extrusora de Fitas 03',
     description: 'Redução do tempo de troca de lote e matriz de 52 para 16 minutos, eliminando perda térmica na linha.',
     wasteCategory: 'espera',
@@ -542,6 +655,15 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     id: 'act_002',
     protocol: 'RAF-2026-8802',
     tenantId: 'tenant_rafitec_01',
+    strategicObjectiveId: 'obj_rafitec_03',
+    strategicObjectiveName: 'Zero Defeito & Qualidade Assegurada em Big Bags e Sacarias',
+    senseiStrategicAudit: {
+      justification: 'O controle óptico de quebra de fita nos teares elimina paradas contínuas e previne tecidos tubulares com falhas estruturais, contribuindo diretamente para o padrão Zero Defeito e conformidade de 99.2% requerida pela alta gerência.',
+      alignmentScore: 94,
+      contributionSummary: 'Redução de 80% das microparadas de tear e R$ 48.500 em desperdício de refugo evitado.',
+      evaluatedAt: '2026-02-22T14:45:00.000Z',
+      modelUsed: 'Sensei IA Cognitivo v2.6',
+    },
     title: 'Redução de Paradas por Quebra de Fita nos Teares Circulares 08 e 12',
     description: 'Implementação de sensor óptico e ajuste de tensão nas gaiolas de alimentação de fita.',
     wasteCategory: 'defeitos',
@@ -697,6 +819,15 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     id: 'act_003',
     protocol: 'RAF-2026-8803',
     tenantId: 'tenant_rafitec_01',
+    strategicObjectiveId: 'obj_rafitec_03',
+    strategicObjectiveName: 'Zero Defeito & Qualidade Assegurada em Big Bags e Sacarias',
+    senseiStrategicAudit: {
+      justification: 'A introdução de gabarito magnético Poka-Yoke na costura de alças elimina a possibilidade física de desvio dimensional nos big bags, blindando a empresa contra não-conformidades críticas em testes de carga 6:1.',
+      alignmentScore: 95,
+      contributionSummary: 'Queda do retrabalho em alças de 4.8% para 1.2% e R$ 26.500 projetados em custo evitado.',
+      evaluatedAt: '2026-02-23T11:30:00.000Z',
+      modelUsed: 'Sensei IA Cognitivo v2.6',
+    },
     title: 'Dispositivo Poka-Yoke na Costura de Alças de Big Bags',
     description: 'Gabarito magnético de alinhamento para evitar costuras fora do padrão de carga.',
     wasteCategory: 'processamento_excessivo',
@@ -798,6 +929,15 @@ export const INITIAL_ACTIONS: LeanAction[] = [
     id: 'act_004',
     protocol: 'RAF-2026-8804',
     tenantId: 'tenant_rafitec_01',
+    strategicObjectiveId: 'obj_rafitec_04',
+    strategicObjectiveName: 'Redução do Lead Time Total de Pedidos para 7 Dias Úteis',
+    senseiStrategicAudit: {
+      justification: 'A implantação do sistema puxado com kanban intermediário de matéria-prima garante suprimento contínuo nas extrusoras, eliminando esperas que causavam atrasos em cascata em toda a cadeia até a expedição final.',
+      alignmentScore: 91,
+      contributionSummary: 'Eliminação prevista de 8 paradas mensais por falta de insumo e redução de variabilidade no lead time fabril.',
+      evaluatedAt: '2026-02-20T09:30:00.000Z',
+      modelUsed: 'Sensei IA Cognitivo v2.6',
+    },
     title: 'Adequação de Fluxo de Resinas e Masterbatch na Extrusão',
     description: 'Sistema puxado com kanban de silos intermediários para evitar faltas de matéria-prima.',
     wasteCategory: 'transporte',
@@ -882,6 +1022,7 @@ export function initializeLocalStorage(): void {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
+    localStorage.setItem(STORAGE_KEYS.STRATEGIC_OBJECTIVES, JSON.stringify(INITIAL_STRATEGIC_OBJECTIVES));
     return;
   }
 
@@ -919,7 +1060,7 @@ export function initializeLocalStorage(): void {
       actionsModified = true;
     }
 
-    // Sincronizar itens de checklist e controllershipAudit com INITIAL_ACTIONS para alimentar métricas de Lead Time
+    // Sincronizar itens de checklist, controllershipAudit e strategicObjective com INITIAL_ACTIONS para alimentar métricas
     INITIAL_ACTIONS.forEach((initAct) => {
       const stored = existingActions.find((a) => a.id === initAct.id);
       if (stored) {
@@ -931,6 +1072,12 @@ export function initializeLocalStorage(): void {
         }
         if (initAct.controllershipAudit && !stored.controllershipAudit) {
           stored.controllershipAudit = initAct.controllershipAudit;
+          actionsModified = true;
+        }
+        if (initAct.strategicObjectiveId && !stored.strategicObjectiveId) {
+          stored.strategicObjectiveId = initAct.strategicObjectiveId;
+          stored.strategicObjectiveName = initAct.strategicObjectiveName;
+          stored.senseiStrategicAudit = initAct.senseiStrategicAudit;
           actionsModified = true;
         }
       }
@@ -951,6 +1098,12 @@ export function initializeLocalStorage(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.TPM_TAGS)) {
     localStorage.setItem(STORAGE_KEYS.TPM_TAGS, JSON.stringify(INITIAL_TPM_TAGS));
+  }
+
+  // Inicialização e Migração dos Objetivos Estratégicos da Alta Gerência
+  const strategicObjStr = localStorage.getItem(STORAGE_KEYS.STRATEGIC_OBJECTIVES);
+  if (!strategicObjStr || !strategicObjStr.includes('HOSHIN-2026-01')) {
+    localStorage.setItem(STORAGE_KEYS.STRATEGIC_OBJECTIVES, JSON.stringify(INITIAL_STRATEGIC_OBJECTIVES));
   }
 
   // Inicialização e Migração da Academia Lean & Provas de Certificação
