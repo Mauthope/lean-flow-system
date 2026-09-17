@@ -187,7 +187,14 @@ export const AgentModal: React.FC<AgentModalProps> = ({
 
   const handleDelete = () => {
     if (!agent) return;
-    if (confirm(`Tem certeza que deseja excluir o agente ${agent.name}?`)) {
+    if (
+      confirm(
+        `ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE o agente ${agent.name}?\n\n` +
+          `• Esta ação apagará permanentemente o cadastro do sistema.\n` +
+          `• Para apenas revogar o acesso e preservar todo o histórico de Kaizens e métricas, recomendamos desmarcar a opção "Agente Ativo" (Bloquear & Arquivar).\n\n` +
+          `Deseja prosseguir com a exclusão irreversível?`
+      )
+    ) {
       dataService.deleteUser(agent.id);
       onSuccess();
       onClose();
@@ -513,9 +520,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
-                style={{ width: '16px', height: '16px', accentColor: '#06b6d4' }}
+                style={{ width: '16px', height: '16px', accentColor: '#10b981' }}
               />
-              <span>Agente Ativo (habilitado para receber demandas)</span>
+              <span>
+                {active
+                  ? 'Agente Ativo na Planta (Acesso Liberado)'
+                  : '🔒 Acesso Bloqueado / Perfil Arquivado (Histórico Preservado)'}
+              </span>
             </label>
 
             <button
@@ -523,8 +534,9 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               onClick={handleDelete}
               className="btn btn-outline-danger btn-sm"
               style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              title="Excluir permanentemente do sistema"
             >
-              <Trash2 size={14} /> Excluir Agente
+              <Trash2 size={14} /> Excluir Definitivamente
             </button>
           </div>
         )}
