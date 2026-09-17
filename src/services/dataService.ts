@@ -212,6 +212,60 @@ export const dataService = {
     };
   },
 
+  getTenantManager(tenantId: string): User | undefined {
+    const users = this.getUsers(tenantId);
+    return (
+      users.find((u) => u.role === 'admin' && u.active !== false) ||
+      users.find((u) => u.role === 'admin')
+    );
+  },
+
+  replaceTenantManager(params: {
+    tenantId: string;
+    previousManagerId?: string;
+    suspendPrevious: boolean;
+    newManagerMode: 'existing' | 'new';
+    existingUserId?: string;
+    newManagerName?: string;
+    newManagerEmail?: string;
+  }): { newManager: User; previousManager?: User } {
+    let newManager: User;
+
+    if (params.newManagerMode === 'existing' && params.existingUserId) {
+      const updated = this.updateUser(params.existingUserId, {
+        role: 'admin',
+        jobTitle: 'Gestor & Supervisor Lean da Unidade',
+        active: true,
+      });
+      if (!updated) throw new Error('Usuário selecionado não encontrado');
+      newManager = updated;
+    } else {
+      newManager = this.createUser({
+        tenantId: params.tenantId,
+        name: params.newManagerName?.trim() || 'Novo Gestor Lean',
+        email: params.newManagerEmail?.trim() || '',
+        role: 'admin',
+        jobTitle: 'Gestor & Supervisor Lean da Unidade',
+        active: true,
+      });
+    }
+
+    let previousManager: User | undefined;
+    if (params.previousManagerId && params.previousManagerId !== newManager.id) {
+      if (params.suspendPrevious) {
+        const prev = this.getUserById(params.previousManagerId);
+        previousManager = this.updateUser(params.previousManagerId, {
+          active: false,
+          jobTitle: `${prev?.jobTitle || 'Supervisor'} (Acesso Suspenso / Transição Concluída)`,
+        });
+      } else {
+        previousManager = this.getUserById(params.previousManagerId);
+      }
+    }
+
+    return { newManager, previousManager };
+  },
+
   // ================= SECTORS =================
   getSectors(tenantId?: string): Sector[] {
     const all = getStoredData<Sector[]>(STORAGE_KEYS.SECTORS, INITIAL_SECTORS);

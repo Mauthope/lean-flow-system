@@ -23,17 +23,26 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
+  ArrowRightLeft,
   Database,
   Lock,
 } from 'lucide-react';
 import Link from 'next/link';
+import { ManagerTransitionModal } from '@/components/forms/ManagerTransitionModal';
 
 export default function AdminEntidadesPage() {
   const { currentTenant, allTenants, switchTenant, refreshData, dataVersion } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [isTransitionModalOpen, setIsTransitionModalOpen] = useState(false);
+  const [transitionTenant, setTransitionTenant] = useState<Tenant | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const handleOpenTransition = (tenant: Tenant) => {
+    setTransitionTenant(tenant);
+    setIsTransitionModalOpen(true);
+  };
 
   // Panorama geral consolidado de todas as entidades
   const panoramaMetrics = useMemo(() => {
@@ -284,6 +293,7 @@ export default function AdminEntidadesPage() {
         {filteredTenants.map((tenant) => {
           const isCurrent = currentTenant?.id === tenant.id;
           const stats = dataService.getTenantStats(tenant.id);
+          const manager = dataService.getTenantManager(tenant.id);
           const isCopied = copiedSlug === tenant.slug;
 
           return (
@@ -360,20 +370,6 @@ export default function AdminEntidadesPage() {
                       </span>
                     )}
 
-                    <span
-                      style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        backgroundColor: tenant.plan === 'enterprise' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.06)',
-                        color: tenant.plan === 'enterprise' ? '#22d3ee' : '#cbd5e1',
-                        border: tenant.plan === 'enterprise' ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
-                        padding: '0.1rem 0.45rem',
-                        borderRadius: '4px',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {tenant.plan || 'enterprise'}
-                    </span>
                   </div>
                 </div>
 
@@ -425,6 +421,66 @@ export default function AdminEntidadesPage() {
                       {formatCurrency(stats.totalCostAvoided)}
                     </p>
                   </div>
+                </div>
+
+                {/* Gestor Responsável da Unidade & Ação de Transição */}
+                <div
+                  style={{
+                    backgroundColor: '#090e1a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '8px',
+                    padding: '0.65rem 0.85rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.6rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <img
+                      src={
+                        manager?.avatarUrl ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+                      }
+                      alt={manager?.name || 'Gestor'}
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                      }}
+                    />
+                    <div>
+                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
+                        Gestor da Planta
+                      </span>
+                      <strong style={{ fontSize: '0.8125rem', color: '#ffffff' }}>
+                        {manager?.name || 'Nenhum gestor ativo'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenTransition(tenant)}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      fontSize: '0.725rem',
+                      padding: '0.3rem 0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      color: '#22d3ee',
+                      borderColor: 'rgba(6, 182, 212, 0.35)',
+                    }}
+                    title="Substituir ou transicionar gestor da planta com zero interrupção de serviços"
+                  >
+                    <ArrowRightLeft size={12} />
+                    <span>Trocar Gestor</span>
+                  </button>
                 </div>
 
                 {/* Link Público de Coleta da Fábrica */}
@@ -591,6 +647,16 @@ export default function AdminEntidadesPage() {
           tenant={selectedTenant}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          onSuccess={refreshData}
+        />
+      )}
+
+      {/* Manager Transition Modal */}
+      {isTransitionModalOpen && (
+        <ManagerTransitionModal
+          tenant={transitionTenant}
+          isOpen={isTransitionModalOpen}
+          onClose={() => setIsTransitionModalOpen(false)}
           onSuccess={refreshData}
         />
       )}

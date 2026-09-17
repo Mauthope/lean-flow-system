@@ -11,8 +11,6 @@ import {
   Mail,
   UserCheck,
   ShieldCheck,
-  Sparkles,
-  Layers,
   Factory,
 } from 'lucide-react';
 
@@ -32,7 +30,6 @@ export const TenantModal: React.FC<TenantModalProps> = ({
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [cnpjOrCode, setCnpjOrCode] = useState('');
-  const [plan, setPlan] = useState<'standard' | 'enterprise'>('enterprise');
 
   // Fields for initial admin when creating new
   const [adminName, setAdminName] = useState('');
@@ -50,7 +47,6 @@ export const TenantModal: React.FC<TenantModalProps> = ({
       setName(tenant.name);
       setSlug(tenant.slug);
       setCnpjOrCode(tenant.cnpjOrCode || '');
-      setPlan(tenant.plan || 'enterprise');
       setControladoriaName(tenant.aiSettings?.controladoriaName || '');
       setControladoriaEmail(tenant.aiSettings?.controladoriaEmail || '');
       setAutoNotifyControladoria(tenant.aiSettings?.autoNotifyControladoria ?? true);
@@ -58,7 +54,6 @@ export const TenantModal: React.FC<TenantModalProps> = ({
       setName('');
       setSlug('');
       setCnpjOrCode('');
-      setPlan('enterprise');
       setAdminName('');
       setAdminEmail('');
       setControladoriaName('Controladoria & Auditoria');
@@ -99,7 +94,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         name: name.trim(),
         slug: cleanSlug,
         cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
-        plan,
+        plan: tenant.plan || 'enterprise',
         aiSettings: {
           ...tenant.aiSettings,
           controladoriaName: controladoriaName.trim(),
@@ -119,7 +114,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         name: name.trim(),
         slug: cleanSlug,
         cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
-        plan,
+        plan: 'enterprise',
         adminName: adminName.trim() || 'Supervisor Lean',
         adminEmail: adminEmail.trim(),
       });
@@ -211,56 +206,6 @@ export const TenantModal: React.FC<TenantModalProps> = ({
               value={cnpjOrCode}
               onChange={(e) => setCnpjOrCode(e.target.value)}
             />
-          </div>
-        </div>
-
-        {/* Plano da Planta */}
-        <div>
-          <label className="form-label">Plano de Ativação</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <button
-              type="button"
-              onClick={() => setPlan('enterprise')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.65rem 1rem',
-                borderRadius: '8px',
-                border: plan === 'enterprise' ? '2px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: plan === 'enterprise' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                color: plan === 'enterprise' ? '#ffffff' : '#94a3b8',
-                fontWeight: 700,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-              }}
-            >
-              <Sparkles size={16} color={plan === 'enterprise' ? '#22d3ee' : '#94a3b8'} />
-              <span>Plano Enterprise</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setPlan('standard')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.65rem 1rem',
-                borderRadius: '8px',
-                border: plan === 'standard' ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: plan === 'standard' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.02)',
-                color: plan === 'standard' ? '#ffffff' : '#94a3b8',
-                fontWeight: 700,
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-              }}
-            >
-              <Layers size={16} color={plan === 'standard' ? '#34d399' : '#94a3b8'} />
-              <span>Plano Standard</span>
-            </button>
           </div>
         </div>
 
