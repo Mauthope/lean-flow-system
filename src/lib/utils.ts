@@ -247,70 +247,11 @@ export const MONTH_NAMES = [
 ] as const;
 
 /**
- * Retorna o índice do mês base (0 = Janeiro, 11 = Dezembro) para o 1º mês do ciclo de 12 meses.
- * Ancora toda a esteira do projeto para garantir uma sequência estritamente linear e sem meses repetidos.
- */
-export function getProjectBaseMonthIndex(
-  action?: {
-    quarterlyFollowUp?: {
-      startedAt?: string;
-      [key: string]: any;
-    };
-    masterApprovedAt?: string;
-    completedAt?: string;
-    createdAt?: string;
-  } | null
-): number {
-  if (!action) return 0;
-
-  const fu = action.quarterlyFollowUp;
-
-  // 1. Data oficial de início do acompanhamento (âncora primária)
-  if (fu?.startedAt) {
-    const d = new Date(fu.startedAt);
-    if (!isNaN(d.getTime())) {
-      return d.getMonth();
-    }
-  }
-
-  // 2. Se o Mês 1 já foi medido, ele define a âncora direta do 1º mês
-  if (fu?.month1?.measuredAt) {
-    const d = new Date(fu.month1.measuredAt);
-    if (!isNaN(d.getTime())) {
-      return d.getMonth();
-    }
-  }
-
-  // 3. Se algum outro mês foi medido (ex: Mês 2, 3...), retroagimos (m - 1) meses para achar o Mês 1
-  if (fu) {
-    for (let m = 2; m <= 12; m++) {
-      const entry = (fu as any)?.[`month${m}`];
-      if (entry?.measuredAt) {
-        const d = new Date(entry.measuredAt);
-        if (!isNaN(d.getTime())) {
-          const measuredMonth = d.getMonth();
-          return (measuredMonth - (m - 1) + 1200) % 12;
-        }
-      }
-    }
-  }
-
-  // 4. Se houver data de homologação, conclusão ou criação da iniciativa
-  const altDate = action.masterApprovedAt || action.completedAt || action.createdAt;
-  if (altDate) {
-    const d = new Date(altDate);
-    if (!isNaN(d.getTime())) {
-      return d.getMonth();
-    }
-  }
-
-  // Fallback padrão civil: Mês 1 = Janeiro (0)
-  return 0;
-}
-
-/**
- * Retorna o nome do mês civil correspondente a um número de mês (1 a 12) de um projeto Kaizen,
- * garantindo uma sequência 100% contínua e cronológica (M1, M2, ..., M12) sem repetições.
+ * Retorna o nome do mês civil correspondente a um número de mês (1 a 12) de um projeto Kaizen.
+ * Regras:
+ * 1. Se este mês JÁ foi medido (tem measuredAt), o mês exibido é SEMPRE o mês real da medição (ex: 15/02/2025 -> Fevereiro).
+ * 2. Se este mês está pendente, projeta a continuidade linear a partir do último mês medido (ex: se Mês 3 foi Abril, Mês 4 será Maio).
+ * 3. Se nenhum mês foi medido ainda, utiliza a data base do projeto (início do acompanhamento ou criação).
  */
 export function getProjectMonthLabel(
   mNum: number,
@@ -324,8 +265,112 @@ export function getProjectMonthLabel(
     createdAt?: string;
   } | null
 ): string {
-  const baseMonthIndex = getProjectBaseMonthIndex(action);
-  const targetMonthIndex = (baseMonthIndex + (mNum - 1)) % 12;
-  return MONTH_NAMES[targetMonthIndex] || `Mês ${mNum}`;
+  if (!action) {
+    return MONTH_NAMES[(mNum - 1) % 12] || `Mês ${mNum}`;
+  }
+
+  const fu = action.quarterlyFollowUp;
+
+  // 1. Se este mês específico JÁ foi aferido, o mês da sua medição é soberano
+  const thisEntry = (fu as any)?.[`month${mNum}`];
+  if (thisEntry?.measuredAt) {
+    const d = new Date(thisEntry.measuredAt);
+    if (!isNaN(d.getTime())) {
+      return MONTH_NAMES[d.getMonth()];
+    }
+  }
+
+  // 2. Se este mês está pendente, busca a âncora do último mês anterior aferido
+  if (fu) {
+    for (let prev = mNum - 1; prev >= 1; prev--) {
+      const prevEntry = (fu as any)?.[`month${prev}`];
+      if (prevEntry?.measuredAt) {
+        const d = new Date(prevEntry.measuredAt);
+        if (!isNaN(d.getTime())) {
+          const prevMonthIndex = d.getMonth();
+          const targetMonthIndex = (prevMonthIndex + (mNum - prev)) % 12;
+          return MONTH_NAMES[targetMonthIndex];
+        }
+      }
+    }
+
+    // Procura algum mês posterior aferido (caso raro)
+    for (let post = mNum + 1; post <= 12; post++) {
+      const postEntry = (fu as any)?.[`month${post}`];
+      if (postEntry?.measuredAt) {
+        const d = new Date(postEntry.measuredAt);
+        if (!isNaN(d.getTime())) {
+          const postMonthIndex = d.getMonth();
+          const targetMonthIndex = (postMonthIndex - (post - mNum) + 1200) % 12;
+          return MONTH_NAMES[targetMonthIndex];
+        }
+      }
+    }
+  }
+
+  // 3. Se nenhum mês de 1 a 12 possui medição, ancora na data de início do projeto
+  const baseDateStr =
+    fu?.startedAt ||
+    action.masterApprovedAt ||
+    action.completedAt ||
+    action.createdAt;
+
+  if (baseDateStr) {
+    const d = new Date(baseDateStr);
+    if (!isNaN(d.getTime())) {
+      const startMonthIndex = d.getMonth();
+      const targetMonthIndex = (startMonthIndex + (mNum - 1)) % 12;
+      return MONTH_NAMES[targetMonthIndex];
+    }
+  }
+
+  // Fallback padrão civil: Mês 1 = Janeiro, Mês 2 = Fevereiro, etc.
+  return MONTH_NAMES[(mNum - 1) % 12] || `Mês ${mNum}`;
+}
+
+/**
+ * Sugere uma data padrão coerente ao abrir o modal de lançamento de uma nova medição.
+ */
+export function getDefaultMeasurementDate(
+  mNum: number,
+  action?: {
+    quarterlyFollowUp?: {
+      startedAt?: string;
+      [key: string]: any;
+    };
+    masterApprovedAt?: string;
+    completedAt?: string;
+    createdAt?: string;
+  } | null
+): string {
+  const fu = action?.quarterlyFollowUp;
+  const currentEntry = (fu as any)?.[`month${mNum}`];
+  if (currentEntry?.measuredAt) {
+    return currentEntry.measuredAt;
+  }
+
+  // Procura o mês anterior mais próximo aferido e sugere +1 mês
+  if (fu) {
+    for (let prev = mNum - 1; prev >= 1; prev--) {
+      const prevEntry = (fu as any)?.[`month${prev}`];
+      if (prevEntry?.measuredAt) {
+        const d = new Date(prevEntry.measuredAt);
+        if (!isNaN(d.getTime())) {
+          d.setMonth(d.getMonth() + (mNum - prev));
+          return d.toISOString().split('T')[0];
+        }
+      }
+    }
+  }
+
+  if (fu?.startedAt) {
+    const d = new Date(fu.startedAt);
+    if (!isNaN(d.getTime())) {
+      d.setMonth(d.getMonth() + (mNum - 1));
+      return d.toISOString().split('T')[0];
+    }
+  }
+
+  return new Date().toISOString().split('T')[0];
 }
 

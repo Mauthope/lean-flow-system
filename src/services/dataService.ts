@@ -849,6 +849,7 @@ export const dataService = {
           sectorName: action.targetSectorName || action.originSectorName || 'Fábrica',
           estimatedMonthlyValue: estimatedMonthly,
           nextMonthToReport: nextM,
+          monthName: getProjectMonthLabel(nextM, action),
           lastReportedMonth: (fu?.monthsFilledCount || 0) > 0 ? fu?.monthsFilledCount : undefined,
         });
       }
@@ -912,6 +913,7 @@ export const dataService = {
             sectorName: action.targetSectorName || action.originSectorName || 'Fábrica',
             estimatedMonthlyValue: estimatedMonthly,
             nextMonthToReport: m,
+            monthName: getProjectMonthLabel(m, action),
             lastReportedMonth: (fu?.monthsFilledCount || 0) > 0 ? fu?.monthsFilledCount : undefined,
           });
           break; // O próximo mês a preencher

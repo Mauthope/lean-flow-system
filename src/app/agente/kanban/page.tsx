@@ -221,8 +221,8 @@ export default function AgenteKanbanPage() {
                       }}
                     >
                       {p.nextMonthToReport <= 3
-                        ? `Mês ${p.nextMonthToReport} (${getProjectMonthLabel(p.nextMonthToReport)}) • Homologação`
-                        : `Mês ${p.nextMonthToReport} (${getProjectMonthLabel(p.nextMonthToReport)}) • Consolidação`}
+                        ? `Mês ${p.nextMonthToReport} (${p.monthName || getProjectMonthLabel(p.nextMonthToReport)}) • Homologação`
+                        : `Mês ${p.nextMonthToReport} (${p.monthName || getProjectMonthLabel(p.nextMonthToReport)}) • Consolidação`}
                     </span>
                   </div>
                   <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', lineHeight: 1.35 }}>
@@ -254,7 +254,7 @@ export default function AgenteKanbanPage() {
                     color: '#000000',
                   }}
                 >
-                  <span>Lançar Mês {p.nextMonthToReport} ({getProjectMonthLabel(p.nextMonthToReport)})</span>
+                  <span>Lançar Mês {p.nextMonthToReport} ({p.monthName || getProjectMonthLabel(p.nextMonthToReport)})</span>
                   <ArrowRight size={14} />
                 </Link>
               </div>

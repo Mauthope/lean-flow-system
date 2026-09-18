@@ -204,6 +204,7 @@ export interface PendingProjectFollowUp {
   sectorName: string;
   estimatedMonthlyValue: number;
   nextMonthToReport: number;
+  monthName?: string;
   lastReportedMonth?: number;
 }
 

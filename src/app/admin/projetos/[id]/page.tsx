@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
 import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
-import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel } from '@/lib/utils';
+import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel, getDefaultMeasurementDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeft,
@@ -1103,7 +1103,7 @@ export default function AdminProjectDetailPage() {
     setFollowUpModalMonth(month);
     setFollowUpValue(currentEntry?.value !== undefined ? currentEntry.value : '');
     setFollowUpHours(currentEntry?.hoursSaved !== undefined ? currentEntry.hoursSaved : '');
-    setFollowUpDate(currentEntry?.measuredAt || new Date().toISOString().split('T')[0]);
+    setFollowUpDate(currentEntry?.measuredAt || getDefaultMeasurementDate(month, action));
     setFollowUpNotes(currentEntry?.notes || '');
   };
 
