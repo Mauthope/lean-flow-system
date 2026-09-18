@@ -52,6 +52,7 @@ export interface User {
   name: string;
   email: string;
   role: UserRole;
+  isMaster?: boolean;
   sectorId?: string;
   sectorName?: string;
   sectorIds?: string[];

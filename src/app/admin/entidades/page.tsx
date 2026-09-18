@@ -1,10 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { Tenant } from '@/lib/types';
 import { TenantModal } from '@/components/forms/TenantModal';
+import { MasterTransferModal } from '@/components/forms/MasterTransferModal';
+import { TenantPurgeModal } from '@/components/forms/TenantPurgeModal';
+import { ManagerTransitionModal } from '@/components/forms/ManagerTransitionModal';
 import { formatCurrency } from '@/lib/utils';
 import {
   Factory,
@@ -26,22 +30,75 @@ import {
   ArrowRightLeft,
   Database,
   Lock,
+  Crown,
+  Download,
 } from 'lucide-react';
 import Link from 'next/link';
-import { ManagerTransitionModal } from '@/components/forms/ManagerTransitionModal';
 
 export default function AdminEntidadesPage() {
-  const { currentTenant, allTenants, switchTenant, refreshData, dataVersion } = useAuth();
+  const router = useRouter();
+  const { currentUser, currentTenant, allTenants, switchTenant, refreshData, dataVersion } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [isTransitionModalOpen, setIsTransitionModalOpen] = useState(false);
   const [transitionTenant, setTransitionTenant] = useState<Tenant | null>(null);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [purgeTenant, setPurgeTenant] = useState<Tenant | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const isMaster =
+    currentUser?.isMaster === true ||
+    currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
+    currentUser?.email?.toLowerCase() === 'master@rafitec.com.br';
+
+  useEffect(() => {
+    if (currentUser && !isMaster) {
+      router.replace('/admin/dashboard');
+    }
+  }, [currentUser, isMaster, router]);
 
   const handleOpenTransition = (tenant: Tenant) => {
     setTransitionTenant(tenant);
     setIsTransitionModalOpen(true);
+  };
+
+  const handleOpenPurge = (tenant: Tenant) => {
+    setPurgeTenant(tenant);
+    setIsPurgeModalOpen(true);
+  };
+
+  const handleDownloadGlobalBackup = () => {
+    const backupData = dataService.exportAllBackup();
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `backup_global_fluxolean_${dateStr}.json`;
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadTenantBackup = (tenant: Tenant) => {
+    const backupData = dataService.exportTenantBackup(tenant.id);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const filename = `backup_${tenant.slug}_${dateStr}.json`;
+
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Panorama geral consolidado de todas as entidades
@@ -121,6 +178,38 @@ export default function AdminEntidadesPage() {
     alert(`Ambiente alternado com sucesso para "${name}"!\nOs dashboards, setores, agentes e Kaizens agora exibem os dados exclusivos desta unidade.`);
   };
 
+  if (currentUser && !isMaster) {
+    return (
+      <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#94a3b8' }}>
+        <div
+          style={{
+            maxWidth: '480px',
+            margin: '0 auto',
+            backgroundColor: '#090e1a',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '16px',
+            padding: '2rem',
+          }}
+        >
+          <Lock size={36} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
+            Acesso Restrito ao Gestor Master
+          </h3>
+          <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+            A gestão de entidades e plantas fabris é exclusiva da conta Master da plataforma. Gestores locais possuem acesso irrestrito ao painel e indicadores da sua própria unidade.
+          </p>
+          <button
+            onClick={() => router.replace('/admin/dashboard')}
+            className="btn btn-primary"
+            style={{ marginTop: '1.25rem' }}
+          >
+            Ir para o Painel da Minha Unidade
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
@@ -151,12 +240,107 @@ export default function AdminEntidadesPage() {
           </p>
         </div>
 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          {/* Botão Backup Global */}
+          <button
+            onClick={handleDownloadGlobalBackup}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.6rem 1rem' }}
+            title="Baixar backup consolidado JSON de todas as entidades"
+          >
+            <Download size={16} color="#22d3ee" /> Backup Global (JSON)
+          </button>
+
+          {/* Botão Sucessão Master */}
+          <button
+            onClick={() => setIsTransferModalOpen(true)}
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.6rem 1rem',
+              borderColor: 'rgba(234, 179, 8, 0.4)',
+              color: '#facc15',
+              backgroundColor: 'rgba(234, 179, 8, 0.1)',
+            }}
+            title="Transferir gestão e titularidade do app para outro profissional (sucessão)"
+          >
+            <Crown size={16} color="#facc15" /> Transferir Master
+          </button>
+
+          {/* Cadastrar Nova Entidade */}
+          <button
+            onClick={handleCreateNew}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.6rem 1.15rem' }}
+          >
+            <Plus size={17} /> Cadastrar Nova Entidade / Planta
+          </button>
+        </div>
+      </div>
+
+      {/* Banner de Titularidade Master Ativa & Sucessão */}
+      <div
+        style={{
+          backgroundColor: 'rgba(234, 179, 8, 0.08)',
+          border: '1px solid rgba(234, 179, 8, 0.25)',
+          borderRadius: '12px',
+          padding: '0.85rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(234, 179, 8, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#facc15',
+            }}
+          >
+            <Crown size={18} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 800, color: '#fde047', letterSpacing: '0.04em' }}>
+                Titular Master da Plataforma:
+              </span>
+              <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>
+                {currentUser?.name || 'Mauricio Grigol'}
+              </strong>
+              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                ({currentUser?.email || 'mauricio.grigol@rafitec.com.br'})
+              </span>
+            </div>
+            <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+              Controle central multi-tenant, provisionamento de novas fábricas, transição de gestores e expurgo fino para entrada em produção.
+            </p>
+          </div>
+        </div>
+
         <button
-          onClick={handleCreateNew}
-          className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.6rem 1.15rem' }}
+          onClick={() => setIsTransferModalOpen(true)}
+          className="btn btn-secondary btn-sm"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.4rem 0.75rem',
+            fontSize: '0.75rem',
+            color: '#facc15',
+            borderColor: 'rgba(234, 179, 8, 0.4)',
+          }}
         >
-          <Plus size={17} /> Cadastrar Nova Entidade / Planta
+          <Crown size={14} /> Sucessão de Titularidade
         </button>
       </div>
 
@@ -545,6 +729,54 @@ export default function AdminEntidadesPage() {
                     </Link>
                   </div>
                 </div>
+
+                {/* Ferramentas de Engenharia de Dados & Produção por Entidade */}
+                <div
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px dashed rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                    Dados & Produção da Planta:
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadTenantBackup(tenant)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.7rem', padding: '0.3rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                      title="Baixar cópia de segurança JSON com todos os dados desta unidade"
+                    >
+                      <Download size={12} color="#22d3ee" /> Backup JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenPurge(tenant)}
+                      className="btn btn-secondary btn-sm"
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.3rem 0.55rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        color: '#f87171',
+                        borderColor: 'rgba(239, 68, 68, 0.35)',
+                      }}
+                      title="Limpar dados fictícios de testes para iniciar a operação real em produção"
+                    >
+                      <Trash2 size={12} /> Limpar para Produção
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Ações do Rodapé do Card */}
@@ -657,6 +889,25 @@ export default function AdminEntidadesPage() {
           tenant={transitionTenant}
           isOpen={isTransitionModalOpen}
           onClose={() => setIsTransitionModalOpen(false)}
+          onSuccess={refreshData}
+        />
+      )}
+
+      {/* Master Transfer Modal */}
+      {isTransferModalOpen && (
+        <MasterTransferModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          onSuccess={refreshData}
+        />
+      )}
+
+      {/* Tenant Purge Modal */}
+      {isPurgeModalOpen && (
+        <TenantPurgeModal
+          tenant={purgeTenant}
+          isOpen={isPurgeModalOpen}
+          onClose={() => setIsPurgeModalOpen(false)}
           onSuccess={refreshData}
         />
       )}

@@ -56,6 +56,10 @@ export const Sidebar: React.FC = () => {
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
+  const isMaster =
+    currentUser?.isMaster === true ||
+    currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
+    currentUser?.email?.toLowerCase() === 'master@rafitec.com.br';
 
   const adminNav: NavSection[] = [
     {
@@ -70,7 +74,9 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Cadastros & Equipe',
       items: [
-        { href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas' },
+        ...(isMaster
+          ? [{ href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas' }]
+          : []),
         { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
         { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
       ],
@@ -283,50 +289,94 @@ export const Sidebar: React.FC = () => {
 
           {/* Tenant Pill when Expanded */}
           {!isSidebarCollapsed && (
-            <Link
-              href="/admin/entidades"
-              onClick={() => setIsMobileMenuOpen(false)}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                padding: '0.45rem 0.65rem',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                textDecoration: 'none',
-                transition: 'all 0.15s ease',
-                cursor: 'pointer',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)';
-                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              }}
-              title="Clique para alternar ou gerenciar plantas fabris"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
-                <Factory size={13} color="#22d3ee" />
+            isMaster ? (
+              <Link
+                href="/admin/entidades"
+                onClick={() => setIsMobileMenuOpen(false)}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '0.45rem 0.65rem',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+                title="Clique para alternar ou gerenciar plantas fabris"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
+                  <Factory size={13} color="#22d3ee" />
+                  <span
+                    style={{
+                      fontSize: '0.725rem',
+                      fontWeight: 700,
+                      color: '#e2e8f0',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {currentTenant?.name || 'Organização Lean'}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800 }}>
+                  Mudar
+                </span>
+              </Link>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  padding: '0.45rem 0.65rem',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+                title={`Unidade Fabril: ${currentTenant?.name || 'Organização Lean'}`}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
+                  <Factory size={13} color="#22d3ee" />
+                  <span
+                    style={{
+                      fontSize: '0.725rem',
+                      fontWeight: 700,
+                      color: '#e2e8f0',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {currentTenant?.name || 'Organização Lean'}
+                  </span>
+                </div>
                 <span
                   style={{
-                    fontSize: '0.725rem',
-                    fontWeight: 700,
-                    color: '#e2e8f0',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
+                    fontSize: '0.6rem',
+                    fontWeight: 800,
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    color: '#34d399',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
                   }}
                 >
-                  {currentTenant?.name || 'Organização Lean'}
+                  Planta
                 </span>
               </div>
-              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800 }}>
-                Mudar
-              </span>
-            </Link>
+            )
           )}
         </div>
 

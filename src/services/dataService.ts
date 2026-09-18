@@ -266,6 +266,193 @@ export const dataService = {
     return { newManager, previousManager };
   },
 
+  // ================= GOVERNANÇA MASTER, BACKUP & PURGE =================
+  getMasterUser(): User | undefined {
+    const users = this.getUsers();
+    return (
+      users.find((u) => u.isMaster === true && u.active !== false) ||
+      users.find((u) => u.isMaster === true) ||
+      users.find((u) => u.email.toLowerCase() === 'mauricio.grigol@rafitec.com.br') ||
+      users.find((u) => u.email.toLowerCase() === 'master@rafitec.com.br')
+    );
+  },
+
+  transferMasterOwnership(params: {
+    currentMasterId: string;
+    newMasterName: string;
+    newMasterEmail: string;
+    newMasterJobTitle?: string;
+    keepCurrentMasterAsAdmin: boolean;
+  }): { newMaster: User; previousMaster: User } {
+    const users = this.getUsers();
+    const currentMaster = users.find((u) => u.id === params.currentMasterId);
+    if (!currentMaster) throw new Error('Titular Master atual não encontrado');
+
+    const cleanEmail = params.newMasterEmail.trim().toLowerCase();
+    let targetUser = users.find((u) => u.email.toLowerCase() === cleanEmail);
+
+    if (targetUser) {
+      targetUser = this.updateUser(targetUser.id, {
+        isMaster: true,
+        role: 'admin',
+        active: true,
+        name: params.newMasterName.trim() || targetUser.name,
+        jobTitle: params.newMasterJobTitle?.trim() || targetUser.jobTitle || 'Gestor Master de Entidades',
+      });
+    } else {
+      targetUser = this.createUser({
+        tenantId: currentMaster.tenantId,
+        name: params.newMasterName.trim(),
+        email: cleanEmail,
+        role: 'admin',
+        isMaster: true,
+        active: true,
+        jobTitle: params.newMasterJobTitle?.trim() || 'Gestor Master de Entidades',
+      });
+    }
+
+    // Atualiza o titular anterior
+    const updatedPrev = this.updateUser(currentMaster.id, {
+      isMaster: false,
+      role: params.keepCurrentMasterAsAdmin ? 'admin' : 'agent',
+      active: params.keepCurrentMasterAsAdmin ? true : false,
+      jobTitle: params.keepCurrentMasterAsAdmin
+        ? `${currentMaster.jobTitle || 'Consultor'} (Ex-Titular Master / Consultor Técnico)`
+        : `${currentMaster.jobTitle || 'Master'} (Titularidade Transferida / Acesso Revogado)`,
+    });
+
+    return { newMaster: targetUser!, previousMaster: updatedPrev! };
+  },
+
+  getTpmMachinesByTenant(tenantId?: string): TpmMachine[] {
+    const all = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
+    if (!tenantId) return all;
+    return all.filter((m) => m.tenantId === tenantId);
+  },
+
+  getTpmAuditsByTenant(tenantId?: string): TpmAudit[] {
+    const all = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
+    if (!tenantId) return all;
+    return all.filter((a) => a.tenantId === tenantId);
+  },
+
+  getTpmTagsByTenant(tenantId?: string): TpmTag[] {
+    const all = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
+    if (!tenantId) return all;
+    return all.filter((t) => t.tenantId === tenantId);
+  },
+
+  exportTenantBackup(tenantId: string) {
+    const tenant = this.getTenantById(tenantId);
+    if (!tenant) throw new Error('Entidade não encontrada');
+
+    return {
+      exportVersion: '1.0',
+      exportType: 'TENANT_SNAPSHOT',
+      exportedAt: new Date().toISOString(),
+      tenant,
+      sectors: this.getSectors(tenantId),
+      users: this.getUsers(tenantId),
+      actions: this.getActions(tenantId),
+      kaizenIdeas: this.getKaizenIdeas(tenantId),
+      tpmMachines: this.getTpmMachinesByTenant(tenantId),
+      tpmAudits: this.getTpmAuditsByTenant(tenantId),
+      tpmTags: this.getTpmTagsByTenant(tenantId),
+      sectorAssessments: this.getSectorAssessments(tenantId),
+      strategicObjectives: this.getStrategicObjectives(tenantId),
+    };
+  },
+
+  exportAllBackup() {
+    return {
+      exportVersion: '1.0',
+      exportType: 'GLOBAL_CONSOLIDATED_SNAPSHOT',
+      exportedAt: new Date().toISOString(),
+      tenants: this.getTenants(),
+      sectors: this.getSectors(),
+      users: this.getUsers(),
+      actions: this.getActions(),
+      kaizenIdeas: this.getKaizenIdeas(),
+      tpmMachines: this.getTpmMachines(),
+      tpmAudits: this.getTpmAudits(),
+      tpmTags: this.getTpmTags(),
+      sectorAssessments: this.getSectorAssessments(),
+      strategicObjectives: this.getStrategicObjectives(),
+    };
+  },
+
+  purgeTenantData(tenantId: string, mode: 'operational_only' | 'full_reset'): {
+    deletedActions: number;
+    deletedIdeas: number;
+    deletedTags: number;
+    deletedAudits: number;
+    deletedAssessments: number;
+    deletedAgents: number;
+    deletedSectors: number;
+  } {
+    // 1. Ações Lean / Kanban
+    const allActions = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
+    const actionsToKeep = allActions.filter((a) => a.tenantId !== tenantId);
+    const deletedActions = allActions.length - actionsToKeep.length;
+    setStoredData(STORAGE_KEYS.ACTIONS, actionsToKeep);
+
+    // 2. Ideias Kaizen
+    const allIdeas = getStoredData<KaizenIdea[]>(STORAGE_KEYS.KAIZEN_IDEAS, INITIAL_KAIZEN_IDEAS);
+    const ideasToKeep = allIdeas.filter((i) => i.tenantId !== tenantId);
+    const deletedIdeas = allIdeas.length - ideasToKeep.length;
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideasToKeep);
+
+    // 3. TPM Tags
+    const allTags = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
+    const tagsToKeep = allTags.filter((t) => t.tenantId !== tenantId);
+    const deletedTags = allTags.length - tagsToKeep.length;
+    setStoredData(STORAGE_KEYS.TPM_TAGS, tagsToKeep);
+
+    // 4. TPM Audits
+    const allAudits = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
+    const auditsToKeep = allAudits.filter((a) => a.tenantId !== tenantId);
+    const deletedAudits = allAudits.length - auditsToKeep.length;
+    setStoredData(STORAGE_KEYS.TPM_AUDITS, auditsToKeep);
+
+    // 5. Avaliações de Setores
+    const allAssessments = getStoredData<SectorLeanAssessment[]>(STORAGE_KEYS.SECTOR_ASSESSMENTS, INITIAL_SECTOR_ASSESSMENTS);
+    const assessmentsToKeep = allAssessments.filter((a) => a.tenantId !== tenantId);
+    const deletedAssessments = allAssessments.length - assessmentsToKeep.length;
+    setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, assessmentsToKeep);
+
+    let deletedAgents = 0;
+    let deletedSectors = 0;
+
+    // Se for reset completo da planta
+    if (mode === 'full_reset') {
+      // Deleta todos os agentes operacionais, mantendo o Gestor da planta (admin) ou usuário Master
+      const allUsers = getStoredData<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+      const usersToKeep = allUsers.filter((u) => {
+        if (u.tenantId !== tenantId) return true;
+        if (u.role === 'admin' || u.isMaster) return true;
+        return false;
+      });
+      deletedAgents = allUsers.length - usersToKeep.length;
+      setStoredData(STORAGE_KEYS.USERS, usersToKeep);
+
+      // Deleta setores
+      const allSectors = getStoredData<Sector[]>(STORAGE_KEYS.SECTORS, INITIAL_SECTORS);
+      const sectorsToKeep = allSectors.filter((s) => s.tenantId !== tenantId);
+      deletedSectors = allSectors.length - sectorsToKeep.length;
+      setStoredData(STORAGE_KEYS.SECTORS, sectorsToKeep);
+    }
+
+    return {
+      deletedActions,
+      deletedIdeas,
+      deletedTags,
+      deletedAudits,
+      deletedAssessments,
+      deletedAgents,
+      deletedSectors,
+    };
+  },
+
   // ================= SECTORS =================
   getSectors(tenantId?: string): Sector[] {
     const all = getStoredData<Sector[]>(STORAGE_KEYS.SECTORS, INITIAL_SECTORS);

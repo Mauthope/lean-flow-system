@@ -379,6 +379,28 @@ export default function LoginPage() {
             /d/{tenant.slug} ↗
           </Link>
         </div>
+
+        {/* Esqueci Minha Senha / Recuperar Acesso */}
+        <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+          <Link
+            href="/recuperar-senha"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              color: '#94a3b8',
+              fontSize: '0.8125rem',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.15s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = '#22d3ee')}
+            onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+          >
+            <Lock size={13} />
+            <span>Esqueceu sua senha? Recuperar acesso</span>
+          </Link>
+        </div>
       </div>
 
       {/* Footer Info */}

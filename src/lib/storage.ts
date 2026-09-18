@@ -119,16 +119,17 @@ export const INITIAL_SECTORS: Sector[] = [
 ];
 
 export const INITIAL_USERS: User[] = [
-  // Rafitec Master Entity Account
+  // Conta Master / Desenvolvedor (Gestão de Entidades)
   {
     id: 'usr_rafitec_master',
     tenantId: 'tenant_rafitec_01',
-    name: 'Rafitec',
-    email: 'master@rafitec.com.br',
+    name: 'Mauricio Grigol',
+    email: 'mauricio.grigol@rafitec.com.br',
     role: 'admin',
-    jobTitle: 'Entidade Master • Gestão Industrial & ROI',
+    isMaster: true,
+    jobTitle: 'Gestor Master de Entidades & Desenvolvedor Lean',
     active: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=150&auto=format&fit=crop&q=80',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-10T08:00:00.000Z',
   },
   // Agentes Operacionais da Rafitec

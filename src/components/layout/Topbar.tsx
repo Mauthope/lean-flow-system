@@ -23,6 +23,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
+  const isMaster =
+    currentUser?.isMaster === true ||
+    currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
+    currentUser?.email?.toLowerCase() === 'master@rafitec.com.br';
 
   const handleLogout = () => {
     logout();
@@ -70,7 +74,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
         <div>
           <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-            {title || (isAdmin ? 'Painel de Gestão Master' : 'Meu Fluxo de Trabalho Lean')}
+            {title || (isMaster ? 'Painel de Gestão Master' : isAdmin ? 'Painel de Gestão Lean' : 'Meu Fluxo de Trabalho Lean')}
           </h1>
           {subtitle && <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{subtitle}</p>}
         </div>
@@ -99,7 +103,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         </button>
 
         {/* Multi-Tenant Quick Switcher for Developer / Master */}
-        {allTenants.length > 1 && (
+        {allTenants.length > 1 && isMaster && (
           <div
             style={{
               display: 'flex',
