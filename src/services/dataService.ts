@@ -44,6 +44,7 @@ import {
   PendingProjectFollowUp,
   MonthlyFollowUpPipeline,
 } from '../lib/types';
+import { getProjectMonthLabel } from '../lib/utils';
 import { sendControladoriaAuditInvite } from './emailService';
 import {
   STORAGE_KEYS,
@@ -719,7 +720,7 @@ export const dataService = {
     const key = `month${monthNumber}`;
     (action.quarterlyFollowUp as any)[key] = {
       monthNumber,
-      monthLabel: `${monthNumber}º Mês`,
+      monthLabel: `${monthNumber}º Mês (${getProjectMonthLabel(monthNumber, action)})`,
       value: Number(data.value) || 0,
       hoursSaved: data.hoursSaved !== undefined ? Number(data.hoursSaved) : undefined,
       notes: data.notes?.trim() || undefined,

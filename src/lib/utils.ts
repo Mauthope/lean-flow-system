@@ -247,8 +247,70 @@ export const MONTH_NAMES = [
 ] as const;
 
 /**
+ * Retorna o índice do mês base (0 = Janeiro, 11 = Dezembro) para o 1º mês do ciclo de 12 meses.
+ * Ancora toda a esteira do projeto para garantir uma sequência estritamente linear e sem meses repetidos.
+ */
+export function getProjectBaseMonthIndex(
+  action?: {
+    quarterlyFollowUp?: {
+      startedAt?: string;
+      [key: string]: any;
+    };
+    masterApprovedAt?: string;
+    completedAt?: string;
+    createdAt?: string;
+  } | null
+): number {
+  if (!action) return 0;
+
+  const fu = action.quarterlyFollowUp;
+
+  // 1. Data oficial de início do acompanhamento (âncora primária)
+  if (fu?.startedAt) {
+    const d = new Date(fu.startedAt);
+    if (!isNaN(d.getTime())) {
+      return d.getMonth();
+    }
+  }
+
+  // 2. Se o Mês 1 já foi medido, ele define a âncora direta do 1º mês
+  if (fu?.month1?.measuredAt) {
+    const d = new Date(fu.month1.measuredAt);
+    if (!isNaN(d.getTime())) {
+      return d.getMonth();
+    }
+  }
+
+  // 3. Se algum outro mês foi medido (ex: Mês 2, 3...), retroagimos (m - 1) meses para achar o Mês 1
+  if (fu) {
+    for (let m = 2; m <= 12; m++) {
+      const entry = (fu as any)?.[`month${m}`];
+      if (entry?.measuredAt) {
+        const d = new Date(entry.measuredAt);
+        if (!isNaN(d.getTime())) {
+          const measuredMonth = d.getMonth();
+          return (measuredMonth - (m - 1) + 1200) % 12;
+        }
+      }
+    }
+  }
+
+  // 4. Se houver data de homologação, conclusão ou criação da iniciativa
+  const altDate = action.masterApprovedAt || action.completedAt || action.createdAt;
+  if (altDate) {
+    const d = new Date(altDate);
+    if (!isNaN(d.getTime())) {
+      return d.getMonth();
+    }
+  }
+
+  // Fallback padrão civil: Mês 1 = Janeiro (0)
+  return 0;
+}
+
+/**
  * Retorna o nome do mês civil correspondente a um número de mês (1 a 12) de um projeto Kaizen,
- * considerando a data de início/homologação/medição ou o calendário padrão.
+ * garantindo uma sequência 100% contínua e cronológica (M1, M2, ..., M12) sem repetições.
  */
 export function getProjectMonthLabel(
   mNum: number,
@@ -262,28 +324,8 @@ export function getProjectMonthLabel(
     createdAt?: string;
   } | null
 ): string {
-  const entry = (action?.quarterlyFollowUp as any)?.[`month${mNum}`];
-  if (entry?.measuredAt) {
-    const d = new Date(entry.measuredAt);
-    if (!isNaN(d.getTime())) {
-      return MONTH_NAMES[d.getMonth()];
-    }
-  }
-
-  const baseDateStr =
-    action?.quarterlyFollowUp?.startedAt ||
-    action?.masterApprovedAt ||
-    action?.completedAt ||
-    action?.createdAt;
-
-  if (baseDateStr) {
-    const d = new Date(baseDateStr);
-    if (!isNaN(d.getTime())) {
-      const targetMonthIndex = (d.getMonth() + (mNum - 1)) % 12;
-      return MONTH_NAMES[targetMonthIndex];
-    }
-  }
-
-  return MONTH_NAMES[(mNum - 1) % 12] || `Mês ${mNum}`;
+  const baseMonthIndex = getProjectBaseMonthIndex(action);
+  const targetMonthIndex = (baseMonthIndex + (mNum - 1)) % 12;
+  return MONTH_NAMES[targetMonthIndex] || `Mês ${mNum}`;
 }
 
