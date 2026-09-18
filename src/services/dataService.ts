@@ -2,6 +2,7 @@ import {
   Tenant,
   Sector,
   User,
+  UserRole,
   LeanAction,
   DashboardMetrics,
   ActionStatus,
@@ -504,6 +505,10 @@ export const dataService = {
 
   getAgents(tenantId?: string): User[] {
     return this.getUsers(tenantId).filter((u) => u.role === 'agent' && u.active);
+  },
+
+  getViewers(tenantId?: string): User[] {
+    return this.getUsers(tenantId).filter((u) => u.role === 'viewer' && u.active);
   },
 
   getUserById(id: string): User | undefined {
@@ -1315,7 +1320,7 @@ export const dataService = {
     return actions[index];
   },
 
-  addActionNote(id: string, note: { authorId: string; authorName: string; authorRole: 'admin' | 'agent'; text: string }): LeanAction {
+  addActionNote(id: string, note: { authorId: string; authorName: string; authorRole: UserRole; text: string }): LeanAction {
     const actions = this.getActions();
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');

@@ -13,11 +13,13 @@ import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2, Award, X } from '
 import { formatCurrency } from '@/lib/utils';
 
 export default function AdminSetoresPage() {
-  const { dataVersion, refreshData } = useAuth();
+  const { dataVersion, refreshData, currentUser } = useAuth();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assessmentSector, setAssessmentSector] = useState<Sector | null>(null);
   const [directAuditSector, setDirectAuditSector] = useState<Sector | null>(null);
+
+  const isViewer = currentUser?.role === 'viewer';
 
   const sectors = useMemo(() => {
     return dataService.getSectors();
@@ -57,13 +59,15 @@ export default function AdminSetoresPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleCreateNew}
-          className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-        >
-          <Plus size={16} /> Cadastrar Novo Setor
-        </button>
+        {!isViewer && (
+          <button
+            onClick={handleCreateNew}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Plus size={16} /> Cadastrar Novo Setor
+          </button>
+        )}
       </div>
 
       {/* Sectors Grid */}
@@ -206,30 +210,32 @@ export default function AdminSetoresPage() {
                   <Award size={14} /> Lean Assessment
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(sec);
-                    }}
-                    className="btn btn-secondary btn-sm"
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                  >
-                    <Edit2 size={13} /> Editar
-                  </button>
+                {!isViewer && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(sec);
+                      }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                    >
+                      <Edit2 size={13} /> Editar
+                    </button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(sec);
-                    }}
-                    className="btn btn-outline-danger btn-sm"
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                    title="Excluir Setor"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(sec);
+                      }}
+                      className="btn btn-outline-danger btn-sm"
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                      title="Excluir Setor"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );

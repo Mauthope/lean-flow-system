@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
+  Eye,
 } from 'lucide-react';
 import {
   TpmMachine,
@@ -59,8 +60,8 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
     description: 'Painéis elétricos trancados com vedação íntegra, canaletas fechadas e cabos devidamente isolados.',
   },
   {
-    title: '7. Estanqueidade (Zero Vazamentos)',
-    description: 'Isenção total de vazamentos de ar comprimido, água de refrigeração e óleo hidráulico.',
+    title: '7. Ausência de Vazamentos',
+    description: 'Zero vazamento de ar comprimido, água de refrigeração, vapor ou óleo hidráulico.',
   },
   {
     title: '8. Quadro de Manutenção Autônoma em Dia',
@@ -70,6 +71,7 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
 
 export default function AdminTPMPage() {
   const { currentUser } = useAuth();
+  const isViewer = currentUser?.role === 'viewer';
 
   // Estados principais de dados
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -156,7 +158,7 @@ export default function AdminTPMPage() {
   // Submissão: Nova Máquina
   const handleCreateMachine = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMachineSectorId || !newMachineCode.trim() || !newMachineName.trim()) return;
+    if (isViewer || !newMachineSectorId || !newMachineCode.trim() || !newMachineName.trim()) return;
 
     const sector = sectors.find((s) => s.id === newMachineSectorId);
     dataService.createTpmMachine({
@@ -179,6 +181,7 @@ export default function AdminTPMPage() {
   // Submissão: Nova Auditoria
   const handleCreateAudit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isViewer) return;
     const machine = machines.find((m) => m.id === auditMachineId);
     if (!machine) return;
 
@@ -280,38 +283,59 @@ export default function AdminTPMPage() {
 
         {/* Botões de Ações Rápidas no Cabeçalho */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => handleOpenNewAuditModal()}
-            className="btn btn-sm"
-            style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              color: '#34d399',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontWeight: 800,
-            }}
-          >
-            <CheckSquare size={15} /> Realizar Auditoria
-          </button>
+          {isViewer ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                color: '#c084fc',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+              }}
+            >
+              <Eye size={14} /> Modo Somente Leitura (Consulta Diretoria)
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={() => handleOpenNewAuditModal()}
+                className="btn btn-sm"
+                style={{
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  color: '#34d399',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  fontWeight: 800,
+                }}
+              >
+                <CheckSquare size={15} /> Realizar Auditoria
+              </button>
 
-          <button
-            onClick={() => {
-              setNewMachineSectorId(sectors[0]?.id || '');
-              setNewMachineCode('');
-              setNewMachineName('');
-              setNewMachineBrandModel('');
-              setNewMachineCriticality('B');
-              setNewMachineStatus('operacional');
-              setNewMachineDescription('');
-              setIsMachineModalOpen(true);
-            }}
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
-          >
-            <Plus size={15} /> Cadastrar Máquina
-          </button>
+              <button
+                onClick={() => {
+                  setNewMachineSectorId(sectors[0]?.id || '');
+                  setNewMachineCode('');
+                  setNewMachineName('');
+                  setNewMachineBrandModel('');
+                  setNewMachineCriticality('B');
+                  setNewMachineStatus('operacional');
+                  setNewMachineDescription('');
+                  setIsMachineModalOpen(true);
+                }}
+                className="btn btn-primary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
+              >
+                <Plus size={15} /> Cadastrar Máquina
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -673,27 +697,29 @@ export default function AdminTPMPage() {
                     </div>
 
                     {/* Botão de Ação na Máquina */}
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
-                      <button
-                        onClick={() => handleOpenNewAuditModal(m.id)}
-                        className="btn btn-sm"
-                        style={{
-                          width: '100%',
-                          backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          color: '#22d3ee',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.4rem',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          padding: '0.45rem',
-                        }}
-                      >
-                        <CheckSquare size={14} /> Realizar Auditoria na Máquina
-                      </button>
-                    </div>
+                    {!isViewer && (
+                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                        <button
+                          onClick={() => handleOpenNewAuditModal(m.id)}
+                          className="btn btn-sm"
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                            border: '1px solid rgba(6, 182, 212, 0.35)',
+                            color: '#22d3ee',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            padding: '0.45rem',
+                          }}
+                        >
+                          <CheckSquare size={14} /> Realizar Auditoria na Máquina
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -709,13 +735,15 @@ export default function AdminTPMPage() {
             <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
               Histórico de Auditorias de Máquina Realizadas
             </h3>
-            <button
-              onClick={() => handleOpenNewAuditModal()}
-              className="btn btn-primary btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
-            >
-              <Plus size={15} /> Realizar Nova Auditoria
-            </button>
+            {!isViewer && (
+              <button
+                onClick={() => handleOpenNewAuditModal()}
+                className="btn btn-primary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 800 }}
+              >
+                <Plus size={15} /> Realizar Nova Auditoria
+              </button>
+            )}
           </div>
 
           {filteredAudits.length === 0 ? (

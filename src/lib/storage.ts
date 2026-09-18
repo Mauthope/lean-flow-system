@@ -198,6 +198,20 @@ export const INITIAL_USERS: User[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-20T11:00:00.000Z',
   },
+  // Perfil Diretoria / Visualizador (Somente Leitura Executiva)
+  {
+    id: 'usr_rafitec_viewer_01',
+    tenantId: 'tenant_rafitec_01',
+    name: 'Dr. Valdomiro Souza',
+    email: 'valdomiro.souza@rafitec.com.br',
+    role: 'viewer',
+    allSectors: true,
+    sectorName: 'Diretoria Executiva & Conselho',
+    jobTitle: 'Diretor Industrial Corporativo',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-20T08:00:00.000Z',
+  },
 ];
 
 export const INITIAL_STRATEGIC_OBJECTIVES: StrategicObjective[] = [

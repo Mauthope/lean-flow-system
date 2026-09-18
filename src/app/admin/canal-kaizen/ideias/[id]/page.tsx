@@ -30,6 +30,7 @@ import {
   BookOpen,
   Sigma,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -38,6 +39,7 @@ export default function KaizenPDCAExecutionPage() {
   const router = useRouter();
   const ideaId = params?.id as string;
   const { currentUser, refreshData, dataVersion } = useAuth();
+  const isViewer = currentUser?.role === 'viewer';
 
   const [idea, setIdea] = useState<KaizenIdea | null>(null);
   const [loading, setLoading] = useState(true);
@@ -209,7 +211,7 @@ export default function KaizenPDCAExecutionPage() {
 
   // Save changes (Auto-save & stage switch)
   const saveIdeaData = useCallback((targetStage?: 'plan' | 'do' | 'check' | 'act') => {
-    if (!ideaId) return;
+    if (!ideaId || isViewer) return;
     const s = stateRef.current;
 
     const nextStage = targetStage || s.activeTab;
@@ -355,12 +357,13 @@ export default function KaizenPDCAExecutionPage() {
   };
 
   const handleDeleteAction = (chkId: string) => {
+    if (isViewer) return;
     setChecklist(checklist.filter((item) => item.id !== chkId));
   };
 
   // Master Approve Kaizen
   const handleMasterApprove = () => {
-    if (!idea) return;
+    if (!idea || isViewer) return;
     const finalCost = calculatedSavings > 0 ? calculatedSavings : Number(idea.actualCostAvoided) || Number(idea.estimatedCostAvoided) || 0;
 
     const updated = dataService.updateKaizenIdea(idea.id, {
@@ -388,6 +391,7 @@ export default function KaizenPDCAExecutionPage() {
 
   // Follow-up Month Handler
   const handleOpenFollowUpModal = (mNum: 1 | 2 | 3) => {
+    if (isViewer) return;
     const entry = idea?.quarterlyFollowUp?.[`month${mNum}` as 'month1' | 'month2' | 'month3'];
     setFollowUpModalMonth(mNum);
     setFollowUpValue(entry?.value !== undefined ? entry.value : '');
@@ -398,7 +402,7 @@ export default function KaizenPDCAExecutionPage() {
 
   const handleSaveFollowUpMonth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!idea || followUpModalMonth === null || followUpValue === '') return;
+    if (!idea || isViewer || followUpModalMonth === null || followUpValue === '') return;
 
     const updated = dataService.saveKaizenQuarterlyMonthResult(idea.id, followUpModalMonth, {
       value: Number(followUpValue),
@@ -466,33 +470,53 @@ export default function KaizenPDCAExecutionPage() {
 
         {/* Real-time Auto-Save Status Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-              border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
-              padding: '0.4rem 0.85rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {saveStatus === 'saving' ? (
-              <>
-                <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Salvando...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={13} color="#34d399" />
-                <span>Salvo automaticamente ✓</span>
-              </>
-            )}
-          </div>
+          {isViewer ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: '#c084fc',
+              }}
+            >
+              <Eye size={13} />
+              <span>Modo Somente Leitura (Consulta Diretoria)</span>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                padding: '0.4rem 0.85rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {saveStatus === 'saving' ? (
+                <>
+                  <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={13} color="#34d399" />
+                  <span>Salvo automaticamente ✓</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1251,6 +1275,23 @@ export default function KaizenPDCAExecutionPage() {
                 >
                   <CheckCircle2 size={18} /> KAIZEN HOMOLOGADO COM SUCESSO ✓
                 </span>
+              ) : isViewer ? (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.65rem 1.25rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                    color: '#c084fc',
+                    border: '1px solid rgba(168, 85, 247, 0.35)',
+                    fontWeight: 800,
+                    fontSize: '0.8125rem',
+                  }}
+                >
+                  <Eye size={16} /> Modo Somente Leitura (Consulta Diretoria)
+                </span>
               ) : (
                 <button
                   type="button"
@@ -1360,24 +1401,32 @@ export default function KaizenPDCAExecutionPage() {
                           <div style={{ fontSize: '0.725rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             {entry.hoursSaved !== undefined && <span>⏱️ {entry.hoursSaved}h salvas</span>}
                             {entry.measuredAt && <span>📅 Medido em: {formatDate(entry.measuredAt)}</span>}
+                            {!isViewer && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenFollowUpModal(mNum)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ marginTop: '0.35rem', fontSize: '0.7rem', width: '100%', justifyContent: 'center' }}
+                              >
+                                Editar Medição
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          !isViewer ? (
                             <button
                               type="button"
                               onClick={() => handleOpenFollowUpModal(mNum)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ marginTop: '0.35rem', fontSize: '0.7rem', width: '100%', justifyContent: 'center' }}
+                              className="btn btn-primary btn-sm"
+                              style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                             >
-                              Editar Medição
+                              <Plus size={14} /> Lançar {mNum}º Mês
                             </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenFollowUpModal(mNum)}
-                            className="btn btn-primary btn-sm"
-                            style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                          >
-                            <Plus size={14} /> Lançar {mNum}º Mês
-                          </button>
+                          ) : (
+                            <div style={{ textAlign: 'center', padding: '0.4rem 0', fontSize: '0.7rem', color: '#64748b' }}>
+                              Aguardando Aferição
+                            </div>
+                          )
                         )}
                       </div>
                     );

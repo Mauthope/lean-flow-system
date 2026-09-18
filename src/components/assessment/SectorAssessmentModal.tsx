@@ -196,6 +196,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
   };
 
   const handleSave = () => {
+    if (currentUser?.role === 'viewer') return;
     setIsSubmitting(true);
 
     const dimensionScores: Record<LeanAssessmentDimensionId, number> = {

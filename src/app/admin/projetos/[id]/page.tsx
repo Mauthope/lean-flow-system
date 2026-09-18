@@ -73,6 +73,7 @@ export default function AdminProjectDetailPage() {
   const router = useRouter();
   const projectId = params.id as string;
   const { currentUser, allAgents, refreshData } = useAuth();
+  const isViewer = currentUser?.role === 'viewer';
 
   const [action, setAction] = useState<LeanAction | null>(null);
   const [loading, setLoading] = useState(true);
@@ -592,7 +593,7 @@ export default function AdminProjectDetailPage() {
   });
 
   const executeSave = useCallback(() => {
-    if (!projectId) return;
+    if (!projectId || isViewer) return;
     const s = stateRef.current;
 
     const parsedTeamMembers = s.teamMembersInput
@@ -787,7 +788,7 @@ export default function AdminProjectDetailPage() {
 
   const handlePhotoBeforeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !action) return;
+    if (!files || files.length === 0 || !action || isViewer) return;
     const file = files[0];
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -802,7 +803,7 @@ export default function AdminProjectDetailPage() {
 
   const handlePhotoAfterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !action) return;
+    if (!files || files.length === 0 || !action || isViewer) return;
     const file = files[0];
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -816,7 +817,7 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleUpdateStrategicObjective = async (objectiveId: string) => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const allObjectives = dataService.getStrategicObjectives();
     const targetObj = allObjectives.find((o) => o.id === objectiveId);
     if (targetObj) {
@@ -859,7 +860,7 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleAgentSubmitForApproval = () => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: O projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
@@ -895,7 +896,7 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleMasterApprove = async () => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
@@ -1133,6 +1134,7 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleOpenFollowUpModal = (month: number) => {
+    if (isViewer) return;
     const currentEntry = (action?.quarterlyFollowUp as any)?.[`month${month}`];
     setFollowUpModalMonth(month);
     setFollowUpValue(currentEntry?.value !== undefined ? currentEntry.value : '');
@@ -1143,7 +1145,7 @@ export default function AdminProjectDetailPage() {
 
   const handleSaveFollowUpMonth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!action || followUpModalMonth === null || followUpValue === '') return;
+    if (!action || isViewer || followUpModalMonth === null || followUpValue === '') return;
 
     const updated = dataService.saveQuarterlyMonthResult(action.id, followUpModalMonth, {
       value: Number(followUpValue),
@@ -1166,7 +1168,7 @@ export default function AdminProjectDetailPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !action) return;
+    if (!files || files.length === 0 || !action || isViewer) return;
 
     const file = files[0];
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -1198,7 +1200,7 @@ export default function AdminProjectDetailPage() {
   };
 
   const handleRemoveAttachment = (attId: string) => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const nextList = attachments.filter((a) => a.id !== attId);
     setAttachments(nextList);
     dataService.updateAction(action.id, { attachments: nextList });
@@ -1370,6 +1372,46 @@ export default function AdminProjectDetailPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '3rem' }}>
+      {/* BANNER EXECUTIVO PARA PERFIL VIEWER */}
+      {isViewer && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            padding: '0.875rem 1.25rem',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(168, 85, 247, 0.12)',
+            border: '1.5px solid rgba(168, 85, 247, 0.35)',
+            boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+          }}
+        >
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '8px',
+              backgroundColor: '#a855f7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              flexShrink: 0,
+            }}
+          >
+            <Eye size={20} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+              Modo de Visualização • Perfil Diretoria / Consulta Executiva (Somente Leitura)
+            </strong>
+            <span style={{ fontSize: '0.75rem', color: '#d8b4fe', lineHeight: 1.4 }}>
+              Você possui permissão de leitura completa para auditar o ciclo PDCA, Pareto, Ishikawa, fotos e acompanhamento financeiro de 12 meses. Ações de edição, inclusão na checklist, homologação e upload estão desabilitadas.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* TOP HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -1455,34 +1497,54 @@ export default function AdminProjectDetailPage() {
             <span>Modo Apresentação</span>
           </button>
 
-          {/* Indicador em Tempo Real de Auto-Save */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-              border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
-              padding: '0.35rem 0.8rem',
-              borderRadius: '9999px',
-              fontSize: '0.75rem',
-              fontWeight: 800,
-              color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {saveStatus === 'saving' ? (
-              <>
-                <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
-                <span>Salvando...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={13} color="#34d399" />
-                <span>Salvo automaticamente ✓</span>
-              </>
-            )}
-          </div>
+          {/* Indicador em Tempo Real de Auto-Save ou Modo Viewer */}
+          {isViewer ? (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: 'rgba(168, 85, 247, 0.14)',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+                padding: '0.35rem 0.8rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: '#d8b4fe',
+              }}
+            >
+              <Eye size={13} color="#c084fc" />
+              <span>Modo Somente Leitura</span>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                padding: '0.35rem 0.8rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {saveStatus === 'saving' ? (
+                <>
+                  <Clock size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={13} color="#34d399" />
+                  <span>Salvo automaticamente ✓</span>
+                </>
+              )}
+            </div>
+          )}
 
           <button onClick={handleCopyLink} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}>
             <Share2 size={14} /> {copied ? 'Copiado!' : 'Compartilhar'}
@@ -2658,8 +2720,9 @@ export default function AdminProjectDetailPage() {
                         <input
                           type="checkbox"
                           checked={item.completed}
-                          onChange={() => handleToggleChecklistItem(item.id)}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#10b981' }}
+                          disabled={isViewer}
+                          onChange={() => !isViewer && handleToggleChecklistItem(item.id)}
+                          style={{ width: '18px', height: '18px', cursor: isViewer ? 'not-allowed' : 'pointer', accentColor: '#10b981' }}
                         />
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -2722,93 +2785,95 @@ export default function AdminProjectDetailPage() {
             </div>
 
             {/* Add Action Form */}
-            <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  ➕ Adicionar Nova Atividade 5W2H (Com Setor Responsável & Mapeamento de Dependências):
-                </span>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                  Setores terceiros alimentam o indicador de Gargalos Externos para defesa do agente
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: '0.65rem', alignItems: 'end' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>O que fazer (Ação): *</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Ex: Cotação de engates rápidos"
-                    value={newActionLabel}
-                    onChange={(e) => setNewActionLabel(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                    required
-                  />
+            {!isViewer && (
+              <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    ➕ Adicionar Nova Atividade 5W2H (Com Setor Responsável & Mapeamento de Dependências):
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                    Setores terceiros alimentam o indicador de Gargalos Externos para defesa do agente
+                  </span>
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: '0.65rem', alignItems: 'end' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>O que fazer (Ação): *</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Ex: Cotação de engates rápidos"
+                      value={newActionLabel}
+                      onChange={(e) => setNewActionLabel(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                      required
+                    />
+                  </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Responsável (Quem):</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Ex: Juliana Mendes"
-                    value={newActionResp}
-                    onChange={(e) => setNewActionResp(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Responsável (Quem):</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Ex: Juliana Mendes"
+                      value={newActionResp}
+                      onChange={(e) => setNewActionResp(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 700 }}>Setor Responsável (Onde):</label>
+                    <input
+                      type="text"
+                      list="action-sectors-list"
+                      className="form-control form-control-sm"
+                      placeholder={action?.originSectorName || 'Ex: Compras, Manutenção'}
+                      value={newActionSector}
+                      onChange={(e) => setNewActionSector(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#ffffff' }}
+                    />
+                    <datalist id="action-sectors-list">
+                      {action?.originSectorName && <option value={action.originSectorName} label="Setor do Projeto" />}
+                      <option value="Compras / Suprimentos" label="Dependência Externa" />
+                      <option value="Manutenção Preditiva & TPM" label="Dependência Externa" />
+                      <option value="Controladoria & Finanças" label="Dependência Externa" />
+                      <option value="Qualidade & Processos" label="Dependência Externa" />
+                      <option value="Engenharia / Ferramentaria" label="Dependência Externa" />
+                      <option value="TI & Automação" label="Dependência Externa" />
+                      {availableSectors.map((s) => (
+                        <option key={s.id} value={s.name} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Início:</label>
+                    <input
+                      type="date"
+                      className="form-control form-control-sm"
+                      value={newActionStart}
+                      onChange={(e) => setNewActionStart(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Fim (Previsão):</label>
+                    <input
+                      type="date"
+                      className="form-control form-control-sm"
+                      value={newActionEnd}
+                      onChange={(e) => setNewActionEnd(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ height: '36px', whiteSpace: 'nowrap' }}>
+                    Adicionar
+                  </button>
                 </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 700 }}>Setor Responsável (Onde):</label>
-                  <input
-                    type="text"
-                    list="action-sectors-list"
-                    className="form-control form-control-sm"
-                    placeholder={action?.originSectorName || 'Ex: Compras, Manutenção'}
-                    value={newActionSector}
-                    onChange={(e) => setNewActionSector(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#ffffff' }}
-                  />
-                  <datalist id="action-sectors-list">
-                    {action?.originSectorName && <option value={action.originSectorName} label="Setor do Projeto" />}
-                    <option value="Compras / Suprimentos" label="Dependência Externa" />
-                    <option value="Manutenção Preditiva & TPM" label="Dependência Externa" />
-                    <option value="Controladoria & Finanças" label="Dependência Externa" />
-                    <option value="Qualidade & Processos" label="Dependência Externa" />
-                    <option value="Engenharia / Ferramentaria" label="Dependência Externa" />
-                    <option value="TI & Automação" label="Dependência Externa" />
-                    {availableSectors.map((s) => (
-                      <option key={s.id} value={s.name} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Início:</label>
-                  <input
-                    type="date"
-                    className="form-control form-control-sm"
-                    value={newActionStart}
-                    onChange={(e) => setNewActionStart(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Fim (Previsão):</label>
-                  <input
-                    type="date"
-                    className="form-control form-control-sm"
-                    value={newActionEnd}
-                    onChange={(e) => setNewActionEnd(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary btn-sm" style={{ height: '36px', whiteSpace: 'nowrap' }}>
-                  Adicionar
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
 
           {/* 2.2 Evidências Visuais da Transformação (Fotos de Antes e Depois) */}
@@ -2832,7 +2897,7 @@ export default function AdminProjectDetailPage() {
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>
                     📸 Foto do Antes (Estado Inicial)
                   </span>
-                  {photoBeforeUrl && (
+                  {!isViewer && photoBeforeUrl && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2849,6 +2914,24 @@ export default function AdminProjectDetailPage() {
                 {photoBeforeUrl ? (
                   <div style={{ height: '200px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <img src={photoBeforeUrl} alt="Antes" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ) : isViewer ? (
+                  <div
+                    style={{
+                      height: '200px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px dashed rgba(255, 255, 255, 0.12)',
+                      borderRadius: '8px',
+                      color: '#64748b',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <ImageIcon size={24} color="#64748b" />
+                    <span>Nenhuma evidência do <strong>Antes</strong> registrada</span>
                   </div>
                 ) : (
                   <label
@@ -2879,7 +2962,7 @@ export default function AdminProjectDetailPage() {
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
                     📸 Foto do Depois (Melhoria Implantada)
                   </span>
-                  {photoAfterUrl && (
+                  {!isViewer && photoAfterUrl && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2896,6 +2979,24 @@ export default function AdminProjectDetailPage() {
                 {photoAfterUrl ? (
                   <div style={{ height: '200px', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <img src={photoAfterUrl} alt="Depois" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ) : isViewer ? (
+                  <div
+                    style={{
+                      height: '200px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px dashed rgba(255, 255, 255, 0.12)',
+                      borderRadius: '8px',
+                      color: '#64748b',
+                      gap: '0.5rem',
+                      fontSize: '0.8125rem',
+                    }}
+                  >
+                    <ImageIcon size={24} color="#64748b" />
+                    <span>Nenhuma evidência do <strong>Depois</strong> registrada</span>
                   </div>
                 ) : (
                   <label
@@ -3562,22 +3663,24 @@ export default function AdminProjectDetailPage() {
                           <Download size={14} /> <span>Baixar / Visualizar</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveAttachment(att.id)}
-                          className="btn btn-sm"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.35rem',
-                            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                          }}
-                          title="Remover este anexo"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {!isViewer && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAttachment(att.id)}
+                            className="btn btn-sm"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                              color: '#f87171',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                            }}
+                            title="Remover este anexo"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -3586,67 +3689,69 @@ export default function AdminProjectDetailPage() {
             </div>
 
             {/* Upload Area */}
-            <div
-              style={{
-                backgroundColor: '#090e1a',
-                padding: '1.25rem',
-                borderRadius: '14px',
-                border: '1.5px dashed rgba(6, 182, 212, 0.35)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
-                <UploadCloud size={18} color="#22d3ee" />
-                <strong style={{ fontSize: '0.85rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                  Anexar Novo Documento / Memorial de Cálculo (PDF, Planilha ou Imagem):
-                </strong>
+            {!isViewer && (
+              <div
+                style={{
+                  backgroundColor: '#090e1a',
+                  padding: '1.25rem',
+                  borderRadius: '14px',
+                  border: '1.5px dashed rgba(6, 182, 212, 0.35)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                  <UploadCloud size={18} color="#22d3ee" />
+                  <strong style={{ fontSize: '0.85rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                    Anexar Novo Documento / Memorial de Cálculo (PDF, Planilha ou Imagem):
+                  </strong>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 1fr', gap: '0.75rem', alignItems: 'end' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
+                      Categoria do Documento:
+                    </label>
+                    <select
+                      className="form-control form-control-sm"
+                      value={newAttachmentCategory}
+                      onChange={(e: any) => setNewAttachmentCategory(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    >
+                      <option value="memorial_calculo">📑 Memorial de Cálculo Financeiro</option>
+                      <option value="relatorio_tecnico">📊 Relatório Técnico / Cronoanálise</option>
+                      <option value="evidencia_foto">📸 Fotos / Evidências do Posto</option>
+                      <option value="outro">📄 Outro Documento Comprobatório</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
+                      Descrição / Nota (opcional):
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Ex: Planilha de cálculo de OEE e perdas térmicas"
+                      value={newAttachmentDesc}
+                      onChange={(e) => setNewAttachmentDesc(e.target.value)}
+                      style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
+                      Selecione o Arquivo (.pdf, .xlsx, .csv, .png):
+                    </label>
+                    <input
+                      type="file"
+                      className="form-control form-control-sm"
+                      accept=".pdf,.xlsx,.csv,.xls,.docx,.doc,.png,.jpg,.jpeg"
+                      onChange={handleFileUpload}
+                      style={{ padding: '0.35rem 0.5rem', cursor: 'pointer', backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    />
+                  </div>
+                </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 1fr', gap: '0.75rem', alignItems: 'end' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
-                    Categoria do Documento:
-                  </label>
-                  <select
-                    className="form-control form-control-sm"
-                    value={newAttachmentCategory}
-                    onChange={(e: any) => setNewAttachmentCategory(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  >
-                    <option value="memorial_calculo">📑 Memorial de Cálculo Financeiro</option>
-                    <option value="relatorio_tecnico">📊 Relatório Técnico / Cronoanálise</option>
-                    <option value="evidencia_foto">📸 Fotos / Evidências do Posto</option>
-                    <option value="outro">📄 Outro Documento Comprobatório</option>
-                  </select>
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
-                    Descrição / Nota (opcional):
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Ex: Planilha de cálculo de OEE e perdas térmicas"
-                    value={newAttachmentDesc}
-                    onChange={(e) => setNewAttachmentDesc(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#cbd5e1' }}>
-                    Selecione o Arquivo (.pdf, .xlsx, .csv, .png):
-                  </label>
-                  <input
-                    type="file"
-                    className="form-control form-control-sm"
-                    accept=".pdf,.xlsx,.csv,.xls,.docx,.doc,.png,.jpg,.jpeg"
-                    onChange={handleFileUpload}
-                    style={{ padding: '0.35rem 0.5rem', cursor: 'pointer', backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
-                  />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -4105,25 +4210,33 @@ export default function AdminProjectDetailPage() {
                               &ldquo;{entry.notes}&rdquo;
                             </p>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenFollowUpModal(mNum)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
-                          >
-                            Editar Medição ({monthName})
-                          </button>
+                          {!isViewer && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFollowUpModal(mNum)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
+                            >
+                              Editar Medição ({monthName})
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenFollowUpModal(mNum)}
-                            className="btn btn-primary btn-sm"
-                            style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                          >
-                            <Plus size={14} /> Lançar {mNum}º Mês ({monthName})
-                          </button>
+                          {!isViewer ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFollowUpModal(mNum)}
+                              className="btn btn-primary btn-sm"
+                              style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            >
+                              <Plus size={14} /> Lançar {mNum}º Mês ({monthName})
+                            </button>
+                          ) : (
+                            <div style={{ textAlign: 'center', padding: '0.4rem 0', fontSize: '0.725rem', color: '#64748b' }}>
+                              Aguardando Aferição
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -4302,35 +4415,43 @@ export default function AdminProjectDetailPage() {
                         <div style={{ fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.45rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                           {entry.measuredAt && <span>Data: {formatDate(entry.measuredAt)} ({monthName})</span>}
                           {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && <span>{entry.hoursSaved}h salvas</span>}
+                          {!isViewer && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenFollowUpModal(mNum)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ marginTop: '0.35rem', fontSize: '0.675rem', padding: '0.25rem 0.5rem', width: '100%', justifyContent: 'center' }}
+                            >
+                              Editar ({monthName})
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        !isViewer ? (
                           <button
                             type="button"
                             onClick={() => handleOpenFollowUpModal(mNum)}
                             className="btn btn-secondary btn-sm"
-                            style={{ marginTop: '0.35rem', fontSize: '0.675rem', padding: '0.25rem 0.5rem', width: '100%', justifyContent: 'center' }}
+                            style={{
+                              fontSize: '0.725rem',
+                              fontWeight: 800,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.35rem',
+                              padding: '0.45rem 0.5rem',
+                              color: '#22d3ee',
+                              borderColor: 'rgba(6, 182, 212, 0.35)',
+                              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                            }}
                           >
-                            Editar ({monthName})
+                            <Plus size={13} /> Lançar Mês {mNum} ({monthName})
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenFollowUpModal(mNum)}
-                          className="btn btn-secondary btn-sm"
-                          style={{
-                            fontSize: '0.725rem',
-                            fontWeight: 800,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.35rem',
-                            padding: '0.45rem 0.5rem',
-                            color: '#22d3ee',
-                            borderColor: 'rgba(6, 182, 212, 0.35)',
-                            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-                          }}
-                        >
-                          <Plus size={13} /> Lançar Mês {mNum} ({monthName})
-                        </button>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '0.35rem 0', fontSize: '0.7rem', color: '#64748b' }}>
+                            Aguardando Lançamento
+                          </div>
+                        )
                       )}
                     </div>
                   );
@@ -4784,6 +4905,23 @@ export default function AdminProjectDetailPage() {
                           : `Homologação Bloqueada (${monthsFilled}/3 meses)`}
                       </span>
                     </button>
+                  ) : isViewer ? (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                        color: '#c084fc',
+                        border: '1px solid rgba(168, 85, 247, 0.35)',
+                        fontWeight: 800,
+                        fontSize: '0.8125rem',
+                      }}
+                    >
+                      <Eye size={15} /> Modo Somente Leitura (Consulta Diretoria)
+                    </span>
                   ) : (
                     // Supervisor / Master Manager
                     <button
@@ -5872,15 +6010,36 @@ export default function AdminProjectDetailPage() {
                         <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           📸 ANTES DA MELHORIA
                         </span>
-                        <label style={{ fontSize: '0.675rem', color: '#22d3ee', cursor: 'pointer', fontWeight: 700 }}>
-                          {photoBeforeUrl ? 'Alterar Foto' : '+ Enviar Foto'}
-                          <input type="file" accept="image/*" onChange={handlePhotoBeforeUpload} style={{ display: 'none' }} />
-                        </label>
+                        {!isViewer && (
+                          <label style={{ fontSize: '0.675rem', color: '#22d3ee', cursor: 'pointer', fontWeight: 700 }}>
+                            {photoBeforeUrl ? 'Alterar Foto' : '+ Enviar Foto'}
+                            <input type="file" accept="image/*" onChange={handlePhotoBeforeUpload} style={{ display: 'none' }} />
+                          </label>
+                        )}
                       </div>
 
                       {photoBeforeUrl ? (
                         <div style={{ height: '225px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
                           <img src={photoBeforeUrl} alt="Antes" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ) : isViewer ? (
+                        <div
+                          style={{
+                            height: '225px',
+                            backgroundColor: '#090e1a',
+                            border: '1px dashed rgba(239, 68, 68, 0.2)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#64748b',
+                            gap: '0.5rem',
+                            fontSize: '0.8125rem',
+                          }}
+                        >
+                          <ImageIcon size={28} color="#64748b" />
+                          <span>Nenhuma foto do <strong>Antes</strong> registrada</span>
                         </div>
                       ) : (
                         <label
@@ -5912,15 +6071,36 @@ export default function AdminProjectDetailPage() {
                         <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           📸 DEPOIS (POSTO PADRONIZADO)
                         </span>
-                        <label style={{ fontSize: '0.675rem', color: '#34d399', cursor: 'pointer', fontWeight: 700 }}>
-                          {photoAfterUrl ? 'Alterar Foto' : '+ Enviar Foto'}
-                          <input type="file" accept="image/*" onChange={handlePhotoAfterUpload} style={{ display: 'none' }} />
-                        </label>
+                        {!isViewer && (
+                          <label style={{ fontSize: '0.675rem', color: '#34d399', cursor: 'pointer', fontWeight: 700 }}>
+                            {photoAfterUrl ? 'Alterar Foto' : '+ Enviar Foto'}
+                            <input type="file" accept="image/*" onChange={handlePhotoAfterUpload} style={{ display: 'none' }} />
+                          </label>
+                        )}
                       </div>
 
                       {photoAfterUrl ? (
                         <div style={{ height: '225px', backgroundColor: '#090e1a', borderRadius: '10px', overflow: 'hidden' }}>
                           <img src={photoAfterUrl} alt="Depois" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      ) : isViewer ? (
+                        <div
+                          style={{
+                            height: '225px',
+                            backgroundColor: '#090e1a',
+                            border: '1px dashed rgba(16, 185, 129, 0.2)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#64748b',
+                            gap: '0.5rem',
+                            fontSize: '0.8125rem',
+                          }}
+                        >
+                          <ImageIcon size={28} color="#64748b" />
+                          <span>Nenhuma foto do <strong>Depois</strong> registrada</span>
                         </div>
                       ) : (
                         <label

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Sparkles,
   Key,
@@ -10,6 +11,7 @@ import {
   Loader2,
   ExternalLink,
   ShieldCheck,
+  ShieldAlert,
   Zap,
   Play,
   VolumeX,
@@ -32,7 +34,7 @@ import {
 } from '@/services/geminiService';
 
 export default function IntegracoesIaPage() {
-  const { currentTenant } = useAuth();
+  const { currentTenant, currentUser } = useAuth();
 
   const [apiKey, setApiKey] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string>(SENSEI_PROFILE.defaultVoice);
@@ -55,6 +57,51 @@ export default function IntegracoesIaPage() {
   const [autoNotifyControladoria, setAutoNotifyControladoria] = useState(true);
   const [isSavingControladoria, setIsSavingControladoria] = useState(false);
   const [controladoriaSaved, setControladoriaSaved] = useState(false);
+
+  if (currentUser?.role === 'viewer') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center',
+          gap: '1rem',
+          maxWidth: '560px',
+          margin: '0 auto',
+        }}
+      >
+        <div
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ShieldAlert size={32} color="#f87171" />
+        </div>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+          Acesso Restrito: Configurações de IA & API
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+          Seu perfil atual é de <strong>Consulta Executiva / Diretoria (Somente Leitura)</strong>. O gerenciamento de credenciais de IA, chaves de API e governança de controladoria é restrito aos Administradores Master da Entidade.
+        </p>
+        <Link
+          href="/admin/dashboard"
+          className="btn btn-primary btn-sm"
+          style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+        >
+          Voltar para o Dashboard Lean
+        </Link>
+      </div>
+    );
+  }
 
   // Carrega configurações da Entidade
   useEffect(() => {

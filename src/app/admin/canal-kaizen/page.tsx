@@ -39,6 +39,7 @@ import confetti from 'canvas-confetti';
 
 export default function AdminCanalKaizenPage() {
   const { dataVersion, currentUser, allAgents, refreshData } = useAuth();
+  const isViewer = currentUser?.role === 'viewer';
 
   const [activeTab, setActiveTab] = useState<'ideias' | 'aprovadas'>('ideias');
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -69,6 +70,7 @@ export default function AdminCanalKaizenPage() {
   const [gainHoursSaved, setGainHoursSaved] = useState<number | ''>('');
   const [gainNotes, setGainNotes] = useState('');
 
+  // Load Sectors
   useEffect(() => {
     setSectors(dataService.getSectors());
   }, [dataVersion]);
@@ -104,15 +106,16 @@ export default function AdminCanalKaizenPage() {
     return allIdeas.filter((idea) => idea.status === 'aprovada');
   }, [allIdeas]);
 
+  // Actions
   const handleCopyPublicLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const publicUrl = `${origin}/canal-kaizen/nova-ideia`;
+    const publicUrl = `${window.location.origin}/canal-kaizen`;
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const handleOpenApproveModal = (idea: KaizenIdea) => {
+    if (isViewer) return;
     setApproveIdeaModal(idea);
     setApproveResponsible(idea.responsibleName || currentUser?.name || 'Líder Kaizen');
     setApproveEstimatedGain(idea.estimatedCostAvoided || '');
@@ -121,7 +124,7 @@ export default function AdminCanalKaizenPage() {
 
   const handleConfirmApproval = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!approveIdeaModal) return;
+    if (!approveIdeaModal || isViewer) return;
 
     dataService.approveKaizenIdea(approveIdeaModal.id, currentUser?.name || 'Gestor Master', {
       responsibleName: approveResponsible.trim(),
@@ -136,13 +139,14 @@ export default function AdminCanalKaizenPage() {
   };
 
   const handleOpenRejectModal = (idea: KaizenIdea) => {
+    if (isViewer) return;
     setRejectIdeaModal(idea);
     setRejectReason('');
   };
 
   const handleConfirmRejection = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rejectIdeaModal || !rejectReason.trim()) return;
+    if (!rejectIdeaModal || !rejectReason.trim() || isViewer) return;
 
     dataService.rejectKaizenIdea(
       rejectIdeaModal.id,
@@ -155,6 +159,7 @@ export default function AdminCanalKaizenPage() {
   };
 
   const handleOpenManageGains = (idea: KaizenIdea) => {
+    if (isViewer) return;
     setManageGainsModal(idea);
     setGainExecutionStatus(idea.executionStatus || 'planejamento');
     setGainActualCostAvoided(idea.actualCostAvoided !== undefined ? idea.actualCostAvoided : '');
@@ -164,7 +169,7 @@ export default function AdminCanalKaizenPage() {
 
   const handleSaveGains = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manageGainsModal) return;
+    if (!manageGainsModal || isViewer) return;
 
     dataService.updateKaizenIdea(manageGainsModal.id, {
       executionStatus: gainExecutionStatus,
@@ -692,24 +697,30 @@ export default function AdminCanalKaizenPage() {
                           {/* Ações de Gestão */}
                           <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
                             {idea.status === 'pendente' ? (
-                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenApproveModal(idea)}
-                                  className="btn btn-success btn-sm"
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                                >
-                                  <Check size={14} /> Aprovar
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenRejectModal(idea)}
-                                  className="btn btn-danger btn-sm"
-                                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                                >
-                                  <XCircle size={14} /> Rejeitar
-                                </button>
-                              </div>
+                              isViewer ? (
+                                <span style={{ fontSize: '0.725rem', color: '#fbbf24', fontWeight: 700 }}>
+                                  Pendente de Análise
+                                </span>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenApproveModal(idea)}
+                                    className="btn btn-success btn-sm"
+                                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                                  >
+                                    <Check size={14} /> Aprovar
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenRejectModal(idea)}
+                                    className="btn btn-danger btn-sm"
+                                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                                  >
+                                    <XCircle size={14} /> Rejeitar
+                                  </button>
+                                </div>
+                              )
                             ) : idea.status === 'aprovada' ? (
                               <Link
                                 href={`/admin/canal-kaizen/ideias/${idea.id}`}
@@ -977,15 +988,17 @@ export default function AdminCanalKaizenPage() {
                               >
                                 <span>Abrir PDCA</span> <ArrowRight size={13} />
                               </Link>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenManageGains(idea)}
-                                className="btn btn-secondary btn-sm"
-                                style={{ fontSize: '0.7rem', padding: '0.35rem 0.5rem' }}
-                                title="Editar Ganhos Rapidamente"
-                              >
-                                $
-                              </button>
+                              {!isViewer && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenManageGains(idea)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ fontSize: '0.7rem', padding: '0.35rem 0.5rem' }}
+                                  title="Editar Ganhos Rapidamente"
+                                >
+                                  $
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>

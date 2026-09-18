@@ -20,6 +20,8 @@ import {
   Sparkles,
   Layers,
   Image as ImageIcon,
+  Eye,
+  Shield,
 } from 'lucide-react';
 
 interface AgentModalProps {
@@ -27,6 +29,7 @@ interface AgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialRole?: 'agent' | 'viewer';
 }
 
 const DEFAULT_AVATARS = [
@@ -34,6 +37,7 @@ const DEFAULT_AVATARS = [
   'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
 ];
 
 export const AgentModal: React.FC<AgentModalProps> = ({
@@ -41,10 +45,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  initialRole = 'agent',
 }) => {
   const { currentTenant } = useAuth();
   const sectors = useMemo(() => dataService.getSectors(), [isOpen]);
 
+  const [role, setRole] = useState<'agent' | 'viewer'>(initialRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -63,6 +69,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
 
     const currentSectors = dataService.getSectors();
     if (agent) {
+      setRole(agent.role === 'viewer' ? 'viewer' : 'agent');
       setName(agent.name);
       setEmail(agent.email);
       setJobTitle(agent.jobTitle || '');
@@ -85,16 +92,18 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         setSelectedSectorIds(currentSectors[0] ? [currentSectors[0].id] : []);
       }
     } else {
+      const isViewerRole = initialRole === 'viewer';
+      setRole(initialRole);
       setName('');
       setEmail('');
-      setJobTitle('Especialista Lean');
+      setJobTitle(isViewerRole ? 'Diretor Industrial' : 'Especialista Lean');
       setPhone('');
-      setAvatarUrl(DEFAULT_AVATARS[0]);
+      setAvatarUrl(isViewerRole ? DEFAULT_AVATARS[4] : DEFAULT_AVATARS[0]);
       setActive(true);
-      setAllSectors(true); // By default new lean agent can act plant-wide
+      setAllSectors(true); // By default new agent or viewer can act/view plant-wide
       setSelectedSectorIds(currentSectors.map((s) => s.id));
     }
-  }, [agent, isOpen]);
+  }, [agent, isOpen, initialRole]);
 
   const handleToggleAllSectors = (checked: boolean) => {
     setAllSectors(checked);
@@ -146,6 +155,21 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleRoleChange = (newRole: 'agent' | 'viewer') => {
+    setRole(newRole);
+    if (!agent) {
+      if (newRole === 'viewer') {
+        if (!jobTitle || jobTitle === 'Especialista Lean') setJobTitle('Diretor Industrial');
+        if (avatarUrl === DEFAULT_AVATARS[0]) setAvatarUrl(DEFAULT_AVATARS[4]);
+        setAllSectors(true);
+        setSelectedSectorIds(sectors.map((s) => s.id));
+      } else {
+        if (!jobTitle || jobTitle === 'Diretor Industrial') setJobTitle('Especialista Lean');
+        if (avatarUrl === DEFAULT_AVATARS[4]) setAvatarUrl(DEFAULT_AVATARS[0]);
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentTenant) return;
@@ -157,6 +181,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       dataService.updateUser(agent.id, {
         name,
         email,
+        role,
         sectorId,
         sectorIds: sectorIdsToSave,
         allSectors,
@@ -170,11 +195,11 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         tenantId: currentTenant.id,
         name,
         email,
-        role: 'agent',
+        role,
         sectorId,
         sectorIds: sectorIdsToSave,
         allSectors,
-        jobTitle: jobTitle || 'Especialista Lean',
+        jobTitle: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Especialista Lean'),
         phone,
         avatarUrl,
         active,
@@ -189,9 +214,9 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     if (!agent) return;
     if (
       confirm(
-        `ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE o agente ${agent.name}?\n\n` +
+        `ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE o registro de ${agent.name}?\n\n` +
           `• Esta ação apagará permanentemente o cadastro do sistema.\n` +
-          `• Para apenas revogar o acesso e preservar todo o histórico de Kaizens e métricas, recomendamos desmarcar a opção "Agente Ativo" (Bloquear & Arquivar).\n\n` +
+          `• Para apenas revogar o acesso e preservar todo o histórico de Kaizens e métricas, recomendamos desmarcar a opção "Usuário Ativo" (Bloquear & Arquivar).\n\n` +
           `Deseja prosseguir com a exclusão irreversível?`
       )
     ) {
@@ -205,12 +230,122 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={agent ? `Editar Agente — ${agent.name}` : 'Cadastrar Novo Agente Lean'}
-      subtitle="Defina o perfil de trabalho, foto e setores de atuação do operador"
+      title={
+        agent
+          ? `Editar ${agent.role === 'viewer' ? 'Visualizador' : 'Agente'} — ${agent.name}`
+          : role === 'viewer'
+          ? 'Cadastrar Visualizador / Diretoria'
+          : 'Cadastrar Novo Agente Lean'
+      }
+      subtitle={
+        role === 'viewer'
+          ? 'Acesso executivo somente leitura para Diretores e Gerentes acompanharem KPIs e projetos'
+          : 'Defina o perfil de trabalho, foto e setores de atuação do facilitador Lean de fábrica'
+      }
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         
+        {/* SELETOR DE PERFIL DE ACESSO: AGENTE vs VISUALIZADOR */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 800, margin: 0 }}>
+            Perfil de Acesso & Permissão na Plataforma:
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {/* Opção Agente Lean */}
+            <div
+              onClick={() => handleRoleChange('agent')}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.85rem',
+                borderRadius: '12px',
+                border: role === 'agent' ? '2px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: role === 'agent' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: role === 'agent' ? '0 0 16px rgba(6, 182, 212, 0.2)' : 'none',
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  backgroundColor: role === 'agent' ? '#06b6d4' : 'rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: role === 'agent' ? '#081325' : '#94a3b8',
+                  flexShrink: 0,
+                }}
+              >
+                <Briefcase size={16} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <strong style={{ fontSize: '0.8125rem', color: role === 'agent' ? '#22d3ee' : '#ffffff' }}>
+                    Agente Lean
+                  </strong>
+                  <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee', padding: '0.1rem 0.35rem', borderRadius: '4px', fontWeight: 700 }}>
+                    Gemba
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
+                  Lidera e executa projetos Kaizen, planos de ação, fotos Antes/Depois e homologação de ganhos.
+                </p>
+              </div>
+            </div>
+
+            {/* Opção Visualizador / Diretoria */}
+            <div
+              onClick={() => handleRoleChange('viewer')}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.75rem',
+                padding: '0.85rem',
+                borderRadius: '12px',
+                border: role === 'viewer' ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: role === 'viewer' ? 'rgba(168, 85, 247, 0.14)' : 'rgba(255, 255, 255, 0.02)',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                boxShadow: role === 'viewer' ? '0 0 16px rgba(168, 85, 247, 0.2)' : 'none',
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  backgroundColor: role === 'viewer' ? '#a855f7' : 'rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: role === 'viewer' ? '#ffffff' : '#94a3b8',
+                  flexShrink: 0,
+                }}
+              >
+                <Eye size={16} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <strong style={{ fontSize: '0.8125rem', color: role === 'viewer' ? '#c084fc' : '#ffffff' }}>
+                    Visualizador / Diretoria
+                  </strong>
+                  <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#d8b4fe', padding: '0.1rem 0.35rem', borderRadius: '4px', fontWeight: 700 }}>
+                    Read-Only
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
+                  Consulta executiva de Dashboards, Hoshin Kanri, Kanban e ROI. Sem permissão de alteração.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* CARREGAMENTO DE FOTO DO USUÁRIO */}
         <div
           style={{
@@ -226,15 +361,15 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           {/* Avatar Preview */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <img
-              src={avatarUrl || DEFAULT_AVATARS[0]}
-              alt="Foto do Agente"
+              src={avatarUrl || (role === 'viewer' ? DEFAULT_AVATARS[4] : DEFAULT_AVATARS[0])}
+              alt="Foto do Membro"
               style={{
                 width: '68px',
                 height: '68px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '2.5px solid #22d3ee',
-                boxShadow: '0 0 15px rgba(6, 182, 212, 0.35)',
+                border: `2.5px solid ${role === 'viewer' ? '#a855f7' : '#22d3ee'}`,
+                boxShadow: `0 0 15px ${role === 'viewer' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
               }}
             />
             <button
@@ -247,7 +382,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 width: '26px',
                 height: '26px',
                 borderRadius: '50%',
-                backgroundColor: '#2563eb',
+                backgroundColor: role === 'viewer' ? '#8b5cf6' : '#2563eb',
                 border: '2px solid #090e1a',
                 color: '#ffffff',
                 display: 'flex',
@@ -264,7 +399,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           {/* Upload Controls */}
           <div style={{ flex: 1 }}>
             <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.2rem' }}>
-              Foto do Agente Lean
+              {role === 'viewer' ? 'Foto do Diretor / Visualizador' : 'Foto do Agente Lean'}
             </span>
             <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>
               Carregue uma imagem do seu dispositivo (PNG, JPG ou WEBP até 4MB).
@@ -343,10 +478,34 @@ export const AgentModal: React.FC<AgentModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="Ex: Especialista Kaizen / Líder Lean"
+              placeholder={role === 'viewer' ? 'Ex: Diretor Industrial, Gerente Geral' : 'Ex: Especialista Kaizen / Líder Lean'}
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
             />
+            {/* Sugestões rápidas de cargo */}
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+              {(role === 'viewer'
+                ? ['Diretor Industrial', 'Gerente de Fábrica', 'Gerente de Operações', 'Conselheiro']
+                : ['Especialista Lean', 'Líder Kaizen', 'Agente TPM', 'Facilitador 5S']
+              ).map((titleSuggestion) => (
+                <button
+                  key={titleSuggestion}
+                  type="button"
+                  onClick={() => setJobTitle(titleSuggestion)}
+                  style={{
+                    fontSize: '0.65rem',
+                    padding: '0.15rem 0.45rem',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    backgroundColor: jobTitle === titleSuggestion ? (role === 'viewer' ? '#a855f7' : '#06b6d4') : 'rgba(255, 255, 255, 0.04)',
+                    color: jobTitle === titleSuggestion ? '#ffffff' : '#94a3b8',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {titleSuggestion}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
@@ -373,10 +532,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div>
               <label className="form-label" style={{ color: '#ffffff', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Building2 size={15} color="#22d3ee" /> Setores & Departamentos de Atuação:
+                <Building2 size={15} color={role === 'viewer' ? '#c084fc' : '#22d3ee'} />{' '}
+                {role === 'viewer' ? 'Escopo & Abrangência de Visualização:' : 'Setores & Departamentos de Atuação:'}
               </label>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                Selecione os setores onde o agente tem permissão para conduzir projetos Lean
+                {role === 'viewer'
+                  ? 'Defina se o visualizador acompanhará toda a planta ou setores específicos'
+                  : 'Selecione os setores onde o agente tem permissão para conduzir projetos Lean'}
               </span>
             </div>
 
@@ -524,7 +686,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               />
               <span>
                 {active
-                  ? 'Agente Ativo na Planta (Acesso Liberado)'
+                  ? `${role === 'viewer' ? 'Visualizador Ativo' : 'Agente Ativo na Planta'} (Acesso Liberado)`
                   : '🔒 Acesso Bloqueado / Perfil Arquivado (Histórico Preservado)'}
               </span>
             </label>
@@ -554,8 +716,19 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary">
-            {agent ? 'Salvar Alterações' : 'Cadastrar Agente'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{
+              backgroundColor: role === 'viewer' ? '#8b5cf6' : undefined,
+              borderColor: role === 'viewer' ? '#a855f7' : undefined,
+            }}
+          >
+            {agent
+              ? 'Salvar Alterações'
+              : role === 'viewer'
+              ? 'Cadastrar Visualizador Executivo'
+              : 'Cadastrar Agente Lean'}
           </button>
         </div>
       </form>

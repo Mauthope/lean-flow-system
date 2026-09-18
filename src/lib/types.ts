@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'agent';
+export type UserRole = 'admin' | 'agent' | 'viewer';
 
 export type ActionStatus = 'aberta' | 'em_andamento' | 'aguardando_aprovacao' | 'concluida' | 'nao_aprovada';
 
@@ -879,7 +879,7 @@ export interface SectorLeanAssessment {
   sectorName: string;
   evaluatorId: string;
   evaluatorName: string;
-  evaluatorRole: 'admin' | 'agent';
+  evaluatorRole: UserRole;
   assessmentDate: string; // ISO date
   overallScore: number; // 0 a 100%
   overallLevel: 1 | 2 | 3 | 4 | 5; // 1=Reativo, 2=Iniciante, 3=Padronizado, 4=Avançado, 5=Classe Mundial

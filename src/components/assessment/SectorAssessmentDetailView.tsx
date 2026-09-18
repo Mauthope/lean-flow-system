@@ -90,8 +90,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
   const [compareAssessmentId, setCompareAssessmentId] = useState<string | undefined>(undefined);
   const [expandedDimensionId, setExpandedDimensionId] = useState<string | null>(null);
   const { currentUser } = useAuth();
-  const projectBaseUrl = currentUser?.role === 'admin' ? '/admin/projetos' : '/agente/projetos';
-  const kanbanBaseUrl = currentUser?.role === 'admin' ? '/admin/kanban' : '/agente/kanban';
+  const isViewer = currentUser?.role === 'viewer';
+  const projectBaseUrl = currentUser?.role === 'admin' || isViewer ? '/admin/projetos' : '/agente/projetos';
+  const kanbanBaseUrl = currentUser?.role === 'admin' || isViewer ? '/admin/kanban' : '/agente/kanban';
 
   // Carregar histórico de assessments do setor
   const assessments = useMemo(() => {
@@ -246,20 +247,36 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn btn-primary"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.65rem 1.5rem',
-            fontSize: '0.875rem',
-            fontWeight: 800,
-          }}
-        >
-          <Plus size={17} /> Realizar Primeiro Lean Assessment
-        </button>
+        {!isViewer ? (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn btn-primary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.65rem 1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: 800,
+            }}
+          >
+            <Plus size={17} /> Realizar Primeiro Lean Assessment
+          </button>
+        ) : (
+          <div
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(168, 85, 247, 0.1)',
+              border: '1px solid rgba(168, 85, 247, 0.3)',
+              color: '#c084fc',
+              fontSize: '0.8125rem',
+              fontWeight: 700,
+            }}
+          >
+            Modo Somente Leitura (Aguardando Auditoria da Equipe Operacional)
+          </div>
+        )}
 
         <SectorAssessmentModal
           isOpen={isModalOpen}
@@ -376,20 +393,22 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             <Printer size={15} /> Imprimir / PDF
           </button>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="btn btn-primary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.5rem 1.15rem',
-              fontSize: '0.8125rem',
-              fontWeight: 800,
-            }}
-          >
-            <Plus size={16} /> Novo Assessment (Gemba)
-          </button>
+          {!isViewer && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="btn btn-primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.5rem 1.15rem',
+                fontSize: '0.8125rem',
+                fontWeight: 800,
+              }}
+            >
+              <Plus size={16} /> Novo Assessment (Gemba)
+            </button>
+          )}
         </div>
       </div>
 

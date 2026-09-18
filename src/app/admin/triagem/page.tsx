@@ -18,14 +18,60 @@ import {
   Clock,
   Building,
   CheckSquare,
+  ShieldAlert,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminTriagemPage() {
-  const { dataVersion, refreshData } = useAuth();
+  const { currentUser, dataVersion, refreshData } = useAuth();
   const [selectedDemand, setSelectedDemand] = useState<LeanAction | null>(null);
   const [filterType, setFilterType] = useState<'pending' | 'all' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
+
+  if (currentUser?.role === 'viewer') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center',
+          gap: '1rem',
+          maxWidth: '560px',
+          margin: '0 auto',
+        }}
+      >
+        <div
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ShieldAlert size={32} color="#f87171" />
+        </div>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+          Acesso Restrito: Triagem Operacional de Demandas
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+          Seu perfil atual é de <strong>Consulta Executiva / Diretoria (Somente Leitura)</strong>. O encaminhamento operacional e triagem de solicitações públicas da fábrica é restrito aos Administradores e Agentes Lean.
+        </p>
+        <Link
+          href="/admin/dashboard"
+          className="btn btn-primary btn-sm"
+          style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+        >
+          Voltar para o Dashboard Lean
+        </Link>
+      </div>
+    );
+  }
 
   const allActions = useMemo(() => {
     return dataService.getActions();

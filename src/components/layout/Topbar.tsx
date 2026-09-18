@@ -23,6 +23,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
 
   const isAdmin = currentUser?.role === 'admin';
+  const isViewer = currentUser?.role === 'viewer';
   const isMaster =
     currentUser?.isMaster === true ||
     currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
@@ -74,7 +75,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
         <div>
           <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-            {title || (isMaster ? 'Painel de Gestão Master' : isAdmin ? 'Painel de Gestão Lean' : 'Meu Fluxo de Trabalho Lean')}
+            {title || (isMaster ? 'Painel de Gestão Master' : isViewer ? 'Painel Executivo • Consulta Diretoria' : isAdmin ? 'Painel de Gestão Lean' : 'Meu Fluxo de Trabalho Lean')}
           </h1>
           {subtitle && <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{subtitle}</p>}
         </div>
@@ -195,16 +196,20 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
               height: '32px',
               borderRadius: '50%',
               objectFit: 'cover',
-              border: `2px solid ${isAdmin ? '#06b6d4' : '#10b981'}`,
-              boxShadow: `0 0 10px ${isAdmin ? 'rgba(6, 182, 212, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+              border: `2px solid ${isViewer ? '#a855f7' : isAdmin ? '#06b6d4' : '#10b981'}`,
+              boxShadow: `0 0 10px ${isViewer ? 'rgba(168, 85, 247, 0.4)' : isAdmin ? 'rgba(6, 182, 212, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
             }}
           />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
               {currentUser?.name || 'Usuário'}
             </span>
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-              {isAdmin ? 'Entidade Master' : currentUser?.sectorName || 'Agente Operacional'}
+            <span style={{ fontSize: '0.675rem', color: isViewer ? '#c084fc' : '#94a3b8' }}>
+              {isViewer
+                ? currentUser?.jobTitle || 'Diretoria / Consulta'
+                : isAdmin
+                ? 'Entidade Master'
+                : currentUser?.sectorName || 'Agente Operacional'}
             </span>
           </div>
 

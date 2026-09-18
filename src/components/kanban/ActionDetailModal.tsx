@@ -31,6 +31,7 @@ import {
   FileCheck,
   ExternalLink,
   Target,
+  Eye,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { evaluateProjectStrategicAlignment } from '@/services/geminiService';
@@ -50,6 +51,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 }) => {
   const { currentUser, allAgents } = useAuth();
   const isAdmin = currentUser?.role === 'admin';
+  const isViewer = currentUser?.role === 'viewer';
 
   // Notes
   const [newNoteText, setNewNoteText] = useState('');
@@ -87,7 +89,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   if (!action) return null;
 
   const handleUpdateStrategicObjective = async (objectiveId: string) => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const targetObj = allStrategicObjectives.find((o) => o.id === objectiveId);
     if (targetObj) {
       setEvaluatingAudit(true);
@@ -118,7 +120,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleRunSenseiStrategicAudit = async () => {
-    if (!action) return;
+    if (!action || isViewer) return;
     const objId = action.strategicObjectiveId || allStrategicObjectives[0]?.id;
     const targetObj = allStrategicObjectives.find((o) => o.id === objId) || allStrategicObjectives[0];
     if (!targetObj) return;
@@ -138,6 +140,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleStatusChange = (newStatus: ActionStatus) => {
+    if (isViewer) return;
     if (newStatus === 'aguardando_aprovacao') {
       const monthsFilled = getFollowUpMonthsFilledCount(action);
       if (monthsFilled < 3) {
@@ -206,6 +209,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
   const handleConfirmCompletion = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isViewer) return;
     const cost = parseFloat(actualCostInput.replace(/[^0-9.]/g, '')) || 0;
     const hours = parseFloat(hoursSavedInput) || 0;
 
@@ -243,7 +247,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNoteText.trim() || !currentUser) return;
+    if (!newNoteText.trim() || !currentUser || isViewer) return;
 
     dataService.addActionNote(action.id, {
       authorId: currentUser.id,
@@ -258,7 +262,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
   const handleAddActivityRecord = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activityLabel.trim()) return;
+    if (!activityLabel.trim() || isViewer) return;
 
     dataService.addActivityRecord(action.id, {
       label: activityLabel.trim(),
@@ -282,6 +286,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleStartActivity = (activityId: string) => {
+    if (isViewer) return;
     const today = new Date().toISOString().split('T')[0];
     dataService.updateActivityRecord(action.id, activityId, {
       status: 'em_andamento',
@@ -292,6 +297,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleFinishActivity = (activityId: string) => {
+    if (isViewer) return;
     const today = new Date().toISOString().split('T')[0];
     dataService.updateActivityRecord(action.id, activityId, {
       status: 'concluida',
@@ -303,6 +309,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleDeleteActivity = (activityId: string) => {
+    if (isViewer) return;
     if (confirm('Deseja remover este registro de atividade?')) {
       dataService.deleteActivityRecord(action.id, activityId);
       onUpdate();
@@ -310,6 +317,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   };
 
   const handleReassignAgent = (agentId: string) => {
+    if (isViewer) return;
     const agent = allAgents.find((a) => a.id === agentId);
     if (!agent) return;
 
@@ -419,29 +427,48 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
               <span>Ver Página Completa</span>
             </Link>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Status:</span>
-              <select
-                value={action.status}
-                onChange={(e) => handleStatusChange(e.target.value as ActionStatus)}
+            {isViewer ? (
+              <span
                 style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
                   padding: '0.35rem 0.65rem',
                   borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.8125rem',
-                  fontWeight: 600,
-                  color: '#0f172a',
-                  background: '#ffffff',
-                  cursor: 'pointer',
+                  backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                  color: '#9333ea',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
                 }}
               >
-                <option value="aberta">Aberta</option>
-                <option value="em_andamento">Em Andamento</option>
-                <option value="aguardando_aprovacao">🟣 Aguardando Homologação</option>
-                <option value="concluida">🟢 Concluída & Homologada</option>
-                {isAdmin && <option value="nao_aprovada">🔴 Não Aprovada</option>}
-              </select>
-            </div>
+                <Eye size={13} /> Somente Leitura
+              </span>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>Status:</span>
+                <select
+                  value={action.status}
+                  onChange={(e) => handleStatusChange(e.target.value as ActionStatus)}
+                  style={{
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    background: '#ffffff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="aberta">Aberta</option>
+                  <option value="em_andamento">Em Andamento</option>
+                  <option value="aguardando_aprovacao">🟣 Aguardando Homologação</option>
+                  <option value="concluida">🟢 Concluída & Homologada</option>
+                  {isAdmin && <option value="nao_aprovada">🔴 Não Aprovada</option>}
+                </select>
+              </div>
+            )}
 
             {(() => {
               const monthsFilled = getFollowUpMonthsFilledCount(action);
@@ -560,16 +587,18 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
                   O Sensei IA analisa as causas raiz e emite a justificativa estratégica executiva.
                 </span>
-                <button
-                  type="button"
-                  onClick={handleRunSenseiStrategicAudit}
-                  disabled={evaluatingAudit}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '0.725rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#0284c7', borderColor: '#bae6fd' }}
-                >
-                  <Sparkles size={12} />
-                  <span>{evaluatingAudit ? 'Avaliando com IA...' : 'Solicitar Parecer do Sensei'}</span>
-                </button>
+                {!isViewer && (
+                  <button
+                    type="button"
+                    onClick={handleRunSenseiStrategicAudit}
+                    disabled={evaluatingAudit}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.725rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#0284c7', borderColor: '#bae6fd' }}
+                  >
+                    <Sparkles size={12} />
+                    <span>{evaluatingAudit ? 'Avaliando com IA...' : 'Solicitar Parecer do Sensei'}</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1083,20 +1112,22 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 {completedActivities} de {activities.length} atividades concluídas
               </span>
 
-              <button
-                type="button"
-                onClick={() => setShowActivityForm(!showActivityForm)}
-                className="btn btn-primary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-              >
-                <Plus size={14} />
-                {showActivityForm ? 'Fechar Formulário' : 'Nova Atividade'}
-              </button>
+              {!isViewer && (
+                <button
+                  type="button"
+                  onClick={() => setShowActivityForm(!showActivityForm)}
+                  className="btn btn-primary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <Plus size={14} />
+                  {showActivityForm ? 'Fechar Formulário' : 'Nova Atividade'}
+                </button>
+              )}
             </div>
           </div>
 
           {/* New Activity Inline Form */}
-          {showActivityForm && (
+          {!isViewer && showActivityForm && (
             <form
               onSubmit={handleAddActivityRecord}
               style={{
@@ -1324,65 +1355,67 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                       </div>
 
                       {/* Action buttons on activity */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        {isActPending && (
-                          <button
-                            type="button"
-                            onClick={() => handleStartActivity(act.id)}
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', color: '#b45309' }}
-                            title="Iniciar esta atividade hoje"
-                          >
-                            <PlayCircle size={13} /> Iniciar
-                          </button>
-                        )}
+                      {!isViewer && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          {isActPending && (
+                            <button
+                              type="button"
+                              onClick={() => handleStartActivity(act.id)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem', color: '#b45309' }}
+                              title="Iniciar esta atividade hoje"
+                            >
+                              <PlayCircle size={13} /> Iniciar
+                            </button>
+                          )}
 
-                        {!isActCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => handleFinishActivity(act.id)}
-                            className="btn btn-success btn-sm"
-                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
-                            title="Marcar como concluída hoje"
-                          >
-                            <CheckCircle2 size={13} /> Concluir
-                          </button>
-                        )}
+                          {!isActCompleted && (
+                            <button
+                              type="button"
+                              onClick={() => handleFinishActivity(act.id)}
+                              className="btn btn-success btn-sm"
+                              style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
+                              title="Marcar como concluída hoje"
+                            >
+                              <CheckCircle2 size={13} /> Concluir
+                            </button>
+                          )}
 
-                        {isActCompleted && (
+                          {isActCompleted && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                dataService.updateActivityRecord(action.id, act.id, {
+                                  status: 'em_andamento',
+                                  completed: false,
+                                });
+                                onUpdate();
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.725rem', padding: '0.2rem 0.45rem' }}
+                            >
+                              Reabrir
+                            </button>
+                          )}
+
                           <button
                             type="button"
-                            onClick={() => {
-                              dataService.updateActivityRecord(action.id, act.id, {
-                                status: 'em_andamento',
-                                completed: false,
-                              });
-                              onUpdate();
+                            onClick={() => handleDeleteActivity(act.id)}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              color: '#94a3b8',
+                              padding: '0.25rem',
                             }}
-                            className="btn btn-secondary btn-sm"
-                            style={{ fontSize: '0.725rem', padding: '0.2rem 0.45rem' }}
+                            title="Excluir Atividade"
+                            onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
+                            onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
                           >
-                            Reabrir
+                            <Trash2 size={14} />
                           </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteActivity(act.id)}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#94a3b8',
-                            padding: '0.25rem',
-                          }}
-                          title="Excluir Atividade"
-                          onMouseOver={(e) => (e.currentTarget.style.color = '#ef4444')}
-                          onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -1439,19 +1472,21 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
           </div>
 
           {/* Add Note Form */}
-          <form onSubmit={handleAddNote} style={{ display: 'flex', gap: '0.5rem' }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Escrever apontamento sobre a evolução..."
-              value={newNoteText}
-              onChange={(e) => setNewNoteText(e.target.value)}
-              style={{ fontSize: '0.8125rem' }}
-            />
-            <button type="submit" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
-              <Send size={14} /> Registrar
-            </button>
-          </form>
+          {!isViewer && (
+            <form onSubmit={handleAddNote} style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Escrever apontamento sobre a evolução..."
+                value={newNoteText}
+                onChange={(e) => setNewNoteText(e.target.value)}
+                style={{ fontSize: '0.8125rem' }}
+              />
+              <button type="submit" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
+                <Send size={14} /> Registrar
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </Modal>

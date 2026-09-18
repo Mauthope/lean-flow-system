@@ -4,19 +4,20 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
-import { Shield, Users, Lock, ArrowLeft, Building2, ExternalLink } from 'lucide-react';
+import { Shield, Users, Lock, ArrowLeft, Building2, ExternalLink, Eye } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
   const { loginAs, refreshData } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'master' | 'agents'>('master');
+  const [activeTab, setActiveTab] = useState<'master' | 'agents' | 'viewers'>('master');
 
   const tenant = dataService.getCurrentTenant();
   const tenantUsers = dataService.getUsers(tenant.id);
   const masterUser = tenantUsers.find((u) => u.role === 'admin') || tenantUsers[0];
   const agentUsers = tenantUsers.filter((u) => u.role === 'agent');
+  const viewerUsers = tenantUsers.filter((u) => u.role === 'viewer');
 
   const handleLoginMaster = () => {
     if (masterUser) {
@@ -28,6 +29,11 @@ export default function LoginPage() {
   const handleLoginAgent = (userId: string) => {
     loginAs(userId);
     router.push('/agente/kanban');
+  };
+
+  const handleLoginViewer = (userId: string) => {
+    loginAs(userId);
+    router.push('/admin/dashboard');
   };
 
   return (
@@ -152,12 +158,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Access Selector Tabs (Entidade Master vs Agentes Operacionais) */}
+        {/* Access Selector Tabs (Entidade Master vs Agentes vs Diretoria) */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.5rem',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '0.4rem',
             backgroundColor: 'rgba(255, 255, 255, 0.04)',
             padding: '0.35rem',
             borderRadius: '14px',
@@ -172,21 +178,21 @@ export default function LoginPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.45rem',
-              padding: '0.75rem',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
               borderRadius: '10px',
               border: activeTab === 'master' ? '1px solid rgba(96, 165, 250, 0.5)' : '1px solid transparent',
               backgroundColor: activeTab === 'master' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
               color: activeTab === 'master' ? '#93c5fd' : '#94a3b8',
               fontWeight: 800,
-              fontSize: '0.84375rem',
+              fontSize: '0.78125rem',
               cursor: 'pointer',
               boxShadow: activeTab === 'master' ? '0 0 15px rgba(37, 99, 235, 0.3)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
-            <Shield size={16} />
-            <span>Entidade Master</span>
+            <Shield size={14} />
+            <span>Master</span>
           </button>
 
           <button
@@ -196,21 +202,45 @@ export default function LoginPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.45rem',
-              padding: '0.75rem',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
               borderRadius: '10px',
               border: activeTab === 'agents' ? '1px solid rgba(52, 211, 153, 0.5)' : '1px solid transparent',
               backgroundColor: activeTab === 'agents' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
               color: activeTab === 'agents' ? '#6ee7b7' : '#94a3b8',
               fontWeight: 800,
-              fontSize: '0.84375rem',
+              fontSize: '0.78125rem',
               cursor: 'pointer',
               boxShadow: activeTab === 'agents' ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
-            <Users size={16} />
-            <span>Agentes da Fábrica ({agentUsers.length})</span>
+            <Users size={14} />
+            <span>Agentes ({agentUsers.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('viewers')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
+              borderRadius: '10px',
+              border: activeTab === 'viewers' ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid transparent',
+              backgroundColor: activeTab === 'viewers' ? 'rgba(168, 85, 247, 0.25)' : 'transparent',
+              color: activeTab === 'viewers' ? '#d8b4fe' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '0.78125rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'viewers' ? '0 0 15px rgba(168, 85, 247, 0.3)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Eye size={14} />
+            <span>Diretoria ({viewerUsers.length})</span>
           </button>
         </div>
 
@@ -358,6 +388,115 @@ export default function LoginPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* TAB 3: DIRETORIA & CONSULTA EXECUTIVA (SOMENTE LEITURA) */}
+        {activeTab === 'viewers' && (
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div style={{ marginBottom: '0.85rem' }}>
+              <span style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 700, display: 'block' }}>
+                Acessos de Diretoria & Gerência de Fábrica
+              </span>
+              <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+                Acompanhamento executivo de KPIs, Hoshin Kanri, Kanban e ROI em modo estritamente somente leitura.
+              </p>
+            </div>
+
+            {viewerUsers.length === 0 ? (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px dashed rgba(168, 85, 247, 0.3)',
+                  textAlign: 'center',
+                }}
+              >
+                <Eye size={24} color="#c084fc" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700, margin: 0 }}>
+                  Nenhum visualizador cadastrado
+                </p>
+                <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                  O supervisor da planta pode criar acessos para a diretoria na tela de Gestão de Equipe & Acessos.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.65rem',
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  paddingRight: '0.25rem',
+                }}
+              >
+                {viewerUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleLoginViewer(user.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(168, 85, 247, 0.25)',
+                      backgroundColor: 'rgba(168, 85, 247, 0.06)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.16)';
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.06)';
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.25)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={user.avatarUrl || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'}
+                        alt={user.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid #a855f7',
+                        }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                          {user.name}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#c084fc' }}>
+                          {user.jobTitle || 'Diretor Industrial'} • Consulta Executiva
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: '0.725rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(168, 85, 247, 0.25)',
+                        color: '#d8b4fe',
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(168, 85, 247, 0.4)',
+                      }}
+                    >
+                      Acessar →
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

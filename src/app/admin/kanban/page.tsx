@@ -7,8 +7,9 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { NewActionModal } from '@/components/forms/NewActionModal';
 
 export default function AdminKanbanPage() {
-  const { dataVersion, refreshData } = useAuth();
+  const { dataVersion, refreshData, currentUser } = useAuth();
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const isViewer = currentUser?.role === 'viewer';
 
   const actions = useMemo(() => {
     return dataService.getActions();
@@ -30,7 +31,7 @@ export default function AdminKanbanPage() {
       <KanbanBoard
         actions={actions}
         onRefresh={refreshData}
-        onNewAction={() => setIsNewModalOpen(true)}
+        onNewAction={isViewer ? undefined : () => setIsNewModalOpen(true)}
       />
 
       <NewActionModal

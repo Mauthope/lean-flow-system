@@ -10,6 +10,7 @@ interface AuthContextType {
   currentTenant: Tenant | null;
   allUsers: User[];
   allAgents: User[];
+  allViewers: User[];
   allTenants: Tenant[];
   isLoading: boolean;
   loginAs: (userId: string) => void;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allAgents, setAllAgents] = useState<User[]>([]);
+  const [allViewers, setAllViewers] = useState<User[]>([]);
   const [allTenants, setAllTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dataVersion, setDataVersion] = useState(1);
@@ -45,12 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const user = dataService.getCurrentUser();
     const users = dataService.getUsers();
     const agents = dataService.getAgents();
+    const viewers = dataService.getViewers();
     const tenants = dataService.getTenants();
 
     setCurrentTenant(tenant);
     setCurrentUser(user);
     setAllUsers(users);
     setAllAgents(agents);
+    setAllViewers(viewers);
     setAllTenants(tenants);
 
     if (typeof window !== 'undefined') {
@@ -132,6 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         currentTenant,
         allUsers,
         allAgents,
+        allViewers,
         allTenants,
         isLoading,
         loginAs,

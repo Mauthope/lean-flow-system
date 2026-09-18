@@ -36,6 +36,7 @@ import {
   PanelLeftOpen,
   Target,
   Factory,
+  Eye,
 } from 'lucide-react';
 
 interface NavItem {
@@ -56,6 +57,7 @@ export const Sidebar: React.FC = () => {
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
+  const isViewer = currentUser?.role === 'viewer';
   const isMaster =
     currentUser?.isMaster === true ||
     currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
@@ -77,7 +79,7 @@ export const Sidebar: React.FC = () => {
         ...(isMaster
           ? [{ href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas' }]
           : []),
-        { href: '/admin/agentes', label: 'Gestão de Agentes', icon: Users },
+        { href: '/admin/agentes', label: 'Equipe & Acessos', icon: Users },
         { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
       ],
     },
@@ -93,6 +95,33 @@ export const Sidebar: React.FC = () => {
     {
       label: 'Fábrica & Comunicação',
       items: [
+        { href: '/admin/tpm', label: 'TPM', icon: Settings },
+        { href: '/admin/canal-kaizen', label: 'Canal Kaizen', icon: Lightbulb, badge: 'Ideias' },
+      ],
+    },
+  ];
+
+  const viewerNav: NavSection[] = [
+    {
+      label: 'Visão Executiva',
+      items: [
+        { href: '/admin/dashboard', label: 'Dashboard Lean', icon: LayoutDashboard },
+        { href: '/admin/alta-gerencia', label: 'Alta Gerência', icon: Target, badge: 'Hoshin' },
+        { href: '/admin/kanban', label: 'Kanban Geral', icon: Kanban },
+      ],
+    },
+    {
+      label: 'Inteligência & Métodos',
+      items: [
+        { href: '/admin/relatorios', label: 'Custo Evitado & ROI', icon: TrendingUp },
+        { href: '/admin/historico-kaizen', label: 'Histórico Kaizen', icon: Sparkles, badge: 'IA' },
+        { href: '/agente/ferramentas', label: 'Academia & Ferramentas', icon: BookOpen, badge: 'Edu' },
+      ],
+    },
+    {
+      label: 'Fábrica & Maturidade',
+      items: [
+        { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
         { href: '/admin/tpm', label: 'TPM', icon: Settings },
         { href: '/admin/canal-kaizen', label: 'Canal Kaizen', icon: Lightbulb, badge: 'Ideias' },
       ],
@@ -125,7 +154,7 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
-  const currentNav = isAdmin ? adminNav : agentNav;
+  const currentNav = isViewer ? viewerNav : isAdmin ? adminNav : agentNav;
 
   return (
     <>
@@ -377,6 +406,32 @@ export const Sidebar: React.FC = () => {
                 </span>
               </div>
             )
+          )}
+
+          {/* Viewer Executive Pill */}
+          {!isSidebarCollapsed && isViewer && (
+            <div
+              style={{
+                marginTop: '0.45rem',
+                backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                border: '1px solid rgba(168, 85, 247, 0.3)',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <Eye size={13} color="#c084fc" />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#d8b4fe', lineHeight: 1.2 }}>
+                  Consulta Executiva
+                </span>
+                <span style={{ fontSize: '0.6rem', color: '#a855f7' }}>
+                  Modo Somente Leitura
+                </span>
+              </div>
+            </div>
           )}
         </div>
 
