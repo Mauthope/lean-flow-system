@@ -46,6 +46,7 @@ import {
 } from '../lib/types';
 import { getProjectMonthLabel } from '../lib/utils';
 import { sendControladoriaAuditInvite } from './emailService';
+import { getLocalFallbackStrategicAudit } from './geminiService';
 import {
   STORAGE_KEYS,
   getStoredData,
@@ -1142,6 +1143,15 @@ export const dataService = {
       checklist: [],
     };
 
+    // Auto-casamento inteligente com a melhor diretriz da Alta Gerência
+    const matchedObj = this.autoMatchStrategicObjective(newAction);
+    if (matchedObj) {
+      newAction.strategicObjectiveId = matchedObj.id;
+      newAction.strategicObjectiveName = `${matchedObj.code} - ${matchedObj.title}`;
+      newAction.senseiStrategicAudit = this.calculateActionStrategicAdherence(newAction, matchedObj);
+      newAction.senseiStrategicAudit.initialScore = newAction.senseiStrategicAudit.alignmentScore;
+    }
+
     actions.unshift(newAction);
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return newAction;
@@ -1155,23 +1165,44 @@ export const dataService = {
       agent = this.getUserById(actionData.assignedAgentId);
     }
 
+    let stratObjId = actionData.strategicObjectiveId;
     let stratObjName = actionData.strategicObjectiveName;
-    if (actionData.strategicObjectiveId && !stratObjName) {
-      const obj = this.getStrategicObjectiveById(actionData.strategicObjectiveId);
+
+    // Se o usuário não informou diretriz corporativa, o Sensei IA faz o casamento inteligente
+    if (!stratObjId) {
+      const tempAction = { ...actionData, id: 'temp' } as LeanAction;
+      const matched = this.autoMatchStrategicObjective(tempAction);
+      if (matched) {
+        stratObjId = matched.id;
+        stratObjName = `${matched.code} - ${matched.title}`;
+      }
+    } else if (!stratObjName) {
+      const obj = this.getStrategicObjectiveById(stratObjId);
       if (obj) stratObjName = `${obj.code} - ${obj.title}`;
     }
 
+    const actionId = generateId('act');
     const newAction: LeanAction = {
       ...actionData,
-      id: generateId('act'),
+      id: actionId,
       protocol: generateProtocol(),
       originSectorName: originSector?.name || actionData.originSectorName,
       assignedAgentName: agent?.name || actionData.assignedAgentName,
       assignedAgentAvatar: agent?.avatarUrl || actionData.assignedAgentAvatar,
+      strategicObjectiveId: stratObjId,
       strategicObjectiveName: stratObjName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    // Avaliação inicial do Sensei com pontuação inicial de aderência e sugestões
+    if (stratObjId) {
+      const obj = this.getStrategicObjectiveById(stratObjId);
+      if (obj) {
+        newAction.senseiStrategicAudit = this.calculateActionStrategicAdherence(newAction, obj);
+        newAction.senseiStrategicAudit.initialScore = newAction.senseiStrategicAudit.alignmentScore;
+      }
+    }
 
     actions.unshift(newAction);
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
@@ -4158,7 +4189,115 @@ export const dataService = {
     return all.find((o) => o.id === id);
   },
 
-  saveStrategicObjective(objective: Partial<StrategicObjective> & { title: string; pillar: StrategicObjective['pillar']; targetValue: number; targetUnit: StrategicObjective['targetUnit']; unitLabel: string }): StrategicObjective {
+  autoMatchStrategicObjective(action: Partial<LeanAction>): StrategicObjective | undefined {
+    const objectives = this.getStrategicObjectives().filter((o) => o.status === 'ativo');
+    if (objectives.length === 0) return undefined;
+
+    const titleLower = (action.title || '').toLowerCase();
+    const descLower = (action.description || '').toLowerCase();
+    const problemLower = (action.problemStatement || '').toLowerCase();
+    const text = `${titleLower} ${descLower} ${problemLower}`;
+    const waste = action.wasteCategory;
+
+    let bestObj: StrategicObjective | undefined = undefined;
+    let highestScore = -1;
+
+    for (const obj of objectives) {
+      let score = 0;
+      const pillar = obj.pillar;
+      const objText = `${obj.title} ${obj.description}`.toLowerCase();
+
+      // Correlaciona Waste com Pilar
+      if (pillar === 'financeiro_custos') {
+        if (waste === 'espera' || waste === 'superproducao' || waste === 'estoque') score += 4;
+        if (text.includes('custo') || text.includes('reais') || text.includes('gasto') || text.includes('perda') || text.includes('economia')) score += 3;
+      } else if (pillar === 'produtividade_oee') {
+        if (waste === 'movimentacao' || waste === 'transporte' || waste === 'espera') score += 4;
+        if (text.includes('setup') || text.includes('smed') || text.includes('parada') || text.includes('tempo') || text.includes('velocidade') || text.includes('oee')) score += 3;
+      } else if (pillar === 'qualidade_refugo') {
+        if (waste === 'defeitos' || waste === 'processamento_excessivo') score += 4;
+        if (text.includes('refugo') || text.includes('defeito') || text.includes('falha') || text.includes('qualidade') || text.includes('rejeito') || text.includes('retrabalho')) score += 3;
+      } else if (pillar === 'lead_time_cliente') {
+        if (waste === 'espera' || waste === 'transporte' || waste === 'estoque') score += 4;
+        if (text.includes('lead time') || text.includes('cliente') || text.includes('entrega') || text.includes('fluxo') || text.includes('atraso')) score += 3;
+      } else if (pillar === 'sustentabilidade_esg') {
+        if (text.includes('energia') || text.includes('ergonomia') || text.includes('seguranca') || text.includes('recicla') || text.includes('ambiente')) score += 4;
+      }
+
+      // Palavras em comum entre projeto e objetivo
+      const words = objText.split(/\s+/).filter((w) => w.length > 4);
+      for (const w of words) {
+        if (text.includes(w)) score += 1;
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestObj = obj;
+      }
+    }
+
+    return bestObj || objectives[0];
+  },
+
+  calculateActionStrategicAdherence(
+    action: LeanAction,
+    targetObjective?: StrategicObjective
+  ): SenseiStrategicAudit {
+    const obj =
+      targetObjective ||
+      (action.strategicObjectiveId
+        ? this.getStrategicObjectiveById(action.strategicObjectiveId)
+        : this.autoMatchStrategicObjective(action));
+
+    if (!obj) {
+      return {
+        justification: 'Iniciativa Kaizen registrada no Gemba aguardando diretriz estratégica corporativa.',
+        alignmentScore: 50,
+        contributionSummary: 'Aporte preliminar no chão de fábrica.',
+        improvementSuggestions: [
+          'Vincular uma diretriz estratégica da diretoria.',
+          'Estruturar plano de ação 5W2H com prazos e responsáveis.',
+        ],
+        evaluatedAt: new Date().toISOString(),
+        modelUsed: 'Sensei IA Dinâmico v2.7',
+      };
+    }
+
+    return getLocalFallbackStrategicAudit(action, obj);
+  },
+
+  recalculateActionStrategicAdherence(actionId: string): LeanAction | undefined {
+    const action = this.getActionById(actionId);
+    if (!action) return undefined;
+
+    let obj: StrategicObjective | undefined = undefined;
+    if (action.strategicObjectiveId) {
+      obj = this.getStrategicObjectiveById(action.strategicObjectiveId);
+    }
+    if (!obj) {
+      obj = this.autoMatchStrategicObjective(action);
+      if (obj) {
+        action.strategicObjectiveId = obj.id;
+        action.strategicObjectiveName = `${obj.code} - ${obj.title}`;
+      }
+    }
+
+    if (!obj) return action;
+
+    const audit = this.calculateActionStrategicAdherence(action, obj);
+    return this.updateAction(actionId, {
+      senseiStrategicAudit: audit,
+      strategicObjectiveId: obj.id,
+      strategicObjectiveName: `${obj.code} - ${obj.title}`,
+    });
+  },
+
+  saveStrategicObjective(
+    objective: Partial<StrategicObjective> & {
+      title: string;
+      pillar: StrategicObjective['pillar'];
+    }
+  ): StrategicObjective {
     const currentTenant = this.getCurrentTenant();
     const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
     const now = new Date().toISOString();
@@ -4193,7 +4332,7 @@ export const dataService = {
       targetValue: objective.targetValue,
       targetUnit: objective.targetUnit,
       unitLabel: objective.unitLabel,
-      baselineValue: objective.baselineValue ?? 0,
+      baselineValue: objective.baselineValue,
       status: objective.status || 'ativo',
       deadlineDate: objective.deadlineDate || `${currentYear}-12-31`,
       createdAt: now,
@@ -4236,53 +4375,34 @@ export const dataService = {
       const completedProjectsCount = linkedProjects.filter((a) => a.status === 'concluida').length;
       const inProgressProjectsCount = linkedProjects.filter((a) => a.status !== 'concluida').length;
 
-      let currentRealizedValue = 0;
-      let fulfillmentPercent = 0;
+      // Cálculo da Aderência Média dos Projetos (% de Convergência da Fábrica)
+      const adherenceScores = linkedProjects
+        .map((p) => p.senseiStrategicAudit?.alignmentScore)
+        .filter((s): s is number => typeof s === 'number' && s > 0);
 
-      if (obj.targetUnit === 'currency') {
-        currentRealizedValue = linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
-        fulfillmentPercent = obj.targetValue > 0
-          ? Math.min(100, Math.round((currentRealizedValue / obj.targetValue) * 100))
-          : 0;
-      } else if (obj.targetUnit === 'hours') {
-        currentRealizedValue = linkedProjects.reduce((acc, a) => acc + (a.hoursSaved || 0), 0);
-        fulfillmentPercent = obj.targetValue > 0
-          ? Math.min(100, Math.round((currentRealizedValue / obj.targetValue) * 100))
-          : 0;
-      } else if (obj.targetUnit === 'days') {
-        const baseline = obj.baselineValue ?? 16;
-        const target = obj.targetValue;
-        const reductionNeeded = Math.max(1, baseline - target);
-        const estimatedReduction = completedProjectsCount > 0
-          ? Math.min(reductionNeeded, completedProjectsCount * (reductionNeeded / Math.max(1, linkedProjects.length)))
-          : (inProgressProjectsCount > 0 ? 1 : 0);
-        currentRealizedValue = Math.max(target, baseline - estimatedReduction);
-        fulfillmentPercent = Math.min(100, Math.round((estimatedReduction / reductionNeeded) * 100));
-      } else {
-        const baseline = obj.baselineValue ?? 0;
-        const target = obj.targetValue;
-        const delta = Math.abs(target - baseline);
-        const ratio = linkedProjects.length > 0 ? completedProjectsCount / linkedProjects.length : 0;
-        const realizedGain = delta * ratio;
-        currentRealizedValue = Number((baseline + realizedGain).toFixed(1));
-        fulfillmentPercent = delta > 0 ? Math.min(100, Math.round((realizedGain / delta) * 100)) : 0;
-      }
+      const averageAdherenceScore = adherenceScores.length > 0
+        ? Math.round(adherenceScores.reduce((acc, v) => acc + v, 0) / adherenceScores.length)
+        : (linkedProjects.length > 0 ? 50 : 0);
+
+      const currentRealizedValue = linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);
+      const fulfillmentPercent = averageAdherenceScore;
 
       let senseiExecutiveSynthesis = '';
       if (linkedProjects.length === 0) {
-        senseiExecutiveSynthesis = 'Nenhum projeto Kaizen/PDCA vinculado a esta diretriz corporativa. Risco de dispersão estratégica no Gemba.';
-      } else if (fulfillmentPercent >= 100) {
-        senseiExecutiveSynthesis = `Meta corporativa atingida com excelência operacional através de ${completedProjectsCount} projeto(s) concluído(s) no chão de fábrica.`;
-      } else if (fulfillmentPercent >= 60) {
-        senseiExecutiveSynthesis = `Trajetória consistente de convergência: ${completedProjectsCount} projeto(s) concluído(s) e ${inProgressProjectsCount} em andamento sustentando os resultados.`;
+        senseiExecutiveSynthesis = 'Nenhum projeto Kaizen/PDCA vinculado a esta diretriz corporativa. Oportunidade para mobilizar o Gemba.';
+      } else if (averageAdherenceScore >= 80) {
+        senseiExecutiveSynthesis = `Excelente convergência estratégica: ${linkedProjects.length} iniciativa(s) sustentam ${averageAdherenceScore}% de aderência média, impulsionando a diretriz no chão de fábrica.`;
+      } else if (averageAdherenceScore >= 55) {
+        senseiExecutiveSynthesis = `Trajetória consistente de convergência: ${linkedProjects.length} projeto(s) com aderência média de ${averageAdherenceScore}%. Recomenda-se avançar nas contramedidas e medições.`;
       } else {
-        senseiExecutiveSynthesis = `Diretriz em fase inicial de implantação (${fulfillmentPercent}% atingido). Recomenda-se priorizar ações rápidas (Kaizen Blitz) para acelerar a captura de resultados.`;
+        senseiExecutiveSynthesis = `Diretriz em estágio embrionário (${averageAdherenceScore}% de aderência). Incentive a equipe a aprofundar os 5 Porquês e o plano 5W2H.`;
       }
 
       return {
         objective: obj,
         currentRealizedValue,
         fulfillmentPercent,
+        averageAdherenceScore,
         linkedProjects,
         completedProjectsCount,
         inProgressProjectsCount,
@@ -4291,12 +4411,12 @@ export const dataService = {
     });
 
     const activeObjectives = effectiveObjectives.filter((o) => o.status === 'ativo');
-    const totalFulfillmentSum = objectivesWithMetrics.reduce((acc, om) => acc + om.fulfillmentPercent, 0);
+    const totalAdherenceSum = objectivesWithMetrics.reduce((acc, om) => acc + om.averageAdherenceScore, 0);
     const overallFulfillmentPercent = objectivesWithMetrics.length > 0
-      ? Math.round(totalFulfillmentSum / objectivesWithMetrics.length)
+      ? Math.round(totalAdherenceSum / objectivesWithMetrics.length)
       : 0;
 
-    const achievedCount = objectivesWithMetrics.filter((om) => om.fulfillmentPercent >= 100).length;
+    const achievedCount = objectivesWithMetrics.filter((om) => om.averageAdherenceScore >= 80).length;
 
     return {
       year: targetYear,

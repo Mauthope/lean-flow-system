@@ -995,9 +995,9 @@ export interface StrategicObjective {
   pillar: StrategicPillar;
   sponsor: string;            // Ex: "Diretoria Industrial & Controladoria"
   year: number;               // Ex: 2026
-  targetValue: number;        // Meta quantitativa
-  targetUnit: 'currency' | 'percentage' | 'hours' | 'days';
-  unitLabel: string;          // Ex: "R$", "%", "horas", "dias"
+  targetValue?: number;       // Meta quantitativa (opcional)
+  targetUnit?: 'currency' | 'percentage' | 'hours' | 'days';
+  unitLabel?: string;         // Ex: "R$", "%", "horas", "dias"
   baselineValue?: number;     // Valor de partida antes do ciclo
   status: 'ativo' | 'atingido' | 'em_revisao';
   deadlineDate?: string;      // Prazo final da meta (ex: 2026-12-31)
@@ -1009,13 +1009,15 @@ export interface SenseiStrategicAudit {
   justification: string;        // Justificativa executiva do porquê o projeto converge com a meta
   alignmentScore: number;       // Score de 1 a 100 de impacto/convergência
   contributionSummary: string;  // Resumo conciso da contribuição prática no chão de fábrica
+  improvementSuggestions?: string[]; // Dicas práticas do Sensei para subir o percentual de aderência
+  initialScore?: number;        // Score inicial registrado na criação do projeto
   evaluatedAt: string;          // Timestamp ISO da avaliação
   modelUsed?: string;           // Modelo neural utilizado (Gemini ou Heurística do Sensei)
 }
 
 export interface MacroStrategicDashboardMetrics {
   year: number;
-  overallFulfillmentPercent: number;    // % macro consolidado de atendimento das diretrizes
+  overallFulfillmentPercent: number;    // % macro consolidado de atendimento das diretrizes (média de aderência)
   totalAvoidedCostAligned: number;       // R$ total gerado por projetos alinhados
   totalHoursSavedAligned: number;        // Horas totais salvas convergentes
   projectCoveragePercent: number;        // % de projetos do portfólio conectados a metas da diretoria
@@ -1028,6 +1030,7 @@ export interface MacroStrategicDashboardMetrics {
     objective: StrategicObjective;
     currentRealizedValue: number;
     fulfillmentPercent: number;
+    averageAdherenceScore: number;
     linkedProjects: LeanAction[];
     completedProjectsCount: number;
     inProgressProjectsCount: number;

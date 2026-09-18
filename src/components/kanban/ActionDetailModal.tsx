@@ -541,6 +541,19 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                     Impacto Estimado: {action.senseiStrategicAudit.contributionSummary}
                   </div>
                 )}
+                {action.senseiStrategicAudit.improvementSuggestions && action.senseiStrategicAudit.improvementSuggestions.length > 0 && (
+                  <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b45309' }}>
+                      💡 Sugestões do Sensei para subir a aderência à diretoria:
+                    </span>
+                    {action.senseiStrategicAudit.improvementSuggestions.map((sug, sIdx) => (
+                      <div key={sIdx} style={{ fontSize: '0.725rem', color: '#475569', display: 'flex', alignItems: 'flex-start', gap: '0.35rem' }}>
+                        <span style={{ color: '#f59e0b', fontWeight: 800 }}>•</span>
+                        <span>{sug}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem', backgroundColor: '#ffffff', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>

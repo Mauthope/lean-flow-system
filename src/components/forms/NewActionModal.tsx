@@ -67,11 +67,9 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
     e.preventDefault();
     if (!currentTenant) return;
 
-    const selectedObj = strategicObjectives.find((o) => o.id === strategicObjectiveId);
-    if (!selectedObj) {
-      alert('Selecione obrigatoriamente um Objetivo Estratégico da Alta Gerência (Hoshin Kanri).');
-      return;
-    }
+    const selectedObj = strategicObjectiveId
+      ? strategicObjectives.find((o) => o.id === strategicObjectiveId)
+      : undefined;
 
     const estCost = parseFloat(estimatedCostAvoided.replace(/[^0-9.]/g, '')) || 0;
 
@@ -79,8 +77,8 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       tenantId: currentTenant.id,
       title,
       description,
-      strategicObjectiveId: selectedObj.id,
-      strategicObjectiveName: `${selectedObj.code} - ${selectedObj.title}`,
+      strategicObjectiveId: selectedObj?.id,
+      strategicObjectiveName: selectedObj ? `${selectedObj.code} - ${selectedObj.title}` : undefined,
       wasteCategory,
       assessmentDimensionId,
       originSectorId,
@@ -137,11 +135,11 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           />
         </div>
 
-        {/* Diretriz da Alta Gerência (Hoshin Kanri) - Vínculo Obrigatório */}
+        {/* Diretriz da Alta Gerência (Hoshin Kanri) - Alinhamento Inteligente */}
         <div
           style={{
-            backgroundColor: 'rgba(59, 130, 246, 0.06)',
-            border: '1.5px solid rgba(59, 130, 246, 0.3)',
+            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+            border: '1.5px solid rgba(59, 130, 246, 0.25)',
             borderRadius: '10px',
             padding: '0.85rem 1rem',
           }}
@@ -149,26 +147,29 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.4rem' }}>
             <label className="form-label" style={{ color: '#60a5fa', margin: 0, fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Target size={15} style={{ color: '#3b82f6' }} />
-              Objetivo Estratégico da Alta Gerência (Hoshin Kanri) *
+              Convergência Estratégica (Hoshin Kanri)
             </label>
-            <span style={{ fontSize: '0.7rem', color: '#93c5fd', backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-              Vínculo Mandatório
+            <span style={{ fontSize: '0.7rem', color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
+              ✨ Sensei IA Avaliará Automaticamente
             </span>
           </div>
+
+          <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>
+            O Sensei IA analisará o projeto e calculará a aderência à diretriz corporativa ideal. Você também pode definir manualmente:
+          </p>
 
           <select
             className="form-select"
             value={strategicObjectiveId}
             onChange={(e) => setStrategicObjectiveId(e.target.value)}
-            required
             style={{ backgroundColor: '#020617', borderColor: 'rgba(59, 130, 246, 0.4)', color: '#f8fafc' }}
           >
-            <option value="">Selecione a diretriz corporativa da Alta Gerência...</option>
+            <option value="">Atribuição Automática pelo Sensei IA (Recomendado)</option>
             {strategicObjectives.map((obj) => {
               const pillarConfig = STRATEGIC_PILLARS_CONFIG[obj.pillar];
               return (
                 <option key={obj.id} value={obj.id}>
-                  {obj.code} • {obj.title} ({pillarConfig?.shortLabel || obj.pillar}) — Meta: {obj.unitLabel} {obj.targetValue.toLocaleString('pt-BR')}
+                  {obj.code} • {obj.title} ({pillarConfig?.shortLabel || obj.pillar})
                 </option>
               );
             })}
@@ -184,7 +185,9 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
                   {pConfig?.icon} {pConfig?.label}
                 </span>
                 <span>• Patrocinador: <strong style={{ color: '#e2e8f0' }}>{selected.sponsor}</strong></span>
-                <span>• Meta 2026: <strong style={{ color: '#22c55e' }}>{selected.unitLabel} {selected.targetValue.toLocaleString('pt-BR')}</strong></span>
+                {selected.targetValue ? (
+                  <span>• Meta: <strong style={{ color: '#22c55e' }}>{selected.unitLabel} {selected.targetValue.toLocaleString('pt-BR')}</strong></span>
+                ) : null}
               </div>
             );
           })()}

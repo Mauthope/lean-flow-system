@@ -1614,15 +1614,15 @@ export async function evaluateProjectStrategicAlignment(
   const promptText = `
 Você é o Sensei Lean AI, mestre em Lean Manufacturing (Sistema Toyota de Produção), Kaizen, PDCA e Desdobramento de Diretrizes Estratégicas Hoshin Kanri.
 
-Sua missão é avaliar tecnicamente a convergência estratégica de uma iniciativa Kaizen de chão de fábrica em relação a uma meta corporativa da Alta Gerência.
+Sua missão é avaliar tecnicamente a aderência e convergência estratégica de uma iniciativa Kaizen de chão de fábrica em relação a uma diretriz corporativa da Alta Gerência, dando feedback pedagógico e sugestões práticas de como a equipe pode elevar a aderência aos objetivos da diretoria.
 
 DIRETRIZ DA ALTA GERÊNCIA:
 - Código: ${objective.code}
 - Título: ${objective.title}
 - Pilar: ${objective.pillar}
 - Patrocinador: ${objective.sponsor}
-- Meta Fixada: ${objective.targetValue} ${objective.unitLabel} (Unidade: ${objective.targetUnit})
-- Desafio: ${objective.description}
+- Desafio Estratégico: ${objective.description}
+${objective.targetValue ? `- Meta Referencial: ${objective.targetValue} ${objective.unitLabel || ''}` : '- Foco: Diretriz Qualitativa / Alinhamento de Propósito'}
 
 PROJETO KAIZEN NO GEMBA:
 - Protocolo: ${project.protocol || project.id}
@@ -1630,16 +1630,25 @@ PROJETO KAIZEN NO GEMBA:
 - Setor: ${project.originSectorName || 'Fábrica'}
 - Desperdício Combatido: ${project.wasteCategory}
 - Problema Declarado: ${project.problemStatement || project.description}
-- Métrica Alvo: ${project.targetMetricName || 'N/A'} (Baseline: ${project.baselineValue || 0}, Meta: ${project.targetGoalValue || 0}, Realizado: ${project.achievedValue || 'Em medição'})
+- Análise de Causa Raiz: ${project.fiveWhys && project.fiveWhys.length > 0 ? `5 Porquês preenchidos (${project.fiveWhys.length} níveis)` : 'Ainda não detalhada'}
+- Plano de Ação 5W2H: ${project.checklist ? `${project.checklist.length} ações mapeadas` : 'Preliminar'}
 - Custo Evitado Validado: R$ ${(project.actualCostAvoided || project.estimatedCostAvoided || 0).toLocaleString('pt-BR')}
 - Horas Salvas: ${project.hoursSaved || 0} horas
-- Procedimento Padronizado: ${project.standardWorkDocRef || 'Em elaboração'}
+- Procedimento Padronizado (POP/SOP): ${project.standardWorkDocRef || 'Pendente de elaboração'}
 
-Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação de markdown extra além do bloco json) com os seguintes campos:
+CRITÉRIOS DE PONTUAÇÃO DO SENSEI (Aderência de 0 a 100%):
+- Projetos em fase inicial/ideia devem começar entre 40% e 60%.
+- Conforme adicionam causa raiz (5 Porquês/Ishikawa), ações 5W2H bem estruturadas, comprovação de ganhos reais e padronização SOP, a pontuação atinge entre 75% e 95%.
+
+Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação extra) com os seguintes campos:
 {
-  "justification": "2 a 3 frases densas e executivas em português formal explicando como a contramedida técnica no Gemba combate a causa raiz e converge com a meta da diretoria.",
-  "alignmentScore": número inteiro entre 85 e 99 indicando o grau de coerência e contribuição,
-  "contributionSummary": "1 frase concisa quantificando o valor gerado (R$, horas ou índice de capacidade) para a meta corporativa."
+  "justification": "2 a 3 frases densas e executivas em português formal explicando como o projeto converge com a diretriz da alta gerência.",
+  "alignmentScore": número inteiro entre 40 e 98 indicando o grau atual de aderência e rigor metodológico,
+  "contributionSummary": "1 frase concisa quantificando o valor gerado ou impacto no Gemba.",
+  "improvementSuggestions": [
+    "Ação prática 1 recomendada pelo Sensei para aumentar a aderência e o impacto na diretoria",
+    "Ação prática 2 recomendada..."
+  ]
 }
 `.trim();
 
@@ -1656,7 +1665,7 @@ Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação de markd
             contents: [{ parts: [{ text: promptText }] }],
             generationConfig: {
               temperature: 0.3,
-              maxOutputTokens: 350,
+              maxOutputTokens: 500,
             },
           }),
         }
@@ -1670,10 +1679,15 @@ Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação de markd
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
             if (parsed.justification && typeof parsed.alignmentScore === 'number') {
+              const suggestions = Array.isArray(parsed.improvementSuggestions) && parsed.improvementSuggestions.length > 0
+                ? parsed.improvementSuggestions
+                : fallbackAudit.improvementSuggestions;
+
               return {
                 justification: parsed.justification.trim(),
-                alignmentScore: Math.min(100, Math.max(70, Math.round(parsed.alignmentScore))),
+                alignmentScore: Math.min(100, Math.max(35, Math.round(parsed.alignmentScore))),
                 contributionSummary: parsed.contributionSummary?.trim() || fallbackAudit.contributionSummary,
+                improvementSuggestions: suggestions,
                 evaluatedAt: now,
                 modelUsed: `Sensei IA • Gemini (${model})`,
               };
@@ -1689,7 +1703,7 @@ Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação de markd
   return fallbackAudit;
 }
 
-function getLocalFallbackStrategicAudit(
+export function getLocalFallbackStrategicAudit(
   project: LeanAction,
   objective: StrategicObjective
 ): SenseiStrategicAudit {
@@ -1697,41 +1711,100 @@ function getLocalFallbackStrategicAudit(
   const savings = project.actualCostAvoided || project.estimatedCostAvoided || 0;
   const hours = project.hoursSaved || 0;
 
-  let justification = '';
-  let alignmentScore = 94;
+  // Cálculo Dinâmico de Aderência Baseado na Maturidade Lean do Projeto
+  let score = 45; // Base inicial para projeto recém-criado
+  const suggestions: string[] = [];
 
-  if (objective.pillar === 'financeiro_custos') {
-    justification = `A eliminação do desperdício de ${project.wasteCategory || 'recursos'} no projeto "${project.title}" reduz custos diretos operacionais no setor ${project.originSectorName || 'fabril'}. O ganho de R$ ${savings.toLocaleString('pt-BR')} suporta de forma direta a meta corporativa ${objective.code} (${objective.title}).`;
-    alignmentScore = savings > 50000 ? 98 : 94;
-  } else if (objective.pillar === 'produtividade_oee') {
-    justification = `Ao combater paradas e ineficiências na iniciativa "${project.title}", a equipe destrava capacidade de máquina e reduz tempos ociosos, elevando a taxa de disponibilidade e performance do OEE almejada pela alta liderança em ${objective.code}.`;
-    alignmentScore = hours > 50 ? 97 : 93;
-  } else if (objective.pillar === 'qualidade_refugo') {
-    justification = `A contenção de falhas e padronização introduzida por "${project.title}" atua na causa raiz de defeitos, garantindo conformidade nas especificações do produto e impulsionando a meta ${objective.code} de Zero Defeito e redução de refugo.`;
-    alignmentScore = 95;
-  } else if (objective.pillar === 'lead_time_cliente') {
-    justification = `A sincronização de fluxo e eliminação de esperas no projeto "${project.title}" reduz o tempo de ciclo e o trabalho em processo (WIP), convergindo diretamente para a meta de encurtamento do lead time total fixada pela diretoria.`;
-    alignmentScore = 93;
+  // 1. Causa Raiz (5 Porquês / Ishikawa)
+  const has5Whys = project.fiveWhys && project.fiveWhys.some((w) => w && w.trim().length > 0);
+  const hasIshikawa = project.ishikawa && (
+    (project.ishikawa.method && project.ishikawa.method.length > 0) ||
+    (project.ishikawa.machine && project.ishikawa.machine.length > 0) ||
+    (project.ishikawa.material && project.ishikawa.material.length > 0)
+  );
+
+  if (has5Whys || hasIshikawa) {
+    score += 15;
   } else {
-    justification = `A iniciativa "${project.title}" fortalece a disciplina operacional, segurança no Gemba e conformidade técnica no setor ${project.originSectorName || 'produtivo'}, alinhando a rotina do chão de fábrica com o desafio corporativo ${objective.code} (${objective.title}).`;
-    alignmentScore = 92;
+    suggestions.push('Realizar a análise de causa raiz com os 5 Porquês ou Diagrama de Ishikawa.');
+  }
+
+  // 2. Plano de Ação 5W2H (Checklist)
+  const checklist = project.checklist || [];
+  const hasChecklistItems = checklist.length >= 3;
+  const completedChecklistCount = checklist.filter((c) => c.completed).length;
+
+  if (hasChecklistItems) {
+    score += 10;
+    if (completedChecklistCount > 0) {
+      score += Math.min(10, Math.round((completedChecklistCount / checklist.length) * 10));
+    }
+  } else {
+    suggestions.push('Estruturar o plano de ação 5W2H com contramedidas claras e responsáveis.');
+  }
+
+  // 3. Acompanhamento dos Ganhos Reais (1 a 12 Meses)
+  const fu = project.quarterlyFollowUp;
+  const monthsFilled = fu?.monthsFilledCount || 0;
+  if (monthsFilled >= 3) {
+    score += 15;
+  } else if (monthsFilled >= 1) {
+    score += 8;
+  } else {
+    suggestions.push('Comprovar os resultados reais mês a mês no acompanhamento do projeto.');
+  }
+
+  // 4. Padronização e Sustentação (SOP / POP / LPP)
+  if (project.standardWorkDocRef || project.standardWorkUpdated) {
+    score += 10;
+  } else {
+    suggestions.push('Documentar e implantar a Instrução de Trabalho Padronizado (POP/SOP) para sustentação.');
+  }
+
+  // Bônus de alinhamento temático de pilar
+  if (objective.pillar === 'financeiro_custos' && (project.wasteCategory === 'espera' || project.wasteCategory === 'superproducao' || savings > 10000)) {
+    score += 5;
+  } else if (objective.pillar === 'qualidade_refugo' && (project.wasteCategory === 'defeitos' || project.wasteCategory === 'processamento_excessivo')) {
+    score += 5;
+  } else if (objective.pillar === 'produtividade_oee' && (project.wasteCategory === 'movimentacao' || project.wasteCategory === 'transporte')) {
+    score += 5;
+  }
+
+  score = Math.min(98, Math.max(40, score));
+
+  // Justificativa adaptada ao pilar da diretriz
+  let justification = '';
+  if (objective.pillar === 'financeiro_custos') {
+    justification = `A iniciativa "${project.title}" no setor ${project.originSectorName || 'produtivo'} ataca diretamente perdas operacionais, convergindo com a diretriz "${objective.title}". O potencial acumulado fortalece a eficiência de custos fabril.`;
+  } else if (objective.pillar === 'produtividade_oee') {
+    justification = `Ao combater ineficiências e tempos de espera, a iniciativa "${project.title}" destrava capacidade de máquina e eleva a fluidez do processo alinhando-se com a diretriz "${objective.title}".`;
+  } else if (objective.pillar === 'qualidade_refugo') {
+    justification = `A eliminação de causas geradoras de não-conformidade no projeto "${project.title}" converge de forma direta com o objetivo "${objective.title}" de elevação dos padrões de qualidade.`;
+  } else if (objective.pillar === 'lead_time_cliente') {
+    justification = `O alinhamento do fluxo contínuo proporcionado por "${project.title}" encurta o tempo de travessia e reduz estoques intermediários, atendendo à diretriz "${objective.title}".`;
+  } else {
+    justification = `A disciplina de melhoria contínua aplicada em "${project.title}" conecta a rotina do Gemba aos desafios estratégicos fixados pela diretoria na diretriz "${objective.title}".`;
   }
 
   let contributionSummary = '';
   if (savings > 0) {
     contributionSummary = `Aporte de R$ ${savings.toLocaleString('pt-BR')} em custos evitados e ${hours}h de trabalho produtivo resgatadas.`;
   } else if (hours > 0) {
-    contributionSummary = `Resgate de ${hours}h operacionais e eliminação de variabilidade no processo produtivo.`;
+    contributionSummary = `Resgate de ${hours}h operacionais e eliminação de variabilidade no posto de trabalho.`;
   } else {
-    contributionSummary = `Padronização no Gemba com impacto direto na sustentação da meta corporativa.`;
+    contributionSummary = `Padronização e melhoria de rotina no Gemba com impacto direto na diretriz corporativa.`;
   }
 
   return {
     justification,
-    alignmentScore,
+    alignmentScore: score,
     contributionSummary,
+    improvementSuggestions: suggestions.length > 0 ? suggestions : [
+      'Manter a disciplina de medição nos próximos meses.',
+      'Disseminar a melhoria como lição aprendida (Yokoten) para outras linhas.'
+    ],
     evaluatedAt: now,
-    modelUsed: 'Sensei IA Cognitivo v2.6',
+    modelUsed: 'Sensei IA Dinâmico v2.7',
   };
 }
 

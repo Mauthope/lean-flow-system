@@ -57,11 +57,11 @@ export default function AltaGerenciaPage() {
     pillar: StrategicPillar;
     sponsor: string;
     year: number;
-    targetValue: number;
-    targetUnit: 'currency' | 'percentage' | 'hours' | 'days';
-    unitLabel: string;
-    baselineValue: number;
     deadlineDate: string;
+    targetValue?: number;
+    targetUnit?: 'currency' | 'percentage' | 'hours' | 'days';
+    unitLabel?: string;
+    baselineValue?: number;
   }>({
     code: '',
     title: '',
@@ -69,10 +69,6 @@ export default function AltaGerenciaPage() {
     pillar: 'financeiro_custos',
     sponsor: 'Diretoria Industrial & Controladoria',
     year: 2026,
-    targetValue: 1000000,
-    targetUnit: 'currency',
-    unitLabel: 'R$',
-    baselineValue: 0,
     deadlineDate: '2026-12-31',
   });
 
@@ -102,10 +98,6 @@ export default function AltaGerenciaPage() {
       pillar: 'financeiro_custos',
       sponsor: 'Diretoria Industrial & Controladoria',
       year: selectedYear,
-      targetValue: 500000,
-      targetUnit: 'currency',
-      unitLabel: 'R$',
-      baselineValue: 0,
       deadlineDate: `${selectedYear}-12-31`,
     });
     setIsModalOpen(true);
@@ -124,7 +116,7 @@ export default function AltaGerenciaPage() {
       targetValue: obj.targetValue,
       targetUnit: obj.targetUnit,
       unitLabel: obj.unitLabel,
-      baselineValue: obj.baselineValue ?? 0,
+      baselineValue: obj.baselineValue,
       deadlineDate: obj.deadlineDate || `${obj.year}-12-31`,
     });
     setIsModalOpen(true);
@@ -146,10 +138,10 @@ export default function AltaGerenciaPage() {
       pillar: formData.pillar,
       sponsor: formData.sponsor.trim(),
       year: Number(formData.year) || selectedYear,
-      targetValue: Number(formData.targetValue) || 0,
+      targetValue: formData.targetValue ? Number(formData.targetValue) : undefined,
       targetUnit: formData.targetUnit,
-      unitLabel: formData.unitLabel.trim() || 'un',
-      baselineValue: Number(formData.baselineValue) || 0,
+      unitLabel: formData.unitLabel?.trim() || undefined,
+      baselineValue: formData.baselineValue !== undefined ? Number(formData.baselineValue) : undefined,
       deadlineDate: formData.deadlineDate,
       status: editingObjective?.status || 'ativo',
     });
@@ -302,7 +294,7 @@ export default function AltaGerenciaPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                Índice Macro Global (Hoshin)
+                Aderência Estratégica Global (Hoshin)
               </span>
               <Target size={18} style={{ color: fulfillmentClass.color }} />
             </div>
@@ -320,7 +312,7 @@ export default function AltaGerenciaPage() {
               >
                 {macroMetrics.overallFulfillmentPercent}%
               </h2>
-              <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>atingimento médio</span>
+              <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>convergência do Gemba</span>
             </div>
 
             {/* Barra de Progresso Macro */}
@@ -583,15 +575,16 @@ export default function AltaGerenciaPage() {
             )}
           </div>
         ) : (
-          filteredObjectives.map(({ objective, currentRealizedValue, fulfillmentPercent, linkedProjects, completedProjectsCount, inProgressProjectsCount, senseiExecutiveSynthesis }) => {
+          filteredObjectives.map(({ objective, currentRealizedValue, fulfillmentPercent, averageAdherenceScore, linkedProjects, completedProjectsCount, inProgressProjectsCount, senseiExecutiveSynthesis }) => {
             const pillarConfig = STRATEGIC_PILLARS_CONFIG[objective.pillar];
             const isExpanded = expandedObjectiveId === objective.id;
 
-            const formatValue = (val: number) => {
+            const formatValue = (val?: number) => {
+              if (val === undefined || val === null) return 'N/A';
               if (objective.targetUnit === 'currency') return formatCurrency(val);
               if (objective.targetUnit === 'percentage') return `${val}%`;
               if (objective.targetUnit === 'hours') return `${val.toLocaleString('pt-BR')}h`;
-              return `${val} ${objective.unitLabel}`;
+              return `${val} ${objective.unitLabel || ''}`.trim();
             };
 
             const progressBarColor =
@@ -726,14 +719,20 @@ export default function AltaGerenciaPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.45rem' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Realizado no Gemba:</span>
-                        <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
-                          {formatValue(currentRealizedValue)}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Aderência dos Projetos:</span>
+                        <strong style={{ fontSize: '1.25rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                          {averageAdherenceScore}%
                         </strong>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          / Meta: <strong style={{ color: '#cbd5e1' }}>{formatValue(objective.targetValue)}</strong>
-                        </span>
+                        {objective.targetValue ? (
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            (Realizado: {formatValue(currentRealizedValue)} / Meta: <strong style={{ color: '#cbd5e1' }}>{formatValue(objective.targetValue)}</strong>)
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                            ({linkedProjects.length} iniciativas • Custo Evitado: {formatCurrency(linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0))})
+                          </span>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.75rem' }}>
@@ -1089,49 +1088,64 @@ export default function AltaGerenciaPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Tipo de Meta:</label>
-                  <select
-                    className="form-select"
-                    value={formData.targetUnit}
-                    onChange={(e) => {
-                      const u = e.target.value as 'currency' | 'percentage' | 'hours' | 'days';
-                      let defaultLabel = 'R$';
-                      if (u === 'percentage') defaultLabel = '%';
-                      if (u === 'hours') defaultLabel = 'horas';
-                      if (u === 'days') defaultLabel = 'dias';
-                      setFormData({ ...formData, targetUnit: u, unitLabel: defaultLabel });
-                    }}
-                  >
-                    <option value="currency">Moeda (R$)</option>
-                    <option value="percentage">Percentual (%)</option>
-                    <option value="hours">Horas (h)</option>
-                    <option value="days">Dias (Lead Time)</option>
-                  </select>
+              {/* Meta Quantitativa Opcional */}
+              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.3rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
+                    Meta Quantitativa (Opcional)
+                  </span>
+                  <span style={{ fontSize: '0.675rem', color: '#64748b' }}>
+                    O Sensei IA avalia a convergência e o % de aderência automaticamente
+                  </span>
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Tipo de Meta:</label>
+                    <select
+                      className="form-select"
+                      value={formData.targetUnit || 'currency'}
+                      onChange={(e) => {
+                        const u = e.target.value as 'currency' | 'percentage' | 'hours' | 'days';
+                        let defaultLabel = 'R$';
+                        if (u === 'percentage') defaultLabel = '%';
+                        if (u === 'hours') defaultLabel = 'horas';
+                        if (u === 'days') defaultLabel = 'dias';
+                        setFormData({ ...formData, targetUnit: u, unitLabel: defaultLabel });
+                      }}
+                      style={{ fontSize: '0.8rem' }}
+                    >
+                      <option value="currency">Moeda (R$)</option>
+                      <option value="percentage">Percentual (%)</option>
+                      <option value="hours">Horas (h)</option>
+                      <option value="days">Dias</option>
+                    </select>
+                  </div>
 
-                <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Meta Quantitativa:</label>
-                  <input
-                    type="number"
-                    step="any"
-                    className="form-control"
-                    value={formData.targetValue}
-                    onChange={(e) => setFormData({ ...formData, targetValue: Number(e.target.value) })}
-                    required
-                  />
-                </div>
+                  <div>
+                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Meta Numérica:</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className="form-control"
+                      placeholder="Opcional"
+                      value={formData.targetValue !== undefined ? formData.targetValue : ''}
+                      onChange={(e) => setFormData({ ...formData, targetValue: e.target.value ? Number(e.target.value) : undefined })}
+                      style={{ fontSize: '0.8rem' }}
+                    />
+                  </div>
 
-                <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Baseline (Partida):</label>
-                  <input
-                    type="number"
-                    step="any"
-                    className="form-control"
-                    value={formData.baselineValue}
-                    onChange={(e) => setFormData({ ...formData, baselineValue: Number(e.target.value) })}
-                  />
+                  <div>
+                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Baseline (Partida):</label>
+                    <input
+                      type="number"
+                      step="any"
+                      className="form-control"
+                      placeholder="Opcional"
+                      value={formData.baselineValue !== undefined ? formData.baselineValue : ''}
+                      onChange={(e) => setFormData({ ...formData, baselineValue: e.target.value ? Number(e.target.value) : undefined })}
+                      style={{ fontSize: '0.8rem' }}
+                    />
+                  </div>
                 </div>
               </div>
 
