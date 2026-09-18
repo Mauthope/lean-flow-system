@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
 import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
-import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
+import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeft,
@@ -3991,6 +3991,7 @@ export default function AdminProjectDetailPage() {
                   const mKey = `month${mNum}` as 'month1' | 'month2' | 'month3';
                   const entry = action.quarterlyFollowUp?.[mKey];
                   const isFilled = entry?.value !== undefined;
+                  const monthName = getProjectMonthLabel(mNum, action);
 
                   return (
                     <div
@@ -4011,9 +4012,26 @@ export default function AdminProjectDetailPage() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          {mNum}º Mês de Operação
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ffffff' }}>
+                            {mNum}º Mês
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.675rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                              color: '#22d3ee',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              padding: '0.08rem 0.4rem',
+                              borderRadius: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.02em',
+                            }}
+                          >
+                            {monthName}
+                          </span>
+                        </div>
                         {isFilled ? (
                           <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
                             ✓ Aferido
@@ -4045,7 +4063,7 @@ export default function AdminProjectDetailPage() {
                           {entry.measuredAt && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#94a3b8' }}>
                               <Calendar size={12} color="#06b6d4" />
-                              <span>Data: {formatDate(entry.measuredAt)}</span>
+                              <span>Data: {formatDate(entry.measuredAt)} ({monthName})</span>
                             </div>
                           )}
                           {entry.notes && (
@@ -4059,7 +4077,7 @@ export default function AdminProjectDetailPage() {
                             className="btn btn-secondary btn-sm"
                             style={{ marginTop: '0.5rem', fontSize: '0.725rem', width: '100%', justifyContent: 'center' }}
                           >
-                            Editar Medição
+                            Editar Medição ({monthName})
                           </button>
                         </div>
                       ) : (
@@ -4070,7 +4088,7 @@ export default function AdminProjectDetailPage() {
                             className="btn btn-primary btn-sm"
                             style={{ width: '100%', justifyContent: 'center', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                           >
-                            <Plus size={14} /> Lançar Resultado do {mNum}º Mês
+                            <Plus size={14} /> Lançar {mNum}º Mês ({monthName})
                           </button>
                         </div>
                       )}
@@ -4186,6 +4204,7 @@ export default function AdminProjectDetailPage() {
                   const mKey = `month${mNum}`;
                   const entry = (action.quarterlyFollowUp as any)?.[mKey];
                   const isFilled = entry?.value !== undefined;
+                  const monthName = getProjectMonthLabel(mNum, action);
 
                   return (
                     <div
@@ -4205,9 +4224,26 @@ export default function AdminProjectDetailPage() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#94a3b8' }}>
-                          {mNum}º Mês
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#ffffff' }}>
+                            {mNum}º Mês
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.675rem',
+                              fontWeight: 800,
+                              backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                              color: '#22d3ee',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              padding: '0.08rem 0.4rem',
+                              borderRadius: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.02em',
+                            }}
+                          >
+                            {monthName}
+                          </span>
+                        </div>
                         {isFilled ? (
                           <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.08rem 0.4rem', borderRadius: '9999px' }}>
                             ✓ Aferido
@@ -4230,7 +4266,7 @@ export default function AdminProjectDetailPage() {
 
                       {isFilled ? (
                         <div style={{ fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.45rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                          {entry.measuredAt && <span>Data: {formatDate(entry.measuredAt)}</span>}
+                          {entry.measuredAt && <span>Data: {formatDate(entry.measuredAt)} ({monthName})</span>}
                           {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && <span>{entry.hoursSaved}h salvas</span>}
                           <button
                             type="button"
@@ -4238,7 +4274,7 @@ export default function AdminProjectDetailPage() {
                             className="btn btn-secondary btn-sm"
                             style={{ marginTop: '0.35rem', fontSize: '0.675rem', padding: '0.25rem 0.5rem', width: '100%', justifyContent: 'center' }}
                           >
-                            Editar
+                            Editar ({monthName})
                           </button>
                         </div>
                       ) : (
@@ -4247,18 +4283,19 @@ export default function AdminProjectDetailPage() {
                           onClick={() => handleOpenFollowUpModal(mNum)}
                           className="btn btn-secondary btn-sm"
                           style={{
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
+                            fontSize: '0.725rem',
+                            fontWeight: 800,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '0.3rem',
-                            padding: '0.35rem 0.5rem',
+                            gap: '0.35rem',
+                            padding: '0.45rem 0.5rem',
                             color: '#22d3ee',
-                            borderColor: 'rgba(6, 182, 212, 0.3)',
+                            borderColor: 'rgba(6, 182, 212, 0.35)',
+                            backgroundColor: 'rgba(6, 182, 212, 0.08)',
                           }}
                         >
-                          <Plus size={12} /> Lançar Mês {mNum}
+                          <Plus size={13} /> Lançar Mês {mNum} ({monthName})
                         </button>
                       )}
                     </div>
@@ -4714,7 +4751,7 @@ export default function AdminProjectDetailPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Calendar size={20} color="#22d3ee" />
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                  Aferição do {followUpModalMonth}º Mês de Operação
+                  Aferição do {followUpModalMonth}º Mês ({getProjectMonthLabel(followUpModalMonth, action)})
                 </h3>
               </div>
               <button

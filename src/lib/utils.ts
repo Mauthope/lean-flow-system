@@ -231,3 +231,59 @@ export function isThreeMonthsFollowUpCompleted(action?: { quarterlyFollowUp?: { 
   return getFollowUpMonthsFilledCount(action) === 3;
 }
 
+export const MONTH_NAMES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+] as const;
+
+/**
+ * Retorna o nome do mês civil correspondente a um número de mês (1 a 12) de um projeto Kaizen,
+ * considerando a data de início/homologação/medição ou o calendário padrão.
+ */
+export function getProjectMonthLabel(
+  mNum: number,
+  action?: {
+    quarterlyFollowUp?: {
+      startedAt?: string;
+      [key: string]: any;
+    };
+    masterApprovedAt?: string;
+    completedAt?: string;
+    createdAt?: string;
+  } | null
+): string {
+  const entry = (action?.quarterlyFollowUp as any)?.[`month${mNum}`];
+  if (entry?.measuredAt) {
+    const d = new Date(entry.measuredAt);
+    if (!isNaN(d.getTime())) {
+      return MONTH_NAMES[d.getMonth()];
+    }
+  }
+
+  const baseDateStr =
+    action?.quarterlyFollowUp?.startedAt ||
+    action?.masterApprovedAt ||
+    action?.completedAt ||
+    action?.createdAt;
+
+  if (baseDateStr) {
+    const d = new Date(baseDateStr);
+    if (!isNaN(d.getTime())) {
+      const targetMonthIndex = (d.getMonth() + (mNum - 1)) % 12;
+      return MONTH_NAMES[targetMonthIndex];
+    }
+  }
+
+  return MONTH_NAMES[(mNum - 1) % 12] || `Mês ${mNum}`;
+}
+
