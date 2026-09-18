@@ -41,6 +41,8 @@ import {
   StrategicObjective,
   MacroStrategicDashboardMetrics,
   SenseiStrategicAudit,
+  PendingProjectFollowUp,
+  MonthlyFollowUpPipeline,
 } from '../lib/types';
 import { sendControladoriaAuditInvite } from './emailService';
 import {
@@ -688,7 +690,7 @@ export const dataService = {
   // Lançar resultado mensal no acompanhamento de 3 meses pós-homologação
   saveQuarterlyMonthResult(
     actionId: string,
-    monthNumber: 1 | 2 | 3,
+    monthNumber: number,
     data: {
       value: number;
       hoursSaved?: number;
@@ -714,8 +716,8 @@ export const dataService = {
       };
     }
 
-    const key = `month${monthNumber}` as 'month1' | 'month2' | 'month3';
-    action.quarterlyFollowUp[key] = {
+    const key = `month${monthNumber}`;
+    (action.quarterlyFollowUp as any)[key] = {
       monthNumber,
       monthLabel: `${monthNumber}º Mês`,
       value: Number(data.value) || 0,
@@ -725,37 +727,198 @@ export const dataService = {
       registeredBy: data.registeredBy,
     };
 
+    // Coleta todos os valores preenchidos de 1 a 12
+    const allFilledValues: number[] = [];
+    for (let m = 1; m <= 12; m++) {
+      const entry = (action.quarterlyFollowUp as any)[`month${m}`];
+      if (entry && entry.value !== undefined) {
+        allFilledValues.push(entry.value);
+      }
+    }
+
+    const countFilled = allFilledValues.length;
+    action.quarterlyFollowUp.monthsFilledCount = countFilled;
+
+    // Total Realizado em Caixa (Soma estrita dos meses já apurados no chão de fábrica)
+    const totalRealized = allFilledValues.reduce((acc, v) => acc + v, 0);
+    action.quarterlyFollowUp.totalRealizedCostAvoided = totalRealized;
+
+    // Média mensal real apurada até o momento
+    const monthlyAvg = countFilled > 0 ? Math.round(totalRealized / countFilled) : 0;
+    action.quarterlyFollowUp.averageCostAvoided = monthlyAvg;
+
+    // Projeção total de 12 meses (Realizado até agora + Projeção dos meses restantes com base na média real)
+    const remainingMonths = Math.max(0, 12 - countFilled);
+    action.quarterlyFollowUp.totalProjectedCostAvoided = totalRealized + (remainingMonths * monthlyAvg);
+
+    // Validação da Homologação da Sustentação (Portão dos 3 Primeiros Meses)
     const m1 = action.quarterlyFollowUp.month1?.value;
     const m2 = action.quarterlyFollowUp.month2?.value;
     const m3 = action.quarterlyFollowUp.month3?.value;
+    const isQuarterCompleted = m1 !== undefined && m2 !== undefined && m3 !== undefined;
 
-    const countFilled = [m1, m2, m3].filter((v) => v !== undefined).length;
-
-    if (countFilled === 3 && m1 !== undefined && m2 !== undefined && m3 !== undefined) {
-      const avg = Math.round((m1 + m2 + m3) / 3);
-      action.quarterlyFollowUp.averageCostAvoided = avg;
+    if (isQuarterCompleted) {
       action.quarterlyFollowUp.isCompleted = true;
-      action.quarterlyFollowUp.completedAt = new Date().toISOString();
-      action.quarterlyFollowUp.status = 'consolidado';
-      // Oficializa o retorno total anualizado (12 meses) como ganho comprovado do projeto
-      action.actualCostAvoided = avg * 12;
-      if (action.projectCosts?.totalCost) {
-        action.netSavings = (avg * 12) - action.projectCosts.totalCost;
+      if (!action.quarterlyFollowUp.completedAt) {
+        action.quarterlyFollowUp.completedAt = new Date().toISOString();
+      }
+      if (countFilled >= 12) {
+        action.quarterlyFollowUp.isFullYearCompleted = true;
+        action.quarterlyFollowUp.status = 'consolidado';
+      } else {
+        action.quarterlyFollowUp.status = 'homologado_em_acompanhamento';
       }
     } else if (m1 !== undefined && m2 !== undefined) {
       action.quarterlyFollowUp.status = 'aguardando_mes_3';
-      action.quarterlyFollowUp.averageCostAvoided = Math.round((m1 + m2) / 2);
     } else if (m1 !== undefined) {
       action.quarterlyFollowUp.status = 'aguardando_mes_2';
-      action.quarterlyFollowUp.averageCostAvoided = m1;
     } else {
       action.quarterlyFollowUp.status = 'aguardando_mes_1';
+    }
+
+    // O valor real acumulado do projeto reflete o montante real já apurado
+    action.actualCostAvoided = totalRealized;
+    if (action.projectCosts?.totalCost) {
+      action.netSavings = totalRealized - action.projectCosts.totalCost;
     }
 
     action.updatedAt = new Date().toISOString();
     actions[index] = action;
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return actions[index];
+  },
+
+  // ===================================================================
+  // RADAR DE FECHAMENTO MENSAL & PIPELINE DE ENTRADA FINANCEIRA
+  // ===================================================================
+  getMonthlyFollowUpPipeline(tenantId?: string, monthIndex: number = 4): MonthlyFollowUpPipeline {
+    const actions = this.getActions(tenantId);
+    // Considera projetos que foram concluídos ou estão em fase de sustentação/homologados
+    const eligibleActions = actions.filter(
+      (a) =>
+        a.status === 'concluida' ||
+        a.masterApproved === true ||
+        (a.quarterlyFollowUp && a.quarterlyFollowUp.enabled)
+    );
+
+    let reportedCount = 0;
+    let confirmedValue = 0;
+    let pendingEstimatedValue = 0;
+    const pendingProjects: PendingProjectFollowUp[] = [];
+
+    eligibleActions.forEach((action) => {
+      const fu = action.quarterlyFollowUp;
+      const entry = fu ? (fu as any)[`month${monthIndex}`] : undefined;
+      const isReported = entry && entry.value !== undefined;
+
+      if (isReported) {
+        reportedCount++;
+        confirmedValue += entry.value;
+      } else {
+        // Estima o valor mensal proporcional esperado para este projeto
+        let estimatedMonthly = 0;
+        if (fu?.averageCostAvoided && fu.averageCostAvoided > 0) {
+          estimatedMonthly = fu.averageCostAvoided;
+        } else if (action.estimatedCostAvoided && action.estimatedCostAvoided > 0) {
+          estimatedMonthly = Math.round(action.estimatedCostAvoided / 12);
+        } else if (action.actualCostAvoided && action.actualCostAvoided > 0) {
+          estimatedMonthly = Math.round(action.actualCostAvoided / Math.max(1, fu?.monthsFilledCount || 1));
+        } else {
+          estimatedMonthly = 4500;
+        }
+
+        pendingEstimatedValue += estimatedMonthly;
+
+        // Identifica qual é o próximo mês que falta ser informado
+        let nextM = monthIndex;
+        for (let m = 1; m <= 12; m++) {
+          const mEntry = fu ? (fu as any)[`month${m}`] : undefined;
+          if (!mEntry || mEntry.value === undefined) {
+            nextM = m;
+            break;
+          }
+        }
+
+        pendingProjects.push({
+          actionId: action.id,
+          actionTitle: action.title,
+          actionCode: action.id.substring(0, 8).toUpperCase(),
+          agentName: action.assignedAgentName || 'Agente Lean',
+          agentId: action.assignedAgentId,
+          sectorName: action.targetSectorName || action.originSectorName || 'Fábrica',
+          estimatedMonthlyValue: estimatedMonthly,
+          nextMonthToReport: nextM,
+          lastReportedMonth: (fu?.monthsFilledCount || 0) > 0 ? fu?.monthsFilledCount : undefined,
+        });
+      }
+    });
+
+    const totalEligible = eligibleActions.length;
+    const pendingCount = pendingProjects.length;
+    const totalPotential = confirmedValue + pendingEstimatedValue;
+    const completionPct = totalEligible > 0 ? Math.round((reportedCount / totalEligible) * 100) : 100;
+
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthLabel = monthNames[Math.min(11, Math.max(0, monthIndex - 1))] || `${monthIndex}º Mês`;
+
+    return {
+      monthIndex,
+      monthLabel,
+      totalEligibleProjects: totalEligible,
+      reportedProjectsCount: reportedCount,
+      pendingProjectsCount: pendingCount,
+      confirmedValue,
+      pendingEstimatedValue,
+      totalPotentialValue: totalPotential,
+      completionPercentage: completionPct,
+      pendingProjects,
+    };
+  },
+
+  getAgentPendingFollowUps(agentId: string): PendingProjectFollowUp[] {
+    const actions = this.getActions();
+    const agentActions = actions.filter(
+      (a) =>
+        a.assignedAgentId === agentId &&
+        (a.status === 'concluida' || a.masterApproved === true || (a.quarterlyFollowUp && a.quarterlyFollowUp.enabled))
+    );
+
+    const pendingList: PendingProjectFollowUp[] = [];
+
+    agentActions.forEach((action) => {
+      const fu = action.quarterlyFollowUp;
+      for (let m = 1; m <= 12; m++) {
+        const entry = fu ? (fu as any)[`month${m}`] : undefined;
+        if (!entry || entry.value === undefined) {
+          let estimatedMonthly = 0;
+          if (fu?.averageCostAvoided && fu.averageCostAvoided > 0) {
+            estimatedMonthly = fu.averageCostAvoided;
+          } else if (action.estimatedCostAvoided) {
+            estimatedMonthly = Math.round(action.estimatedCostAvoided / 12);
+          } else {
+            estimatedMonthly = 5000;
+          }
+
+          pendingList.push({
+            actionId: action.id,
+            actionTitle: action.title,
+            actionCode: action.id.substring(0, 8).toUpperCase(),
+            agentName: action.assignedAgentName || 'Agente Lean',
+            agentId: action.assignedAgentId,
+            sectorName: action.targetSectorName || action.originSectorName || 'Fábrica',
+            estimatedMonthlyValue: estimatedMonthly,
+            nextMonthToReport: m,
+            lastReportedMonth: (fu?.monthsFilledCount || 0) > 0 ? fu?.monthsFilledCount : undefined,
+          });
+          break; // O próximo mês a preencher
+        }
+      }
+    });
+
+    return pendingList;
   },
 
   // ===================================================================

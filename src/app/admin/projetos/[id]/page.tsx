@@ -174,8 +174,8 @@ export default function AdminProjectDetailPage() {
     }
   }, [action?.tenantId]);
 
-  // Acompanhamento Trimestral pós-homologação (3 Meses)
-  const [followUpModalMonth, setFollowUpModalMonth] = useState<1 | 2 | 3 | null>(null);
+  // Acompanhamento do Ciclo Real de 12 Meses (3 Meses Homologação + 9 Meses Consolidação)
+  const [followUpModalMonth, setFollowUpModalMonth] = useState<number | null>(null);
   const [followUpValue, setFollowUpValue] = useState<number | ''>('');
   const [followUpHours, setFollowUpHours] = useState<number | ''>('');
   const [followUpDate, setFollowUpDate] = useState<string>('');
@@ -1098,8 +1098,8 @@ export default function AdminProjectDetailPage() {
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
-  const handleOpenFollowUpModal = (month: 1 | 2 | 3) => {
-    const currentEntry = action?.quarterlyFollowUp?.[`month${month}` as 'month1' | 'month2' | 'month3'];
+  const handleOpenFollowUpModal = (month: number) => {
+    const currentEntry = (action?.quarterlyFollowUp as any)?.[`month${month}`];
     setFollowUpModalMonth(month);
     setFollowUpValue(currentEntry?.value !== undefined ? currentEntry.value : '');
     setFollowUpHours(currentEntry?.hoursSaved !== undefined ? currentEntry.hoursSaved : '');
@@ -3852,7 +3852,7 @@ export default function AdminProjectDetailPage() {
             )}
           </div>
 
-          {/* Card 4.3: Acompanhamento & Sustentação de Resultados em 3 Meses (Obrigatório para Homologação) */}
+          {/* Card 4.3: Ciclo Real de 12 Meses de Ganhos Fabris (Homologação & Caixa Real) */}
           <div
             className="card"
             style={{
@@ -3872,6 +3872,7 @@ export default function AdminProjectDetailPage() {
               gap: '1.5rem',
             }}
           >
+            {/* Topo do Bloco 4.3 */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                 <div
@@ -3892,7 +3893,7 @@ export default function AdminProjectDetailPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      4.3 Comprovação Trimestral de Ganhos Reais (Auditoria de 3 Meses pelo Agente)
+                      4.3 Ciclo Real de 12 Meses de Ganhos Fabris (Homologação & Caixa Real)
                     </h3>
                     {isThreeMonthsFollowUpCompleted(action) ? (
                       <span
@@ -3926,19 +3927,65 @@ export default function AdminProjectDetailPage() {
                           gap: '0.25rem',
                         }}
                       >
-                        ⏳ EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES — OBRIGATÓRIO P/ HOMOLOGAÇÃO)
+                        ⏳ HOMOLOGAÇÃO EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES OBRIGATÓRIOS)
                       </span>
                     )}
+
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                        color: '#22d3ee',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        padding: '0.15rem 0.55rem',
+                        borderRadius: '9999px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      ● {action.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action)}/12 MESES APURADOS
+                    </span>
                   </div>
-                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '750px', lineHeight: 1.5 }}>
-                    Conforme a metodologia de sustentação Lean, o <strong>Agente Responsável</strong> deve monitorar e registrar os resultados operacionais reais obtidos nos 3 primeiros meses. <strong>O envio para homologação master só é liberado após o preenchimento dos 3 meses.</strong>
+                  <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '850px', lineHeight: 1.5 }}>
+                    Metodologia Lean adaptada à realidade fabril: os <strong>3 primeiros meses</strong> constituem a homologação obrigatória de sustentação para a Controladoria e Diretoria. Do <strong>4º ao 12º mês</strong>, o agente continua alimentando o resultado apurado à medida que os dados de refugo, setup ou energia ficarem disponíveis (sem travas de dia fatal), compondo o caixa real no Gemba.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Grid dos 3 Meses */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* ========================================================================= */}
+            {/* FASE 1: PORTÃO DE HOMOLOGAÇÃO DA SUSTENTAÇÃO (MESES 1 A 3 - OBRIGATÓRIO)  */}
+            {/* ========================================================================= */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(6, 182, 212, 0.18)',
+                      color: '#22d3ee',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      padding: '0.12rem 0.5rem',
+                      borderRadius: '9999px',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Fase 1 • Portão de Homologação
+                  </span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>
+                    Meses 1 a 3 (Requisito Controladoria)
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                  {isThreeMonthsFollowUpCompleted(action) ? '✓ Pronto para homologação' : `${3 - getFollowUpMonthsFilledCount(action)} mês(es) para homologar`}
+                </span>
+              </div>
+
+              {/* Grid Meses 1 a 3 */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 {([1, 2, 3] as const).map((mNum) => {
                   const mKey = `month${mNum}` as 'month1' | 'month2' | 'month3';
@@ -4032,7 +4079,7 @@ export default function AdminProjectDetailPage() {
                 })}
               </div>
 
-              {/* Banner de Média Trimestral e Consolidação */}
+              {/* Banner de Média Trimestral e Homologação Master */}
               <div
                 style={{
                   backgroundColor: isThreeMonthsFollowUpCompleted(action)
@@ -4070,7 +4117,7 @@ export default function AdminProjectDetailPage() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                        Média Trimestral de Custo Evitado
+                        Média Trimestral de Sustentação
                       </h4>
                       {isThreeMonthsFollowUpCompleted(action) ? (
                         <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
@@ -4101,6 +4148,178 @@ export default function AdminProjectDetailPage() {
                     <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
                   </h3>
                 </div>
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* FASE 2: CONSOLIDAÇÃO CONTÍNUA DE CAIXA (MESES 4 AO 12 - SEM TRAVAS DE DATA)*/}
+            {/* ========================================================================= */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(245, 158, 11, 0.18)',
+                      color: '#fbbf24',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      padding: '0.12rem 0.5rem',
+                      borderRadius: '9999px',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Fase 2 • Caixa Real Fabril
+                  </span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>
+                    Meses 4 ao 12 (Alimentação Contínua sem Travas)
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                  Alimente conforme relatórios contábeis, refugo e paradas forem fechados
+                </span>
+              </div>
+
+              {/* Grid Meses 4 a 12 (9 meses) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
+                {([4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((mNum) => {
+                  const mKey = `month${mNum}`;
+                  const entry = (action.quarterlyFollowUp as any)?.[mKey];
+                  const isFilled = entry?.value !== undefined;
+
+                  return (
+                    <div
+                      key={mNum}
+                      style={{
+                        backgroundColor: '#090e1a',
+                        border: isFilled
+                          ? '1px solid rgba(16, 185, 129, 0.35)'
+                          : '1px solid rgba(255, 255, 255, 0.07)',
+                        borderRadius: '12px',
+                        padding: '0.95rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.65rem',
+                        boxShadow: isFilled ? '0 4px 15px rgba(16, 185, 129, 0.06)' : 'none',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#94a3b8' }}>
+                          {mNum}º Mês
+                        </span>
+                        {isFilled ? (
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.08rem 0.4rem', borderRadius: '9999px' }}>
+                            ✓ Aferido
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#cbd5e1', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)', padding: '0.08rem 0.4rem', borderRadius: '9999px' }}>
+                            ⏳ Pendente
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
+                          Resultado do Mês
+                        </span>
+                        <h5 style={{ fontSize: '1.2rem', fontWeight: 900, color: isFilled ? '#34d399' : '#64748b', margin: '0.15rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                          {isFilled ? formatCurrency(entry.value!) : 'R$ --'}
+                        </h5>
+                      </div>
+
+                      {isFilled ? (
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.45rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                          {entry.measuredAt && <span>Data: {formatDate(entry.measuredAt)}</span>}
+                          {entry.hoursSaved !== undefined && entry.hoursSaved > 0 && <span>{entry.hoursSaved}h salvas</span>}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenFollowUpModal(mNum)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ marginTop: '0.35rem', fontSize: '0.675rem', padding: '0.25rem 0.5rem', width: '100%', justifyContent: 'center' }}
+                          >
+                            Editar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFollowUpModal(mNum)}
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.3rem',
+                            padding: '0.35rem 0.5rem',
+                            color: '#22d3ee',
+                            borderColor: 'rgba(6, 182, 212, 0.3)',
+                          }}
+                        >
+                          <Plus size={12} /> Lançar Mês {mNum}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* CONSOLIDAÇÃO FINANCEIRA GLOBAL DO PROJETO (12 MESES)                      */}
+            {/* ========================================================================= */}
+            <div
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '14px',
+                padding: '1.25rem 1.5rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '1.25rem',
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                  Realizado em Caixa (Soma dos Meses Apurados)
+                </span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(action.quarterlyFollowUp?.totalRealizedCostAvoided || (action.actualCostAvoided || 0))}
+                </h3>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.2rem', display: 'block' }}>
+                  Total apurado fisicamente no chão de fábrica
+                </span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                  Projeção a 12 Meses (Realizado + Média)
+                </span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#22d3ee', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                  {formatCurrency(
+                    action.quarterlyFollowUp?.totalProjectedCostAvoided ||
+                    ((action.quarterlyFollowUp?.averageCostAvoided || 0) * 12)
+                  )}
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/ano</span>
+                </h3>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.2rem', display: 'block' }}>
+                  Visão executiva estimada para fechamento de ciclo
+                </span>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                  Taxa de Alimentação Operacional
+                </span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
+                  {action.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action)}
+                  <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 700, marginLeft: '0.25rem' }}>/ 12 meses</span>
+                </h3>
+                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.2rem', display: 'block' }}>
+                  {12 - (action.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action))} mês(es) a serem apurados
+                </span>
               </div>
             </div>
           </div>

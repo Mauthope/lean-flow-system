@@ -7,7 +7,7 @@ import { dataService } from '@/services/dataService';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { formatCurrency } from '@/lib/utils';
-import { CheckCircle2, Clock, DollarSign, Kanban, UserCheck } from 'lucide-react';
+import { CheckCircle2, Clock, DollarSign, Kanban, UserCheck, AlertTriangle, Calendar, ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
 
 import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
 
@@ -19,6 +19,12 @@ export default function AgenteKanbanPage() {
     if (!currentUser) return [];
     const all = dataService.getActions();
     return all.filter((a) => a.assignedAgentId === currentUser.id);
+  }, [currentUser, dataVersion]);
+
+  // Pendências de acompanhamento de 1 a 12 meses do agente
+  const pendingFollowUps = useMemo(() => {
+    if (!currentUser) return [];
+    return dataService.getAgentPendingFollowUps(currentUser.id);
   }, [currentUser, dataVersion]);
 
   // Agent stats
@@ -103,6 +109,157 @@ export default function AgenteKanbanPage() {
           </p>
         </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* BANNER DINÂMICO DE ACOMPANHAMENTO MENSAL (CICLO 12 MESES) */}
+      {/* ========================================================= */}
+      {pendingFollowUps.length > 0 && (
+        <div
+          style={{
+            backgroundColor: '#090e1a',
+            border: '1.5px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '16px',
+            padding: '1.25rem 1.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem',
+            boxShadow: '0 10px 30px rgba(245, 158, 11, 0.1)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px',
+                }}
+              >
+                <Calendar size={22} color="#fbbf24" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <span
+                    style={{
+                      fontSize: '0.675rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                      color: '#fbbf24',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      padding: '0.1rem 0.5rem',
+                      borderRadius: '9999px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    Acompanhamento Real • 12 Meses
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      color: '#f87171',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      padding: '0.1rem 0.45rem',
+                      borderRadius: '9999px',
+                    }}
+                  >
+                    {pendingFollowUps.length} projeto(s) com medição a informar
+                  </span>
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  Lembrete de Alimentação Mensal de Ganhos
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: '#cbd5e1', margin: '0.25rem 0 0', maxWidth: '780px', lineHeight: 1.45 }}>
+                  Na realidade da sua fábrica, o resultado financeiro real dos projetos é consolidado mês a mês até o 12º mês.
+                  Assim que tiver os relatórios de refugo, energia ou manutenção do mês, informe os valores para atualizar os KPIs e o fechamento do caixa.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Projetos Pendentes de Medição */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem' }}>
+            {pendingFollowUps.map((p) => (
+              <div
+                key={p.actionId}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                    <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                      {p.actionCode}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.675rem',
+                        fontWeight: 800,
+                        backgroundColor: p.nextMonthToReport <= 3 ? 'rgba(6, 182, 212, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: p.nextMonthToReport <= 3 ? '#22d3ee' : '#fbbf24',
+                        border: `1px solid ${p.nextMonthToReport <= 3 ? 'rgba(6, 182, 212, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                        padding: '0.1rem 0.45rem',
+                        borderRadius: '9999px',
+                      }}
+                    >
+                      {p.nextMonthToReport <= 3 ? `Mês ${p.nextMonthToReport} (Homologação)` : `Mês ${p.nextMonthToReport} (Consolidação)`}
+                    </span>
+                  </div>
+                  <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', lineHeight: 1.35 }}>
+                    {p.actionTitle}
+                  </strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.35rem', fontSize: '0.725rem', color: '#94a3b8' }}>
+                    <span>{p.sectorName}</span>
+                    <span>•</span>
+                    <span style={{ color: '#facc15', fontWeight: 700 }}>
+                      Est: ~ {formatCurrency(p.estimatedMonthlyValue)}/mês
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href={`/admin/projetos/${p.actionId}`}
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    padding: '0.45rem 0.75rem',
+                    textDecoration: 'none',
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#d97706',
+                    color: '#000000',
+                  }}
+                >
+                  <span>Lançar Mês {p.nextMonthToReport}</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mini Agent KPI cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>

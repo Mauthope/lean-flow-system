@@ -32,6 +32,7 @@ import {
 import Link from 'next/link';
 
 import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
+import { MonthlyFollowUpRadarWidget } from '@/components/dashboard/MonthlyFollowUpRadarWidget';
 
 const SECTOR_ACCENTS = [
   { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' },
@@ -43,7 +44,7 @@ const SECTOR_ACCENTS = [
 ];
 
 export default function AdminDashboardPage() {
-  const { dataVersion } = useAuth();
+  const { dataVersion, currentTenant } = useAuth();
 
   const metrics = useMemo(() => {
     return dataService.getMetrics();
@@ -383,6 +384,11 @@ export default function AdminDashboardPage() {
           trend={{ value: 'Payback plurianual suportado', isPositive: true }}
         />
       </div>
+
+      {/* ========================================================================= */}
+      {/* RADAR DE FECHAMENTO MENSAL & PIPELINE DE ENTRADA (CICLO REAL DE 12 MESES)  */}
+      {/* ========================================================================= */}
+      <MonthlyFollowUpRadarWidget tenantId={currentTenant?.id} />
 
       {/* ========================================================================= */}
       {/* PAINEL EXECUTIVO DIRETORIA: DEMONSTRATIVO DE GANHOS LEAN (CICLO 12 MESES) */}

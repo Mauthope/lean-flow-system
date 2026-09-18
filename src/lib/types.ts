@@ -151,10 +151,10 @@ export interface ProjectAttachment {
   description?: string;
 }
 
-// Acompanhamento e Comprovação de Resultados em 3 Meses (Pós-Homologação)
+// Acompanhamento e Comprovação de Resultados em 12 Meses (3 Meses Homologação + 9 Meses Ciclo Real)
 export interface MonthlyResultEntry {
-  monthNumber: 1 | 2 | 3;
-  monthLabel?: string;     // Ex: "1º Mês", "2º Mês", "3º Mês"
+  monthNumber: number;     // 1 a 12
+  monthLabel?: string;     // Ex: "1º Mês", "2º Mês", ..., "12º Mês"
   value?: number;          // Custo Evitado Real aferido no mês (R$)
   hoursSaved?: number;     // Horas salvas no mês (h)
   measuredAt?: string;     // Data da medição (AAAA-MM-DD)
@@ -164,14 +164,60 @@ export interface MonthlyResultEntry {
 
 export interface QuarterlyFollowUp {
   enabled: boolean;
-  startedAt?: string;          // Data de início do acompanhamento (após homologação)
+  startedAt?: string;          // Data de início do acompanhamento (após conclusão do PDCA)
+  // Meses 1 a 3 (Homologação da Sustentação pela Controladoria/Master)
   month1?: MonthlyResultEntry;
   month2?: MonthlyResultEntry;
   month3?: MonthlyResultEntry;
-  averageCostAvoided?: number; // Média calculada automaticamente ((M1 + M2 + M3) / 3) ou média parcial
-  isCompleted?: boolean;       // Concluído/fechado automaticamente após preenchimento do 3º resultado
-  completedAt?: string;        // Data de consolidação final
-  status: 'aguardando_mes_1' | 'aguardando_mes_2' | 'aguardando_mes_3' | 'consolidado';
+  // Meses 4 a 12 (Acompanhamento Contínuo Real no Chão de Fábrica)
+  month4?: MonthlyResultEntry;
+  month5?: MonthlyResultEntry;
+  month6?: MonthlyResultEntry;
+  month7?: MonthlyResultEntry;
+  month8?: MonthlyResultEntry;
+  month9?: MonthlyResultEntry;
+  month10?: MonthlyResultEntry;
+  month11?: MonthlyResultEntry;
+  month12?: MonthlyResultEntry;
+  // Métricas financeiras e de progresso
+  averageCostAvoided?: number;        // Média mensal apurada
+  totalRealizedCostAvoided?: number;  // Soma estrita dos meses já aferidos (R$ em caixa)
+  totalProjectedCostAvoided?: number; // Projeção total de 12 meses
+  monthsFilledCount?: number;         // Quantidade de meses já aferidos (0 a 12)
+  isCompleted?: boolean;              // Homologação dos 3 primeiros meses concluída
+  isFullYearCompleted?: boolean;      // Fechamento completo dos 12 meses
+  completedAt?: string;               // Data de consolidação final
+  status:
+    | 'aguardando_mes_1'
+    | 'aguardando_mes_2'
+    | 'aguardando_mes_3'
+    | 'homologado_em_acompanhamento'
+    | 'consolidado';
+}
+
+export interface PendingProjectFollowUp {
+  actionId: string;
+  actionTitle: string;
+  actionCode?: string;
+  agentName: string;
+  agentId?: string;
+  sectorName: string;
+  estimatedMonthlyValue: number;
+  nextMonthToReport: number;
+  lastReportedMonth?: number;
+}
+
+export interface MonthlyFollowUpPipeline {
+  monthIndex: number;
+  monthLabel: string;
+  totalEligibleProjects: number;
+  reportedProjectsCount: number;
+  pendingProjectsCount: number;
+  confirmedValue: number;
+  pendingEstimatedValue: number;
+  totalPotentialValue: number;
+  completionPercentage: number;
+  pendingProjects: PendingProjectFollowUp[];
 }
 
 // Auditoria e Homologação Prévia de Ganhos pela Controladoria
