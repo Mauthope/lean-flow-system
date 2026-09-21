@@ -31,12 +31,12 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         background: isDark
           ? `radial-gradient(circle at 95% 10%, ${accentColor}18 0%, #0f172a 65%)`
           : `radial-gradient(circle at 95% 10%, ${accentColor}10 0%, #ffffff 70%)`,
-        border: `1px solid ${isDark ? `${accentColor}30` : `${accentColor}35`}`,
+        border: `1px solid ${isDark ? `${accentColor}30` : `${accentColor}45`}`,
         borderRadius: '16px',
         padding: '1.2rem 1.35rem',
         boxShadow: isDark
           ? `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`
-          : `0 4px 15px rgba(0, 0, 0, 0.05), 0 0 10px ${accentColor}08`,
+          : `0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -49,15 +49,15 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         e.currentTarget.style.transform = 'translateY(-2px)';
         e.currentTarget.style.boxShadow = isDark
           ? `0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px ${accentColor}25`
-          : `0 8px 25px -3px rgba(0, 0, 0, 0.08), 0 0 15px ${accentColor}15`;
-        e.currentTarget.style.borderColor = `${accentColor}60`;
+          : `0 10px 25px -3px rgba(15, 23, 42, 0.1), 0 0 15px ${accentColor}20`;
+        e.currentTarget.style.borderColor = `${accentColor}80`;
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'none';
         e.currentTarget.style.boxShadow = isDark
           ? `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`
-          : `0 4px 15px rgba(0, 0, 0, 0.05), 0 0 10px ${accentColor}08`;
-        e.currentTarget.style.borderColor = isDark ? `${accentColor}30` : `${accentColor}35`;
+          : `0 4px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)`;
+        e.currentTarget.style.borderColor = isDark ? `${accentColor}30` : `${accentColor}45`;
       }}
     >
       {/* Delicate Top Glowing Line */}
@@ -78,10 +78,10 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '3.5px',
+          width: '4px',
           height: '100%',
           backgroundColor: accentColor,
-          boxShadow: `0 0 12px ${accentColor}`,
+          boxShadow: isDark ? `0 0 12px ${accentColor}` : `0 0 8px ${accentColor}60`,
         }}
       />
 
@@ -99,7 +99,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           style={{
             fontSize: '0.7rem',
             fontWeight: 800,
-            color: '#94a3b8',
+            color: isDark ? '#94a3b8' : '#475569',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             margin: 0,
@@ -134,7 +134,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           style={{
             fontSize: 'clamp(1.25rem, 1.8vw, 1.55rem)',
             fontWeight: 900,
-            color: 'var(--text-heading, #ffffff)',
+            color: isDark ? '#ffffff' : '#0f172a',
             margin: 0,
             fontFamily: 'var(--font-heading)',
             letterSpacing: '-0.02em',
@@ -162,8 +162,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           <div
             style={{
               fontSize: '0.735rem',
-              color: '#94a3b8',
-              fontWeight: 500,
+              color: isDark ? '#94a3b8' : '#64748b',
+              fontWeight: 600,
               lineHeight: 1.35,
             }}
           >

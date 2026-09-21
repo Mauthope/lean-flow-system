@@ -5,6 +5,7 @@ import { User, Sector } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   UserPlus,
   UserCheck,
@@ -48,6 +49,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
   initialRole = 'agent',
 }) => {
   const { currentTenant } = useAuth();
+  const { isDark } = useTheme();
   const sectors = useMemo(() => dataService.getSectors(), [isOpen]);
 
   const [role, setRole] = useState<'agent' | 'viewer'>(initialRole);
@@ -248,7 +250,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         
         {/* SELETOR DE PERFIL DE ACESSO: AGENTE vs VISUALIZADOR */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 800, margin: 0 }}>
+          <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155', fontWeight: 800, margin: 0 }}>
             Perfil de Acesso & Permissão na Plataforma:
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -261,8 +263,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 gap: '0.75rem',
                 padding: '0.85rem',
                 borderRadius: '12px',
-                border: role === 'agent' ? '2px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
-                backgroundColor: role === 'agent' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                border: role === 'agent'
+                  ? (isDark ? '2px solid #06b6d4' : '2px solid #0284c7')
+                  : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                backgroundColor: role === 'agent'
+                  ? (isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe')
+                  : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'),
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 boxShadow: role === 'agent' ? '0 0 16px rgba(6, 182, 212, 0.2)' : 'none',
@@ -273,11 +279,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  backgroundColor: role === 'agent' ? '#06b6d4' : 'rgba(255, 255, 255, 0.08)',
+                  backgroundColor: role === 'agent'
+                    ? (isDark ? '#06b6d4' : '#0284c7')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: role === 'agent' ? '#081325' : '#94a3b8',
+                  color: role === 'agent' ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b'),
                   flexShrink: 0,
                 }}
               >
@@ -285,14 +293,21 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <strong style={{ fontSize: '0.8125rem', color: role === 'agent' ? '#22d3ee' : '#ffffff' }}>
+                  <strong style={{ fontSize: '0.8125rem', color: role === 'agent' ? (isDark ? '#22d3ee' : '#0369a1') : (isDark ? '#ffffff' : '#0f172a') }}>
                     Agente Lean
                   </strong>
-                  <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee', padding: '0.1rem 0.35rem', borderRadius: '4px', fontWeight: 700 }}>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#bae6fd',
+                    color: isDark ? '#22d3ee' : '#0284c7',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '4px',
+                    fontWeight: 700
+                  }}>
                     Gemba
                   </span>
                 </div>
-                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
+                <p style={{ fontSize: '0.6875rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
                   Lidera e executa projetos Kaizen, planos de ação, fotos Antes/Depois e homologação de ganhos.
                 </p>
               </div>
@@ -307,8 +322,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 gap: '0.75rem',
                 padding: '0.85rem',
                 borderRadius: '12px',
-                border: role === 'viewer' ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
-                backgroundColor: role === 'viewer' ? 'rgba(168, 85, 247, 0.14)' : 'rgba(255, 255, 255, 0.02)',
+                border: role === 'viewer'
+                  ? (isDark ? '2px solid #a855f7' : '2px solid #9333ea')
+                  : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                backgroundColor: role === 'viewer'
+                  ? (isDark ? 'rgba(168, 85, 247, 0.14)' : '#f3e8ff')
+                  : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'),
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 boxShadow: role === 'viewer' ? '0 0 16px rgba(168, 85, 247, 0.2)' : 'none',
@@ -319,11 +338,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  backgroundColor: role === 'viewer' ? '#a855f7' : 'rgba(255, 255, 255, 0.08)',
+                  backgroundColor: role === 'viewer'
+                    ? (isDark ? '#a855f7' : '#9333ea')
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: role === 'viewer' ? '#ffffff' : '#94a3b8',
+                  color: '#ffffff',
                   flexShrink: 0,
                 }}
               >
@@ -331,14 +352,21 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <strong style={{ fontSize: '0.8125rem', color: role === 'viewer' ? '#c084fc' : '#ffffff' }}>
+                  <strong style={{ fontSize: '0.8125rem', color: role === 'viewer' ? (isDark ? '#c084fc' : '#7e22ce') : (isDark ? '#ffffff' : '#0f172a') }}>
                     Visualizador / Diretoria
                   </strong>
-                  <span style={{ fontSize: '0.65rem', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#d8b4fe', padding: '0.1rem 0.35rem', borderRadius: '4px', fontWeight: 700 }}>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : '#e9d5ff',
+                    color: isDark ? '#d8b4fe' : '#7e22ce',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '4px',
+                    fontWeight: 700
+                  }}>
                     Read-Only
                   </span>
                 </div>
-                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
+                <p style={{ fontSize: '0.6875rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.2rem 0 0 0', lineHeight: 1.3 }}>
                   Consulta executiva de Dashboards, Hoshin Kanri, Kanban e ROI. Sem permissão de alteração.
                 </p>
               </div>
@@ -349,9 +377,9 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         {/* CARREGAMENTO DE FOTO DO USUÁRIO */}
         <div
           style={{
-            backgroundColor: '#090e1a',
+            backgroundColor: isDark ? '#090e1a' : '#f8fafc',
             borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
             padding: '1rem',
             display: 'flex',
             alignItems: 'center',
@@ -368,7 +396,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 height: '68px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: `2.5px solid ${role === 'viewer' ? '#a855f7' : '#22d3ee'}`,
+                border: `2.5px solid ${role === 'viewer' ? '#a855f7' : (isDark ? '#22d3ee' : '#0284c7')}`,
                 boxShadow: `0 0 15px ${role === 'viewer' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
               }}
             />
@@ -383,7 +411,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 height: '26px',
                 borderRadius: '50%',
                 backgroundColor: role === 'viewer' ? '#8b5cf6' : '#2563eb',
-                border: '2px solid #090e1a',
+                border: `2px solid ${isDark ? '#090e1a' : '#ffffff'}`,
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
@@ -398,10 +426,10 @@ export const AgentModal: React.FC<AgentModalProps> = ({
 
           {/* Upload Controls */}
           <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#ffffff', display: 'block', marginBottom: '0.2rem' }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginBottom: '0.2rem' }}>
               {role === 'viewer' ? 'Foto do Diretor / Visualizador' : 'Foto do Agente Lean'}
             </span>
-            <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>
+            <p style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0 0 0.5rem 0' }}>
               Carregue uma imagem do seu dispositivo (PNG, JPG ou WEBP até 4MB).
             </p>
 
@@ -420,7 +448,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 className="btn btn-secondary btn-sm"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
               >
-                <Upload size={13} color="#22d3ee" />
+                <Upload size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
                 <span>Carregar Foto</span>
               </button>
 
@@ -431,7 +459,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#94a3b8',
+                    color: isDark ? '#94a3b8' : '#64748b',
                     fontSize: '0.7rem',
                     cursor: 'pointer',
                     textDecoration: 'underline',
@@ -447,7 +475,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         {/* NOME COMPLETO & EMAIL */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Nome Completo:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Nome Completo:</label>
             <input
               type="text"
               className="form-control"
@@ -459,7 +487,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>E-mail Institucional:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>E-mail Institucional:</label>
             <input
               type="email"
               className="form-control"
@@ -474,7 +502,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         {/* CARGO & TELEFONE */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Cargo / Função:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Cargo / Função:</label>
             <input
               type="text"
               className="form-control"
@@ -496,9 +524,11 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                     fontSize: '0.65rem',
                     padding: '0.15rem 0.45rem',
                     borderRadius: '4px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    backgroundColor: jobTitle === titleSuggestion ? (role === 'viewer' ? '#a855f7' : '#06b6d4') : 'rgba(255, 255, 255, 0.04)',
-                    color: jobTitle === titleSuggestion ? '#ffffff' : '#94a3b8',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+                    backgroundColor: jobTitle === titleSuggestion
+                      ? (role === 'viewer' ? '#a855f7' : (isDark ? '#06b6d4' : '#0284c7'))
+                      : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+                    color: jobTitle === titleSuggestion ? '#ffffff' : (isDark ? '#94a3b8' : '#334155'),
                     cursor: 'pointer',
                   }}
                 >
@@ -509,7 +539,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Telefone / Ramal:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Telefone / Ramal:</label>
             <input
               type="text"
               className="form-control"
@@ -523,19 +553,19 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         {/* SETORES DE ATUAÇÃO COM MÚLTIPLA ESCOLHA E OPÇÃO 'TODOS' */}
         <div
           style={{
-            backgroundColor: '#090e1a',
+            backgroundColor: isDark ? '#090e1a' : '#f8fafc',
             borderRadius: '12px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
             padding: '1rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div>
-              <label className="form-label" style={{ color: '#ffffff', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Building2 size={15} color={role === 'viewer' ? '#c084fc' : '#22d3ee'} />{' '}
+              <label className="form-label" style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Building2 size={15} color={role === 'viewer' ? '#c084fc' : (isDark ? '#22d3ee' : '#0284c7')} />{' '}
                 {role === 'viewer' ? 'Escopo & Abrangência de Visualização:' : 'Setores & Departamentos de Atuação:'}
               </label>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                 {role === 'viewer'
                   ? 'Defina se o visualizador acompanhará toda a planta ou setores específicos'
                   : 'Selecione os setores onde o agente tem permissão para conduzir projetos Lean'}
@@ -546,11 +576,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                color: allSectors ? '#34d399' : '#22d3ee',
-                backgroundColor: allSectors ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                color: allSectors ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#22d3ee' : '#0284c7'),
+                backgroundColor: allSectors
+                  ? (isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7')
+                  : (isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe'),
                 padding: '0.15rem 0.5rem',
                 borderRadius: '9999px',
-                border: `1px solid ${allSectors ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
+                border: `1px solid ${allSectors ? (isDark ? 'rgba(16, 185, 129, 0.3)' : '#86efac') : (isDark ? 'rgba(6, 182, 212, 0.3)' : '#7dd3fc')}`,
               }}
             >
               {allSectors ? '🌟 Todos os Setores' : `${selectedSectorIds.length} selecionado(s)`}
@@ -566,8 +598,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               justifyContent: 'space-between',
               padding: '0.65rem 0.85rem',
               borderRadius: '8px',
-              backgroundColor: allSectors ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-              border: allSectors ? '1.5px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: allSectors
+                ? (isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7')
+                : (isDark ? 'rgba(255, 255, 255, 0.03)' : '#ffffff'),
+              border: allSectors
+                ? '1.5px solid #10b981'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
               cursor: 'pointer',
               marginBottom: '0.75rem',
               transition: 'all 0.15s ease',
@@ -582,16 +618,16 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
               <div>
-                <strong style={{ fontSize: '0.8125rem', color: allSectors ? '#34d399' : '#ffffff' }}>
+                <strong style={{ fontSize: '0.8125rem', color: allSectors ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#ffffff' : '#0f172a') }}>
                   🌟 Todos os Setores (Atuação Geral em Toda a Planta)
                 </strong>
-                <p style={{ fontSize: '0.6875rem', color: '#94a3b8', margin: '0.1rem 0 0 0' }}>
+                <p style={{ fontSize: '0.6875rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.1rem 0 0 0' }}>
                   Habilita o agente para atuar em qualquer departamento ou demanda da fábrica.
                 </p>
               </div>
             </div>
 
-            {allSectors && <Check size={16} color="#34d399" />}
+            {allSectors && <Check size={16} color="#10b981" />}
           </div>
 
           {/* Grid de Setores Individuais */}
@@ -618,10 +654,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                     gap: '0.5rem',
                     padding: '0.5rem 0.65rem',
                     borderRadius: '8px',
-                    backgroundColor: isSelected ? `${sec.color || '#06b6d4'}18` : 'rgba(255, 255, 255, 0.02)',
+                    backgroundColor: isSelected
+                      ? (isDark ? `${sec.color || '#06b6d4'}18` : '#f0fdf4')
+                      : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#ffffff'),
                     border: isSelected
-                      ? `1.5px solid ${sec.color || '#06b6d4'}`
-                      : '1px solid rgba(255, 255, 255, 0.06)',
+                      ? `1.5px solid ${sec.color || '#10b981'}`
+                      : (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #cbd5e1'),
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -638,7 +676,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                       style={{
                         fontSize: '0.65rem',
                         fontWeight: 800,
-                        color: sec.color || '#22d3ee',
+                        color: sec.color || (isDark ? '#22d3ee' : '#0284c7'),
                         fontFamily: 'var(--font-mono)',
                       }}
                     >
@@ -647,7 +685,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                     <span
                       style={{
                         fontSize: '0.75rem',
-                        color: '#ffffff',
+                        color: isDark ? '#ffffff' : '#0f172a',
                         fontWeight: 600,
                         display: 'block',
                         whiteSpace: 'nowrap',
@@ -672,12 +710,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0.75rem',
-              backgroundColor: '#090e1a',
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
               borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
             }}
           >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#ffffff' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: isDark ? '#ffffff' : '#0f172a' }}>
               <input
                 type="checkbox"
                 checked={active}
@@ -710,7 +748,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '0.75rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SectorLeanAssessment } from '@/lib/types';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SectorCardPolygonProps {
   assessment?: SectorLeanAssessment | null;
@@ -31,6 +32,7 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
   width = 250,
   height = 195,
 }) => {
+  const { isDark } = useTheme();
   const centerX = width / 2;
   const centerY = height / 2;
   const radius = Math.min(centerX, centerY) - 34; // espaço para rótulos externos
@@ -114,8 +116,8 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
           <path
             key={`ring-${lvl}`}
             d={getLevelPolygonPath(lvl)}
-            fill={lvl === 100 ? 'rgba(15, 23, 42, 0.45)' : 'none'}
-            stroke="rgba(255, 255, 255, 0.08)"
+            fill={lvl === 100 ? (isDark ? 'rgba(15, 23, 42, 0.45)' : 'rgba(241, 245, 249, 0.7)') : 'none'}
+            stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : '#cbd5e1'}
             strokeWidth={lvl === 100 ? 1.2 : 0.7}
             strokeDasharray={lvl === 60 ? '3 3' : 'none'}
           />
@@ -131,7 +133,7 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
               y1={centerY}
               x2={x}
               y2={y}
-              stroke="rgba(255, 255, 255, 0.12)"
+              stroke={isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1'}
               strokeWidth="1"
             />
           );
@@ -157,7 +159,7 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
                   cx={x}
                   cy={y}
                   r={3.2}
-                  fill="#090d16"
+                  fill={isDark ? '#090d16' : '#ffffff'}
                   stroke={color}
                   strokeWidth="1.8"
                 />
@@ -167,8 +169,8 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
         ) : (
           <path
             d={polygonPath}
-            fill="rgba(255, 255, 255, 0.03)"
-            stroke="rgba(255, 255, 255, 0.2)"
+            fill={isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)'}
+            stroke={isDark ? 'rgba(255, 255, 255, 0.2)' : '#94a3b8'}
             strokeWidth="1.2"
             strokeDasharray="4 4"
           />
@@ -193,7 +195,7 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
               style={{
                 fontSize: '9px',
                 fontWeight: 700,
-                fill: hasData ? '#cbd5e1' : '#64748b',
+                fill: hasData ? (isDark ? '#cbd5e1' : '#334155') : (isDark ? '#64748b' : '#94a3b8'),
                 fontFamily: 'var(--font-heading, sans-serif)',
               }}
             >
@@ -204,7 +206,11 @@ export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
                   style={{
                     fontSize: '8.5px',
                     fontWeight: 800,
-                    fill: score >= 70 ? '#34d399' : score >= 45 ? '#fbbf24' : '#f87171',
+                    fill: score >= 70
+                      ? (isDark ? '#34d399' : '#059669')
+                      : score >= 45
+                      ? (isDark ? '#fbbf24' : '#d97706')
+                      : (isDark ? '#f87171' : '#dc2626'),
                     fontFamily: 'var(--font-mono, monospace)',
                   }}
                 >

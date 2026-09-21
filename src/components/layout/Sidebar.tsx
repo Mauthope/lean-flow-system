@@ -243,16 +243,16 @@ export const Sidebar: React.FC = () => {
               {!isSidebarCollapsed && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-                      Fluxo<span style={{ background: 'linear-gradient(90deg, #22d3ee, #5eead4, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lean</span>
+                    <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
+                      Fluxo<span style={{ background: 'linear-gradient(90deg, #06b6d4, #0d9488, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lean</span>
                     </span>
                     <span
                       style={{
                         fontSize: '0.6rem',
                         fontWeight: 800,
-                        backgroundColor: 'rgba(6, 182, 212, 0.18)',
-                        color: '#22d3ee',
-                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : 'rgba(2, 132, 199, 0.12)',
+                        color: isDark ? '#22d3ee' : '#0284c7',
+                        border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(2, 132, 199, 0.3)',
                         padding: '0.05rem 0.3rem',
                         borderRadius: '4px',
                       }}
@@ -260,7 +260,7 @@ export const Sidebar: React.FC = () => {
                       PRO
                     </span>
                   </div>
-                  <p style={{ fontSize: '0.675rem', color: '#94a3b8', margin: 0 }}>Engenharia Lean & ROI</p>
+                  <p style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>Engenharia Lean & ROI</p>
                 </div>
               )}
             </div>
@@ -273,9 +273,9 @@ export const Sidebar: React.FC = () => {
                   onClick={toggleSidebar}
                   title="Recolher menu lateral"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: '#94a3b8',
+                    background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+                    color: isDark ? '#94a3b8' : '#475569',
                     borderRadius: '8px',
                     width: '30px',
                     height: '30px',
@@ -286,12 +286,12 @@ export const Sidebar: React.FC = () => {
                     transition: 'all 0.15s ease',
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-                    e.currentTarget.style.color = '#ffffff';
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0';
+                    e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
                   }}
                   onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
+                    e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
                   }}
                 >
                   <PanelLeftClose size={15} />
@@ -327,8 +327,8 @@ export const Sidebar: React.FC = () => {
                 href="/admin/entidades"
                 onClick={() => setIsMobileMenuOpen(false)}
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '8px',
                   display: 'flex',
@@ -339,22 +339,22 @@ export const Sidebar: React.FC = () => {
                   cursor: 'pointer',
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.12)';
-                  e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe';
+                  e.currentTarget.style.borderColor = isDark ? 'rgba(6, 182, 212, 0.3)' : '#bae6fd';
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc';
+                  e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#cbd5e1';
                 }}
                 title="Clique para alternar ou gerenciar plantas fabris"
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
-                  <Factory size={13} color="#22d3ee" />
+                  <Factory size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
                   <span
                     style={{
                       fontSize: '0.725rem',
                       fontWeight: 700,
-                      color: '#e2e8f0',
+                      color: isDark ? '#e2e8f0' : '#1e293b',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -363,15 +363,15 @@ export const Sidebar: React.FC = () => {
                     {currentTenant?.name || 'Organização Lean'}
                   </span>
                 </div>
-                <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800 }}>
+                <span style={{ fontSize: '0.65rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 800 }}>
                   Mudar
                 </span>
               </Link>
             ) : (
               <div
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '8px',
                   display: 'flex',
@@ -381,12 +381,12 @@ export const Sidebar: React.FC = () => {
                 title={`Unidade Fabril: ${currentTenant?.name || 'Organização Lean'}`}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
-                  <Factory size={13} color="#22d3ee" />
+                  <Factory size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
                   <span
                     style={{
                       fontSize: '0.725rem',
                       fontWeight: 700,
-                      color: '#e2e8f0',
+                      color: isDark ? '#e2e8f0' : '#1e293b',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -399,11 +399,11 @@ export const Sidebar: React.FC = () => {
                   style={{
                     fontSize: '0.6rem',
                     fontWeight: 800,
-                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                    color: '#34d399',
+                    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7',
+                    color: isDark ? '#34d399' : '#15803d',
                     padding: '0.1rem 0.35rem',
                     borderRadius: '4px',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
                   }}
                 >
                   Planta
@@ -459,7 +459,7 @@ export const Sidebar: React.FC = () => {
                     fontWeight: 800,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
-                    color: '#64748b',
+                    color: isDark ? '#64748b' : '#64748b',
                     padding: '0 0.5rem 0.35rem',
                   }}
                 >
@@ -483,30 +483,38 @@ export const Sidebar: React.FC = () => {
                         padding: isSidebarCollapsed ? '0.65rem 0' : '0.55rem 0.7rem',
                         borderRadius: '9px',
                         fontSize: '0.8125rem',
-                        fontWeight: isActive ? 800 : 500,
-                        color: isActive ? '#22d3ee' : '#94a3b8',
-                        backgroundColor: isActive ? 'rgba(6, 182, 212, 0.14)' : 'transparent',
-                        border: isActive ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid transparent',
+                        fontWeight: isActive ? 800 : 600,
+                        color: isActive
+                          ? (isDark ? '#22d3ee' : '#0284c7')
+                          : (isDark ? '#94a3b8' : '#475569'),
+                        backgroundColor: isActive
+                          ? (isDark ? 'rgba(6, 182, 212, 0.14)' : '#e0f2fe')
+                          : 'transparent',
+                        border: isActive
+                          ? (isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd')
+                          : '1px solid transparent',
                         textDecoration: 'none',
                         transition: 'all 0.15s ease',
-                        boxShadow: isActive ? '0 2px 10px rgba(6, 182, 212, 0.15)' : 'none',
+                        boxShadow: isActive
+                          ? (isDark ? '0 2px 10px rgba(6, 182, 212, 0.15)' : '0 2px 8px rgba(2, 132, 199, 0.12)')
+                          : 'none',
                         position: 'relative',
                       }}
                       onMouseOver={(e) => {
                         if (!isActive) {
-                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                          e.currentTarget.style.color = '#ffffff';
+                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
+                          e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
                         }
                       }}
                       onMouseOut={(e) => {
                         if (!isActive) {
                           e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = '#94a3b8';
+                          e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
                         }
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Icon size={18} color={isActive ? '#22d3ee' : '#94a3b8'} />
+                        <Icon size={18} color={isActive ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#475569')} />
                         {!isSidebarCollapsed && <span>{item.label}</span>}
                       </div>
 
@@ -515,11 +523,11 @@ export const Sidebar: React.FC = () => {
                           style={{
                             fontSize: '0.625rem',
                             fontWeight: 800,
-                            backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                            color: '#22d3ee',
+                            backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe',
+                            color: isDark ? '#22d3ee' : '#0284c7',
                             padding: '0.08rem 0.35rem',
                             borderRadius: '9999px',
-                            border: '1px solid rgba(6, 182, 212, 0.35)',
+                            border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
                           }}
                         >
                           {item.badge}
@@ -535,8 +543,8 @@ export const Sidebar: React.FC = () => {
                             width: '4px',
                             height: '4px',
                             borderRadius: '50%',
-                            backgroundColor: '#22d3ee',
-                            boxShadow: '0 0 6px #22d3ee',
+                            backgroundColor: isDark ? '#22d3ee' : '#0284c7',
+                            boxShadow: isDark ? '0 0 6px #22d3ee' : '0 0 4px #0284c7',
                           }}
                         />
                       )}
@@ -651,12 +659,12 @@ export const Sidebar: React.FC = () => {
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                   <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-                  <span style={{ fontSize: '0.6rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+                  <span style={{ fontSize: '0.6rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
                     Desenvolvido por:
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.1rem' }}>
-                  <strong style={{ fontSize: '0.78125rem', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <strong style={{ fontSize: '0.78125rem', color: isDark ? '#ffffff' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     Mauricio Grigol
                   </strong>
                   <Link
@@ -665,9 +673,9 @@ export const Sidebar: React.FC = () => {
                     style={{
                       fontSize: '0.625rem',
                       fontWeight: 800,
-                      backgroundColor: 'rgba(14, 165, 233, 0.2)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(14, 165, 233, 0.4)',
+                      backgroundColor: isDark ? 'rgba(14, 165, 233, 0.2)' : '#e0f2fe',
+                      color: isDark ? '#38bdf8' : '#0284c7',
+                      border: isDark ? '1px solid rgba(14, 165, 233, 0.4)' : '1px solid #bae6fd',
                       padding: '0.1rem 0.4rem',
                       borderRadius: '4px',
                       textDecoration: 'none',
@@ -691,9 +699,9 @@ export const Sidebar: React.FC = () => {
               onClick={toggleSidebar}
               title="Expandir menu lateral"
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#22d3ee',
+                background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+                color: isDark ? '#22d3ee' : '#0284c7',
                 borderRadius: '8px',
                 width: '100%',
                 height: '32px',
@@ -704,10 +712,10 @@ export const Sidebar: React.FC = () => {
                 transition: 'all 0.15s ease',
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.2)';
+                e.currentTarget.style.backgroundColor = isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe';
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
               }}
             >
               <PanelLeftOpen size={16} />

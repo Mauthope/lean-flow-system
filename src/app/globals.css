@@ -84,17 +84,17 @@
   color-scheme: light;
 
   /* Color Palette - Clean Enterprise Light */
-  --bg-primary: #f8fafc;
+  --bg-primary: #f1f5f9;
   --bg-surface: #ffffff;
   --bg-surface-elevated: #ffffff;
   --bg-surface-card: #ffffff;
-  --bg-muted: #f1f5f9;
+  --bg-muted: #e2e8f0;
   --bg-dark: #f8fafc;
   --bg-sidebar: #ffffff;
 
-  --border-subtle: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --border-highlight: rgba(6, 182, 212, 0.5);
+  --border-subtle: #cbd5e1;
+  --border-strong: #94a3b8;
+  --border-highlight: rgba(8, 145, 178, 0.6);
 
   --text-primary: #0f172a;
   --text-secondary: #334155;
@@ -114,13 +114,13 @@
   --bg-input-focus: #f8fafc;
   --border-input: #cbd5e1;
   --bg-topbar: rgba(255, 255, 255, 0.94);
-  --border-topbar: #e2e8f0;
+  --border-topbar: #cbd5e1;
   --bg-modal-overlay: rgba(15, 23, 42, 0.55);
   --bg-modal: #ffffff;
-  --border-modal: #e2e8f0;
+  --border-modal: #cbd5e1;
   --kanban-col-bg: #f1f5f9;
   --kanban-card-bg: #ffffff;
-  --kanban-col-header-bg: #e2e8f0;
+  --kanban-col-header-bg: #ffffff;
   --kanban-border: #cbd5e1;
 
   /* Status Tokens WCAG AA Light */
@@ -144,12 +144,12 @@
   --status-recusada-text: #b91c1c;
   --status-recusada-border: #fecaca;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --shadow-glow: 0 0 15px rgba(8, 145, 178, 0.15);
+  /* Shadows - Rich Elevation */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 12px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 20px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-glow: 0 0 15px rgba(8, 145, 178, 0.2);
 }
 
 *,
@@ -915,15 +915,59 @@ th, td {
 /* 8. Modais e Diálogos */
 [data-theme="light"] .modal-content-surface {
   background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
   color: #0f172a !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25) !important;
 }
 
 [data-theme="light"] .modal-header-surface {
   background-color: #f8fafc !important;
   border-bottom-color: #e2e8f0 !important;
   color: #0f172a !important;
+}
+
+/* 9. Cards, Painéis e Superfícies Nítidas */
+[data-theme="light"] .card {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 14px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* 10. Tabelas e Linhas com Hover Executivo */
+[data-theme="light"] table thead tr {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] table tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* 11. Kanban Colunas e Cards Destacados */
+[data-theme="light"] .kanban-col {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="light"] .kanban-col-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .kanban-cards-list {
+  background-color: #f1f5f9 !important;
+}
+
+[data-theme="light"] .kanban-card {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.05) !important;
+}
+
+[data-theme="light"] .kanban-card:hover {
+  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -2px rgba(15, 23, 42, 0.06) !important;
 }
 
 /* ================= GLOBAL PRINT STYLES ================= */

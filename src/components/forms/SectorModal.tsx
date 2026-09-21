@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 import { Building2, Trash2, Award, Sparkles, ChevronDown, ChevronUp, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SectorModalProps {
   sector: Sector | null;
@@ -25,6 +26,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   onStartAssessment,
 }) => {
   const { currentTenant } = useAuth();
+  const { isDark } = useTheme();
 
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -125,7 +127,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           {/* Dados Principais do Setor */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
             <div>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Nome do Setor:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Nome do Setor:</label>
               <input
                 type="text"
                 className="form-control"
@@ -137,7 +139,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
             </div>
 
             <div>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Sigla / Código:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Sigla / Código:</label>
               <input
                 type="text"
                 className="form-control"
@@ -151,7 +153,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           </div>
 
           <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição Operacional & Equipamentos:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Descrição Operacional & Equipamentos:</label>
             <textarea
               rows={2}
               className="form-control"
@@ -162,7 +164,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           </div>
 
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Cor de Identificação Visual no Gemba:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Cor de Identificação Visual no Gemba:</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <input
                 type="color"
@@ -183,8 +185,10 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           {/* Seção: Controle de Auditoria Fabril & Rastreamento ERP (OC / OS) */}
           <div
             style={{
-              backgroundColor: '#0c121e',
-              border: requiresTrackingDoc ? '1.5px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: isDark ? '#0c121e' : '#f8fafc',
+              border: requiresTrackingDoc
+                ? '1.5px solid rgba(245, 158, 11, 0.45)'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
               borderRadius: '12px',
               padding: '1.15rem',
               display: 'flex',
@@ -202,7 +206,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     gap: '0.5rem',
                     fontSize: '0.875rem',
                     fontWeight: 700,
-                    color: requiresTrackingDoc ? '#fbbf24' : '#ffffff',
+                    color: requiresTrackingDoc
+                      ? (isDark ? '#fbbf24' : '#b45309')
+                      : (isDark ? '#ffffff' : '#0f172a'),
                     cursor: 'pointer',
                     margin: 0,
                   }}
@@ -215,7 +221,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                   />
                   <span>Exigir Documento de Rastreio (OC / OS) para Atividades deste Setor</span>
                 </label>
-                <p style={{ margin: '0.35rem 0 0 1.6rem', fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                <p style={{ margin: '0.35rem 0 0 1.6rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.4 }}>
                   Auditorias internas de fábrica exigem vínculo formal: Compras deve apontar o número da Ordem de Compra (OC) e Manutenção o número da Ordem de Serviço (OS).
                 </p>
               </div>
@@ -225,9 +231,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                   style={{
                     fontSize: '0.6875rem',
                     fontWeight: 800,
-                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                    color: '#fbbf24',
-                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7',
+                    color: isDark ? '#fbbf24' : '#b45309',
+                    border: isDark ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid #fcd34d',
                     padding: '0.15rem 0.5rem',
                     borderRadius: '6px',
                     whiteSpace: 'nowrap',
@@ -242,7 +248,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
               <div style={{ paddingLeft: '1.6rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {/* Botões de Preenchimento Rápido */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 600 }}>Modelos Prontos:</span>
+                  <span style={{ fontSize: '0.7rem', color: isDark ? '#cbd5e1' : '#475569', fontWeight: 600 }}>Modelos Prontos:</span>
                   <button
                     type="button"
                     onClick={() => handleApplyPreset('purchase_order')}
@@ -250,9 +256,15 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     style={{
                       fontSize: '0.725rem',
                       padding: '0.2rem 0.6rem',
-                      backgroundColor: trackingDocType === 'purchase_order' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                      color: trackingDocType === 'purchase_order' ? '#34d399' : '#cbd5e1',
-                      borderColor: trackingDocType === 'purchase_order' ? '#10b981' : 'rgba(255, 255, 255, 0.1)',
+                      backgroundColor: trackingDocType === 'purchase_order'
+                        ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7')
+                        : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'),
+                      color: trackingDocType === 'purchase_order'
+                        ? (isDark ? '#34d399' : '#15803d')
+                        : (isDark ? '#cbd5e1' : '#334155'),
+                      borderColor: trackingDocType === 'purchase_order'
+                        ? '#10b981'
+                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1'),
                     }}
                   >
                     🛒 Compras (Nº da OC)
@@ -264,9 +276,15 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     style={{
                       fontSize: '0.725rem',
                       padding: '0.2rem 0.6rem',
-                      backgroundColor: trackingDocType === 'work_order' ? 'rgba(217, 119, 6, 0.25)' : 'rgba(255, 255, 255, 0.05)',
-                      color: trackingDocType === 'work_order' ? '#fbbf24' : '#cbd5e1',
-                      borderColor: trackingDocType === 'work_order' ? '#f59e0b' : 'rgba(255, 255, 255, 0.1)',
+                      backgroundColor: trackingDocType === 'work_order'
+                        ? (isDark ? 'rgba(217, 119, 6, 0.25)' : '#fef3c7')
+                        : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'),
+                      color: trackingDocType === 'work_order'
+                        ? (isDark ? '#fbbf24' : '#b45309')
+                        : (isDark ? '#cbd5e1' : '#334155'),
+                      borderColor: trackingDocType === 'work_order'
+                        ? '#f59e0b'
+                        : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1'),
                     }}
                   >
                     🔧 Manutenção (Nº da OS)
@@ -275,7 +293,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
 
                 {/* Input do Nome do Campo */}
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: '0 0 0.3rem 0' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', margin: '0 0 0.3rem 0' }}>
                     Nome do Campo Exibido ao Agente / Chão de Fábrica:
                   </label>
                   <input
@@ -284,7 +302,11 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     placeholder="Ex: Número da Ordem de Compra (OC) ou Número da OS"
                     value={trackingDocLabel}
                     onChange={(e) => setTrackingDocLabel(e.target.value)}
-                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.15)', color: '#ffffff' }}
+                    style={{
+                      backgroundColor: isDark ? '#060a13' : '#ffffff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                      color: isDark ? '#ffffff' : '#0f172a'
+                    }}
                     required={requiresTrackingDoc}
                   />
                 </div>
@@ -296,8 +318,8 @@ export const SectorModal: React.FC<SectorModalProps> = ({
           {sector && (
             <div
               style={{
-                backgroundColor: 'rgba(16, 185, 129, 0.06)',
-                border: '1.5px solid rgba(16, 185, 129, 0.3)',
+                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.06)' : '#f0fdf4',
+                border: isDark ? '1.5px solid rgba(16, 185, 129, 0.3)' : '1.5px solid #86efac',
                 borderRadius: '12px',
                 padding: '1.25rem',
                 display: 'flex',
@@ -313,7 +335,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     width: '44px',
                     height: '44px',
                     borderRadius: '10px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#dcfce7',
                     border: '1.5px solid #10b981',
                     display: 'flex',
                     alignItems: 'center',
@@ -325,7 +347,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#ffffff' }}>
+                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a' }}>
                       Lean Assessment de Maturidade Operacional
                     </h4>
                     {latestAssessment && (
@@ -333,8 +355,8 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                         style={{
                           fontSize: '0.7rem',
                           fontWeight: 800,
-                          backgroundColor: 'rgba(16, 185, 129, 0.25)',
-                          color: '#34d399',
+                          backgroundColor: isDark ? 'rgba(16, 185, 129, 0.25)' : '#dcfce7',
+                          color: isDark ? '#34d399' : '#15803d',
                           padding: '0.1rem 0.45rem',
                           borderRadius: '6px',
                           border: '1px solid #10b981',
@@ -344,7 +366,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                       </span>
                     )}
                   </div>
-                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>
+                  <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                     {latestAssessment
                       ? `Última auditoria realizada por ${latestAssessment.evaluatorName}. Clique para abrir um novo ciclo no Gemba.`
                       : 'Nenhuma auditoria realizada ainda. Inicie o primeiro diagnóstico no chão de fábrica.'}
@@ -388,7 +410,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               paddingTop: '0.75rem',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
               gap: '1rem',
             }}
           >

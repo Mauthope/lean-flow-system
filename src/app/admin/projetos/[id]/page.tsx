@@ -8,6 +8,7 @@ import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachmen
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel, getDefaultMeasurementDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
 import { ActivityAttachmentModal } from '@/components/kanban/ActivityAttachmentModal';
 import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
@@ -77,6 +78,7 @@ export default function AdminProjectDetailPage() {
   const router = useRouter();
   const projectId = params.id as string;
   const { currentUser, allAgents, refreshData } = useAuth();
+  const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
   const [action, setAction] = useState<LeanAction | null>(null);
@@ -1661,19 +1663,19 @@ export default function AdminProjectDetailPage() {
                 </span>
               )}
             </div>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
               {action.title}
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginTop: '0.35rem', flexWrap: 'wrap', fontSize: '0.78125rem' }}>
-              <span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
-                👑 Líder: <span style={{ color: '#ffffff', fontWeight: 600 }}>{leaderName || action.leaderName || action.assignedAgentName}</span>
+              <span style={{ color: isDark ? '#fbbf24' : '#b45309', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
+                👑 Líder: <span style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 600 }}>{leaderName || action.leaderName || action.assignedAgentName}</span>
               </span>
-              <span style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                👤 Agente: <span style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</span>
+              <span style={{ color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                👤 Agente: <span style={{ color: isDark ? '#cbd5e1' : '#334155' }}>{action.assignedAgentName}</span>
               </span>
               {(teamMembersInput || (action.teamMembers && action.teamMembers.length > 0)) && (
-                <span style={{ color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
-                  👥 Equipe: <span style={{ color: '#cbd5e1', fontWeight: 400 }}>{teamMembersInput || action.teamMembers?.join(', ')}</span>
+                <span style={{ color: isDark ? '#22d3ee' : '#0284c7', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
+                  👥 Equipe: <span style={{ color: isDark ? '#cbd5e1' : '#334155', fontWeight: 400 }}>{teamMembersInput || action.teamMembers?.join(', ')}</span>
                 </span>
               )}
             </div>
@@ -1693,16 +1695,16 @@ export default function AdminProjectDetailPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.45rem',
-              backgroundColor: 'rgba(139, 92, 246, 0.2)',
-              border: '1px solid rgba(139, 92, 246, 0.5)',
-              color: '#c084fc',
+              backgroundColor: isDark ? 'rgba(139, 92, 246, 0.2)' : '#f3e8ff',
+              border: isDark ? '1px solid rgba(139, 92, 246, 0.5)' : '1.5px solid #d8b4fe',
+              color: isDark ? '#c084fc' : '#7e22ce',
               fontWeight: 800,
-              boxShadow: '0 0 15px rgba(139, 92, 246, 0.25)',
+              boxShadow: isDark ? '0 0 15px rgba(139, 92, 246, 0.25)' : '0 1px 3px rgba(126, 34, 206, 0.15)',
               transition: 'all 0.15s ease',
             }}
             title="Abrir Apresentação de Slides Executivos do Ciclo PDCA (P -> D -> C -> A -> Antes e Depois)"
           >
-            <Play size={14} fill="#c084fc" />
+            <Play size={14} fill={isDark ? '#c084fc' : '#7e22ce'} />
             <span>Modo Apresentação</span>
           </button>
 
@@ -1713,16 +1715,16 @@ export default function AdminProjectDetailPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                backgroundColor: 'rgba(168, 85, 247, 0.14)',
-                border: '1px solid rgba(168, 85, 247, 0.35)',
+                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.14)' : '#faf5ff',
+                border: isDark ? '1px solid rgba(168, 85, 247, 0.35)' : '1px solid #e9d5ff',
                 padding: '0.35rem 0.8rem',
                 borderRadius: '9999px',
                 fontSize: '0.75rem',
                 fontWeight: 800,
-                color: '#d8b4fe',
+                color: isDark ? '#d8b4fe' : '#7e22ce',
               }}
             >
-              <Eye size={13} color="#c084fc" />
+              <Eye size={13} color={isDark ? '#c084fc' : '#7e22ce'} />
               <span>Modo Somente Leitura</span>
             </div>
           ) : (
@@ -1731,13 +1733,21 @@ export default function AdminProjectDetailPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                backgroundColor: saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                border: `1px solid ${saveStatus === 'saving' ? 'rgba(6, 182, 212, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                backgroundColor: saveStatus === 'saving'
+                  ? (isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe')
+                  : (isDark ? 'rgba(16, 185, 129, 0.12)' : '#f0fdf4'),
+                border: `1px solid ${
+                  saveStatus === 'saving'
+                    ? (isDark ? 'rgba(6, 182, 212, 0.35)' : '#7dd3fc')
+                    : (isDark ? 'rgba(16, 185, 129, 0.35)' : '#86efac')
+                }`,
                 padding: '0.35rem 0.8rem',
                 borderRadius: '9999px',
                 fontSize: '0.75rem',
                 fontWeight: 800,
-                color: saveStatus === 'saving' ? '#22d3ee' : '#34d399',
+                color: saveStatus === 'saving'
+                  ? (isDark ? '#22d3ee' : '#0369a1')
+                  : (isDark ? '#34d399' : '#15803d'),
                 transition: 'all 0.2s ease',
               }}
             >
@@ -1748,21 +1758,39 @@ export default function AdminProjectDetailPage() {
                 </>
               ) : (
                 <>
-                  <CheckCircle2 size={13} color="#34d399" />
+                  <CheckCircle2 size={13} color={isDark ? '#34d399' : '#15803d'} />
                   <span>Salvo automaticamente ✓</span>
                 </>
               )}
             </div>
           )}
 
-          <button onClick={handleCopyLink} className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}>
+          <button
+            onClick={handleCopyLink}
+            className="btn btn-secondary btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: isDark ? '#0d1527' : '#ffffff',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+              color: isDark ? '#f8fafc' : '#1e293b',
+            }}
+          >
             <Share2 size={14} /> {copied ? 'Copiado!' : 'Compartilhar'}
           </button>
 
           <button
             onClick={handlePrint}
             className="btn btn-secondary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#0d1527', borderColor: 'rgba(255, 255, 255, 0.12)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              backgroundColor: isDark ? '#0d1527' : '#ffffff',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+              color: isDark ? '#f8fafc' : '#1e293b',
+            }}
             title="Visualizar e Imprimir Relatório A3 Paisagem (4 Quadrantes PDCA)"
           >
             <Printer size={14} /> Relatório A3 (Paisagem)
@@ -1833,11 +1861,11 @@ export default function AdminProjectDetailPage() {
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '0.75rem',
-          backgroundColor: '#0f172a',
+          backgroundColor: isDark ? '#0f172a' : '#ffffff',
           padding: '0.75rem',
           borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+          boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 2px 8px rgba(0,0,0,0.06)',
         }}
       >
         {/* P - PLAN */}
@@ -1847,8 +1875,12 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'plan' ? '2px solid #06b6d4' : '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: activeTab === 'plan' ? 'rgba(6, 182, 212, 0.16)' : '#0d1527',
+            border: activeTab === 'plan'
+              ? '2px solid #06b6d4'
+              : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            backgroundColor: activeTab === 'plan'
+              ? (isDark ? 'rgba(6, 182, 212, 0.16)' : '#e0f2fe')
+              : (isDark ? '#0d1527' : '#f8fafc'),
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
@@ -1856,15 +1888,15 @@ export default function AdminProjectDetailPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'plan' ? '#22d3ee' : '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'plan' ? (isDark ? '#22d3ee' : '#0369a1') : (isDark ? '#94a3b8' : '#64748b') }}>
               1. PLAN (Planejar)
             </span>
             <span style={{ fontSize: '1rem' }}>🔵</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
+          <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Diagnóstico & Causas
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>5W2H • 5 Porquês • Ishikawa 6M</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>5W2H • 5 Porquês • Ishikawa 6M</span>
         </button>
 
         {/* D - DO */}
@@ -1874,8 +1906,12 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'do' ? '2px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: activeTab === 'do' ? 'rgba(245, 158, 11, 0.16)' : '#0d1527',
+            border: activeTab === 'do'
+              ? '2px solid #f59e0b'
+              : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            backgroundColor: activeTab === 'do'
+              ? (isDark ? 'rgba(245, 158, 11, 0.16)' : '#fef3c7')
+              : (isDark ? '#0d1527' : '#f8fafc'),
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
@@ -1883,15 +1919,15 @@ export default function AdminProjectDetailPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'do' ? '#fbbf24' : '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'do' ? (isDark ? '#fbbf24' : '#b45309') : (isDark ? '#94a3b8' : '#64748b') }}>
               2. DO (Executar)
             </span>
             <span style={{ fontSize: '1rem' }}>🟡</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
+          <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Plano de Ação 5W2H
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Checklist • Testes Piloto • Posto</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Checklist • Testes Piloto • Posto</span>
         </button>
 
         {/* C - CHECK */}
@@ -1901,8 +1937,12 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'check' ? '2px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: activeTab === 'check' ? 'rgba(168, 85, 247, 0.16)' : '#0d1527',
+            border: activeTab === 'check'
+              ? '2px solid #a855f7'
+              : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            backgroundColor: activeTab === 'check'
+              ? (isDark ? 'rgba(168, 85, 247, 0.16)' : '#f3e8ff')
+              : (isDark ? '#0d1527' : '#f8fafc'),
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
@@ -1910,15 +1950,15 @@ export default function AdminProjectDetailPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'check' ? '#c084fc' : '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'check' ? (isDark ? '#c084fc' : '#7e22ce') : (isDark ? '#94a3b8' : '#64748b') }}>
               3. CHECK (Verificar & ROI)
             </span>
             <span style={{ fontSize: '1rem' }}>🟣</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
+          <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Custos vs. Ganhos
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Lucro Líquido • ROI % • Payback</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Lucro Líquido • ROI % • Payback</span>
         </button>
 
         {/* A - ACT */}
@@ -1928,8 +1968,12 @@ export default function AdminProjectDetailPage() {
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
-            border: activeTab === 'act' ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
-            backgroundColor: activeTab === 'act' ? 'rgba(16, 185, 129, 0.16)' : '#0d1527',
+            border: activeTab === 'act'
+              ? '2px solid #10b981'
+              : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            backgroundColor: activeTab === 'act'
+              ? (isDark ? 'rgba(16, 185, 129, 0.16)' : '#dcfce7')
+              : (isDark ? '#0d1527' : '#f8fafc'),
             textAlign: 'left',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
@@ -1937,15 +1981,15 @@ export default function AdminProjectDetailPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'act' ? '#34d399' : '#94a3b8' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'act' ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#94a3b8' : '#64748b') }}>
               4. ACT (Padronizar)
             </span>
             <span style={{ fontSize: '1rem' }}>🟢</span>
           </div>
-          <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
+          <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             POP, Yokoten & Master
           </strong>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Padronização • Replicação • DRE</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Padronização • Replicação • DRE</span>
         </button>
       </div>
 

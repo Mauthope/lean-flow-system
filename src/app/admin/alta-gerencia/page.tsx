@@ -40,9 +40,11 @@ import {
   List,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AltaGerenciaPage() {
   const { currentTenant, currentUser, dataVersion, refreshData } = useAuth();
+  const { isDark } = useTheme();
   const isAdmin = currentUser?.role === 'admin';
 
   const [selectedYear, setSelectedYear] = useState<number>(2026);
@@ -213,7 +215,7 @@ export default function AltaGerenciaPage() {
             style={{
               fontSize: '1.75rem',
               fontWeight: 900,
-              color: '#ffffff',
+              color: isDark ? '#ffffff' : '#0f172a',
               margin: 0,
               letterSpacing: '-0.02em',
               fontFamily: 'var(--font-heading)',
@@ -221,7 +223,7 @@ export default function AltaGerenciaPage() {
           >
             Alta Gerência & Metas Globais de Negócio
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '0.35rem 0 0', maxWidth: '800px', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.35rem 0 0', maxWidth: '800px', lineHeight: 1.5 }}>
             Convergência estratégica de projetos Kaizen e PDCA do chão de fábrica para os objetivos corporativos da diretoria.
             O Sensei IA audita a coerência de cada melhoria e emite justificativas executivas de retorno.
           </p>
@@ -229,25 +231,34 @@ export default function AltaGerenciaPage() {
 
         {/* Controles: Ano e Botão Cadastrar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#020617', padding: '0.4rem 0.8rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
-            <Calendar size={15} style={{ color: '#38bdf8' }} />
-            <span style={{ fontSize: '0.78125rem', color: '#94a3b8', fontWeight: 600 }}>Ciclo:</span>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            backgroundColor: isDark ? '#020617' : '#ffffff',
+            padding: '0.4rem 0.8rem',
+            borderRadius: '10px',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+            boxShadow: isDark ? 'none' : 'var(--shadow-sm)'
+          }}>
+            <Calendar size={15} style={{ color: '#0284c7' }} />
+            <span style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600 }}>Ciclo:</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               style={{
                 backgroundColor: 'transparent',
                 border: 'none',
-                color: '#ffffff',
+                color: isDark ? '#ffffff' : '#0f172a',
                 fontWeight: 800,
                 fontSize: '0.875rem',
                 outline: 'none',
                 cursor: 'pointer',
               }}
             >
-              <option value={2026} style={{ backgroundColor: '#020617' }}>2026</option>
-              <option value={2025} style={{ backgroundColor: '#020617' }}>2025</option>
-              <option value={2027} style={{ backgroundColor: '#020617' }}>2027</option>
+              <option value={2026} style={{ backgroundColor: isDark ? '#020617' : '#ffffff', color: isDark ? '#ffffff' : '#0f172a' }}>2026</option>
+              <option value={2025} style={{ backgroundColor: isDark ? '#020617' : '#ffffff', color: isDark ? '#ffffff' : '#0f172a' }}>2025</option>
+              <option value={2027} style={{ backgroundColor: isDark ? '#020617' : '#ffffff', color: isDark ? '#ffffff' : '#0f172a' }}>2027</option>
             </select>
           </div>
 
@@ -285,8 +296,10 @@ export default function AltaGerenciaPage() {
           style={{
             padding: '1.35rem',
             borderRadius: '16px',
-            border: `1.5px solid ${fulfillmentClass.border}`,
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)',
+            border: isDark ? `1.5px solid ${fulfillmentClass.border}` : '1px solid #cbd5e1',
+            borderLeft: !isDark ? `4.5px solid ${fulfillmentClass.color}` : undefined,
+            background: isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)' : '#ffffff',
+            boxShadow: isDark ? 'none' : 'var(--shadow-md)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -296,7 +309,7 @@ export default function AltaGerenciaPage() {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Aderência Estratégica Global (Hoshin)
               </span>
               <Target size={18} style={{ color: fulfillmentClass.color }} />
@@ -315,11 +328,11 @@ export default function AltaGerenciaPage() {
               >
                 {macroMetrics.overallFulfillmentPercent}%
               </h2>
-              <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>convergência do Gemba</span>
+              <span style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600 }}>convergência do Gemba</span>
             </div>
 
             {/* Barra de Progresso Macro */}
-            <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '9999px', margin: '0.85rem 0 0.5rem', overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0', borderRadius: '9999px', margin: '0.85rem 0 0.5rem', overflow: 'hidden' }}>
               <div
                 style={{
                   width: `${Math.min(100, macroMetrics.overallFulfillmentPercent)}%`,
@@ -347,7 +360,7 @@ export default function AltaGerenciaPage() {
             >
               {fulfillmentClass.label}
             </span>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 600 }}>
               {macroMetrics.achievedObjectivesCount}/{macroMetrics.totalObjectivesCount} metas batidas
             </span>
           </div>
@@ -359,8 +372,10 @@ export default function AltaGerenciaPage() {
           style={{
             padding: '1.35rem',
             borderRadius: '16px',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)',
+            border: isDark ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid #cbd5e1',
+            borderLeft: !isDark ? '4.5px solid #10b981' : undefined,
+            background: isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)' : '#ffffff',
+            boxShadow: isDark ? 'none' : 'var(--shadow-md)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -368,7 +383,7 @@ export default function AltaGerenciaPage() {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Custo Evitado Alinhado
               </span>
               <DollarSign size={18} style={{ color: '#10b981' }} />
@@ -378,7 +393,7 @@ export default function AltaGerenciaPage() {
               style={{
                 fontSize: '1.85rem',
                 fontWeight: 900,
-                color: '#34d399',
+                color: isDark ? '#34d399' : '#0f172a',
                 margin: 0,
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '-0.02em',
@@ -386,7 +401,7 @@ export default function AltaGerenciaPage() {
             >
               {formatCurrency(macroMetrics.totalAvoidedCostAligned)}
             </h2>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.35rem 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.35rem 0 0' }}>
               Gerados por projetos homologados que convergem diretamente com metas corporativas.
             </p>
           </div>
@@ -403,8 +418,10 @@ export default function AltaGerenciaPage() {
           style={{
             padding: '1.35rem',
             borderRadius: '16px',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)',
+            border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #cbd5e1',
+            borderLeft: !isDark ? '4.5px solid #0284c7' : undefined,
+            background: isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)' : '#ffffff',
+            boxShadow: isDark ? 'none' : 'var(--shadow-md)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -412,17 +429,17 @@ export default function AltaGerenciaPage() {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Horas Resgatadas (Capacidade)
               </span>
-              <Clock size={18} style={{ color: '#38bdf8' }} />
+              <Clock size={18} style={{ color: '#0284c7' }} />
             </div>
 
             <h2
               style={{
                 fontSize: '1.85rem',
                 fontWeight: 900,
-                color: '#38bdf8',
+                color: isDark ? '#38bdf8' : '#0f172a',
                 margin: 0,
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '-0.02em',
@@ -430,12 +447,12 @@ export default function AltaGerenciaPage() {
             >
               {macroMetrics.totalHoursSavedAligned.toLocaleString('pt-BR')}h
             </h2>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.35rem 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.35rem 0 0' }}>
               Horas operacionais reaproveitadas em atividades de alto valor agregado.
             </p>
           </div>
 
-          <div style={{ marginTop: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.725rem', color: '#38bdf8', fontWeight: 700 }}>
+          <div style={{ marginTop: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.725rem', color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
             <TrendingUp size={13} />
             <span>Eliminação de microparadas & SMED</span>
           </div>
@@ -447,8 +464,10 @@ export default function AltaGerenciaPage() {
           style={{
             padding: '1.35rem',
             borderRadius: '16px',
-            border: '1px solid rgba(168, 85, 247, 0.25)',
-            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)',
+            border: isDark ? '1px solid rgba(168, 85, 247, 0.25)' : '1px solid #cbd5e1',
+            borderLeft: !isDark ? '4.5px solid #8b5cf6' : undefined,
+            background: isDark ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(2, 6, 23, 0.95) 100%)' : '#ffffff',
+            boxShadow: isDark ? 'none' : 'var(--shadow-md)',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -456,17 +475,17 @@ export default function AltaGerenciaPage() {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Cobertura Estratégica do Portfólio
               </span>
-              <Layers size={18} style={{ color: '#c084fc' }} />
+              <Layers size={18} style={{ color: '#8b5cf6' }} />
             </div>
 
             <h2
               style={{
                 fontSize: '1.85rem',
                 fontWeight: 900,
-                color: '#c084fc',
+                color: isDark ? '#c084fc' : '#0f172a',
                 margin: 0,
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '-0.02em',
@@ -474,12 +493,12 @@ export default function AltaGerenciaPage() {
             >
               {macroMetrics.projectCoveragePercent}%
             </h2>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.35rem 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.35rem 0 0' }}>
               {macroMetrics.totalAlignedProjectsCount} projetos conectados às prioridades corporativas da empresa.
             </p>
           </div>
 
-          <div style={{ marginTop: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.725rem', color: '#c084fc', fontWeight: 700 }}>
+          <div style={{ marginTop: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.725rem', color: isDark ? '#c084fc' : '#8b5cf6', fontWeight: 700 }}>
             <Shield size={13} />
             <span>Zero projetos dispersos no Gemba</span>
           </div>
@@ -493,13 +512,14 @@ export default function AltaGerenciaPage() {
           alignItems: 'center',
           gap: '0.5rem',
           flexWrap: 'wrap',
-          backgroundColor: '#020617',
+          backgroundColor: isDark ? '#020617' : '#ffffff',
           padding: '0.5rem 0.75rem',
           borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+          boxShadow: isDark ? 'none' : 'var(--shadow-sm)'
         }}
       >
-        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', marginRight: '0.35rem' }}>
+        <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', marginRight: '0.35rem' }}>
           <Filter size={14} /> Pilares Hoshin:
         </span>
 
@@ -511,9 +531,9 @@ export default function AltaGerenciaPage() {
             borderRadius: '8px',
             fontSize: '0.78125rem',
             fontWeight: 700,
-            border: selectedPillar === 'todos' ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: selectedPillar === 'todos' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-            color: selectedPillar === 'todos' ? '#ffffff' : '#cbd5e1',
+            border: selectedPillar === 'todos' ? (isDark ? '1px solid #38bdf8' : '1.5px solid #0284c7') : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+            backgroundColor: selectedPillar === 'todos' ? (isDark ? 'rgba(56, 189, 248, 0.2)' : '#e0f2fe') : (isDark ? 'transparent' : '#f8fafc'),
+            color: selectedPillar === 'todos' ? (isDark ? '#ffffff' : '#0284c7') : (isDark ? '#cbd5e1' : '#475569'),
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
@@ -534,9 +554,9 @@ export default function AltaGerenciaPage() {
                 borderRadius: '8px',
                 fontSize: '0.78125rem',
                 fontWeight: 700,
-                border: isSelected ? `1px solid ${pConfig.color}` : '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: isSelected ? pConfig.bg : 'transparent',
-                color: isSelected ? '#ffffff' : '#cbd5e1',
+                border: isSelected ? `1.5px solid ${pConfig.color}` : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+                backgroundColor: isSelected ? pConfig.bg : (isDark ? 'transparent' : '#f8fafc'),
+                color: isSelected ? (isDark ? '#ffffff' : pConfig.color) : (isDark ? '#cbd5e1' : '#475569'),
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -564,16 +584,16 @@ export default function AltaGerenciaPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <Target size={18} style={{ color: '#38bdf8' }} /> Diretrizes Corporativas & Desdobramento Hoshin
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <Target size={18} style={{ color: '#0284c7' }} /> Diretrizes Corporativas & Desdobramento Hoshin
           </h3>
           <span
             style={{
               fontSize: '0.725rem',
               fontWeight: 700,
-              backgroundColor: 'rgba(56, 189, 248, 0.15)',
-              color: '#38bdf8',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+              color: isDark ? '#38bdf8' : '#0284c7',
+              border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
               padding: '0.15rem 0.55rem',
               borderRadius: '9999px',
             }}
@@ -587,8 +607,8 @@ export default function AltaGerenciaPage() {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            backgroundColor: '#020617',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: isDark ? '#020617' : '#f1f5f9',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
             borderRadius: '10px',
             padding: '3px',
             gap: '3px',
@@ -608,8 +628,8 @@ export default function AltaGerenciaPage() {
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: layoutMode === 'grid' ? '#2563eb' : 'transparent',
-              color: layoutMode === 'grid' ? '#ffffff' : '#94a3b8',
+              backgroundColor: layoutMode === 'grid' ? '#0284c7' : 'transparent',
+              color: layoutMode === 'grid' ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b'),
               transition: 'all 0.15s ease',
             }}
           >
@@ -631,8 +651,8 @@ export default function AltaGerenciaPage() {
               fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
-              backgroundColor: layoutMode === 'list' ? '#2563eb' : 'transparent',
-              color: layoutMode === 'list' ? '#ffffff' : '#94a3b8',
+              backgroundColor: layoutMode === 'list' ? '#0284c7' : 'transparent',
+              color: layoutMode === 'list' ? '#ffffff' : (isDark ? '#94a3b8' : '#64748b'),
               transition: 'all 0.15s ease',
             }}
           >
@@ -661,15 +681,16 @@ export default function AltaGerenciaPage() {
               gridColumn: '1 / -1',
               padding: '3rem 2rem',
               textAlign: 'center',
-              backgroundColor: '#0f172a',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? 'none' : '1px solid #cbd5e1',
               borderRadius: '16px',
             }}
           >
             <Target size={42} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
               Nenhuma diretriz encontrada para este filtro
             </h3>
-            <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.35rem 0 1rem' }}>
+            <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.35rem 0 1rem' }}>
               Selecione outro pilar ou cadastre uma nova meta corporativa da Alta Gerência.
             </p>
             {isAdmin && (
@@ -693,9 +714,9 @@ export default function AltaGerenciaPage() {
 
             const progressBarColor =
               fulfillmentPercent >= 100
-                ? '#22c55e'
+                ? '#10b981'
                 : fulfillmentPercent >= 60
-                ? '#38bdf8'
+                ? '#0284c7'
                 : '#f59e0b';
 
             return (
@@ -704,8 +725,14 @@ export default function AltaGerenciaPage() {
                 className="card"
                 style={{
                   borderRadius: '16px',
-                  border: `1.5px solid ${isExpanded ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255, 255, 255, 0.08)'}`,
-                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%)',
+                  border: isDark
+                    ? `1.5px solid ${isExpanded ? 'rgba(59, 130, 246, 0.4)' : 'rgba(255, 255, 255, 0.08)'}`
+                    : `1px solid ${isExpanded ? '#0284c7' : '#cbd5e1'}`,
+                  borderLeft: !isDark ? `4.5px solid ${pillarConfig.color}` : undefined,
+                  background: isDark
+                    ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%)'
+                    : '#ffffff',
+                  boxShadow: isDark ? 'none' : 'var(--shadow-md)',
                   overflow: 'hidden',
                   transition: 'all 0.2s ease',
                   display: 'flex',
@@ -740,9 +767,9 @@ export default function AltaGerenciaPage() {
                           fontFamily: 'var(--font-mono)',
                           fontSize: '0.725rem',
                           fontWeight: 800,
-                          color: '#38bdf8',
-                          backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                          border: '1px solid rgba(56, 189, 248, 0.25)',
+                          color: isDark ? '#38bdf8' : '#0284c7',
+                          backgroundColor: isDark ? 'rgba(56, 189, 248, 0.1)' : '#e0f2fe',
+                          border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #bae6fd',
                           padding: '0.15rem 0.45rem',
                           borderRadius: '6px',
                         }}
@@ -750,8 +777,8 @@ export default function AltaGerenciaPage() {
                         {objective.code}
                       </span>
 
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                        Patrocinador: <strong style={{ color: '#e2e8f0' }}>{objective.sponsor}</strong>
+                      <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
+                        Patrocinador: <strong style={{ color: isDark ? '#e2e8f0' : '#0f172a' }}>{objective.sponsor}</strong>
                       </span>
                     </div>
 
@@ -771,7 +798,7 @@ export default function AltaGerenciaPage() {
                             type="button"
                             onClick={() => handleDeleteObjective(objective.id, objective.title)}
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.725rem', color: '#f87171' }}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.725rem', color: '#ef4444' }}
                             title="Excluir diretriz"
                           >
                             <Trash2 size={13} />
@@ -785,9 +812,17 @@ export default function AltaGerenciaPage() {
                           fontWeight: 800,
                           padding: '0.2rem 0.6rem',
                           borderRadius: '9999px',
-                          backgroundColor: fulfillmentPercent >= 100 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                          color: fulfillmentPercent >= 100 ? '#4ade80' : '#38bdf8',
-                          border: `1px solid ${fulfillmentPercent >= 100 ? 'rgba(34, 197, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)'}`,
+                          backgroundColor: fulfillmentPercent >= 100
+                            ? (isDark ? 'rgba(34, 197, 94, 0.15)' : '#dcfce7')
+                            : (isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe'),
+                          color: fulfillmentPercent >= 100
+                            ? (isDark ? '#4ade80' : '#15803d')
+                            : (isDark ? '#38bdf8' : '#0369a1'),
+                          border: `1px solid ${
+                            fulfillmentPercent >= 100
+                              ? (isDark ? 'rgba(34, 197, 94, 0.35)' : '#bbf7d0')
+                              : (isDark ? 'rgba(56, 189, 248, 0.35)' : '#bae6fd')
+                          }`,
                         }}
                       >
                         {fulfillmentPercent >= 100 ? '✓ Meta Atingida' : `${fulfillmentPercent}% Atendido`}
@@ -801,7 +836,7 @@ export default function AltaGerenciaPage() {
                       style={{
                         fontSize: '1.15rem',
                         fontWeight: 900,
-                        color: '#ffffff',
+                        color: isDark ? '#ffffff' : '#0f172a',
                         margin: 0,
                         fontFamily: 'var(--font-heading)',
                         lineHeight: 1.35,
@@ -809,7 +844,7 @@ export default function AltaGerenciaPage() {
                     >
                       {objective.title}
                     </h3>
-                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0.35rem 0 0', lineHeight: 1.45 }}>
+                    <p style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#475569', margin: '0.35rem 0 0', lineHeight: 1.45 }}>
                       {objective.description}
                     </p>
                   </div>
@@ -817,8 +852,8 @@ export default function AltaGerenciaPage() {
                   {/* Medidor de Realizado vs Meta Corporativa */}
                   <div
                     style={{
-                      backgroundColor: 'rgba(2, 6, 23, 0.7)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      backgroundColor: isDark ? 'rgba(2, 6, 23, 0.7)' : '#f8fafc',
+                      border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                       borderRadius: '12px',
                       padding: '0.85rem 1rem',
                       display: 'flex',
@@ -828,32 +863,32 @@ export default function AltaGerenciaPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.725rem', color: '#94a3b8', fontWeight: 600 }}>Aderência dos Projetos:</span>
-                        <strong style={{ fontSize: '1.2rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Aderência dos Projetos:</span>
+                        <strong style={{ fontSize: '1.2rem', color: isDark ? '#38bdf8' : '#0284c7', fontFamily: 'var(--font-mono)' }}>
                           {averageAdherenceScore}%
                         </strong>
                         {objective.targetValue ? (
-                          <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
-                            (Realizado: {formatValue(currentRealizedValue)} / Meta: <strong style={{ color: '#cbd5e1' }}>{formatValue(objective.targetValue)}</strong>)
+                          <span style={{ fontSize: '0.725rem', color: isDark ? '#64748b' : '#64748b' }}>
+                            (Realizado: {formatValue(currentRealizedValue)} / Meta: <strong style={{ color: isDark ? '#cbd5e1' : '#0f172a' }}>{formatValue(objective.targetValue)}</strong>)
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
+                          <span style={{ fontSize: '0.725rem', color: isDark ? '#64748b' : '#64748b' }}>
                             ({linkedProjects.length} iniciativas • Custo Evitado: {formatCurrency(linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0))})
                           </span>
                         )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.725rem' }}>
-                        <span style={{ color: '#34d399', fontWeight: 700 }}>
+                        <span style={{ color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>
                           ✓ {completedProjectsCount} concluído(s)
                         </span>
-                        <span style={{ color: '#38bdf8', fontWeight: 700 }}>
+                        <span style={{ color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
                           ⏳ {inProgressProjectsCount} em andamento
                         </span>
                       </div>
                     </div>
 
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '9999px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
                       <div
                         style={{
                           width: `${Math.min(100, fulfillmentPercent)}%`,
@@ -870,8 +905,8 @@ export default function AltaGerenciaPage() {
                   {/* Laudo Síntese do Sensei IA */}
                   <div
                     style={{
-                      backgroundColor: 'rgba(56, 189, 248, 0.05)',
-                      border: '1px solid rgba(56, 189, 248, 0.2)',
+                      backgroundColor: isDark ? 'rgba(56, 189, 248, 0.05)' : '#f0f9ff',
+                      border: isDark ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid #bae6fd',
                       borderRadius: '10px',
                       padding: '0.75rem 1rem',
                       display: 'flex',
@@ -880,8 +915,8 @@ export default function AltaGerenciaPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
-                      <Sparkles size={16} style={{ color: '#38bdf8', flexShrink: 0, marginTop: '2px' }} />
-                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic', lineHeight: 1.45 }}>
+                      <Sparkles size={16} style={{ color: isDark ? '#38bdf8' : '#0284c7', flexShrink: 0, marginTop: '2px' }} />
+                      <span style={{ fontSize: '0.8rem', color: isDark ? '#cbd5e1' : '#0369a1', fontStyle: 'italic', lineHeight: 1.45 }}>
                         "{senseiExecutiveSynthesis}"
                       </span>
                     </div>
@@ -894,8 +929,8 @@ export default function AltaGerenciaPage() {
                         style={{
                           fontSize: '0.75rem',
                           fontWeight: 700,
-                          color: '#38bdf8',
-                          borderColor: 'rgba(56, 189, 248, 0.3)',
+                          color: isDark ? '#38bdf8' : '#0284c7',
+                          borderColor: isDark ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '0.35rem',
@@ -912,8 +947,8 @@ export default function AltaGerenciaPage() {
                 {isExpanded && (
                   <div
                     style={{
-                      backgroundColor: 'rgba(2, 6, 23, 0.95)',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                      backgroundColor: isDark ? 'rgba(2, 6, 23, 0.95)' : '#f8fafc',
+                      borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                       padding: '1.25rem',
                       display: 'flex',
                       flexDirection: 'column',
@@ -922,12 +957,12 @@ export default function AltaGerenciaPage() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Layers size={16} style={{ color: '#38bdf8' }} />
-                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                        <Layers size={16} style={{ color: isDark ? '#38bdf8' : '#0284c7' }} />
+                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                           Projetos Kaizen Conectados ({linkedProjects.length})
                         </h4>
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                         Contribuição técnica ao desafio corporativo
                       </span>
                     </div>
@@ -937,16 +972,16 @@ export default function AltaGerenciaPage() {
                         style={{
                           padding: '2rem',
                           textAlign: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#ffffff',
                           borderRadius: '12px',
-                          border: '1px dashed rgba(255, 255, 255, 0.1)',
+                          border: isDark ? '1px dashed rgba(255, 255, 255, 0.1)' : '1px dashed #cbd5e1',
                         }}
                       >
                         <AlertCircle size={32} color="#f59e0b" style={{ margin: '0 auto 0.5rem' }} />
-                        <p style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 700, margin: 0 }}>
+                        <p style={{ fontSize: '0.85rem', color: isDark ? '#cbd5e1' : '#0f172a', fontWeight: 700, margin: 0 }}>
                           Nenhum projeto vinculado a esta meta corporativa
                         </p>
-                        <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.25rem 0 0.85rem' }}>
+                        <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.25rem 0 0.85rem' }}>
                           Vincule projetos existentes ou crie novas ações no Kanban com esta diretriz selecionada.
                         </p>
                         <Link href="/admin/kanban" className="btn btn-secondary btn-sm">
@@ -961,10 +996,11 @@ export default function AltaGerenciaPage() {
                             <div
                               key={proj.id}
                               style={{
-                                backgroundColor: '#0f172a',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                                 borderRadius: '12px',
                                 padding: '1rem',
+                                boxShadow: isDark ? 'none' : 'var(--shadow-sm)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '0.6rem',
@@ -972,13 +1008,22 @@ export default function AltaGerenciaPage() {
                             >
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                                  <span style={{
+                                    fontFamily: 'var(--font-mono)',
+                                    fontSize: '0.725rem',
+                                    fontWeight: 800,
+                                    color: isDark ? '#38bdf8' : '#0284c7',
+                                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.1)' : '#e0f2fe',
+                                    border: isDark ? 'none' : '1px solid #bae6fd',
+                                    padding: '0.15rem 0.5rem',
+                                    borderRadius: '4px'
+                                  }}>
                                     {proj.protocol || proj.id}
                                   </span>
-                                  <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>
+                                  <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a' }}>
                                     {proj.title}
                                   </strong>
-                                  <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                                  <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                                     • {proj.originSectorName || 'Setor'}
                                   </span>
                                 </div>
@@ -990,15 +1035,27 @@ export default function AltaGerenciaPage() {
                                       fontWeight: 800,
                                       padding: '0.15rem 0.5rem',
                                       borderRadius: '9999px',
-                                      backgroundColor: proj.status === 'concluida' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                                      color: proj.status === 'concluida' ? '#4ade80' : '#38bdf8',
+                                      backgroundColor: proj.status === 'concluida'
+                                        ? (isDark ? 'rgba(34, 197, 94, 0.15)' : '#dcfce7')
+                                        : (isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe'),
+                                      color: proj.status === 'concluida'
+                                        ? (isDark ? '#4ade80' : '#15803d')
+                                        : (isDark ? '#38bdf8' : '#0284c7'),
                                     }}
                                   >
                                     {proj.status === 'concluida' ? '✓ Concluído' : proj.status}
                                   </span>
 
                                   {proj.senseiStrategicAudit?.alignmentScore && (
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.45rem', borderRadius: '6px' }}>
+                                    <span style={{
+                                      fontSize: '0.7rem',
+                                      fontWeight: 800,
+                                      color: isDark ? '#34d399' : '#15803d',
+                                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7',
+                                      border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
+                                      padding: '0.15rem 0.45rem',
+                                      borderRadius: '6px'
+                                    }}>
                                       Aderência: {proj.senseiStrategicAudit.alignmentScore}%
                                     </span>
                                   )}
@@ -1026,8 +1083,8 @@ export default function AltaGerenciaPage() {
                               {/* Laudo do Sensei IA para o Projeto: "Por que converge?" */}
                               <div
                                 style={{
-                                  backgroundColor: 'rgba(2, 6, 23, 0.7)',
-                                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                                  backgroundColor: isDark ? 'rgba(2, 6, 23, 0.7)' : '#f0f9ff',
+                                  border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid #bae6fd',
                                   borderRadius: '8px',
                                   padding: '0.7rem 0.85rem',
                                   display: 'flex',
@@ -1036,30 +1093,30 @@ export default function AltaGerenciaPage() {
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#38bdf8', fontSize: '0.725rem', fontWeight: 700 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isDark ? '#38bdf8' : '#0284c7', fontSize: '0.725rem', fontWeight: 700 }}>
                                     <Sparkles size={12} />
                                     <span>Justificativa de Convergência do Sensei IA:</span>
                                   </div>
-                                  <span style={{ fontSize: '0.675rem', color: '#64748b' }}>
+                                  <span style={{ fontSize: '0.675rem', color: isDark ? '#64748b' : '#64748b' }}>
                                     {proj.senseiStrategicAudit?.modelUsed || 'Sensei IA'}
                                   </span>
                                 </div>
 
-                                <p style={{ margin: 0, color: '#cbd5e1', fontSize: '0.78125rem', lineHeight: 1.45, fontStyle: 'italic' }}>
+                                <p style={{ margin: 0, color: isDark ? '#cbd5e1' : '#1e293b', fontSize: '0.78125rem', lineHeight: 1.45, fontStyle: 'italic' }}>
                                   "{proj.senseiStrategicAudit?.justification || 'Projeto alinhado tecnicamente à meta através da eliminação de causas vitais de desperdício no Gemba.'}"
                                 </p>
 
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
-                                  <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700 }}>
+                                  <span style={{ fontSize: '0.725rem', color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>
                                     💰 Custo Evitado: {formatCurrency(savings)}/ano
                                   </span>
                                   {proj.hoursSaved > 0 && (
-                                    <span style={{ fontSize: '0.725rem', color: '#38bdf8', fontWeight: 700 }}>
+                                    <span style={{ fontSize: '0.725rem', color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
                                       ⏱️ Horas Salvas: {proj.hoursSaved}h
                                     </span>
                                   )}
-                                  <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                                    Líder: <strong style={{ color: '#cbd5e1' }}>{proj.leaderName || proj.assignedAgentName || 'Agente'}</strong>
+                                  <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
+                                    Líder: <strong style={{ color: isDark ? '#cbd5e1' : '#0f172a' }}>{proj.leaderName || proj.assignedAgentName || 'Agente'}</strong>
                                   </span>
                                 </div>
                               </div>
@@ -1099,23 +1156,23 @@ export default function AltaGerenciaPage() {
               maxHeight: '90vh',
               overflowY: 'auto',
               borderRadius: '20px',
-              backgroundColor: '#0a0f1d',
-              border: '1.5px solid rgba(59, 130, 246, 0.4)',
+              backgroundColor: isDark ? '#0a0f1d' : '#ffffff',
+              border: isDark ? '1.5px solid rgba(59, 130, 246, 0.4)' : '1px solid #cbd5e1',
               padding: '1.75rem',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+              boxShadow: isDark ? '0 25px 50px -12px rgba(0, 0, 0, 0.75)' : 'var(--shadow-xl)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Target size={20} style={{ color: '#38bdf8' }} />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                <Target size={20} style={{ color: '#0284c7' }} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   {editingObjective ? 'Editar Diretriz Estratégica' : 'Cadastrar Diretriz da Alta Gerência'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
@@ -1124,7 +1181,7 @@ export default function AltaGerenciaPage() {
             <form onSubmit={handleSaveObjective} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Código Hoshin:</label>
+                  <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Código Hoshin:</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1135,7 +1192,7 @@ export default function AltaGerenciaPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Ano de Vigência:</label>
+                  <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Ano de Vigência:</label>
                   <input
                     type="number"
                     className="form-control"
@@ -1147,7 +1204,7 @@ export default function AltaGerenciaPage() {
               </div>
 
               <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Título da Meta Corporativa:</label>
+                <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Título da Meta Corporativa:</label>
                 <input
                   type="text"
                   className="form-control"
@@ -1159,7 +1216,7 @@ export default function AltaGerenciaPage() {
               </div>
 
               <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Desafio Corporativo / Detalhamento:</label>
+                <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Desafio Corporativo / Detalhamento:</label>
                 <textarea
                   className="form-textarea"
                   rows={3}
@@ -1172,7 +1229,7 @@ export default function AltaGerenciaPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Pilar Estratégico STP:</label>
+                  <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Pilar Estratégico STP:</label>
                   <select
                     className="form-select"
                     value={formData.pillar}
@@ -1187,7 +1244,7 @@ export default function AltaGerenciaPage() {
                 </div>
 
                 <div>
-                  <label className="form-label" style={{ color: '#cbd5e1' }}>Patrocinador / Diretor Responsável:</label>
+                  <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Patrocinador / Diretor Responsável:</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1200,18 +1257,18 @@ export default function AltaGerenciaPage() {
               </div>
 
               {/* Meta Quantitativa Opcional */}
-              <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', padding: '0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.3rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' }}>
                     Meta Quantitativa (Opcional)
                   </span>
-                  <span style={{ fontSize: '0.675rem', color: '#64748b' }}>
+                  <span style={{ fontSize: '0.675rem', color: isDark ? '#64748b' : '#64748b' }}>
                     O Sensei IA avalia a convergência e o % de aderência automaticamente
                   </span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Tipo de Meta:</label>
+                    <label className="form-label" style={{ color: isDark ? '#94a3b8' : '#475569', fontSize: '0.75rem' }}>Tipo de Meta:</label>
                     <select
                       className="form-select"
                       value={formData.targetUnit || 'currency'}
@@ -1233,7 +1290,7 @@ export default function AltaGerenciaPage() {
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Meta Numérica:</label>
+                    <label className="form-label" style={{ color: isDark ? '#94a3b8' : '#475569', fontSize: '0.75rem' }}>Meta Numérica:</label>
                     <input
                       type="number"
                       step="any"
@@ -1246,7 +1303,7 @@ export default function AltaGerenciaPage() {
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Baseline (Partida):</label>
+                    <label className="form-label" style={{ color: isDark ? '#94a3b8' : '#475569', fontSize: '0.75rem' }}>Baseline (Partida):</label>
                     <input
                       type="number"
                       step="any"
@@ -1261,7 +1318,7 @@ export default function AltaGerenciaPage() {
               </div>
 
               <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Data Limite para Atingimento:</label>
+                <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Data Limite para Atingimento:</label>
                 <input
                   type="date"
                   className="form-control"
@@ -1278,7 +1335,7 @@ export default function AltaGerenciaPage() {
                   gap: '0.75rem',
                   marginTop: '1rem',
                   paddingTop: '1rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
                 }}
               >
                 <button

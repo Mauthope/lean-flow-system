@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Tenant } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
+import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import {
   Building2,
@@ -27,6 +28,8 @@ export const TenantModal: React.FC<TenantModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [cnpjOrCode, setCnpjOrCode] = useState('');
@@ -135,8 +138,8 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         {/* Banner Informativo Multi-Tenant */}
         <div
           style={{
-            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-            border: '1px solid rgba(6, 182, 212, 0.25)',
+            backgroundColor: isDark ? 'rgba(6, 182, 212, 0.08)' : '#f0fdfa',
+            border: isDark ? '1px solid rgba(6, 182, 212, 0.25)' : '1px solid #99f6e4',
             borderRadius: '10px',
             padding: '0.875rem 1rem',
             display: 'flex',
@@ -144,12 +147,12 @@ export const TenantModal: React.FC<TenantModalProps> = ({
             gap: '0.75rem',
           }}
         >
-          <Factory size={22} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <Factory size={22} color="#0891b2" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+            <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
               {tenant ? 'Configuração da Unidade' : 'Isolamento Multi-Tenant Automático'}
             </h4>
-            <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: '0.25rem 0 0', lineHeight: 1.4 }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#334155', margin: '0.25rem 0 0', lineHeight: 1.4 }}>
               {tenant
                 ? 'Os dados desta planta são protegidos por RLS. Kaizens, setores e métricas pertencem exclusivamente a esta unidade.'
                 : 'Ao cadastrar esta nova entidade, o FluxoLean gerará automaticamente os 5 setores Lean essenciais e o acesso inicial do supervisor responsável.'}
@@ -160,7 +163,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         {/* Nome da Entidade */}
         <div>
           <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Building2 size={14} color="#22d3ee" />
+            <Building2 size={14} color="#0891b2" />
             <span>Nome da Entidade / Razão Social ou Planta</span>
           </label>
           <input
@@ -177,7 +180,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Globe size={14} color="#22d3ee" />
+              <Globe size={14} color="#0891b2" />
               <span>Slug do Link Público</span>
             </label>
             <input
@@ -189,14 +192,14 @@ export const TenantModal: React.FC<TenantModalProps> = ({
               onChange={(e) => setSlug(e.target.value)}
               style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}
             />
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.25rem' }}>
               URL de Coleta: /d/<strong>{slug || 'slug-da-empresa'}</strong>
             </span>
           </div>
 
           <div>
             <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <FileText size={14} color="#94a3b8" />
+              <FileText size={14} color={isDark ? '#94a3b8' : '#64748b'} />
               <span>CNPJ ou Código da Planta</span>
             </label>
             <input
@@ -213,8 +216,8 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         {!tenant && (
           <div
             style={{
-              backgroundColor: '#030712',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: isDark ? '#030712' : '#f8fafc',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
               borderRadius: '10px',
               padding: '1rem',
               display: 'flex',
@@ -222,7 +225,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
               gap: '0.875rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffffff', fontSize: '0.8125rem', fontWeight: 700 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: isDark ? '#ffffff' : '#0f172a', fontSize: '0.8125rem', fontWeight: 700 }}>
               <UserCheck size={16} color="#10b981" />
               <span>Gestor / Supervisor Responsável pela Nova Planta</span>
             </div>
@@ -258,8 +261,8 @@ export const TenantModal: React.FC<TenantModalProps> = ({
         {tenant && (
           <div
             style={{
-              backgroundColor: '#030712',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: isDark ? '#030712' : '#f8fafc',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
               borderRadius: '10px',
               padding: '1rem',
               display: 'flex',
@@ -267,8 +270,8 @@ export const TenantModal: React.FC<TenantModalProps> = ({
               gap: '0.875rem',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#ffffff', fontSize: '0.8125rem', fontWeight: 700 }}>
-              <ShieldCheck size={16} color="#fbbf24" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: isDark ? '#ffffff' : '#0f172a', fontSize: '0.8125rem', fontWeight: 700 }}>
+              <ShieldCheck size={16} color="#d97706" />
               <span>Integração de Controladoria & Auditoria</span>
             </div>
 
@@ -296,7 +299,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
               </div>
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.78125rem', color: '#cbd5e1' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.78125rem', color: isDark ? '#cbd5e1' : '#334155' }}>
               <input
                 type="checkbox"
                 checked={autoNotifyControladoria}
@@ -315,7 +318,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '0.75rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>

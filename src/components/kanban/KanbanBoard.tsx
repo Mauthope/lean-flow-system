@@ -9,6 +9,7 @@ import { dataService } from '@/services/dataService';
 import { WASTE_CATEGORIES } from '@/lib/utils';
 import { Search, Filter, RefreshCw, Plus, Building2, AlertTriangle, Layers } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface KanbanBoardProps {
   actions: LeanAction[];
@@ -25,6 +26,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   const router = useRouter();
   const { allAgents } = useAuth();
+  const { isDark } = useTheme();
   const sectors = dataService.getSectors();
 
   const [selectedAction, setSelectedAction] = useState<LeanAction | null>(null);
@@ -93,8 +95,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       {/* Filter Bar */}
       <div
         style={{
-          backgroundColor: '#0f172a',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: isDark ? '#0f172a' : '#ffffff',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
           borderRadius: '14px',
           padding: '0.875rem 1.15rem',
           display: 'flex',
@@ -102,14 +104,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.75rem',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.35)',
+          boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.35)' : '0 2px 8px rgba(15, 23, 42, 0.05)',
         }}
       >
         {/* Search */}
         <div style={{ position: 'relative', minWidth: '240px', flex: 1 }}>
           <Search
             size={16}
-            color="#64748b"
+            color={isDark ? '#64748b' : '#64748b'}
             style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
@@ -121,9 +123,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             style={{
               paddingLeft: '2.25rem',
               fontSize: '0.84375rem',
-              backgroundColor: '#0d1527',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#f8fafc',
+              backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+              color: isDark ? '#f8fafc' : '#0f172a',
             }}
           />
         </div>
@@ -139,9 +141,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               width: 'auto',
               fontSize: '0.8125rem',
               padding: '0.45rem 0.65rem',
-              backgroundColor: '#0d1527',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#cbd5e1',
+              backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+              color: isDark ? '#cbd5e1' : '#1e293b',
+              fontWeight: 600,
             }}
           >
             <option value="all">🏢 Todos os Setores</option>
@@ -161,9 +164,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               width: 'auto',
               fontSize: '0.8125rem',
               padding: '0.45rem 0.65rem',
-              backgroundColor: '#0d1527',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#cbd5e1',
+              backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+              color: isDark ? '#cbd5e1' : '#1e293b',
+              fontWeight: 600,
             }}
           >
             <option value="all">⚡ Todos os Desperdícios</option>
@@ -183,9 +187,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               width: 'auto',
               fontSize: '0.8125rem',
               padding: '0.45rem 0.65rem',
-              backgroundColor: '#0d1527',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#cbd5e1',
+              backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+              color: isDark ? '#cbd5e1' : '#1e293b',
+              fontWeight: 600,
             }}
           >
             <option value="all">🎯 Todas Prioridades</option>
@@ -205,9 +210,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 width: 'auto',
                 fontSize: '0.8125rem',
                 padding: '0.45rem 0.65rem',
-                backgroundColor: '#0d1527',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
-                color: '#cbd5e1',
+                backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+                color: isDark ? '#cbd5e1' : '#1e293b',
+                fontWeight: 600,
               }}
             >
               <option value="all">👤 Todos os Agentes</option>
@@ -226,9 +232,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             title="Recarregar dados"
             style={{
               padding: '0.45rem 0.65rem',
-              backgroundColor: '#0d1527',
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-              color: '#94a3b8',
+              backgroundColor: isDark ? '#0d1527' : '#f8fafc',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+              color: isDark ? '#94a3b8' : '#64748b',
             }}
           >
             <RefreshCw size={14} />
@@ -265,9 +271,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             borderRadius: '9999px',
             fontSize: '0.75rem',
             fontWeight: 700,
-            border: mobileSelectedCol === 'all' ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
-            backgroundColor: mobileSelectedCol === 'all' ? 'rgba(6, 182, 212, 0.2)' : '#0d1527',
-            color: mobileSelectedCol === 'all' ? '#22d3ee' : '#94a3b8',
+            border: mobileSelectedCol === 'all'
+              ? (isDark ? '1.5px solid #22d3ee' : '1.5px solid #0284c7')
+              : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+            backgroundColor: mobileSelectedCol === 'all'
+              ? (isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe')
+              : (isDark ? '#0d1527' : '#ffffff'),
+            color: mobileSelectedCol === 'all'
+              ? (isDark ? '#22d3ee' : '#0284c7')
+              : (isDark ? '#94a3b8' : '#64748b'),
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             flexShrink: 0,
@@ -296,9 +308,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 borderRadius: '9999px',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                border: isSelected ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
-                backgroundColor: isSelected ? 'rgba(6, 182, 212, 0.2)' : '#0d1527',
-                color: isSelected ? '#22d3ee' : '#94a3b8',
+                border: isSelected
+                  ? (isDark ? '1.5px solid #22d3ee' : '1.5px solid #0284c7')
+                  : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+                backgroundColor: isSelected
+                  ? (isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe')
+                  : (isDark ? '#0d1527' : '#ffffff'),
+                color: isSelected
+                  ? (isDark ? '#22d3ee' : '#0284c7')
+                  : (isDark ? '#94a3b8' : '#64748b'),
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,

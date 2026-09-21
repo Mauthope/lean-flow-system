@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import { KaizenIdea, KaizenIdeaStatus, KaizenExecutionStatus, Sector } from '@/lib/types';
 import { formatCurrency, formatDateTime, formatDate } from '@/lib/utils';
@@ -39,6 +40,7 @@ import confetti from 'canvas-confetti';
 
 export default function AdminCanalKaizenPage() {
   const { dataVersion, currentUser, allAgents, refreshData } = useAuth();
+  const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
   const [activeTab, setActiveTab] = useState<'ideias' | 'aprovadas'>('ideias');
@@ -188,8 +190,10 @@ export default function AdminCanalKaizenPage() {
       {/* ================= TOP HERO BANNER ================= */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #091326 0%, #0c1c38 45%, #070e1d 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
+          background: isDark
+            ? 'linear-gradient(135deg, #091326 0%, #0c1c38 45%, #070e1d 100%)'
+            : 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0f766e 100%)',
+          border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid #38bdf8',
           borderRadius: '20px',
           padding: '1.85rem 2.25rem',
           color: '#ffffff',
@@ -198,7 +202,9 @@ export default function AdminCanalKaizenPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1.5rem',
-          boxShadow: '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.08)',
+          boxShadow: isDark
+            ? '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.08)'
+            : '0 10px 25px -5px rgba(2, 132, 199, 0.25)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -209,9 +215,9 @@ export default function AdminCanalKaizenPage() {
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                color: '#22d3ee',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
+                backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.2)',
+                color: isDark ? '#22d3ee' : '#ffffff',
+                border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(255, 255, 255, 0.35)',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 letterSpacing: '0.05em',
@@ -220,16 +226,16 @@ export default function AdminCanalKaizenPage() {
                 gap: '0.35rem',
               }}
             >
-              <Lightbulb size={12} color="#22d3ee" /> CHÃO DE FÁBRICA • BANCO DE IDEIAS
+              <Lightbulb size={12} color={isDark ? '#22d3ee' : '#ffffff'} /> CHÃO DE FÁBRICA • BANCO DE IDEIAS
             </span>
 
             <span
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                color: '#34d399',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
+                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.25)',
+                color: isDark ? '#34d399' : '#dcfce7',
+                border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(16, 185, 129, 0.5)',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 fontFamily: 'var(--font-mono)',
@@ -242,7 +248,7 @@ export default function AdminCanalKaizenPage() {
           <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
             Canal Kaizen
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#94a3b8', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', color: isDark ? '#94a3b8' : '#e0f2fe', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
             Espaço aberto para captação de melhorias dos operadores, triagem rápida da liderança e apuração autônoma dos ganhos operacionais.
           </p>
         </div>
@@ -257,9 +263,13 @@ export default function AdminCanalKaizenPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: copiedLink ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-              borderColor: copiedLink ? '#10b981' : 'rgba(255, 255, 255, 0.15)',
-              color: copiedLink ? '#34d399' : '#f8fafc',
+              backgroundColor: copiedLink
+                ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#10b981')
+                : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.18)'),
+              borderColor: copiedLink
+                ? '#10b981'
+                : (isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.35)'),
+              color: copiedLink ? (isDark ? '#34d399' : '#ffffff') : '#ffffff',
               fontSize: '0.84375rem',
               padding: '0.65rem 1.15rem',
               borderRadius: '12px',
@@ -281,6 +291,8 @@ export default function AdminCanalKaizenPage() {
               fontSize: '0.84375rem',
               padding: '0.65rem 1.15rem',
               borderRadius: '12px',
+              backgroundColor: isDark ? undefined : '#0284c7',
+              borderColor: isDark ? undefined : '#0284c7',
             }}
           >
             <ExternalLink size={16} />
@@ -326,7 +338,7 @@ export default function AdminCanalKaizenPage() {
       </div>
 
       {/* ================= TABS NAVIGATION ================= */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1', paddingBottom: '0.5rem' }}>
         <button
           type="button"
           onClick={() => setActiveTab('ideias')}
@@ -336,9 +348,15 @@ export default function AdminCanalKaizenPage() {
             gap: '0.5rem',
             padding: '0.65rem 1.25rem',
             borderRadius: '10px',
-            backgroundColor: activeTab === 'ideias' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
-            border: `1px solid ${activeTab === 'ideias' ? 'rgba(6, 182, 212, 0.4)' : 'transparent'}`,
-            color: activeTab === 'ideias' ? '#22d3ee' : '#94a3b8',
+            backgroundColor: activeTab === 'ideias'
+              ? (isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe')
+              : 'transparent',
+            border: activeTab === 'ideias'
+              ? (isDark ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid #38bdf8')
+              : '1px solid transparent',
+            color: activeTab === 'ideias'
+              ? (isDark ? '#22d3ee' : '#0369a1')
+              : (isDark ? '#94a3b8' : '#64748b'),
             fontWeight: 800,
             fontSize: '0.875rem',
             cursor: 'pointer',
@@ -348,7 +366,16 @@ export default function AdminCanalKaizenPage() {
         >
           <Lightbulb size={16} />
           <span>Banco de Ideias & Triagem</span>
-          <span style={{ fontSize: '0.7rem', backgroundColor: '#090e1a', padding: '0.1rem 0.45rem', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              backgroundColor: isDark ? '#090e1a' : '#f1f5f9',
+              padding: '0.1rem 0.45rem',
+              borderRadius: '999px',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+              color: isDark ? '#94a3b8' : '#334155',
+            }}
+          >
             {allIdeas.length}
           </span>
         </button>
@@ -362,9 +389,15 @@ export default function AdminCanalKaizenPage() {
             gap: '0.5rem',
             padding: '0.65rem 1.25rem',
             borderRadius: '10px',
-            backgroundColor: activeTab === 'aprovadas' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-            border: `1px solid ${activeTab === 'aprovadas' ? 'rgba(16, 185, 129, 0.4)' : 'transparent'}`,
-            color: activeTab === 'aprovadas' ? '#34d399' : '#94a3b8',
+            backgroundColor: activeTab === 'aprovadas'
+              ? (isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7')
+              : 'transparent',
+            border: activeTab === 'aprovadas'
+              ? (isDark ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid #86efac')
+              : '1px solid transparent',
+            color: activeTab === 'aprovadas'
+              ? (isDark ? '#34d399' : '#15803d')
+              : (isDark ? '#94a3b8' : '#64748b'),
             fontWeight: 800,
             fontSize: '0.875rem',
             cursor: 'pointer',
@@ -374,7 +407,16 @@ export default function AdminCanalKaizenPage() {
         >
           <Sparkles size={16} />
           <span>Ideias Aprovadas & Execução Kaizen</span>
-          <span style={{ fontSize: '0.7rem', backgroundColor: '#090e1a', padding: '0.1rem 0.45rem', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              backgroundColor: isDark ? '#090e1a' : '#f1f5f9',
+              padding: '0.1rem 0.45rem',
+              borderRadius: '999px',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+              color: isDark ? '#94a3b8' : '#334155',
+            }}
+          >
             {approvedIdeas.length}
           </span>
         </button>
@@ -390,9 +432,10 @@ export default function AdminCanalKaizenPage() {
             className="card"
             style={{
               padding: '1rem 1.25rem',
-              backgroundColor: '#0f172a',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
               borderRadius: '14px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -403,14 +446,19 @@ export default function AdminCanalKaizenPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', flex: 1 }}>
               {/* Search Box */}
               <div style={{ position: 'relative', minWidth: '240px', flex: 1 }}>
-                <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <Search size={16} color={isDark ? '#94a3b8' : '#64748b'} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
                   placeholder="Buscar por colaborador, cargo ou ideia..."
                   className="form-control form-control-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ paddingLeft: '2.25rem', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                  style={{
+                    paddingLeft: '2.25rem',
+                    backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                    color: isDark ? '#ffffff' : '#0f172a',
+                  }}
                 />
               </div>
 
@@ -419,7 +467,13 @@ export default function AdminCanalKaizenPage() {
                 className="form-control form-control-sm"
                 value={selectedSector}
                 onChange={(e) => setSelectedSector(e.target.value)}
-                style={{ width: 'auto', minWidth: '180px', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                style={{
+                  width: 'auto',
+                  minWidth: '180px',
+                  backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                  color: isDark ? '#ffffff' : '#0f172a',
+                }}
               >
                 <option value="all">Todos os Setores</option>
                 {sectors.map((sec) => (
@@ -438,9 +492,13 @@ export default function AdminCanalKaizenPage() {
                     fontSize: '0.75rem',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '8px',
-                    backgroundColor: statusFilter === 'all' ? 'rgba(255, 255, 255, 0.12)' : '#090e1a',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: statusFilter === 'all' ? '#ffffff' : '#94a3b8',
+                    backgroundColor: statusFilter === 'all'
+                      ? (isDark ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0')
+                      : (isDark ? '#090e1a' : '#f8fafc'),
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+                    color: statusFilter === 'all'
+                      ? (isDark ? '#ffffff' : '#0f172a')
+                      : (isDark ? '#94a3b8' : '#64748b'),
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -454,9 +512,15 @@ export default function AdminCanalKaizenPage() {
                     fontSize: '0.75rem',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '8px',
-                    backgroundColor: statusFilter === 'pendente' ? 'rgba(245, 158, 11, 0.2)' : '#090e1a',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    color: statusFilter === 'pendente' ? '#fbbf24' : '#94a3b8',
+                    backgroundColor: statusFilter === 'pendente'
+                      ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7')
+                      : (isDark ? '#090e1a' : '#f8fafc'),
+                    border: statusFilter === 'pendente'
+                      ? (isDark ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid #fcd34d')
+                      : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+                    color: statusFilter === 'pendente'
+                      ? (isDark ? '#fbbf24' : '#b45309')
+                      : (isDark ? '#94a3b8' : '#64748b'),
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -470,9 +534,15 @@ export default function AdminCanalKaizenPage() {
                     fontSize: '0.75rem',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '8px',
-                    backgroundColor: statusFilter === 'aprovada' ? 'rgba(16, 185, 129, 0.2)' : '#090e1a',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    color: statusFilter === 'aprovada' ? '#34d399' : '#94a3b8',
+                    backgroundColor: statusFilter === 'aprovada'
+                      ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7')
+                      : (isDark ? '#090e1a' : '#f8fafc'),
+                    border: statusFilter === 'aprovada'
+                      ? (isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #86efac')
+                      : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+                    color: statusFilter === 'aprovada'
+                      ? (isDark ? '#34d399' : '#15803d')
+                      : (isDark ? '#94a3b8' : '#64748b'),
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -486,9 +556,15 @@ export default function AdminCanalKaizenPage() {
                     fontSize: '0.75rem',
                     padding: '0.35rem 0.75rem',
                     borderRadius: '8px',
-                    backgroundColor: statusFilter === 'rejeitada' ? 'rgba(239, 68, 68, 0.2)' : '#090e1a',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: statusFilter === 'rejeitada' ? '#f87171' : '#94a3b8',
+                    backgroundColor: statusFilter === 'rejeitada'
+                      ? (isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2')
+                      : (isDark ? '#090e1a' : '#f8fafc'),
+                    border: statusFilter === 'rejeitada'
+                      ? (isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fca5a5')
+                      : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+                    color: statusFilter === 'rejeitada'
+                      ? (isDark ? '#f87171' : '#b91c1c')
+                      : (isDark ? '#94a3b8' : '#64748b'),
                     fontWeight: 700,
                     cursor: 'pointer',
                   }}
@@ -500,12 +576,21 @@ export default function AdminCanalKaizenPage() {
           </div>
 
           {/* Ideas Table / Grid */}
-          <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
+          <div
+            className="card"
+            style={{
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+            }}
+          >
             <div style={{ overflowX: 'auto' }}>
               {filteredIdeas.length === 0 ? (
-                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
                   <Lightbulb size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
-                  <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  <p style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                     Nenhuma ideia encontrada com os filtros selecionados.
                   </p>
                   <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
@@ -515,7 +600,16 @@ export default function AdminCanalKaizenPage() {
               ) : (
                 <table style={{ width: '100%', minWidth: '950px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <tr
+                      style={{
+                        backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+                        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                        color: isDark ? '#94a3b8' : '#475569',
+                        fontSize: '0.725rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
                       <th style={{ padding: '0.875rem 1.25rem' }}>Foto</th>
                       <th style={{ padding: '0.875rem 1rem' }}>Colaborador & Cargo</th>
                       <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
@@ -531,10 +625,10 @@ export default function AdminCanalKaizenPage() {
                         <tr
                           key={idea.id}
                           style={{
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #f1f5f9',
                             transition: 'background-color 0.15s ease',
                           }}
-                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc')}
                           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           {/* Foto */}
@@ -545,13 +639,13 @@ export default function AdminCanalKaizenPage() {
                                 onClick={() => setViewPhotoIdea(idea)}
                                 style={{
                                   padding: 0,
-                                  border: '1.5px solid rgba(6, 182, 212, 0.4)',
+                                  border: isDark ? '1.5px solid rgba(6, 182, 212, 0.4)' : '1.5px solid #38bdf8',
                                   borderRadius: '8px',
                                   overflow: 'hidden',
                                   cursor: 'pointer',
                                   width: '44px',
                                   height: '44px',
-                                  backgroundColor: '#090e1a',
+                                  backgroundColor: isDark ? '#090e1a' : '#f1f5f9',
                                   display: 'block',
                                 }}
                                 title="Clique para ver a foto em tamanho real"
@@ -568,8 +662,8 @@ export default function AdminCanalKaizenPage() {
                                   width: '44px',
                                   height: '44px',
                                   borderRadius: '8px',
-                                  backgroundColor: '#090e1a',
-                                  border: '1px dashed rgba(255, 255, 255, 0.15)',
+                                  backgroundColor: isDark ? '#090e1a' : '#f1f5f9',
+                                  border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #cbd5e1',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -585,13 +679,13 @@ export default function AdminCanalKaizenPage() {
                           {/* Colaborador & Cargo */}
                           <td style={{ padding: '0.875rem 1rem' }}>
                             <div>
-                              <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                              <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', fontFamily: 'var(--font-heading)' }}>
                                 {idea.authorName}
                               </strong>
-                              <span style={{ fontSize: '0.725rem', color: '#22d3ee', fontWeight: 600 }}>
+                              <span style={{ fontSize: '0.725rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 600 }}>
                                 {idea.authorRoleTitle}
                               </span>
-                              <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', fontFamily: 'var(--font-mono)' }}>
+                              <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', fontFamily: 'var(--font-mono)' }}>
                                 {idea.protocol}
                               </span>
                             </div>
@@ -603,9 +697,9 @@ export default function AdminCanalKaizenPage() {
                               style={{
                                 fontSize: '0.75rem',
                                 fontWeight: 700,
-                                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                color: '#cbd5e1',
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+                                color: isDark ? '#cbd5e1' : '#334155',
                                 padding: '0.2rem 0.55rem',
                                 borderRadius: '6px',
                               }}
@@ -616,11 +710,11 @@ export default function AdminCanalKaizenPage() {
 
                           {/* Resumo da Ideia */}
                           <td style={{ padding: '0.875rem 1.25rem', maxWidth: '340px' }}>
-                            <p style={{ margin: 0, fontSize: '0.8125rem', color: '#f8fafc', lineHeight: 1.45 }}>
+                            <p style={{ margin: 0, fontSize: '0.8125rem', color: isDark ? '#f8fafc' : '#1e293b', lineHeight: 1.45 }}>
                               {idea.summary}
                             </p>
                             {idea.rejectionReason && idea.status === 'rejeitada' && (
-                              <p style={{ margin: '0.35rem 0 0', fontSize: '0.725rem', color: '#f87171', fontStyle: 'italic' }}>
+                              <p style={{ margin: '0.35rem 0 0', fontSize: '0.725rem', color: isDark ? '#f87171' : '#dc2626', fontStyle: 'italic' }}>
                                 <strong>Motivo da Recusa:</strong> &ldquo;{idea.rejectionReason}&rdquo;
                               </p>
                             )}
@@ -628,10 +722,10 @@ export default function AdminCanalKaizenPage() {
 
                           {/* Data do Cadastro (Salva automaticamente) */}
                           <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                            <span style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'block', fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#334155', display: 'block', fontFamily: 'var(--font-mono)' }}>
                               {formatDate(idea.createdAt)}
                             </span>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                               {new Date(idea.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </td>
@@ -641,9 +735,9 @@ export default function AdminCanalKaizenPage() {
                             {idea.status === 'pendente' && (
                               <span
                                 style={{
-                                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                                  color: '#fbbf24',
-                                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7',
+                                  color: isDark ? '#fbbf24' : '#b45309',
+                                  border: isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #fcd34d',
                                   padding: '0.2rem 0.6rem',
                                   borderRadius: '9999px',
                                   fontWeight: 800,
@@ -659,9 +753,9 @@ export default function AdminCanalKaizenPage() {
                             {idea.status === 'aprovada' && (
                               <span
                                 style={{
-                                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                                  color: '#34d399',
-                                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7',
+                                  color: isDark ? '#34d399' : '#15803d',
+                                  border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid #86efac',
                                   padding: '0.2rem 0.6rem',
                                   borderRadius: '9999px',
                                   fontWeight: 800,
@@ -677,9 +771,9 @@ export default function AdminCanalKaizenPage() {
                             {idea.status === 'rejeitada' && (
                               <span
                                 style={{
-                                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                  color: '#f87171',
-                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2',
+                                  color: isDark ? '#f87171' : '#b91c1c',
+                                  border: isDark ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid #fca5a5',
                                   padding: '0.2rem 0.6rem',
                                   borderRadius: '9999px',
                                   fontWeight: 800,
@@ -698,7 +792,7 @@ export default function AdminCanalKaizenPage() {
                           <td style={{ padding: '0.875rem 1.25rem', textAlign: 'right' }}>
                             {idea.status === 'pendente' ? (
                               isViewer ? (
-                                <span style={{ fontSize: '0.725rem', color: '#fbbf24', fontWeight: 700 }}>
+                                <span style={{ fontSize: '0.725rem', color: isDark ? '#fbbf24' : '#b45309', fontWeight: 700 }}>
                                   Pendente de Análise
                                 </span>
                               ) : (
@@ -730,7 +824,7 @@ export default function AdminCanalKaizenPage() {
                                 <span>Abrir Ciclo PDCA</span> <ArrowRight size={13} />
                               </Link>
                             ) : (
-                              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                              <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                                 Analisada por {idea.reviewedBy}
                               </span>
                             )}
@@ -755,8 +849,8 @@ export default function AdminCanalKaizenPage() {
           <div
             style={{
               padding: '1.15rem 1.35rem',
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4',
+              border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #86efac',
               borderRadius: '14px',
               display: 'flex',
               alignItems: 'center',
@@ -766,34 +860,43 @@ export default function AdminCanalKaizenPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Sparkles size={22} color="#34d399" />
+              <Sparkles size={22} color={isDark ? '#34d399' : '#15803d'} />
               <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   Painel de Ideias Aprovadas & Ganhos do Chão de Fábrica
                 </h4>
-                <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+                <p style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#475569', margin: '0.2rem 0 0' }}>
                   Estas melhorias foram aprovadas da base de colaboradores e são gerenciadas de forma independente dos projetos formais dos agentes Lean.
                 </p>
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>
                 Total Economizado por Ideias
               </span>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: isDark ? '#34d399' : '#15803d', margin: 0, fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(kaizenMetrics.totalSavings)}
               </h3>
             </div>
           </div>
 
           {/* Approved Ideas Table */}
-          <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
+          <div
+            className="card"
+            style={{
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+            }}
+          >
             <div style={{ overflowX: 'auto' }}>
               {approvedIdeas.length === 0 ? (
-                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+                <div style={{ padding: '3rem 2rem', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
                   <Award size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
-                  <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  <p style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                     Nenhuma ideia aprovada ainda.
                   </p>
                   <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
@@ -803,7 +906,16 @@ export default function AdminCanalKaizenPage() {
               ) : (
                 <table style={{ width: '100%', minWidth: '980px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                   <thead>
-                    <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <tr
+                      style={{
+                        backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+                        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                        color: isDark ? '#94a3b8' : '#475569',
+                        fontSize: '0.725rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
                       <th style={{ padding: '0.875rem 1.25rem' }}>Protocolo & Ideia</th>
                       <th style={{ padding: '0.875rem 1rem' }}>Autor (Chão de Fábrica)</th>
                       <th style={{ padding: '0.875rem 1rem' }}>Responsável Implantação</th>
@@ -823,10 +935,10 @@ export default function AdminCanalKaizenPage() {
                         <tr
                           key={idea.id}
                           style={{
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                            borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #f1f5f9',
                             transition: 'background-color 0.15s ease',
                           }}
-                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+                          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc')}
                           onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           {/* Protocolo & Ideia */}
@@ -835,7 +947,7 @@ export default function AdminCanalKaizenPage() {
                               href={`/admin/canal-kaizen/ideias/${idea.id}`}
                               style={{
                                 fontSize: '0.75rem',
-                                color: '#22d3ee',
+                                color: isDark ? '#22d3ee' : '#0284c7',
                                 fontFamily: 'var(--font-mono)',
                                 fontWeight: 800,
                                 textDecoration: 'none',
@@ -849,7 +961,7 @@ export default function AdminCanalKaizenPage() {
                               style={{
                                 margin: '0.2rem 0 0',
                                 fontSize: '0.8125rem',
-                                color: '#ffffff',
+                                color: isDark ? '#ffffff' : '#0f172a',
                                 fontWeight: 600,
                                 lineHeight: 1.4,
                                 textDecoration: 'none',
@@ -862,17 +974,17 @@ export default function AdminCanalKaizenPage() {
 
                           {/* Autor */}
                           <td style={{ padding: '0.875rem 1rem' }}>
-                            <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                            <strong style={{ fontSize: '0.84375rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', fontFamily: 'var(--font-heading)' }}>
                               {idea.authorName}
                             </strong>
-                            <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                               {idea.authorRoleTitle}
                             </span>
                           </td>
 
                           {/* Responsável Implantação */}
                           <td style={{ padding: '0.875rem 1rem' }}>
-                            <span style={{ fontSize: '0.84375rem', fontWeight: 700, color: '#f8fafc' }}>
+                            <span style={{ fontSize: '0.84375rem', fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
                               {idea.responsibleName || 'Não atribuído'}
                             </span>
                           </td>
@@ -883,9 +995,9 @@ export default function AdminCanalKaizenPage() {
                               style={{
                                 fontSize: '0.75rem',
                                 fontWeight: 700,
-                                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                color: '#cbd5e1',
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
+                                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+                                color: isDark ? '#cbd5e1' : '#334155',
                                 padding: '0.2rem 0.55rem',
                                 borderRadius: '6px',
                               }}
@@ -908,28 +1020,28 @@ export default function AdminCanalKaizenPage() {
                                   borderRadius: '9999px',
                                   backgroundColor:
                                     idea.pdcaStage === 'act'
-                                      ? 'rgba(16, 185, 129, 0.2)'
+                                      ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7')
                                       : idea.pdcaStage === 'check'
-                                      ? 'rgba(245, 158, 11, 0.2)'
+                                      ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7')
                                       : idea.pdcaStage === 'do'
-                                      ? 'rgba(139, 92, 246, 0.2)'
-                                      : 'rgba(6, 182, 212, 0.2)',
+                                      ? (isDark ? 'rgba(139, 92, 246, 0.2)' : '#f3e8ff')
+                                      : (isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe'),
                                   color:
                                     idea.pdcaStage === 'act'
-                                      ? '#34d399'
+                                      ? (isDark ? '#34d399' : '#15803d')
                                       : idea.pdcaStage === 'check'
-                                      ? '#fbbf24'
+                                      ? (isDark ? '#fbbf24' : '#b45309')
                                       : idea.pdcaStage === 'do'
-                                      ? '#c084fc'
-                                      : '#22d3ee',
+                                      ? (isDark ? '#c084fc' : '#7e22ce')
+                                      : (isDark ? '#22d3ee' : '#0369a1'),
                                   border: `1px solid ${
                                     idea.pdcaStage === 'act'
-                                      ? 'rgba(16, 185, 129, 0.4)'
+                                      ? (isDark ? 'rgba(16, 185, 129, 0.4)' : '#86efac')
                                       : idea.pdcaStage === 'check'
-                                      ? 'rgba(245, 158, 11, 0.4)'
+                                      ? (isDark ? 'rgba(245, 158, 11, 0.4)' : '#fcd34d')
                                       : idea.pdcaStage === 'do'
-                                      ? 'rgba(139, 92, 246, 0.4)'
-                                      : 'rgba(6, 182, 212, 0.4)'
+                                      ? (isDark ? 'rgba(139, 92, 246, 0.4)' : '#d8b4fe')
+                                      : (isDark ? 'rgba(6, 182, 212, 0.4)' : '#7dd3fc')
                                   }`,
                                 }}
                               >
@@ -938,15 +1050,15 @@ export default function AdminCanalKaizenPage() {
 
                               {/* Execution Status */}
                               {idea.executionStatus === 'implantada_sucesso' ? (
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d' }}>
                                   ✓ Concluída
                                 </span>
                               ) : idea.executionStatus === 'em_implantacao' ? (
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#c084fc' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#c084fc' : '#7e22ce' }}>
                                   Em Implantação
                                 </span>
                               ) : (
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee' }}>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0284c7' }}>
                                   Planejamento
                                 </span>
                               )}
@@ -959,21 +1071,23 @@ export default function AdminCanalKaizenPage() {
                               style={{
                                 fontSize: '0.9375rem',
                                 fontWeight: 900,
-                                color: actual > 0 ? '#34d399' : '#fbbf24',
+                                color: actual > 0
+                                  ? (isDark ? '#34d399' : '#15803d')
+                                  : (isDark ? '#fbbf24' : '#b45309'),
                                 fontFamily: 'var(--font-mono)',
                                 display: 'block',
                               }}
                             >
                               {actual > 0 ? formatCurrency(actual) : formatCurrency(estimated)}
                             </strong>
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
+                            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                               {actual > 0 ? 'ganho homologado' : 'projeção estimada'}
                             </span>
                           </td>
 
                           {/* Horas Salvas */}
                           <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                            <strong style={{ fontSize: '0.875rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                            <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)' }}>
                               {idea.hoursSaved ? `${idea.hoursSaved}h` : '--'}
                             </strong>
                           </td>
@@ -1034,41 +1148,43 @@ export default function AdminCanalKaizenPage() {
             style={{
               width: '100%',
               maxWidth: '520px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? '1px solid rgba(16, 185, 129, 0.4)' : '1.5px solid #10b981',
               borderRadius: '16px',
               padding: '1.75rem',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.15)',
+              boxShadow: isDark
+                ? '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.15)'
+                : '0 20px 50px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle2 size={22} color="#34d399" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                <CheckCircle2 size={22} color={isDark ? '#34d399' : '#15803d'} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   Aprovar Ideia Kaizen
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setApproveIdeaModal(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ backgroundColor: '#090e1a', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+            <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem', border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                 {approveIdeaModal.protocol} • {approveIdeaModal.authorName} ({approveIdeaModal.authorRoleTitle})
               </span>
-              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#f8fafc', fontStyle: 'italic', lineHeight: 1.4 }}>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: isDark ? '#f8fafc' : '#1e293b', fontStyle: 'italic', lineHeight: 1.4 }}>
                 &ldquo;{approveIdeaModal.summary}&rdquo;
               </p>
             </div>
 
             <form onSubmit={handleConfirmApproval} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                   Responsável pela Implantação *
                 </label>
                 <input
@@ -1078,13 +1194,17 @@ export default function AdminCanalKaizenPage() {
                   value={approveResponsible}
                   onChange={(e) => setApproveResponsible(e.target.value)}
                   placeholder="Nome do agente ou líder encarregado..."
-                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                  style={{
+                    backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                    color: isDark ? '#ffffff' : '#0f172a',
+                  }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                     Economia Estimada (R$)
                   </label>
                   <input
@@ -1095,12 +1215,17 @@ export default function AdminCanalKaizenPage() {
                     className="form-control"
                     value={approveEstimatedGain}
                     onChange={(e) => setApproveEstimatedGain(e.target.value === '' ? '' : Number(e.target.value))}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontFamily: 'var(--font-mono)' }}
+                    style={{
+                      backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                      color: isDark ? '#ffffff' : '#0f172a',
+                      fontFamily: 'var(--font-mono)',
+                    }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                     Previsão de Conclusão
                   </label>
                   <input
@@ -1108,7 +1233,11 @@ export default function AdminCanalKaizenPage() {
                     className="form-control"
                     value={approveTargetDate}
                     onChange={(e) => setApproveTargetDate(e.target.value)}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                    style={{
+                      backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                      color: isDark ? '#ffffff' : '#0f172a',
+                    }}
                   />
                 </div>
               </div>
@@ -1156,36 +1285,38 @@ export default function AdminCanalKaizenPage() {
             style={{
               width: '100%',
               maxWidth: '500px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? '1px solid rgba(239, 68, 68, 0.4)' : '1.5px solid #ef4444',
               borderRadius: '16px',
               padding: '1.75rem',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.15)',
+              boxShadow: isDark
+                ? '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.15)'
+                : '0 20px 50px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <XCircle size={22} color="#f87171" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                <XCircle size={22} color={isDark ? '#f87171' : '#dc2626'} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   Rejeitar Ideia Kaizen
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setRejectIdeaModal(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', lineHeight: 1.5, marginBottom: '1rem' }}>
+            <p style={{ fontSize: '0.84375rem', color: isDark ? '#cbd5e1' : '#475569', lineHeight: 1.5, marginBottom: '1rem' }}>
               Por favor, informe a justificativa técnica para que o colaborador compreenda o motivo da recusa ou possa aprimorar a proposta.
             </p>
 
             <form onSubmit={handleConfirmRejection} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                   Motivo da Rejeição / Feedback ao Colaborador *
                 </label>
                 <textarea
@@ -1195,7 +1326,12 @@ export default function AdminCanalKaizenPage() {
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Ex: No momento a máquina passará por retrofitting geral já previsto para o próximo mês..."
-                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.84375rem' }}
+                  style={{
+                    backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                    color: isDark ? '#ffffff' : '#0f172a',
+                    fontSize: '0.84375rem',
+                  }}
                 />
               </div>
 
@@ -1243,27 +1379,27 @@ export default function AdminCanalKaizenPage() {
             style={{
               maxWidth: '700px',
               width: '100%',
-              backgroundColor: '#0f172a',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
               borderRadius: '16px',
               overflow: 'hidden',
-              border: '1px solid rgba(6, 182, 212, 0.35)',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.9)',
+              border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1.5px solid #38bdf8',
+              boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.9)' : '0 20px 50px rgba(0, 0, 0, 0.25)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <strong style={{ color: '#ffffff', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)', display: 'block' }}>
+                <strong style={{ color: isDark ? '#ffffff' : '#0f172a', fontSize: '0.9375rem', fontFamily: 'var(--font-heading)', display: 'block' }}>
                   {viewPhotoIdea.authorName} • {viewPhotoIdea.sectorName}
                 </strong>
-                <span style={{ fontSize: '0.725rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#22d3ee' : '#0284c7', fontFamily: 'var(--font-mono)' }}>
                   {viewPhotoIdea.protocol} ({formatDateTime(viewPhotoIdea.createdAt)})
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setViewPhotoIdea(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
@@ -1277,8 +1413,8 @@ export default function AdminCanalKaizenPage() {
               />
             </div>
 
-            <div style={{ padding: '1rem 1.25rem', backgroundColor: '#090e1a' }}>
-              <p style={{ margin: 0, fontSize: '0.84375rem', color: '#f8fafc', lineHeight: 1.5 }}>
+            <div style={{ padding: '1rem 1.25rem', backgroundColor: isDark ? '#090e1a' : '#f8fafc' }}>
+              <p style={{ margin: 0, fontSize: '0.84375rem', color: isDark ? '#f8fafc' : '#1e293b', lineHeight: 1.5 }}>
                 {viewPhotoIdea.summary}
               </p>
             </div>
@@ -1308,34 +1444,36 @@ export default function AdminCanalKaizenPage() {
             style={{
               width: '100%',
               maxWidth: '540px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              border: isDark ? '1px solid rgba(16, 185, 129, 0.4)' : '1.5px solid #10b981',
               borderRadius: '16px',
               padding: '1.75rem',
-              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.15)',
+              boxShadow: isDark
+                ? '0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.15)'
+                : '0 20px 50px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <DollarSign size={22} color="#34d399" />
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                <DollarSign size={22} color={isDark ? '#34d399' : '#15803d'} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   Ganhos & Execução da Ideia
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setManageGainsModal(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ backgroundColor: '#090e1a', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+            <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.85rem 1rem', borderRadius: '10px', marginBottom: '1.25rem', border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                 {manageGainsModal.protocol} • Autor: {manageGainsModal.authorName} ({manageGainsModal.sectorName})
               </span>
-              <p style={{ margin: '0.2rem 0 0', fontSize: '0.8125rem', color: '#ffffff' }}>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.8125rem', color: isDark ? '#ffffff' : '#0f172a' }}>
                 {manageGainsModal.summary}
               </p>
             </div>
@@ -1343,14 +1481,18 @@ export default function AdminCanalKaizenPage() {
             <form onSubmit={handleSaveGains} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Etapa de Execução */}
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                   Etapa de Implantação
                 </label>
                 <select
                   className="form-control"
                   value={gainExecutionStatus}
                   onChange={(e) => setGainExecutionStatus(e.target.value as KaizenExecutionStatus)}
-                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
+                  style={{
+                    backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                    color: isDark ? '#ffffff' : '#0f172a',
+                  }}
                 >
                   <option value="planejamento">Planejamento da Melhoria</option>
                   <option value="em_implantacao">Em Implantação Prática no Posto</option>
@@ -1361,7 +1503,7 @@ export default function AdminCanalKaizenPage() {
               {/* Ganhos em Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                     Custo Evitado Real (R$) *
                   </label>
                   <input
@@ -1372,12 +1514,18 @@ export default function AdminCanalKaizenPage() {
                     className="form-control"
                     value={gainActualCostAvoided}
                     onChange={(e) => setGainActualCostAvoided(e.target.value === '' ? '' : Number(e.target.value))}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(16, 185, 129, 0.4)', color: '#ffffff', fontFamily: 'var(--font-mono)', fontWeight: 800 }}
+                    style={{
+                      backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.4)' : '#10b981',
+                      color: isDark ? '#ffffff' : '#0f172a',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 800,
+                    }}
                   />
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                     Horas Salvas (h)
                   </label>
                   <input
@@ -1388,13 +1536,18 @@ export default function AdminCanalKaizenPage() {
                     className="form-control"
                     value={gainHoursSaved}
                     onChange={(e) => setGainHoursSaved(e.target.value === '' ? '' : Number(e.target.value))}
-                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontFamily: 'var(--font-mono)' }}
+                    style={{
+                      backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                      color: isDark ? '#ffffff' : '#0f172a',
+                      fontFamily: 'var(--font-mono)',
+                    }}
                   />
                 </div>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: 700, color: '#cbd5e1' }}>
+                <label className="form-label" style={{ fontWeight: 700, color: isDark ? '#cbd5e1' : '#334155' }}>
                   Memorial do Ganho / Detalhes da Economia
                 </label>
                 <textarea
@@ -1403,7 +1556,12 @@ export default function AdminCanalKaizenPage() {
                   value={gainNotes}
                   onChange={(e) => setGainNotes(e.target.value)}
                   placeholder="Ex: Redução de 5 minutos por troca de turno e eliminação de desperdício de refugo..."
-                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.84375rem' }}
+                  style={{
+                    backgroundColor: isDark ? '#090e1a' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1',
+                    color: isDark ? '#ffffff' : '#0f172a',
+                    fontSize: '0.84375rem',
+                  }}
                 />
               </div>
 

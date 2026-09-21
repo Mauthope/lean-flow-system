@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tenant } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
+import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import {
   AlertOctagon,
@@ -29,6 +30,9 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [mode, setMode] = useState<'operational_only' | 'full_reset'>('operational_only');
   const [autoDownloadBackup, setAutoDownloadBackup] = useState(true);
   const [confirmationInput, setConfirmationInput] = useState('');
@@ -147,10 +151,10 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
         >
           <AlertOctagon size={22} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
-            <strong style={{ fontSize: '0.875rem', color: '#fca5a5', display: 'block', marginBottom: '0.2rem' }}>
+            <strong style={{ fontSize: '0.875rem', color: isDark ? '#fca5a5' : '#dc2626', display: 'block', marginBottom: '0.2rem' }}>
               Atenção: Limpeza e Preparação para Go-Live Industrial
             </strong>
-            <p style={{ fontSize: '0.775rem', color: '#fecaca', margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: '0.775rem', color: isDark ? '#fecaca' : '#991b1b', margin: 0, lineHeight: 1.45 }}>
               Esta ação destina-se a expurgar dados fictícios utilizados durante fases de teste, validação e homologação, permitindo iniciar o ciclo real de projetos Kaizen com os indicadores zerados.
             </p>
           </div>
@@ -159,46 +163,46 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
         {/* Resumo do Conteúdo Atual da Planta */}
         <div
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             borderRadius: '12px',
             padding: '0.85rem 1rem',
           }}
         >
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block', marginBottom: '0.65rem' }}>
+          <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block', marginBottom: '0.65rem' }}>
             Volume de Dados Detectados em "{tenant.name}":
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Ações Lean / Kaizens</span>
-              <strong style={{ fontSize: '1.05rem', color: '#ffffff' }}>{stats?.actionsCount || 0}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Ações Lean / Kaizens</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#ffffff' : '#0f172a' }}>{stats?.actionsCount || 0}</strong>
             </div>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Ideias Sugeridas</span>
-              <strong style={{ fontSize: '1.05rem', color: '#ffffff' }}>{stats?.ideasCount || 0}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Ideias Sugeridas</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#ffffff' : '#0f172a' }}>{stats?.ideasCount || 0}</strong>
             </div>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Auditorias & Tags TPM</span>
-              <strong style={{ fontSize: '1.05rem', color: '#ffffff' }}>{(stats?.tagsCount || 0) + (stats?.auditsCount || 0)}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Auditorias & Tags TPM</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#ffffff' : '#0f172a' }}>{(stats?.tagsCount || 0) + (stats?.auditsCount || 0)}</strong>
             </div>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Avaliações de Maturidade</span>
-              <strong style={{ fontSize: '1.05rem', color: '#ffffff' }}>{stats?.assessmentsCount || 0}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Avaliações de Maturidade</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#ffffff' : '#0f172a' }}>{stats?.assessmentsCount || 0}</strong>
             </div>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Setores Mapeados</span>
-              <strong style={{ fontSize: '1.05rem', color: '#22d3ee' }}>{stats?.sectorsCount || 0}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Setores Mapeados</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#22d3ee' : '#0891b2' }}>{stats?.sectorsCount || 0}</strong>
             </div>
-            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Agentes Cadastrados</span>
-              <strong style={{ fontSize: '1.05rem', color: '#34d399' }}>{stats?.agentsCount || 0}</strong>
+            <div style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : '#f1f5f9', padding: '0.5rem 0.65rem', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block' }}>Agentes Cadastrados</span>
+              <strong style={{ fontSize: '1.05rem', color: isDark ? '#34d399' : '#059669' }}>{stats?.agentsCount || 0}</strong>
             </div>
           </div>
         </div>
 
         {/* Escolha do Modo de Limpeza Fina */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#e2e8f0', display: 'block' }}>
+          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#e2e8f0' : '#1e293b', display: 'block' }}>
             Selecione o Nível de Limpeza Cirúrgica:
           </label>
 
@@ -206,8 +210,12 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             style={{
               padding: '0.85rem 1rem',
               borderRadius: '12px',
-              border: mode === 'operational_only' ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: mode === 'operational_only' ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+              border: mode === 'operational_only'
+                ? (isDark ? '1.5px solid #22d3ee' : '1.5px solid #0891b2')
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'),
+              backgroundColor: mode === 'operational_only'
+                ? (isDark ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.08)')
+                : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'),
               display: 'flex',
               alignItems: 'flex-start',
               gap: '0.75rem',
@@ -224,14 +232,14 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.2rem' }}>
-                <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>
+                <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a' }}>
                   Modo 1: Limpeza Operacional de Testes (Recomendado para Produção)
                 </strong>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, backgroundColor: 'rgba(34, 211, 238, 0.2)', color: '#22d3ee', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, backgroundColor: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(8, 145, 178, 0.12)', color: isDark ? '#22d3ee' : '#0891b2', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                   Go-Live
                 </span>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', margin: 0, lineHeight: 1.4 }}>
                 <strong>Apaga:</strong> Todas as ações do Kanban de teste, ideias do Canal Kaizen, etiquetas e auditorias TPM.<br />
                 <strong>Preserva:</strong> A entidade, todos os Setores e todos os Agentes/Gestor com logins já criados, eliminando retrabalho de recadastro!
               </p>
@@ -242,8 +250,12 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             style={{
               padding: '0.85rem 1rem',
               borderRadius: '12px',
-              border: mode === 'full_reset' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: mode === 'full_reset' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+              border: mode === 'full_reset'
+                ? '1.5px solid #ef4444'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0'),
+              backgroundColor: mode === 'full_reset'
+                ? (isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)')
+                : (isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'),
               display: 'flex',
               alignItems: 'flex-start',
               gap: '0.75rem',
@@ -260,11 +272,11 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.2rem' }}>
-                <strong style={{ fontSize: '0.875rem', color: '#fca5a5' }}>
+                <strong style={{ fontSize: '0.875rem', color: isDark ? '#fca5a5' : '#dc2626' }}>
                   Modo 2: Reset Absoluto da Planta
                 </strong>
               </div>
-              <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0, lineHeight: 1.4 }}>
+              <p style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', margin: 0, lineHeight: 1.4 }}>
                 <strong>Apaga:</strong> Todos os dados operacionais, agentes fictícios e setores de teste.<br />
                 <strong>Preserva:</strong> Apenas o registro da Entidade e o perfil do Gestor da Unidade.
               </p>
@@ -275,8 +287,8 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
         {/* Checkbox de Backup Preventivo Automático */}
         <div
           style={{
-            backgroundColor: 'rgba(34, 197, 94, 0.08)',
-            border: '1px solid rgba(34, 197, 94, 0.25)',
+            backgroundColor: isDark ? 'rgba(34, 197, 94, 0.08)' : 'rgba(34, 197, 94, 0.06)',
+            border: isDark ? '1px solid rgba(34, 197, 94, 0.25)' : '1px solid rgba(34, 197, 94, 0.35)',
             borderRadius: '10px',
             padding: '0.75rem 1rem',
             display: 'flex',
@@ -284,7 +296,7 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             justifyContent: 'space-between',
           }}
         >
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#dcfce7' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', fontSize: '0.8125rem', color: isDark ? '#dcfce7' : '#166534' }}>
             <input
               type="checkbox"
               checked={autoDownloadBackup}
@@ -307,17 +319,17 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
         {/* Trava de Confirmação Digitada */}
         <div
           style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-            border: '1.5px dashed rgba(239, 68, 68, 0.4)',
+            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.06)',
+            border: isDark ? '1.5px dashed rgba(239, 68, 68, 0.4)' : '1.5px dashed rgba(239, 68, 68, 0.35)',
             borderRadius: '12px',
             padding: '1rem',
           }}
         >
-          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fca5a5', display: 'block', marginBottom: '0.35rem' }}>
+          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#fca5a5' : '#dc2626', display: 'block', marginBottom: '0.35rem' }}>
             Confirmação de Segurança:
           </label>
-          <p style={{ fontSize: '0.75rem', color: '#fecaca', margin: '0 0 0.5rem', lineHeight: 1.4 }}>
-            Para autorizar a limpeza, digite exatamente: <code style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 900, color: '#ffffff' }}>{REQUIRED_CONFIRMATION}</code>
+          <p style={{ fontSize: '0.75rem', color: isDark ? '#fecaca' : '#991b1b', margin: '0 0 0.5rem', lineHeight: 1.4 }}>
+            Para autorizar a limpeza, digite exatamente: <code style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.06)', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a' }}>{REQUIRED_CONFIRMATION}</code>
           </p>
           <input
             type="text"
@@ -328,10 +340,12 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
             style={{
               width: '100%',
               padding: '0.65rem 0.85rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.35)',
-              border: isConfirmationValid ? '1.5px solid #22c55e' : '1px solid rgba(239, 68, 68, 0.4)',
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#f1f5f9',
+              border: isConfirmationValid
+                ? '1.5px solid #22c55e'
+                : (isDark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(239, 68, 68, 0.35)'),
               borderRadius: '8px',
-              color: isConfirmationValid ? '#86efac' : '#ffffff',
+              color: isConfirmationValid ? (isDark ? '#86efac' : '#15803d') : (isDark ? '#ffffff' : '#0f172a'),
               fontSize: '0.875rem',
               fontWeight: 700,
               letterSpacing: '0.05em',

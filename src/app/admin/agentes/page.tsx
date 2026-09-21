@@ -7,6 +7,7 @@ import { dataService } from '@/services/dataService';
 import { User } from '@/lib/types';
 import { AgentModal } from '@/components/forms/AgentModal';
 import { formatCurrency } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Users,
   UserPlus,
@@ -34,6 +35,7 @@ import {
 
 export default function AdminAgentesPage() {
   const { dataVersion, refreshData, currentUser } = useAuth();
+  const { isDark } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<User | null>(null);
   const [initialModalRole, setInitialModalRole] = useState<'agent' | 'viewer'>('agent');
@@ -54,8 +56,8 @@ export default function AdminAgentesPage() {
           flexDirection: 'column',
           alignItems: 'center',
           gap: '1rem',
-          backgroundColor: '#0f172a',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
+          backgroundColor: isDark ? '#0f172a' : '#ffffff',
+          border: isDark ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #fca5a5',
           borderRadius: '16px',
         }}
       >
@@ -72,10 +74,10 @@ export default function AdminAgentesPage() {
         >
           <ShieldAlert size={32} color="#f87171" />
         </div>
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
           Acesso Restrito: Configuração de Equipe
         </h2>
-        <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+        <p style={{ fontSize: '0.85rem', color: isDark ? '#94a3b8' : '#475569', margin: 0, lineHeight: 1.5 }}>
           Seu perfil atual é de <strong>Consulta Executiva / Diretoria (Somente Leitura)</strong>. O cadastro e gerenciamento de acessos de equipe é restrito aos Administradores da Entidade.
         </p>
         <Link
@@ -194,10 +196,10 @@ export default function AdminAgentesPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Gestão de Equipe & Acessos
           </h2>
-          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
+          <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#475569' }}>
             Gerencie os facilitadores Lean de fábrica e cadastre acessos executivos para Diretoria e Gerência (somente leitura)
           </p>
         </div>
@@ -211,12 +213,12 @@ export default function AdminAgentesPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.45rem',
-              backgroundColor: 'rgba(168, 85, 247, 0.12)',
-              borderColor: 'rgba(168, 85, 247, 0.35)',
-              color: '#d8b4fe',
+              backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
+              borderColor: isDark ? 'rgba(168, 85, 247, 0.35)' : '#d8b4fe',
+              color: isDark ? '#d8b4fe' : '#7e22ce',
             }}
           >
-            <Eye size={16} color="#c084fc" /> Cadastrar Visualizador (Diretoria)
+            <Eye size={16} color={isDark ? '#c084fc' : '#7e22ce'} /> Cadastrar Visualizador (Diretoria)
           </button>
 
           <button
@@ -237,20 +239,20 @@ export default function AdminAgentesPage() {
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#34d399',
+              color: isDark ? '#34d399' : '#15803d',
             }}
           >
             <Briefcase size={22} />
           </div>
           <div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Agentes Lean Ativos
             </span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
               {activeAgents.length}
             </div>
           </div>
@@ -262,20 +264,20 @@ export default function AdminAgentesPage() {
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(168, 85, 247, 0.12)',
+              backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#c084fc',
+              color: isDark ? '#c084fc' : '#7e22ce',
             }}
           >
             <Eye size={22} />
           </div>
           <div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Acessos Diretoria / Leitura
             </span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
               {activeViewers.length}
             </div>
           </div>
@@ -287,20 +289,20 @@ export default function AdminAgentesPage() {
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(6, 182, 212, 0.12)',
+              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#22d3ee',
+              color: isDark ? '#22d3ee' : '#0284c7',
             }}
           >
             <TrendingUp size={22} />
           </div>
           <div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Custo Evitado Homologado
             </span>
-            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-heading)' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: isDark ? '#34d399' : '#059669', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.totalActualCostAvoided)}
             </div>
           </div>
@@ -312,21 +314,21 @@ export default function AdminAgentesPage() {
               width: '46px',
               height: '46px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(234, 179, 8, 0.12)',
+              backgroundColor: isDark ? 'rgba(234, 179, 8, 0.12)' : '#fef3c7',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#facc15',
+              color: isDark ? '#facc15' : '#d97706',
             }}
           >
             <Award size={22} />
           </div>
           <div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
               Ações Concluídas
             </span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
-              {metrics.completedActions} <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>de {metrics.totalActions}</span>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
+              {metrics.completedActions} <span style={{ fontSize: '0.85rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 500 }}>de {metrics.totalActions}</span>
             </div>
           </div>
         </div>
@@ -340,10 +342,11 @@ export default function AdminAgentesPage() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          backgroundColor: '#090e1a',
+          backgroundColor: isDark ? '#090e1a' : '#ffffff',
           padding: '0.875rem 1rem',
           borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+          boxShadow: isDark ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.04)',
         }}
       >
         {/* Navigation Tabs */}
@@ -361,17 +364,21 @@ export default function AdminAgentesPage() {
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              backgroundColor: currentTab === 'all' ? '#2563eb' : 'rgba(255, 255, 255, 0.04)',
-              color: currentTab === 'all' ? '#ffffff' : '#94a3b8',
-              border: currentTab === 'all' ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: currentTab === 'all'
+                ? '#2563eb'
+                : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+              color: currentTab === 'all' ? '#ffffff' : (isDark ? '#94a3b8' : '#475569'),
+              border: currentTab === 'all'
+                ? '1px solid #3b82f6'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
             }}
           >
             <Users size={15} />
             <span>Todos</span>
             <span
               style={{
-                backgroundColor: currentTab === 'all' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                color: currentTab === 'all' ? '#ffffff' : '#cbd5e1',
+                backgroundColor: currentTab === 'all' ? 'rgba(0, 0, 0, 0.3)' : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0'),
+                color: currentTab === 'all' ? '#ffffff' : (isDark ? '#cbd5e1' : '#334155'),
                 padding: '0.1rem 0.4rem',
                 borderRadius: '9999px',
                 fontSize: '0.675rem',
@@ -395,17 +402,21 @@ export default function AdminAgentesPage() {
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              backgroundColor: currentTab === 'agents' ? '#10b981' : 'rgba(255, 255, 255, 0.04)',
-              color: currentTab === 'agents' ? '#ffffff' : '#94a3b8',
-              border: currentTab === 'agents' ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: currentTab === 'agents'
+                ? '#10b981'
+                : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+              color: currentTab === 'agents' ? '#ffffff' : (isDark ? '#94a3b8' : '#475569'),
+              border: currentTab === 'agents'
+                ? '1px solid #10b981'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
             }}
           >
             <Briefcase size={15} />
             <span>Agentes Lean</span>
             <span
               style={{
-                backgroundColor: currentTab === 'agents' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(16, 185, 129, 0.2)',
-                color: currentTab === 'agents' ? '#ffffff' : '#34d399',
+                backgroundColor: currentTab === 'agents' ? 'rgba(0, 0, 0, 0.25)' : (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7'),
+                color: currentTab === 'agents' ? '#ffffff' : (isDark ? '#34d399' : '#15803d'),
                 padding: '0.1rem 0.4rem',
                 borderRadius: '9999px',
                 fontSize: '0.675rem',
@@ -429,17 +440,21 @@ export default function AdminAgentesPage() {
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              backgroundColor: currentTab === 'viewers' ? '#8b5cf6' : 'rgba(255, 255, 255, 0.04)',
-              color: currentTab === 'viewers' ? '#ffffff' : '#94a3b8',
-              border: currentTab === 'viewers' ? '1px solid #a855f7' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: currentTab === 'viewers'
+                ? '#8b5cf6'
+                : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+              color: currentTab === 'viewers' ? '#ffffff' : (isDark ? '#94a3b8' : '#475569'),
+              border: currentTab === 'viewers'
+                ? '1px solid #a855f7'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
             }}
           >
             <Eye size={15} />
             <span>Diretoria & Visualizadores</span>
             <span
               style={{
-                backgroundColor: currentTab === 'viewers' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(168, 85, 247, 0.2)',
-                color: currentTab === 'viewers' ? '#ffffff' : '#d8b4fe',
+                backgroundColor: currentTab === 'viewers' ? 'rgba(0, 0, 0, 0.25)' : (isDark ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff'),
+                color: currentTab === 'viewers' ? '#ffffff' : (isDark ? '#d8b4fe' : '#7e22ce'),
                 padding: '0.1rem 0.4rem',
                 borderRadius: '9999px',
                 fontSize: '0.675rem',
@@ -463,17 +478,21 @@ export default function AdminAgentesPage() {
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
-              backgroundColor: currentTab === 'archived' ? '#475569' : 'rgba(255, 255, 255, 0.04)',
-              color: currentTab === 'archived' ? '#ffffff' : '#94a3b8',
-              border: currentTab === 'archived' ? '1px solid #64748b' : '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: currentTab === 'archived'
+                ? '#475569'
+                : (isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'),
+              color: currentTab === 'archived' ? '#ffffff' : (isDark ? '#94a3b8' : '#475569'),
+              border: currentTab === 'archived'
+                ? '1px solid #64748b'
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
             }}
           >
             <Lock size={14} />
             <span>Arquivados & Bloqueados</span>
             <span
               style={{
-                backgroundColor: currentTab === 'archived' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(148, 163, 184, 0.2)',
-                color: currentTab === 'archived' ? '#ffffff' : '#cbd5e1',
+                backgroundColor: currentTab === 'archived' ? 'rgba(0, 0, 0, 0.25)' : (isDark ? 'rgba(148, 163, 184, 0.2)' : '#e2e8f0'),
+                color: currentTab === 'archived' ? '#ffffff' : (isDark ? '#cbd5e1' : '#475569'),
                 padding: '0.1rem 0.4rem',
                 borderRadius: '9999px',
                 fontSize: '0.675rem',
@@ -489,7 +508,7 @@ export default function AdminAgentesPage() {
         <div style={{ position: 'relative', minWidth: '240px', flex: '1 1 240px', maxWidth: '380px' }}>
           <Search
             size={15}
-            color="#64748b"
+            color={isDark ? '#64748b' : '#94a3b8'}
             style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
@@ -499,11 +518,11 @@ export default function AdminAgentesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
               width: '100%',
-              backgroundColor: '#030712',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: isDark ? '#030712' : '#ffffff',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
               borderRadius: '8px',
               padding: '0.45rem 0.75rem 0.45rem 2.25rem',
-              color: '#ffffff',
+              color: isDark ? '#ffffff' : '#0f172a',
               fontSize: '0.8125rem',
               outline: 'none',
             }}
@@ -523,8 +542,8 @@ export default function AdminAgentesPage() {
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.75rem',
-            backgroundColor: '#090e1a',
-            border: '1px dashed rgba(255, 255, 255, 0.12)',
+            backgroundColor: isDark ? '#090e1a' : '#ffffff',
+            border: isDark ? '1px dashed rgba(255, 255, 255, 0.12)' : '1px dashed #cbd5e1',
             borderRadius: '12px',
           }}
         >
@@ -535,19 +554,19 @@ export default function AdminAgentesPage() {
                   width: '54px',
                   height: '54px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(168, 85, 247, 0.12)',
+                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#c084fc',
+                  color: isDark ? '#c084fc' : '#7e22ce',
                 }}
               >
                 <Eye size={26} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                 Nenhum visualizador executivo cadastrado
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8', maxWidth: '440px', margin: 0 }}>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', maxWidth: '440px', margin: 0 }}>
                 Cadastre acessos somente leitura para Diretores, Gerentes de Fábrica ou Conselheiros acompanharem KPIs e relatórios de ROI.
               </p>
               <button
@@ -558,12 +577,12 @@ export default function AdminAgentesPage() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
-                  backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                  borderColor: 'rgba(168, 85, 247, 0.4)',
-                  color: '#d8b4fe',
+                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : '#f3e8ff',
+                  borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : '#d8b4fe',
+                  color: isDark ? '#d8b4fe' : '#7e22ce',
                 }}
               >
-                <Eye size={15} color="#c084fc" /> Cadastrar Visualizador
+                <Eye size={15} color={isDark ? '#c084fc' : '#7e22ce'} /> Cadastrar Visualizador
               </button>
             </>
           ) : currentTab === 'archived' ? (
@@ -573,19 +592,19 @@ export default function AdminAgentesPage() {
                   width: '54px',
                   height: '54px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                  backgroundColor: isDark ? 'rgba(148, 163, 184, 0.1)' : '#f1f5f9',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#94a3b8',
+                  color: isDark ? '#94a3b8' : '#64748b',
                 }}
               >
                 <ShieldCheck size={26} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                 Nenhum membro arquivado ou bloqueado
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8', maxWidth: '440px', margin: 0 }}>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', maxWidth: '440px', margin: 0 }}>
                 Todos os colaboradores cadastrados estão atualmente com acesso liberado e ativos na plataforma.
               </p>
             </>
@@ -596,19 +615,19 @@ export default function AdminAgentesPage() {
                   width: '54px',
                   height: '54px',
                   borderRadius: '50%',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.1)' : '#dcfce7',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#34d399',
+                  color: isDark ? '#34d399' : '#15803d',
                 }}
               >
                 <UserCheck size={26} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                 Nenhum membro encontrado
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8', maxWidth: '420px', margin: 0 }}>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', maxWidth: '420px', margin: 0 }}>
                 {searchTerm
                   ? 'Nenhum cadastro corresponde aos termos da pesquisa.'
                   : 'Nenhum membro em atividade no momento. Utilize os botões acima para cadastrar facilitadores Lean ou visualizadores.'}
@@ -633,7 +652,9 @@ export default function AdminAgentesPage() {
                   justifyContent: 'space-between',
                   padding: '1.5rem',
                   borderTop: isArchived ? '4px solid #64748b' : isViewer ? '4px solid #a855f7' : '4px solid #10b981',
-                  backgroundColor: isArchived ? 'rgba(15, 23, 42, 0.65)' : undefined,
+                  backgroundColor: isArchived
+                    ? (isDark ? 'rgba(15, 23, 42, 0.65)' : '#f8fafc')
+                    : (isDark ? undefined : '#ffffff'),
                   opacity: isArchived ? 0.92 : 1,
                   transition: 'all 0.2s ease',
                 }}
@@ -654,7 +675,7 @@ export default function AdminAgentesPage() {
                           borderRadius: '50%',
                           objectFit: 'cover',
                           border: isArchived
-                            ? '2px solid rgba(148, 163, 184, 0.3)'
+                            ? (isDark ? '2px solid rgba(148, 163, 184, 0.3)' : '2px solid #cbd5e1')
                             : isViewer
                             ? '2.5px solid rgba(168, 85, 247, 0.65)'
                             : '2.5px solid rgba(16, 185, 129, 0.45)',
@@ -666,14 +687,16 @@ export default function AdminAgentesPage() {
                           style={{
                             fontSize: '1.05rem',
                             fontWeight: 800,
-                            color: isArchived ? '#cbd5e1' : '#ffffff',
+                            color: isArchived
+                              ? (isDark ? '#cbd5e1' : '#64748b')
+                              : (isDark ? '#ffffff' : '#0f172a'),
                             fontFamily: 'var(--font-heading)',
                             margin: 0,
                           }}
                         >
                           {member.name}
                         </h3>
-                        <p style={{ fontSize: '0.75rem', color: isArchived ? '#64748b' : '#94a3b8', margin: 0 }}>
+                        <p style={{ fontSize: '0.75rem', color: isArchived ? '#64748b' : (isDark ? '#94a3b8' : '#64748b'), margin: 0 }}>
                           {member.jobTitle || (isViewer ? 'Diretor / Visualizador' : 'Especialista Lean')}
                         </p>
                       </div>
@@ -686,17 +709,21 @@ export default function AdminAgentesPage() {
                           fontSize: '0.675rem',
                           fontWeight: 800,
                           backgroundColor: isArchived
-                            ? 'rgba(239, 68, 68, 0.12)'
+                            ? (isDark ? 'rgba(239, 68, 68, 0.12)' : '#fee2e2')
                             : isViewer
-                            ? 'rgba(168, 85, 247, 0.16)'
-                            : 'rgba(16, 185, 129, 0.16)',
-                          color: isArchived ? '#fca5a5' : isViewer ? '#d8b4fe' : '#34d399',
+                            ? (isDark ? 'rgba(168, 85, 247, 0.16)' : '#f3e8ff')
+                            : (isDark ? 'rgba(16, 185, 129, 0.16)' : '#dcfce7'),
+                          color: isArchived
+                            ? (isDark ? '#fca5a5' : '#b91c1c')
+                            : isViewer
+                            ? (isDark ? '#d8b4fe' : '#7e22ce')
+                            : (isDark ? '#34d399' : '#15803d'),
                           border: `1px solid ${
                             isArchived
-                              ? 'rgba(239, 68, 68, 0.3)'
+                              ? (isDark ? 'rgba(239, 68, 68, 0.3)' : '#fca5a5')
                               : isViewer
-                              ? 'rgba(168, 85, 247, 0.35)'
-                              : 'rgba(16, 185, 129, 0.35)'
+                              ? (isDark ? 'rgba(168, 85, 247, 0.35)' : '#d8b4fe')
+                              : (isDark ? 'rgba(16, 185, 129, 0.35)' : '#86efac')
                           }`,
                           padding: '0.15rem 0.55rem',
                           borderRadius: '9999px',
@@ -720,7 +747,7 @@ export default function AdminAgentesPage() {
                                 width: '6px',
                                 height: '6px',
                                 borderRadius: '50%',
-                                backgroundColor: '#34d399',
+                                backgroundColor: isDark ? '#34d399' : '#15803d',
                                 display: 'inline-block',
                               }}
                             />
@@ -734,9 +761,9 @@ export default function AdminAgentesPage() {
                           style={{
                             fontSize: '0.65rem',
                             fontWeight: 800,
-                            backgroundColor: 'rgba(251, 191, 36, 0.15)',
-                            color: '#fbbf24',
-                            border: '1px solid #fbbf24',
+                            backgroundColor: isDark ? 'rgba(251, 191, 36, 0.15)' : '#fef3c7',
+                            color: isDark ? '#fbbf24' : '#b45309',
+                            border: isDark ? '1px solid #fbbf24' : '1px solid #fcd34d',
                             padding: '0.1rem 0.45rem',
                             borderRadius: '9999px',
                             display: 'inline-flex',
@@ -757,32 +784,32 @@ export default function AdminAgentesPage() {
                       flexDirection: 'column',
                       gap: '0.35rem',
                       fontSize: '0.8125rem',
-                      color: isArchived ? '#94a3b8' : '#cbd5e1',
+                      color: isArchived ? (isDark ? '#94a3b8' : '#64748b') : (isDark ? '#cbd5e1' : '#334155'),
                       marginBottom: '1.15rem',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Building2 size={14} color={isViewer ? '#c084fc' : '#22d3ee'} />
+                      <Building2 size={14} color={isViewer ? '#a855f7' : (isDark ? '#22d3ee' : '#0284c7')} />
                       <span>
                         {isViewer ? 'Abrangência: ' : 'Setor: '}
                         {member.allSectors || member.sectorName === 'Todos os Setores (Geral)' ? (
-                          <span style={{ color: isViewer ? '#d8b4fe' : '#34d399', fontWeight: 800 }}>
+                          <span style={{ color: isViewer ? (isDark ? '#d8b4fe' : '#7e22ce') : (isDark ? '#34d399' : '#15803d'), fontWeight: 800 }}>
                             🌟 Todos os Setores (Geral Planta)
                           </span>
                         ) : (
-                          <strong style={{ color: isArchived ? '#cbd5e1' : '#ffffff' }}>
+                          <strong style={{ color: isArchived ? (isDark ? '#cbd5e1' : '#64748b') : (isDark ? '#ffffff' : '#0f172a') }}>
                             {member.sectorName || 'Não Definido'}
                           </strong>
                         )}
                       </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Mail size={14} color="#94a3b8" />
+                      <Mail size={14} color={isDark ? '#94a3b8' : '#64748b'} />
                       <span>{member.email}</span>
                     </div>
                     {member.phone && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Phone size={14} color="#94a3b8" />
+                        <Phone size={14} color={isDark ? '#94a3b8' : '#64748b'} />
                         <span>{member.phone}</span>
                       </div>
                     )}
@@ -792,9 +819,9 @@ export default function AdminAgentesPage() {
                   {isViewer ? (
                     <div
                       style={{
-                        backgroundColor: '#090e1a',
+                        backgroundColor: isDark ? '#090e1a' : '#fdf4ff',
                         borderRadius: '10px',
-                        border: '1px solid rgba(168, 85, 247, 0.2)',
+                        border: isDark ? '1px solid rgba(168, 85, 247, 0.2)' : '1px solid #e9d5ff',
                         padding: '0.75rem',
                         marginBottom: '1rem',
                         display: 'flex',
@@ -802,18 +829,18 @@ export default function AdminAgentesPage() {
                         gap: '0.6rem',
                       }}
                     >
-                      <Shield size={16} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <div style={{ fontSize: '0.725rem', color: '#cbd5e1', lineHeight: 1.35 }}>
-                        <strong style={{ color: '#d8b4fe', display: 'block' }}>Acesso Executivo (Somente Leitura)</strong>
+                      <Shield size={16} color="#a855f7" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <div style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', lineHeight: 1.35 }}>
+                        <strong style={{ color: isDark ? '#d8b4fe' : '#7e22ce', display: 'block' }}>Acesso Executivo (Somente Leitura)</strong>
                         Acompanhamento de Dashboards, Hoshin Kanri, Kanban Geral e Relatórios de ROI. Sem permissão de mutação ou homologação.
                       </div>
                     </div>
                   ) : stats ? (
                     <div
                       style={{
-                        backgroundColor: '#090e1a',
+                        backgroundColor: isDark ? '#090e1a' : '#f8fafc',
                         borderRadius: '10px',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                         padding: '0.75rem',
                         display: 'grid',
                         gridTemplateColumns: '1fr 1fr',
@@ -822,19 +849,19 @@ export default function AdminAgentesPage() {
                       }}
                     >
                       <div>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
                           {isArchived ? 'Histórico Custo Evitado' : 'Custo Evitado'}
                         </span>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399', margin: '0.1rem 0 0' }}>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#34d399' : '#059669', margin: '0.1rem 0 0' }}>
                           {formatCurrency(stats.actualCostAvoided)}
                         </p>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>
                           {isArchived ? 'Ações Históricas' : 'Ações Concluídas'}
                         </span>
-                        <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: '0.1rem 0 0' }}>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0.1rem 0 0' }}>
                           {stats.completedCount} de {stats.assignedCount}
                         </p>
                       </div>
@@ -848,7 +875,7 @@ export default function AdminAgentesPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                     paddingTop: '0.875rem',
                     gap: '0.5rem',
                   }}

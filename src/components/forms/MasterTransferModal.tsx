@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '@/components/ui/Modal';
+import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import {
   ShieldAlert,
@@ -25,6 +26,9 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const currentMaster = useMemo(() => {
     return dataService.getMasterUser();
   }, [isOpen]);
@@ -115,10 +119,10 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
         >
           <ShieldAlert size={22} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
-            <strong style={{ fontSize: '0.875rem', color: '#fca5a5', display: 'block', marginBottom: '0.2rem' }}>
+            <strong style={{ fontSize: '0.875rem', color: isDark ? '#fca5a5' : '#dc2626', display: 'block', marginBottom: '0.2rem' }}>
               Ação Crítica de Governança e Sucessão da Plataforma
             </strong>
-            <p style={{ fontSize: '0.775rem', color: '#fecaca', margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: '0.775rem', color: isDark ? '#fecaca' : '#991b1b', margin: 0, lineHeight: 1.45 }}>
               A titularidade Master confere controle irrestrito sobre a criação de entidades industriais, transição de gestores de fábrica e gestão de instâncias multi-tenant. Certifique-se dos dados do sucessor antes de prosseguir.
             </p>
           </div>
@@ -127,8 +131,8 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
         {/* Titular Master Atual */}
         <div
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             borderRadius: '12px',
             padding: '0.85rem 1rem',
             display: 'flex',
@@ -147,19 +151,19 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#facc15',
+                color: isDark ? '#facc15' : '#ca8a04',
               }}
             >
               <Crown size={18} />
             </div>
             <div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', display: 'block' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em', display: 'block' }}>
                 Titular Master Atual
               </span>
-              <strong style={{ fontSize: '0.9rem', color: '#ffffff' }}>
+              <strong style={{ fontSize: '0.9rem', color: isDark ? '#ffffff' : '#0f172a' }}>
                 {currentMaster?.name || 'Mauricio Grigol'}
               </strong>
-              <span style={{ fontSize: '0.75rem', color: '#cbd5e1', marginLeft: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', marginLeft: '0.5rem' }}>
                 ({currentMaster?.email || 'mauricio.grigol@rafitec.com.br'})
               </span>
             </div>
@@ -168,9 +172,9 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
             style={{
               fontSize: '0.65rem',
               fontWeight: 800,
-              backgroundColor: 'rgba(234, 179, 8, 0.2)',
-              color: '#fde047',
-              border: '1px solid rgba(234, 179, 8, 0.4)',
+              backgroundColor: isDark ? 'rgba(234, 179, 8, 0.2)' : 'rgba(234, 179, 8, 0.15)',
+              color: isDark ? '#fde047' : '#854d0e',
+              border: isDark ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid rgba(202, 138, 4, 0.35)',
               padding: '0.2rem 0.5rem',
               borderRadius: '6px',
             }}
@@ -181,13 +185,13 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
 
         {/* Dados do Novo Titular Master */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Crown size={14} color="#facc15" /> Dados do Novo Titular Master (Sucessor):
+          <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#e2e8f0' : '#1e293b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Crown size={14} color={isDark ? '#facc15' : '#ca8a04'} /> Dados do Novo Titular Master (Sucessor):
           </label>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.3rem' }}>
+              <label style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '0.3rem' }}>
                 Nome Completo do Sucessor *
               </label>
               <input
@@ -200,17 +204,17 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.85rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #e2e8f0',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: isDark ? '#ffffff' : '#0f172a',
                   fontSize: '0.84375rem',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.3rem' }}>
+              <label style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '0.3rem' }}>
                 E-mail Corporativo do Sucessor *
               </label>
               <input
@@ -223,10 +227,10 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.85rem',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #e2e8f0',
                   borderRadius: '8px',
-                  color: '#ffffff',
+                  color: isDark ? '#ffffff' : '#0f172a',
                   fontSize: '0.84375rem',
                 }}
               />
@@ -234,7 +238,7 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
           </div>
 
           <div>
-            <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.3rem' }}>
+            <label style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginBottom: '0.3rem' }}>
               Cargo / Função do Sucessor
             </label>
             <input
@@ -246,10 +250,10 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
               style={{
                 width: '100%',
                 padding: '0.65rem 0.85rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f8fafc',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #e2e8f0',
                 borderRadius: '8px',
-                color: '#ffffff',
+                color: isDark ? '#ffffff' : '#0f172a',
                 fontSize: '0.84375rem',
               }}
             />
@@ -259,13 +263,13 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
         {/* Status do Titular Anterior */}
         <div
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
             borderRadius: '12px',
             padding: '0.85rem 1rem',
           }}
         >
-          <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#e2e8f0', display: 'block', marginBottom: '0.5rem' }}>
+          <label style={{ fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#e2e8f0' : '#1e293b', display: 'block', marginBottom: '0.5rem' }}>
             Acesso do Titular Anterior ({currentMaster?.name || 'Mauricio Grigol'}):
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -275,7 +279,7 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
                 alignItems: 'center',
                 gap: '0.6rem',
                 fontSize: '0.8125rem',
-                color: '#cbd5e1',
+                color: isDark ? '#cbd5e1' : '#475569',
                 cursor: 'pointer',
               }}
             >
@@ -316,17 +320,17 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
         {/* Trava de Segurança Digitada */}
         <div
           style={{
-            backgroundColor: 'rgba(234, 179, 8, 0.08)',
+            backgroundColor: isDark ? 'rgba(234, 179, 8, 0.08)' : 'rgba(234, 179, 8, 0.06)',
             border: '1.5px dashed rgba(234, 179, 8, 0.4)',
             borderRadius: '12px',
             padding: '1rem',
           }}
         >
-          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fde047', display: 'block', marginBottom: '0.35rem' }}>
+          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#fde047' : '#854d0e', display: 'block', marginBottom: '0.35rem' }}>
             Trava Anti-Acidente: Digite a confirmação abaixo:
           </label>
-          <p style={{ fontSize: '0.75rem', color: '#fef08a', margin: '0 0 0.5rem', lineHeight: 1.4 }}>
-            Para habilitar o botão de transferência, digite exatamente: <code style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 900, color: '#ffffff' }}>{REQUIRED_CONFIRMATION}</code>
+          <p style={{ fontSize: '0.75rem', color: isDark ? '#fef08a' : '#713f12', margin: '0 0 0.5rem', lineHeight: 1.4 }}>
+            Para habilitar o botão de transferência, digite exatamente: <code style={{ backgroundColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.06)', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a' }}>{REQUIRED_CONFIRMATION}</code>
           </p>
           <input
             type="text"
@@ -337,10 +341,10 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
             style={{
               width: '100%',
               padding: '0.65rem 0.85rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.35)',
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#f1f5f9',
               border: isConfirmationValid ? '1.5px solid #22c55e' : '1px solid rgba(234, 179, 8, 0.4)',
               borderRadius: '8px',
-              color: isConfirmationValid ? '#86efac' : '#ffffff',
+              color: isConfirmationValid ? (isDark ? '#86efac' : '#15803d') : (isDark ? '#ffffff' : '#0f172a'),
               fontSize: '0.875rem',
               fontWeight: 700,
               letterSpacing: '0.05em',

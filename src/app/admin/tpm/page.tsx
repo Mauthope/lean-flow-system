@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 import { Modal } from '@/components/ui/Modal';
 import { TpmPhaseSeal } from '@/components/tpm/TpmPhaseSeal';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'status'>[] = [
   {
@@ -71,6 +72,7 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
 
 export default function AdminTPMPage() {
   const { currentUser } = useAuth();
+  const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
   // Estados principais de dados
@@ -342,10 +344,11 @@ export default function AdminTPMPage() {
       {/* Barra de Filtro de Setor Global */}
       <div
         style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: isDark ? '#0f172a' : '#ffffff',
           padding: '0.85rem 1.25rem',
           borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+          boxShadow: isDark ? 'none' : 'var(--shadow-sm)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -354,8 +357,8 @@ export default function AdminTPMPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Layers size={14} color="#22d3ee" /> Setor Fabril:
+          <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Layers size={14} color="#0284c7" /> Setor Fabril:
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
             <button
@@ -365,9 +368,15 @@ export default function AdminTPMPage() {
                 fontWeight: 800,
                 padding: '0.3rem 0.75rem',
                 borderRadius: '8px',
-                border: selectedSectorId === 'all' ? '1px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.08)',
-                backgroundColor: selectedSectorId === 'all' ? 'rgba(6, 182, 212, 0.15)' : '#090e1a',
-                color: selectedSectorId === 'all' ? '#22d3ee' : '#94a3b8',
+                border: selectedSectorId === 'all'
+                  ? (isDark ? '1px solid #22d3ee' : '1.5px solid #0284c7')
+                  : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                backgroundColor: selectedSectorId === 'all'
+                  ? (isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe')
+                  : (isDark ? '#090e1a' : '#f8fafc'),
+                color: selectedSectorId === 'all'
+                  ? (isDark ? '#22d3ee' : '#0284c7')
+                  : (isDark ? '#94a3b8' : '#475569'),
                 cursor: 'pointer',
               }}
             >
@@ -385,16 +394,22 @@ export default function AdminTPMPage() {
                     fontWeight: 700,
                     padding: '0.3rem 0.75rem',
                     borderRadius: '8px',
-                    border: isSel ? `1px solid ${sec.color || '#22d3ee'}` : '1px solid rgba(255, 255, 255, 0.08)',
-                    backgroundColor: isSel ? `${sec.color || '#22d3ee'}22` : '#090e1a',
-                    color: isSel ? '#ffffff' : '#94a3b8',
+                    border: isSel
+                      ? `1.5px solid ${sec.color || '#0284c7'}`
+                      : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                    backgroundColor: isSel
+                      ? (isDark ? `${sec.color || '#22d3ee'}22` : '#e0f2fe')
+                      : (isDark ? '#090e1a' : '#f8fafc'),
+                    color: isSel
+                      ? (isDark ? '#ffffff' : (sec.color || '#0284c7'))
+                      : (isDark ? '#94a3b8' : '#475569'),
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.35rem',
                   }}
                 >
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sec.color || '#22d3ee' }} />
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: sec.color || '#0284c7' }} />
                   {sec.name} ({count})
                 </button>
               );
@@ -420,15 +435,15 @@ export default function AdminTPMPage() {
       {metrics && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
           {/* Card 1: Total de Máquinas */}
-          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #22d3ee' }}>
+          <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #0284c7' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Máquinas Ativas</span>
-              <Wrench size={18} color="#22d3ee" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase' }}>Máquinas Ativas</span>
+              <Wrench size={18} color="#0284c7" />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
               {filteredMachines.length}
             </div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
               {filteredMachines.filter((m) => m.status === 'operacional').length} operando • {filteredMachines.filter((m) => m.status !== 'operacional').length} manutenção/paradas
             </span>
           </div>
@@ -436,13 +451,13 @@ export default function AdminTPMPage() {
           {/* Card 2: Média Geral de Auditorias */}
           <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: metrics.averageAuditScore >= 85 ? '4px solid #10b981' : metrics.averageAuditScore >= 70 ? '4px solid #f59e0b' : '4px solid #ef4444' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Nota Média de Auditorias</span>
-              <Shield size={18} color={metrics.averageAuditScore >= 85 ? '#34d399' : '#fbbf24'} />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase' }}>Nota Média de Auditorias</span>
+              <Shield size={18} color={metrics.averageAuditScore >= 85 ? (isDark ? '#34d399' : '#10b981') : (isDark ? '#fbbf24' : '#f59e0b')} />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: metrics.averageAuditScore >= 85 ? '#34d399' : metrics.averageAuditScore >= 70 ? '#fbbf24' : '#f87171', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: metrics.averageAuditScore >= 85 ? (isDark ? '#34d399' : '#15803d') : metrics.averageAuditScore >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626'), fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
               {metrics.averageAuditScore > 0 ? `${metrics.averageAuditScore}%` : '--'}
             </div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
               {metrics.averageAuditScore >= 85 ? '✅ Nível Classe Mundial' : metrics.averageAuditScore >= 70 ? '⚠️ Sob Observação' : '🚨 Nível Crítico'}
             </span>
           </div>
@@ -450,13 +465,13 @@ export default function AdminTPMPage() {
           {/* Card 3: Total de Auditorias Realizadas */}
           <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #3b82f6' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Auditorias Realizadas</span>
-              <CheckSquare size={18} color="#60a5fa" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase' }}>Auditorias Realizadas</span>
+              <CheckSquare size={18} color="#3b82f6" />
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#60a5fa', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
+            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: isDark ? '#60a5fa' : '#0284c7', fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
               {filteredAudits.length}
             </div>
-            <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
               {filteredAudits.filter((a) => a.score === 100).length} auditorias com nota 100%
             </span>
           </div>
@@ -464,27 +479,27 @@ export default function AdminTPMPage() {
           {/* Card 4: Selo de Fases TPM (4 Fases) */}
           <div className="card" style={{ padding: '1rem 1.25rem', borderLeft: '4px solid #f59e0b' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Selo de Fases TPM</span>
-              <Award size={18} color="#fbbf24" />
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase' }}>Selo de Fases TPM</span>
+              <Award size={18} color="#f59e0b" />
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.3rem' }}>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: isDark ? '#fbbf24' : '#d97706', fontFamily: 'var(--font-mono)' }}>
                 {filteredMachines.filter((m) => (m.tpmPhase || 1) >= 4).length}
               </div>
-              <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>/ {filteredMachines.length} com Selo Ouro</span>
+              <span style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b' }}>/ {filteredMachines.length} com Selo Ouro</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem', fontSize: '0.675rem', color: '#cbd5e1' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem', fontSize: '0.675rem', color: isDark ? '#cbd5e1' : '#475569' }}>
               <span>F1: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 1).length}</span> •
               <span>F2: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 2).length}</span> •
               <span>F3: {filteredMachines.filter((m) => (m.tpmPhase || 1) === 3).length}</span> •
-              <span style={{ color: '#fbbf24', fontWeight: 700 }}>F4: {filteredMachines.filter((m) => (m.tpmPhase || 1) >= 4).length}</span>
+              <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 700 }}>F4: {filteredMachines.filter((m) => (m.tpmPhase || 1) >= 4).length}</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Navegação de Abas do Módulo TPM */}
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1', paddingBottom: '0.5rem', overflowX: 'auto' }}>
         <button
           onClick={() => setActiveTab('maquinas')}
           style={{
@@ -494,12 +509,12 @@ export default function AdminTPMPage() {
             padding: '0.55rem 1rem',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'maquinas' ? '#0f172a' : 'transparent',
-            color: activeTab === 'maquinas' ? '#22d3ee' : '#94a3b8',
+            backgroundColor: activeTab === 'maquinas' ? (isDark ? '#0f172a' : '#e0f2fe') : 'transparent',
+            color: activeTab === 'maquinas' ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#64748b'),
             fontWeight: 800,
             fontSize: '0.8125rem',
             cursor: 'pointer',
-            borderBottom: activeTab === 'maquinas' ? '2px solid #22d3ee' : 'none',
+            borderBottom: activeTab === 'maquinas' ? (isDark ? '2px solid #22d3ee' : '2px solid #0284c7') : 'none',
           }}
         >
           <Wrench size={16} /> 1. Máquinas por Setor ({filteredMachines.length})
@@ -514,12 +529,12 @@ export default function AdminTPMPage() {
             padding: '0.55rem 1rem',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'auditorias' ? '#0f172a' : 'transparent',
-            color: activeTab === 'auditorias' ? '#22d3ee' : '#94a3b8',
+            backgroundColor: activeTab === 'auditorias' ? (isDark ? '#0f172a' : '#e0f2fe') : 'transparent',
+            color: activeTab === 'auditorias' ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#64748b'),
             fontWeight: 800,
             fontSize: '0.8125rem',
             cursor: 'pointer',
-            borderBottom: activeTab === 'auditorias' ? '2px solid #22d3ee' : 'none',
+            borderBottom: activeTab === 'auditorias' ? (isDark ? '2px solid #22d3ee' : '2px solid #0284c7') : 'none',
           }}
         >
           <CheckSquare size={16} /> 2. Auditorias & Notas de Máquina ({filteredAudits.length})
@@ -534,12 +549,12 @@ export default function AdminTPMPage() {
             padding: '0.55rem 1rem',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'indicadores' ? '#0f172a' : 'transparent',
-            color: activeTab === 'indicadores' ? '#22d3ee' : '#94a3b8',
+            backgroundColor: activeTab === 'indicadores' ? (isDark ? '#0f172a' : '#e0f2fe') : 'transparent',
+            color: activeTab === 'indicadores' ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#64748b'),
             fontWeight: 800,
             fontSize: '0.8125rem',
             cursor: 'pointer',
-            borderBottom: activeTab === 'indicadores' ? '2px solid #22d3ee' : 'none',
+            borderBottom: activeTab === 'indicadores' ? (isDark ? '2px solid #22d3ee' : '2px solid #0284c7') : 'none',
           }}
         >
           <BarChart3 size={16} /> 3. Indicadores & Selos TPM
@@ -550,12 +565,12 @@ export default function AdminTPMPage() {
       {activeTab === 'maquinas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {filteredMachines.length === 0 ? (
-            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
               <Wrench size={40} color="#64748b" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
                 Nenhuma máquina cadastrada neste setor
               </h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', marginTop: '0.25rem' }}>
                 Cadastre as máquinas para iniciar a gestão de auditorias e evolução do Selo TPM.
               </p>
               <button
@@ -569,7 +584,7 @@ export default function AdminTPMPage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '1.25rem' }}>
               {filteredMachines.map((m) => {
-                const scoreColor = m.currentAuditScore >= 85 ? '#34d399' : m.currentAuditScore >= 70 ? '#fbbf24' : '#f87171';
+                const scoreColor = m.currentAuditScore >= 85 ? (isDark ? '#34d399' : '#15803d') : m.currentAuditScore >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626');
 
                 return (
                   <div
@@ -581,7 +596,8 @@ export default function AdminTPMPage() {
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       position: 'relative',
-                      borderTop: `4px solid ${m.criticality === 'A' ? '#ef4444' : m.criticality === 'B' ? '#f59e0b' : '#3b82f6'}`,
+                      boxShadow: isDark ? 'none' : 'var(--shadow-md)',
+                      borderTop: `4px solid ${m.criticality === 'A' ? '#ef4444' : m.criticality === 'B' ? '#f59e0b' : '#0284c7'}`,
                     }}
                   >
                     <div>
@@ -589,7 +605,16 @@ export default function AdminTPMPage() {
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ fontSize: '0.725rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                            <span style={{
+                              fontSize: '0.725rem',
+                              fontFamily: 'var(--font-mono)',
+                              fontWeight: 800,
+                              color: isDark ? '#22d3ee' : '#0284c7',
+                              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe',
+                              border: isDark ? 'none' : '1px solid #bae6fd',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '4px'
+                            }}>
                               {m.code}
                             </span>
                             <span
@@ -598,14 +623,14 @@ export default function AdminTPMPage() {
                                 fontWeight: 800,
                                 padding: '0.1rem 0.45rem',
                                 borderRadius: '4px',
-                                backgroundColor: m.criticality === 'A' ? 'rgba(239, 68, 68, 0.15)' : m.criticality === 'B' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                                color: m.criticality === 'A' ? '#f87171' : m.criticality === 'B' ? '#fbbf24' : '#60a5fa',
+                                backgroundColor: m.criticality === 'A' ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2') : m.criticality === 'B' ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7') : (isDark ? 'rgba(59, 130, 246, 0.15)' : '#e0f2fe'),
+                                color: m.criticality === 'A' ? (isDark ? '#f87171' : '#b91c1c') : m.criticality === 'B' ? (isDark ? '#fbbf24' : '#b45309') : (isDark ? '#60a5fa' : '#0369a1'),
                               }}
                             >
                               Criticidade {m.criticality}
                             </span>
                           </div>
-                          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: '0.35rem 0 0', fontFamily: 'var(--font-heading)' }}>
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0.35rem 0 0', fontFamily: 'var(--font-heading)' }}>
                             {m.name}
                           </h3>
                         </div>
@@ -617,9 +642,23 @@ export default function AdminTPMPage() {
                             fontWeight: 800,
                             padding: '0.15rem 0.5rem',
                             borderRadius: '9999px',
-                            backgroundColor: m.status === 'operacional' ? 'rgba(16, 185, 129, 0.15)' : m.status === 'em_manutencao' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                            color: m.status === 'operacional' ? '#34d399' : m.status === 'em_manutencao' ? '#fbbf24' : '#f87171',
-                            border: `1px solid ${m.status === 'operacional' ? 'rgba(16, 185, 129, 0.3)' : m.status === 'em_manutencao' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                            backgroundColor: m.status === 'operacional'
+                              ? (isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7')
+                              : m.status === 'em_manutencao'
+                              ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7')
+                              : (isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2'),
+                            color: m.status === 'operacional'
+                              ? (isDark ? '#34d399' : '#15803d')
+                              : m.status === 'em_manutencao'
+                              ? (isDark ? '#fbbf24' : '#b45309')
+                              : (isDark ? '#f87171' : '#b91c1c'),
+                            border: `1px solid ${
+                              m.status === 'operacional'
+                                ? (isDark ? 'rgba(16, 185, 129, 0.3)' : '#bbf7d0')
+                                : m.status === 'em_manutencao'
+                                ? (isDark ? 'rgba(245, 158, 11, 0.3)' : '#fde68a')
+                                : (isDark ? 'rgba(239, 68, 68, 0.3)' : '#fecaca')
+                            }`,
                           }}
                         >
                           {m.status === 'operacional' ? '● Operando' : m.status === 'em_manutencao' ? '⚙️ Em Manutenção' : '⏹️ Parada'}
@@ -627,18 +666,20 @@ export default function AdminTPMPage() {
                       </div>
 
                       {/* Setor e Modelo */}
-                      <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0 0 0.75rem' }}>
-                        Setor: <strong style={{ color: '#cbd5e1' }}>{m.sectorName}</strong>
+                      <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0 0 0.75rem' }}>
+                        Setor: <strong style={{ color: isDark ? '#cbd5e1' : '#0f172a' }}>{m.sectorName}</strong>
                         {m.brandModel && <span> • {m.brandModel}</span>}
                       </p>
 
                       {/* Selo de Fase TPM (Círculo dividido em 4 quadrantes) */}
                       <div
                         style={{
-                          backgroundColor: '#090e1a',
+                          backgroundColor: isDark ? '#090e1a' : '#f8fafc',
                           padding: '0.75rem 1rem',
                           borderRadius: '10px',
-                          border: (m.tpmPhase || 1) >= 4 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                          border: (m.tpmPhase || 1) >= 4
+                            ? (isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #fde68a')
+                            : (isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0'),
                           marginBottom: '0.85rem',
                           display: 'flex',
                           alignItems: 'center',
@@ -648,15 +689,15 @@ export default function AdminTPMPage() {
                       >
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.2rem' }}>
-                            <Award size={13} color={(m.tpmPhase || 1) >= 4 ? '#fbbf24' : '#22d3ee'} />
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            <Award size={13} color={(m.tpmPhase || 1) >= 4 ? '#f59e0b' : '#0284c7'} />
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase' }}>
                               Selo de Fase TPM
                             </span>
                           </div>
-                          <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.15rem' }}>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.15rem' }}>
                             {(m.tpmPhase || 1) >= 4 ? '🏆 Selo Ouro (4/4)' : `Fase ${m.tpmPhase || 1} de 4`}
                           </h4>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: 1.3 }}>
+                          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', lineHeight: 1.3 }}>
                             {(m.tpmPhase || 1) >= 4
                               ? 'Excelência e autonomia plena atingidas'
                               : `Nota 100% na auditoria avança para a Fase ${(m.tpmPhase || 1) + 1}`}
@@ -667,12 +708,12 @@ export default function AdminTPMPage() {
                       </div>
 
                       {/* Box de Avaliação / Nota de Auditoria */}
-                      <div style={{ backgroundColor: '#090e1a', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)', marginBottom: '0.85rem' }}>
+                      <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.75rem 1rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0', marginBottom: '0.85rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 800, textTransform: 'uppercase' }}>
                             Nota de Auditoria TPM
                           </span>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                             {m.lastAuditDate ? `Auditoria em ${formatDate(m.lastAuditDate)}` : 'Sem auditoria recente'}
                           </span>
                         </div>
@@ -680,11 +721,11 @@ export default function AdminTPMPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           <div style={{ fontSize: '1.5rem', fontWeight: 900, color: scoreColor, fontFamily: 'var(--font-mono)' }}>
                             {m.currentAuditScore > 0 ? `${m.currentAuditScore}` : '--'}
-                            <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>/100</span>
+                            <span style={{ fontSize: '0.875rem', color: isDark ? '#94a3b8' : '#64748b' }}>/100</span>
                           </div>
 
                           <div style={{ flex: 1 }}>
-                            <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                            <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
                               <div style={{ width: `${m.currentAuditScore}%`, height: '100%', backgroundColor: scoreColor, transition: 'width 0.4s ease' }} />
                             </div>
                             <span style={{ fontSize: '0.675rem', color: scoreColor, fontWeight: 700, marginTop: '0.2rem', display: 'block' }}>
@@ -698,15 +739,15 @@ export default function AdminTPMPage() {
 
                     {/* Botão de Ação na Máquina */}
                     {!isViewer && (
-                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                      <div style={{ borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', paddingTop: '0.75rem' }}>
                         <button
                           onClick={() => handleOpenNewAuditModal(m.id)}
                           className="btn btn-sm"
                           style={{
                             width: '100%',
-                            backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                            border: '1px solid rgba(6, 182, 212, 0.35)',
-                            color: '#22d3ee',
+                            backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe',
+                            border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
+                            color: isDark ? '#22d3ee' : '#0284c7',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -732,7 +773,7 @@ export default function AdminTPMPage() {
       {activeTab === 'auditorias' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
               Histórico de Auditorias de Máquina Realizadas
             </h3>
             {!isViewer && (
@@ -747,31 +788,31 @@ export default function AdminTPMPage() {
           </div>
 
           {filteredAudits.length === 0 ? (
-            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: '#94a3b8' }}>
+            <div className="card" style={{ padding: '3rem 2rem', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
               <CheckSquare size={40} color="#64748b" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff' }}>Nenhuma auditoria registrada neste filtro</h3>
-              <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>Realize a primeira auditoria com checklist ponderado de 8 itens industriais.</p>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a' }}>Nenhuma auditoria registrada neste filtro</h3>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b' }}>Realize a primeira auditoria com checklist ponderado de 8 itens industriais.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {filteredAudits.map((adt) => {
-                const scoreColor = adt.score >= 85 ? '#34d399' : adt.score >= 70 ? '#fbbf24' : '#f87171';
+                const scoreColor = adt.score >= 85 ? (isDark ? '#34d399' : '#15803d') : adt.score >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626');
                 return (
                   <div key={adt.id} className="card" style={{ padding: '1.25rem 1.5rem', borderLeft: `5px solid ${scoreColor}` }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: '#22d3ee' }}>
+                          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', fontWeight: 800, color: isDark ? '#22d3ee' : '#0284c7' }}>
                             {adt.machineCode}
                           </span>
-                          <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Setor: <strong style={{ color: '#ffffff' }}>{adt.sectorName}</strong></span>
+                          <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>• Setor: <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{adt.sectorName}</strong></span>
                           <span
                             style={{
                               fontSize: '0.675rem',
                               fontWeight: 800,
                               padding: '0.1rem 0.45rem',
                               borderRadius: '4px',
-                              backgroundColor: adt.status === 'conforme' ? 'rgba(16, 185, 129, 0.15)' : adt.status === 'atencao' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              backgroundColor: adt.status === 'conforme' ? (isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7') : adt.status === 'atencao' ? (isDark ? 'rgba(245, 158, 11, 0.15)' : '#fef3c7') : (isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2'),
                               color: scoreColor,
                             }}
                           >
@@ -779,18 +820,18 @@ export default function AdminTPMPage() {
                           </span>
                         </div>
 
-                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.35rem', fontFamily: 'var(--font-heading)' }}>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.35rem', fontFamily: 'var(--font-heading)' }}>
                           {adt.machineName}
                         </h4>
 
                         {adt.observations && (
-                          <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4, margin: '0 0 0.65rem' }}>
+                          <p style={{ fontSize: '0.8125rem', color: isDark ? '#cbd5e1' : '#334155', lineHeight: 1.4, margin: '0 0 0.65rem' }}>
                             {adt.observations}
                           </p>
                         )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-                          <span>👤 Auditor: <strong style={{ color: '#ffffff' }}>{adt.auditorName}</strong></span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
+                          <span>👤 Auditor: <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{adt.auditorName}</strong></span>
                           <span>📅 Data: {formatDate(adt.auditDate)}</span>
                           <span>✅ {adt.items.filter((i) => i.status === 'conforme').length} de {adt.items.length} itens conformes</span>
                         </div>
@@ -798,10 +839,10 @@ export default function AdminTPMPage() {
 
                       {/* Score Badge */}
                       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>Nota da Auditoria</span>
+                        <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', fontWeight: 800 }}>Nota da Auditoria</span>
                         <div style={{ fontSize: '2.25rem', fontWeight: 900, color: scoreColor, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
                           {adt.score}
-                          <span style={{ fontSize: '1rem', color: '#94a3b8' }}>/100</span>
+                          <span style={{ fontSize: '1rem', color: isDark ? '#94a3b8' : '#64748b' }}>/100</span>
                         </div>
                       </div>
                     </div>
@@ -821,52 +862,52 @@ export default function AdminTPMPage() {
             <div className="card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                     Maturidade do Selo TPM (Fases 1 a 4)
                   </h4>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Distribuição de evolução dos postos de trabalho</span>
+                  <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>Distribuição de evolução dos postos de trabalho</span>
                 </div>
-                <Award size={20} color="#fbbf24" />
+                <Award size={20} color="#f59e0b" />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '0.5rem 0' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#22d3ee', fontWeight: 700 }}>Fase 1: Limpeza Inicial & 5S</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.phase1Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase1Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                    <span style={{ color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 700 }}>Fase 1: Limpeza Inicial & 5S</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.phase1Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase1Count / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase1Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#22d3ee' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#38bdf8', fontWeight: 700 }}>Fase 2: Fontes de Contaminação</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.phase2Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase2Count / metrics.totalMachines) * 100) : 0}%)</strong>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase2Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#38bdf8' }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase1Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#22d3ee' : '#0284c7' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#818cf8', fontWeight: 700 }}>Fase 3: Padrões de Manutenção Autônoma</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.phase3Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase3Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                    <span style={{ color: isDark ? '#38bdf8' : '#0369a1', fontWeight: 700 }}>Fase 2: Fontes de Contaminação</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.phase2Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase2Count / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase3Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#818cf8' }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase2Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#38bdf8' : '#0284c7' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: 800 }}>🏆 Fase 4: Selo Ouro (Excelência Plena)</span>
-                    <strong style={{ color: '#fbbf24' }}>{metrics.phase4Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase4Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                    <span style={{ color: isDark ? '#818cf8' : '#6366f1', fontWeight: 700 }}>Fase 3: Padrões de Manutenção Autônoma</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.phase3Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase3Count / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase4Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#fbbf24' }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase3Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#818cf8' : '#6366f1' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 800 }}>🏆 Fase 4: Selo Ouro (Excelência Plena)</span>
+                    <strong style={{ color: isDark ? '#fbbf24' : '#d97706' }}>{metrics.phase4Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase4Count / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.phase4Count / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#fbbf24' : '#f59e0b' }} />
                   </div>
                 </div>
               </div>
@@ -876,49 +917,49 @@ export default function AdminTPMPage() {
             <div className="card" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                     Status Operacional do Parque Fabril
                   </h4>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Disponibilidade e criticidade de fluxo</span>
+                  <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>Disponibilidade e criticidade de fluxo</span>
                 </div>
-                <Activity size={20} color="#34d399" />
+                <Activity size={20} color={isDark ? '#34d399' : '#10b981'} />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '0.5rem 0' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#34d399', fontWeight: 700 }}>● Em Operação Normal</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.operationalMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.operationalMachines / metrics.totalMachines) * 100) : 0}%)</strong>
+                    <span style={{ color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>● Em Operação Normal</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.operationalMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.operationalMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.operationalMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#10b981' }} />
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#fbbf24', fontWeight: 700 }}>⚙️ Em Manutenção Preventiva/Corretiva</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.inMaintenanceMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.inMaintenanceMachines / metrics.totalMachines) * 100) : 0}%)</strong>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.inMaintenanceMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#f59e0b' }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.operationalMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#10b981' : '#16a34a' }} />
                   </div>
                 </div>
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: '#f87171', fontWeight: 700 }}>⏹️ Paradas / Em Espera</span>
-                    <strong style={{ color: '#ffffff' }}>{metrics.stoppedMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.stoppedMachines / metrics.totalMachines) * 100) : 0}%)</strong>
+                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 700 }}>⚙️ Em Manutenção Preventiva/Corretiva</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.inMaintenanceMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.inMaintenanceMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
-                  <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.stoppedMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: '#ef4444' }} />
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.inMaintenanceMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#f59e0b' : '#d97706' }} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-                  <span>Criticidade A (Gargalo): <strong style={{ color: '#f87171' }}>{metrics.criticalityACount}</strong></span>
-                  <span>Criticidade B: <strong style={{ color: '#fbbf24' }}>{metrics.criticalityBCount}</strong></span>
-                  <span>Criticidade C: <strong style={{ color: '#60a5fa' }}>{metrics.criticalityCCount}</strong></span>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                    <span style={{ color: isDark ? '#f87171' : '#dc2626', fontWeight: 700 }}>⏹️ Paradas / Em Espera</span>
+                    <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.stoppedMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.stoppedMachines / metrics.totalMachines) * 100) : 0}%)</strong>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${metrics.totalMachines > 0 ? (metrics.stoppedMachines / metrics.totalMachines) * 100 : 0}%`, height: '100%', backgroundColor: isDark ? '#ef4444' : '#dc2626' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0', paddingTop: '0.65rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
+                  <span>Criticidade A (Gargalo): <strong style={{ color: isDark ? '#f87171' : '#dc2626' }}>{metrics.criticalityACount}</strong></span>
+                  <span>Criticidade B: <strong style={{ color: isDark ? '#fbbf24' : '#d97706' }}>{metrics.criticalityBCount}</strong></span>
+                  <span>Criticidade C: <strong style={{ color: isDark ? '#60a5fa' : '#0284c7' }}>{metrics.criticalityCCount}</strong></span>
                 </div>
               </div>
             </div>
@@ -926,7 +967,7 @@ export default function AdminTPMPage() {
 
           {/* Ranking de Máquinas: Menor Nota de Auditoria para Foco Kaizen */}
           <div className="card" style={{ padding: '1.5rem' }}>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.85rem' }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.85rem' }}>
               🎯 Máquinas com Menor Nota de Auditoria (Prioridade para Ação Kaizen)
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
@@ -934,15 +975,15 @@ export default function AdminTPMPage() {
                 .sort((a, b) => a.currentAuditScore - b.currentAuditScore)
                 .slice(0, 4)
                 .map((m) => (
-                  <div key={m.id} style={{ backgroundColor: '#090e1a', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <div key={m.id} style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.85rem 1rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{m.code}</span>
-                      <span style={{ fontSize: '1.15rem', fontWeight: 900, color: m.currentAuditScore >= 85 ? '#34d399' : m.currentAuditScore >= 70 ? '#fbbf24' : '#f87171', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0284c7', fontFamily: 'var(--font-mono)' }}>{m.code}</span>
+                      <span style={{ fontSize: '1.15rem', fontWeight: 900, color: m.currentAuditScore >= 85 ? (isDark ? '#34d399' : '#15803d') : m.currentAuditScore >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626'), fontFamily: 'var(--font-mono)' }}>
                         {m.currentAuditScore > 0 ? `${m.currentAuditScore}%` : '--'}
                       </span>
                     </div>
-                    <strong style={{ fontSize: '0.8125rem', color: '#ffffff', display: 'block' }}>{m.name}</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{m.sectorName}</span>
+                    <strong style={{ fontSize: '0.8125rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block' }}>{m.name}</strong>
+                    <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>{m.sectorName}</span>
                   </div>
                 ))}
             </div>
@@ -959,7 +1000,7 @@ export default function AdminTPMPage() {
       >
         <form onSubmit={handleCreateMachine} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Setor Fabril Responsável: *</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Setor Fabril Responsável: *</label>
             <select
               className="form-select"
               value={newMachineSectorId}
@@ -975,7 +1016,7 @@ export default function AdminTPMPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Tag / Código: *</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Tag / Código: *</label>
               <input
                 type="text"
                 className="form-control"
@@ -987,7 +1028,7 @@ export default function AdminTPMPage() {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Nome da Máquina: *</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Nome da Máquina: *</label>
               <input
                 type="text"
                 className="form-control"
@@ -1001,7 +1042,7 @@ export default function AdminTPMPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Fabricante / Modelo:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Fabricante / Modelo:</label>
               <input
                 type="text"
                 className="form-control"
@@ -1012,7 +1053,7 @@ export default function AdminTPMPage() {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Criticidade Operacional:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Criticidade Operacional:</label>
               <select
                 className="form-select"
                 value={newMachineCriticality}
@@ -1027,7 +1068,7 @@ export default function AdminTPMPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Status Operacional Inicial:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Status Operacional Inicial:</label>
               <select
                 className="form-select"
                 value={newMachineStatus}
@@ -1040,7 +1081,7 @@ export default function AdminTPMPage() {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Fase Inicial do Selo TPM:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Fase Inicial do Selo TPM:</label>
               <select
                 className="form-select"
                 value={newMachinePhase}
@@ -1055,7 +1096,7 @@ export default function AdminTPMPage() {
           </div>
 
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Observações / Descrição:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Observações / Descrição:</label>
             <textarea
               className="form-textarea"
               rows={2}
@@ -1088,7 +1129,7 @@ export default function AdminTPMPage() {
           {/* Seleção de Máquina e Auditor */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr', gap: '0.75rem' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Máquina Auditada: *</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Máquina Auditada: *</label>
               <select
                 className="form-select"
                 value={auditMachineId}
@@ -1104,7 +1145,7 @@ export default function AdminTPMPage() {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Auditor / Especialista:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Auditor / Especialista:</label>
               <input
                 type="text"
                 className="form-control"
@@ -1115,7 +1156,7 @@ export default function AdminTPMPage() {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>Data:</label>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Data:</label>
               <input
                 type="date"
                 className="form-control"
@@ -1129,26 +1170,28 @@ export default function AdminTPMPage() {
           {/* Banner da Nota em Tempo Real */}
           <div
             style={{
-              backgroundColor: '#090e1a',
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
               padding: '0.85rem 1.25rem',
               borderRadius: '12px',
-              border: `1.5px solid ${currentAuditScore >= 85 ? 'rgba(16, 185, 129, 0.4)' : currentAuditScore >= 70 ? 'rgba(245, 158, 11, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+              border: isDark
+                ? `1.5px solid ${currentAuditScore >= 85 ? 'rgba(16, 185, 129, 0.4)' : currentAuditScore >= 70 ? 'rgba(245, 158, 11, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`
+                : `1.5px solid ${currentAuditScore >= 85 ? '#86efac' : currentAuditScore >= 70 ? '#fde047' : '#fca5a5'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
             <div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
                 Nota da Máquina Calculada:
               </span>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: '0.1rem 0 0' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: '0.1rem 0 0' }}>
                 {currentAuditScore >= 85 ? '✅ Padrão Conforme (Classe Mundial)' : currentAuditScore >= 70 ? '⚠️ Alerta de Atenção (Anomalias Menores)' : '🚨 Crítico (Ações Imediatas)'}
               </h3>
             </div>
 
-            <div style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: currentAuditScore >= 85 ? '#34d399' : currentAuditScore >= 70 ? '#fbbf24' : '#f87171' }}>
-              {currentAuditScore}<span style={{ fontSize: '1.15rem', color: '#94a3b8' }}>/100</span>
+            <div style={{ fontSize: '2.5rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: currentAuditScore >= 85 ? (isDark ? '#34d399' : '#15803d') : currentAuditScore >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626') }}>
+              {currentAuditScore}<span style={{ fontSize: '1.15rem', color: isDark ? '#94a3b8' : '#64748b' }}>/100</span>
             </div>
           </div>
 
@@ -1162,8 +1205,8 @@ export default function AdminTPMPage() {
               return (
                 <div
                   style={{
-                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                    border: '1.5px solid rgba(245, 158, 11, 0.5)',
+                    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#fffbeb',
+                    border: isDark ? '1.5px solid rgba(245, 158, 11, 0.5)' : '1.5px solid #fcd34d',
                     padding: '0.85rem 1.25rem',
                     borderRadius: '12px',
                     display: 'flex',
@@ -1175,10 +1218,10 @@ export default function AdminTPMPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <TpmPhaseSeal phase={nextMachPhase} size="sm" showLabel={false} />
                     <div>
-                      <strong style={{ fontSize: '0.85rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <strong style={{ fontSize: '0.85rem', color: isDark ? '#fbbf24' : '#b45309', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <Sparkles size={15} /> CONQUISTA DE FASE TPM GARANTIDA!
                       </strong>
-                      <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                      <span style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569' }}>
                         {currentMachPhase < 4
                           ? `Nota 100% atingida! Ao registrar esta auditoria, a máquina avançará da Fase ${currentMachPhase} para a Fase ${nextMachPhase} do Selo TPM.`
                           : 'Nota 100% atingida! A máquina reafirma o status supremo de Selo Ouro de Excelência TPM.'}
@@ -1205,19 +1248,19 @@ export default function AdminTPMPage() {
             return (
               <div
                 style={{
-                  backgroundColor: '#090e1a',
+                  backgroundColor: isDark ? '#090e1a' : '#f8fafc',
                   padding: '0.65rem 1rem',
                   borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   fontSize: '0.75rem',
-                  color: '#94a3b8',
+                  color: isDark ? '#94a3b8' : '#64748b',
                 }}
               >
                 <span>
-                  Selo TPM Atual: <strong style={{ color: '#22d3ee' }}>Fase {currentMachPhase} de 4</strong> (ao obter nota 100%, avançará para a Fase {nextMachPhase})
+                  Selo TPM Atual: <strong style={{ color: isDark ? '#22d3ee' : '#0284c7' }}>Fase {currentMachPhase} de 4</strong> (ao obter nota 100%, avançará para a Fase {nextMachPhase})
                 </span>
                 <TpmPhaseSeal phase={currentMachPhase} size="sm" showLabel={false} />
               </div>
@@ -1230,10 +1273,10 @@ export default function AdminTPMPage() {
               <div
                 key={item.id}
                 style={{
-                  backgroundColor: '#090e1a',
+                  backgroundColor: isDark ? '#090e1a' : '#f8fafc',
                   padding: '0.75rem 1rem',
                   borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -1241,8 +1284,8 @@ export default function AdminTPMPage() {
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <strong style={{ fontSize: '0.8125rem', color: '#ffffff', display: 'block' }}>{item.title}</strong>
-                  <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>{item.description}</span>
+                  <strong style={{ fontSize: '0.8125rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block' }}>{item.title}</strong>
+                  <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>{item.description}</span>
                 </div>
 
                 {/* Opções de Conformidade */}
@@ -1259,9 +1302,15 @@ export default function AdminTPMPage() {
                       fontWeight: 800,
                       padding: '0.35rem 0.65rem',
                       borderRadius: '6px',
-                      border: item.status === 'conforme' ? '1.5px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
-                      backgroundColor: item.status === 'conforme' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                      color: item.status === 'conforme' ? '#34d399' : '#64748b',
+                      border: item.status === 'conforme'
+                        ? '1.5px solid #10b981'
+                        : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+                      backgroundColor: item.status === 'conforme'
+                        ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7')
+                        : (isDark ? 'transparent' : '#ffffff'),
+                      color: item.status === 'conforme'
+                        ? (isDark ? '#34d399' : '#15803d')
+                        : '#64748b',
                       cursor: 'pointer',
                     }}
                   >
@@ -1280,9 +1329,15 @@ export default function AdminTPMPage() {
                       fontWeight: 800,
                       padding: '0.35rem 0.65rem',
                       borderRadius: '6px',
-                      border: item.status === 'parcial' ? '1.5px solid #f59e0b' : '1px solid rgba(255, 255, 255, 0.08)',
-                      backgroundColor: item.status === 'parcial' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                      color: item.status === 'parcial' ? '#fbbf24' : '#64748b',
+                      border: item.status === 'parcial'
+                        ? '1.5px solid #f59e0b'
+                        : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+                      backgroundColor: item.status === 'parcial'
+                        ? (isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7')
+                        : (isDark ? 'transparent' : '#ffffff'),
+                      color: item.status === 'parcial'
+                        ? (isDark ? '#fbbf24' : '#b45309')
+                        : '#64748b',
                       cursor: 'pointer',
                     }}
                   >
@@ -1301,9 +1356,15 @@ export default function AdminTPMPage() {
                       fontWeight: 800,
                       padding: '0.35rem 0.65rem',
                       borderRadius: '6px',
-                      border: item.status === 'nao_conforme' ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-                      backgroundColor: item.status === 'nao_conforme' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                      color: item.status === 'nao_conforme' ? '#f87171' : '#64748b',
+                      border: item.status === 'nao_conforme'
+                        ? '1.5px solid #ef4444'
+                        : isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+                      backgroundColor: item.status === 'nao_conforme'
+                        ? (isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2')
+                        : (isDark ? 'transparent' : '#ffffff'),
+                      color: item.status === 'nao_conforme'
+                        ? (isDark ? '#f87171' : '#b91c1c')
+                        : '#64748b',
                       cursor: 'pointer',
                     }}
                   >
@@ -1315,7 +1376,7 @@ export default function AdminTPMPage() {
           </div>
 
           <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Observações & Anomalias Diagnosticadas:</label>
+            <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Observações & Anomalias Diagnosticadas:</label>
             <textarea
               className="form-textarea"
               rows={2}
@@ -1348,11 +1409,11 @@ export default function AdminTPMPage() {
             <TpmPhaseSeal phase={celebrationModal?.newPhase || 2} size="xl" showLabel={true} />
           </div>
 
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
             {celebrationModal?.newPhase === 4 ? '🏆 SELO OURO TPM CONQUISTADO!' : `A Máquina Avançou para a Fase ${celebrationModal?.newPhase}!`}
           </h3>
 
-          <p style={{ fontSize: '0.875rem', color: '#cbd5e1', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', color: isDark ? '#cbd5e1' : '#334155', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
             {celebrationModal?.newPhase === 4
               ? 'Parabéns a toda a equipe e aos operadores do posto! Esta máquina atingiu os 4 quadrantes do Selo TPM, alcançando a Excelência Máxima e Autonomia Plena na metodologia Lean!'
               : `Com nota 100% de conformidade nesta auditoria, a máquina conquistou o ${celebrationModal?.newPhase}º quadrante do Selo TPM e avançou da Fase ${celebrationModal?.previousPhase} para a Fase ${celebrationModal?.newPhase} com sucesso!`}

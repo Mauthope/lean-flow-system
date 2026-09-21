@@ -11,9 +11,11 @@ import { SectorCardPolygon } from '@/components/charts/SectorCardPolygon';
 import { Modal } from '@/components/ui/Modal';
 import { Building2, Plus, Edit2, Trash2, Layers, CheckCircle2, Award, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AdminSetoresPage() {
   const { dataVersion, refreshData, currentUser } = useAuth();
+  const { isDark } = useTheme();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assessmentSector, setAssessmentSector] = useState<Sector | null>(null);
@@ -51,10 +53,10 @@ export default function AdminSetoresPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Gestão & Cadastro de Setores
           </h2>
-          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
+          <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#475569' }}>
             Estruture os departamentos da organização para canalização de fluxo Lean, Lean Assessment e alocação de agentes
           </p>
         </div>
@@ -87,7 +89,11 @@ export default function AdminSetoresPage() {
                 justifyContent: 'space-between',
                 padding: '1.5rem',
                 borderLeft: `5px solid ${sec.color || '#06b6d4'}`,
-                backgroundColor: '#090d16',
+                backgroundColor: isDark ? '#090d16' : '#ffffff',
+                borderTop: isDark ? undefined : '1px solid #cbd5e1',
+                borderRight: isDark ? undefined : '1px solid #cbd5e1',
+                borderBottom: isDark ? undefined : '1px solid #cbd5e1',
+                boxShadow: isDark ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.04)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
               }}
@@ -101,7 +107,7 @@ export default function AdminSetoresPage() {
                       fontSize: '0.75rem',
                       fontWeight: 800,
                       backgroundColor: `${sec.color || '#06b6d4'}22`,
-                      color: sec.color || '#22d3ee',
+                      color: sec.color || (isDark ? '#22d3ee' : '#0284c7'),
                       padding: '0.2rem 0.55rem',
                       borderRadius: '6px',
                       border: `1px solid ${sec.color || '#06b6d4'}44`,
@@ -115,9 +121,9 @@ export default function AdminSetoresPage() {
                       style={{
                         fontSize: '0.7rem',
                         fontWeight: 800,
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                        color: '#34d399',
-                        border: '1px solid #10b981',
+                        backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7',
+                        color: isDark ? '#34d399' : '#15803d',
+                        border: isDark ? '1px solid #10b981' : '1px solid #86efac',
                         padding: '0.15rem 0.5rem',
                         borderRadius: '6px',
                         display: 'flex',
@@ -129,24 +135,24 @@ export default function AdminSetoresPage() {
                       <Award size={12} /> {latestAssessment.overallScore}% (Nível {latestAssessment.overallLevel})
                     </span>
                   ) : (
-                    <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Assessment</span>
+                    <span style={{ fontSize: '0.7rem', color: isDark ? '#64748b' : '#94a3b8' }}>Sem Assessment</span>
                   )}
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
                   {sec.name}
                 </h3>
 
-                <p style={{ fontSize: '0.775rem', color: '#94a3b8', marginBottom: '0.75rem', minHeight: '34px' }}>
+                <p style={{ fontSize: '0.775rem', color: isDark ? '#94a3b8' : '#475569', marginBottom: '0.75rem', minHeight: '34px' }}>
                   {sec.description || 'Setor fabril cadastrado para alocação de ações Kaizen.'}
                 </p>
 
                 {/* POLÍGONO DE MATURIDADE DO SETOR (RADAR SVG COMPACTO) */}
                 <div
                   style={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.45)' : '#f8fafc',
                     borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #cbd5e1',
                     padding: '0.65rem 0.5rem',
                     marginBottom: '0.85rem',
                     display: 'flex',
@@ -166,8 +172,8 @@ export default function AdminSetoresPage() {
                 {stats && stats.costAvoided > 0 && (
                   <div
                     style={{
-                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      border: '1px solid rgba(16, 185, 129, 0.35)',
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7',
+                      border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid #86efac',
                       borderRadius: '8px',
                       padding: '0.5rem 0.75rem',
                       marginBottom: '0.85rem',
@@ -176,10 +182,10 @@ export default function AdminSetoresPage() {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <span style={{ fontSize: '0.75rem', color: '#a7f3d0', fontWeight: 600 }}>
+                    <span style={{ fontSize: '0.75rem', color: isDark ? '#a7f3d0' : '#15803d', fontWeight: 600 }}>
                       Custo Evitado pelo Setor:
                     </span>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#34d399' : '#059669' }}>
                       {formatCurrency(stats.costAvoided)}
                     </span>
                   </div>
@@ -192,7 +198,7 @@ export default function AdminSetoresPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
                   paddingTop: '0.875rem',
                   gap: '0.5rem',
                   flexWrap: 'wrap',
@@ -271,8 +277,8 @@ export default function AdminSetoresPage() {
         >
           <div
             style={{
-              backgroundColor: '#090d16',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: isDark ? '#090d16' : '#ffffff',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid #cbd5e1',
               borderRadius: '16px',
               width: '100%',
               maxWidth: '1040px',
@@ -280,15 +286,15 @@ export default function AdminSetoresPage() {
               overflowY: 'auto',
               padding: '1.75rem',
               position: 'relative',
-              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+              boxShadow: isDark ? '0 25px 60px rgba(0, 0, 0, 0.8)' : '0 25px 60px rgba(0, 0, 0, 0.25)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1', paddingBottom: '1rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#ffffff' }}>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a' }}>
                   Lean Assessment & Radar de Maturidade — {assessmentSector.name}
                 </h3>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                   Visão executiva do Gestor Master com comparativo evolutivo
                 </span>
               </div>
@@ -298,9 +304,9 @@ export default function AdminSetoresPage() {
                 onClick={() => setAssessmentSector(null)}
                 style={{
                   background: 'none',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
                   borderRadius: '8px',
-                  color: '#94a3b8',
+                  color: isDark ? '#94a3b8' : '#64748b',
                   cursor: 'pointer',
                   padding: '0.4rem',
                 }}

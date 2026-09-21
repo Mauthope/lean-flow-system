@@ -7,6 +7,7 @@ import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { WASTE_CATEGORIES } from '@/lib/utils';
 import { CheckCircle2, XCircle, AlertCircle, Calendar, UserCheck } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TriageModalProps {
   action: LeanAction | null;
@@ -22,6 +23,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   onSuccess,
 }) => {
   const { currentUser, allAgents } = useAuth();
+  const { isDark } = useTheme();
 
   const [decision, setDecision] = useState<'approve' | 'reject'>('approve');
   const [assignedAgentId, setAssignedAgentId] = useState('');
@@ -73,36 +75,36 @@ export const TriageModal: React.FC<TriageModalProps> = ({
         {/* Requester Summary */}
         <div
           style={{
-            backgroundColor: '#090e1a',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
             borderRadius: '10px',
             padding: '1rem',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
               Solicitante
             </span>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#22d3ee' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#22d3ee' : '#0284c7' }}>
               Setor: {action.originSectorName}
             </span>
           </div>
-          <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+          <p style={{ fontSize: '0.9375rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
             {action.requesterName} {action.requesterDepartment ? `(${action.requesterDepartment})` : ''}
           </p>
-          <p style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>{action.requesterEmail}</p>
+          <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#475569' }}>{action.requesterEmail}</p>
 
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(255, 255, 255, 0.08)' }}>
-            <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem', fontFamily: 'var(--font-heading)' }}>
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: isDark ? '1px dashed rgba(255, 255, 255, 0.08)' : '1px dashed #cbd5e1' }}>
+            <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', marginBottom: '0.25rem', fontFamily: 'var(--font-heading)' }}>
               {action.title}
             </h4>
-            <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', lineHeight: 1.4 }}>{action.description}</p>
+            <p style={{ fontSize: '0.8125rem', color: isDark ? '#cbd5e1' : '#334155', lineHeight: 1.4 }}>{action.description}</p>
           </div>
         </div>
 
         {/* Decision Toggle */}
         <div>
-          <label className="form-label" style={{ color: '#cbd5e1' }}>Decisão do Supervisor:</label>
+          <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Decisão do Supervisor:</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <button
               type="button"
@@ -114,15 +116,15 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                 gap: '0.5rem',
                 padding: '0.75rem',
                 borderRadius: '10px',
-                border: decision === 'approve' ? '2px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
-                backgroundColor: decision === 'approve' ? 'rgba(16, 185, 129, 0.15)' : '#090e1a',
-                color: decision === 'approve' ? '#34d399' : '#94a3b8',
+                border: decision === 'approve' ? '2px solid #10b981' : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                backgroundColor: decision === 'approve' ? (isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7') : (isDark ? '#090e1a' : '#f8fafc'),
+                color: decision === 'approve' ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#94a3b8' : '#64748b'),
                 fontWeight: 800,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
               }}
             >
-              <CheckCircle2 size={18} color={decision === 'approve' ? '#34d399' : '#94a3b8'} />
+              <CheckCircle2 size={18} color={decision === 'approve' ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#94a3b8' : '#64748b')} />
               Aprovar & Atribuir Agente
             </button>
 
@@ -136,15 +138,15 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                 gap: '0.5rem',
                 padding: '0.75rem',
                 borderRadius: '10px',
-                border: decision === 'reject' ? '2px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-                backgroundColor: decision === 'reject' ? 'rgba(239, 68, 68, 0.15)' : '#090e1a',
-                color: decision === 'reject' ? '#f87171' : '#94a3b8',
+                border: decision === 'reject' ? '2px solid #ef4444' : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+                backgroundColor: decision === 'reject' ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2') : (isDark ? '#090e1a' : '#f8fafc'),
+                color: decision === 'reject' ? (isDark ? '#f87171' : '#b91c1c') : (isDark ? '#94a3b8' : '#64748b'),
                 fontWeight: 800,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
               }}
             >
-              <XCircle size={18} color={decision === 'reject' ? '#f87171' : '#94a3b8'} />
+              <XCircle size={18} color={decision === 'reject' ? (isDark ? '#f87171' : '#b91c1c') : (isDark ? '#94a3b8' : '#64748b')} />
               Recusar / Não Aprovar
             </button>
           </div>
@@ -155,7 +157,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', animation: 'fadeIn 0.2s ease' }}>
             {/* Assign Agent */}
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>
                 <UserCheck size={14} style={{ display: 'inline', marginRight: '4px' }} />
                 Agente Responsável pela Ação:
               </label>
@@ -177,7 +179,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
             {/* Waste category and Priority */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Classificação do Desperdício Lean:</label>
+                <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Classificação do Desperdício Lean:</label>
                 <select
                   className="form-select"
                   value={wasteCategory}
@@ -192,7 +194,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
               </div>
 
               <div>
-                <label className="form-label" style={{ color: '#cbd5e1' }}>Nível de Prioridade:</label>
+                <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>Nível de Prioridade:</label>
                 <select
                   className="form-select"
                   value={priority}
@@ -208,7 +210,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
 
             {/* Due Date */}
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#cbd5e1' }}>
+              <label className="form-label" style={{ color: isDark ? '#cbd5e1' : '#334155' }}>
                 <Calendar size={14} style={{ display: 'inline', marginRight: '4px' }} />
                 Prazo Limite para Conclusão:
               </label>
@@ -224,7 +226,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
           /* Form if Rejected */
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', animation: 'fadeIn 0.2s ease' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ color: '#f87171' }}>
+              <label className="form-label" style={{ color: isDark ? '#f87171' : '#b91c1c' }}>
                 Motivo / Justificativa da Não Aprovação: *
               </label>
               <textarea
@@ -246,7 +248,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
             justifyContent: 'flex-end',
             gap: '0.75rem',
             paddingTop: '1rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
           }}
         >
           <button type="button" className="btn btn-secondary" onClick={onClose}>

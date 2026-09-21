@@ -46,8 +46,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 1.5rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        backgroundColor: 'rgba(6, 10, 19, 0.85)',
+        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+        backgroundColor: isDark ? 'rgba(6, 10, 19, 0.85)' : 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
@@ -63,25 +63,25 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           className="mobile-hamburger-btn"
           aria-label="Abrir menu lateral"
           style={{
-            background: 'rgba(255, 255, 255, 0.06)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
             padding: '0.45rem',
             borderRadius: '8px',
             display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            color: '#f8fafc',
+            color: isDark ? '#f8fafc' : '#0f172a',
           }}
         >
           <Menu size={18} />
         </button>
 
         <div>
-          <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+          <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {title || (isMaster ? 'Painel de Gestão Master' : isViewer ? 'Painel Executivo • Consulta Diretoria' : isAdmin ? 'Painel de Gestão Lean' : 'Meu Fluxo de Trabalho Lean')}
           </h1>
-          {subtitle && <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>{subtitle}</p>}
+          {subtitle && <p style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>{subtitle}</p>}
         </div>
       </div>
 
@@ -180,16 +180,16 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
             gap: '0.35rem',
             padding: '0.4rem 0.75rem',
             borderRadius: '8px',
-            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#cbd5e1',
+            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : '#f1f5f9',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+            color: isDark ? '#cbd5e1' : '#334155',
             fontSize: '0.75rem',
-            fontWeight: 600,
+            fontWeight: 700,
             textDecoration: 'none',
           }}
           title="Abrir link de coleta da fábrica em nova aba"
         >
-          <ExternalLink size={13} color="#22d3ee" />
+          <ExternalLink size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
           <span>Link de Coleta ({currentTenant?.slug || 'rafitec'})</span>
         </Link>
 
@@ -212,7 +212,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
             alignItems: 'center',
             gap: '0.55rem',
             paddingLeft: '0.75rem',
-            borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
+            borderLeft: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
           }}
         >
           <img
@@ -231,10 +231,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
             }}
           />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: isDark ? '#f8fafc' : '#0f172a', lineHeight: 1.2 }}>
               {currentUser?.name || 'Usuário'}
             </span>
-            <span style={{ fontSize: '0.675rem', color: isViewer ? '#c084fc' : '#94a3b8' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? (isViewer ? '#c084fc' : '#94a3b8') : (isViewer ? '#7e22ce' : '#64748b'), fontWeight: 600 }}>
               {isViewer
                 ? currentUser?.jobTitle || 'Diretoria / Consulta'
                 : isAdmin

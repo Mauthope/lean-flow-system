@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { dataService } from '@/services/dataService';
 import { formatCurrency } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   Calendar,
   Clock,
@@ -30,6 +31,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
   tenantId,
   initialMonth = 4,
 }) => {
+  const { isDark } = useTheme();
   const [selectedMonth, setSelectedMonth] = useState<number>(initialMonth);
   const [isListExpanded, setIsListExpanded] = useState<boolean>(false);
 
@@ -55,14 +57,14 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
   return (
     <div
       style={{
-        backgroundColor: '#090e1a',
-        border: '1.5px solid rgba(6, 182, 212, 0.25)',
+        backgroundColor: isDark ? '#090e1a' : '#ffffff',
+        border: isDark ? '1.5px solid rgba(6, 182, 212, 0.25)' : '1px solid #cbd5e1',
         borderRadius: '16px',
         padding: '1.5rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '1.25rem',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
+        boxShadow: isDark ? '0 10px 30px rgba(0, 0, 0, 0.4)' : '0 4px 14px rgba(15, 23, 42, 0.06)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -75,9 +77,9 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
               style={{
                 fontSize: '0.675rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(6, 182, 212, 0.18)',
-                color: '#22d3ee',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
+                backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : '#e0f2fe',
+                color: isDark ? '#22d3ee' : '#0284c7',
+                border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
                 padding: '0.15rem 0.5rem',
                 borderRadius: '9999px',
                 textTransform: 'uppercase',
@@ -87,25 +89,25 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
               Ciclo Real de 12 Meses • Governança Fabril
             </span>
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
             Radar de Fechamento Mensal & Pipeline de Entrada
           </h3>
-          <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
+          <p style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.2rem 0 0' }}>
             Comparativo em tempo real de projetos com medição já homologada versus valores pendentes de inserção
           </p>
         </div>
 
         {/* Month Selector */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>Competência:</span>
+          <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#475569', fontWeight: 700 }}>Competência:</span>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#ffffff',
+              border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid #cbd5e1',
               borderRadius: '8px',
-              color: '#22d3ee',
+              color: isDark ? '#22d3ee' : '#0284c7',
               fontWeight: 800,
               fontSize: '0.8125rem',
               padding: '0.4rem 0.75rem',
@@ -114,7 +116,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
             }}
           >
             {monthOptions.map((m) => (
-              <option key={m.num} value={m.num} style={{ backgroundColor: '#090e1a', color: '#ffffff' }}>
+              <option key={m.num} value={m.num} style={{ backgroundColor: isDark ? '#090e1a' : '#ffffff', color: isDark ? '#ffffff' : '#0f172a' }}>
                 {m.name}
               </option>
             ))}
@@ -127,68 +129,68 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
         {/* 1. Realizado em Caixa */}
         <div
           style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4',
+            border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.3)' : '#bbf7d0'}`,
             borderRadius: '12px',
             padding: '1rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', textTransform: 'uppercase' }}>
               ✓ Realizado em Caixa
             </span>
-            <CheckCircle2 size={16} color="#34d399" />
+            <CheckCircle2 size={16} color={isDark ? '#34d399' : '#15803d'} />
           </div>
-          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-mono)' }}>
             {formatCurrency(pipeline.confirmedValue)}
           </p>
-          <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.25rem', display: 'block' }}>
-            <strong>{pipeline.reportedProjectsCount}</strong> de {pipeline.totalEligibleProjects} projetos apurados
+          <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', marginTop: '0.25rem', display: 'block' }}>
+            <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{pipeline.reportedProjectsCount}</strong> de {pipeline.totalEligibleProjects} projetos apurados
           </span>
         </div>
 
         {/* 2. Projeção a Entrar (Pendente) */}
         <div
           style={{
-            backgroundColor: 'rgba(234, 179, 8, 0.08)',
-            border: '1px solid rgba(234, 179, 8, 0.3)',
+            backgroundColor: isDark ? 'rgba(234, 179, 8, 0.08)' : '#fefce8',
+            border: `1px solid ${isDark ? 'rgba(234, 179, 8, 0.3)' : '#fde68a'}`,
             borderRadius: '12px',
             padding: '1rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#facc15', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#facc15' : '#a16207', textTransform: 'uppercase' }}>
               ⏳ Projeção a Entrar
             </span>
-            <Hourglass size={16} color="#facc15" />
+            <Hourglass size={16} color={isDark ? '#facc15' : '#a16207'} />
           </div>
-          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: '#fde047', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#fde047' : '#b45309', margin: 0, fontFamily: 'var(--font-mono)' }}>
             ~ {formatCurrency(pipeline.pendingEstimatedValue)}
           </p>
-          <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.25rem', display: 'block' }}>
-            <strong>{pipeline.pendingProjectsCount}</strong> projeto(s) a reportar no mês
+          <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', marginTop: '0.25rem', display: 'block' }}>
+            <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{pipeline.pendingProjectsCount}</strong> projeto(s) a reportar no mês
           </span>
         </div>
 
         {/* 3. Potencial Total do Mês */}
         <div
           style={{
-            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-            border: '1px solid rgba(6, 182, 212, 0.3)',
+            backgroundColor: isDark ? 'rgba(6, 182, 212, 0.08)' : '#ecfeff',
+            border: `1px solid ${isDark ? 'rgba(6, 182, 212, 0.3)' : '#a5f3fc'}`,
             borderRadius: '12px',
             padding: '1rem',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0e7490', textTransform: 'uppercase' }}>
               📈 Potencial Total
             </span>
-            <TrendingUp size={16} color="#22d3ee" />
+            <TrendingUp size={16} color={isDark ? '#22d3ee' : '#0e7490'} />
           </div>
-          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-mono)' }}>
             {formatCurrency(pipeline.totalPotentialValue)}
           </p>
-          <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.25rem', display: 'block' }}>
+          <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', marginTop: '0.25rem', display: 'block' }}>
             100% da carteira de sustentação
           </span>
         </div>
@@ -197,15 +199,15 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
       {/* Barra de Progresso do Fechamento */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#475569' }}>
             Taxa de Fechamento de {pipeline.monthLabel}:
           </span>
-          <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: pipeline.completionPercentage >= 90 ? '#34d399' : '#facc15' }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 900, color: pipeline.completionPercentage >= 90 ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#facc15' : '#b45309') }}>
             {pipeline.completionPercentage}% ({pipeline.reportedProjectsCount}/{pipeline.totalEligibleProjects} apurados)
           </span>
         </div>
 
-        <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '9999px', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0', borderRadius: '9999px', overflow: 'hidden' }}>
           <div
             style={{
               width: `${pipeline.completionPercentage}%`,
@@ -222,8 +224,8 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
       {pipeline.pendingProjectsCount > 0 ? (
         <div
           style={{
-            backgroundColor: 'rgba(234, 179, 8, 0.08)',
-            border: '1px solid rgba(234, 179, 8, 0.25)',
+            backgroundColor: isDark ? 'rgba(234, 179, 8, 0.08)' : '#fffbeb',
+            border: `1px solid ${isDark ? 'rgba(234, 179, 8, 0.25)' : '#fde68a'}`,
             borderRadius: '12px',
             padding: '0.85rem 1rem',
             display: 'flex',
@@ -231,25 +233,25 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
             gap: '0.75rem',
           }}
         >
-          <AlertTriangle size={18} color="#facc15" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <AlertTriangle size={18} color={isDark ? '#facc15' : '#b45309'} style={{ flexShrink: 0, marginTop: '2px' }} />
           <div style={{ flex: 1 }}>
-            <strong style={{ fontSize: '0.8125rem', color: '#fde047', display: 'block', marginBottom: '0.2rem' }}>
+            <strong style={{ fontSize: '0.8125rem', color: isDark ? '#fde047' : '#92400e', display: 'block', marginBottom: '0.2rem' }}>
               Valores Sujeitos a Alteração • Projeção de Entrada Estimada
             </strong>
-            <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0, lineHeight: 1.45 }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#cbd5e1' : '#475569', margin: 0, lineHeight: 1.45 }}>
               No mês de <strong>{pipeline.monthLabel}</strong>, de {pipeline.totalEligibleProjects} projetos ativos com ganho, apenas{' '}
-              <strong style={{ color: '#34d399' }}>{pipeline.reportedProjectsCount}</strong> foram confirmados. Restam{' '}
-              <strong style={{ color: '#facc15' }}>{pipeline.pendingProjectsCount} projetos</strong> a serem informados pelos agentes.
+              <strong style={{ color: isDark ? '#34d399' : '#15803d' }}>{pipeline.reportedProjectsCount}</strong> foram confirmados. Restam{' '}
+              <strong style={{ color: isDark ? '#facc15' : '#b45309' }}>{pipeline.pendingProjectsCount} projetos</strong> a serem informados pelos agentes.
               O valor financeiro global deste mês aumentará em aproximadamente{' '}
-              <strong style={{ color: '#fde047' }}>~ {formatCurrency(pipeline.pendingEstimatedValue)}</strong> assim que esses relatórios forem inseridos.
+              <strong style={{ color: isDark ? '#fde047' : '#047857' }}>~ {formatCurrency(pipeline.pendingEstimatedValue)}</strong> assim que esses relatórios forem inseridos.
             </p>
           </div>
         </div>
       ) : (
         <div
           style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
+            backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4',
+            border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.25)' : '#bbf7d0'}`,
             borderRadius: '12px',
             padding: '0.75rem 1rem',
             display: 'flex',
@@ -257,8 +259,8 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
             gap: '0.65rem',
           }}
         >
-          <CheckCircle2 size={18} color="#34d399" />
-          <span style={{ fontSize: '0.78125rem', color: '#dcfce7', fontWeight: 600 }}>
+          <CheckCircle2 size={18} color={isDark ? '#34d399' : '#15803d'} />
+          <span style={{ fontSize: '0.78125rem', color: isDark ? '#dcfce7' : '#166534', fontWeight: 600 }}>
             Fechamento de <strong>{pipeline.monthLabel}</strong> 100% concluído! Todos os projetos foram devidamente alimentados pelos agentes.
           </span>
         </div>
@@ -279,8 +281,9 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
               gap: '0.45rem',
               padding: '0.5rem',
               fontSize: '0.75rem',
-              color: '#22d3ee',
-              borderColor: 'rgba(6, 182, 212, 0.3)',
+              color: isDark ? '#22d3ee' : '#0284c7',
+              borderColor: isDark ? 'rgba(6, 182, 212, 0.3)' : '#cbd5e1',
+              backgroundColor: isDark ? undefined : '#f8fafc',
             }}
           >
             <span>
@@ -296,8 +299,8 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
             <div
               style={{
                 marginTop: '0.75rem',
-                backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#f8fafc',
+                border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}`,
                 borderRadius: '12px',
                 padding: '0.85rem',
                 display: 'flex',
@@ -305,7 +308,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
                 gap: '0.65rem',
               }}
             >
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#475569', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
                 Projetos aguardando dados operacionais de {pipeline.monthLabel}:
               </span>
 
@@ -313,8 +316,8 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
                 <div
                   key={proj.actionId}
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
+                    border: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}`,
                     borderRadius: '10px',
                     padding: '0.75rem 0.85rem',
                     display: 'flex',
@@ -322,25 +325,26 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '0.6rem',
+                    boxShadow: isDark ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.04)',
                   }}
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.15rem' }}>
-                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', padding: '0.05rem 0.35rem', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0284c7', backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe', padding: '0.05rem 0.35rem', borderRadius: '4px', border: isDark ? 'none' : '1px solid #bae6fd' }}>
                         {proj.actionCode || 'KAIZEN'}
                       </span>
-                      <strong style={{ fontSize: '0.84375rem', color: '#ffffff' }}>
+                      <strong style={{ fontSize: '0.84375rem', color: isDark ? '#ffffff' : '#0f172a' }}>
                         {proj.actionTitle}
                       </strong>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.725rem', color: '#94a3b8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                         <User size={12} /> {proj.agentName}
                       </span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                         <Building2 size={12} /> {proj.sectorName}
                       </span>
-                      <span style={{ color: '#facc15', fontWeight: 700 }}>
+                      <span style={{ color: isDark ? '#facc15' : '#b45309', fontWeight: 700 }}>
                         Estimado a entrar: ~ {formatCurrency(proj.estimatedMonthlyValue)}
                       </span>
                     </div>
@@ -354,7 +358,9 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.35rem',
-                      color: '#22d3ee',
+                      color: isDark ? '#22d3ee' : '#0284c7',
+                      borderColor: isDark ? 'rgba(6, 182, 212, 0.3)' : '#cbd5e1',
+                      backgroundColor: isDark ? undefined : '#ffffff',
                       textDecoration: 'none',
                     }}
                   >

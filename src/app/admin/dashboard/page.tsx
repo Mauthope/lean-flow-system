@@ -33,6 +33,7 @@ import Link from 'next/link';
 
 import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
 import { MonthlyFollowUpRadarWidget } from '@/components/dashboard/MonthlyFollowUpRadarWidget';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const SECTOR_ACCENTS = [
   { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' },
@@ -45,6 +46,7 @@ const SECTOR_ACCENTS = [
 
 export default function AdminDashboardPage() {
   const { dataVersion, currentTenant } = useAuth();
+  const { isDark } = useTheme();
 
   const metrics = useMemo(() => {
     return dataService.getMetrics();
@@ -396,24 +398,28 @@ export default function AdminDashboardPage() {
       <div
         className="card"
         style={{
-          backgroundColor: '#0b1329',
-          border: '1px solid rgba(16, 185, 129, 0.4)',
+          backgroundColor: isDark ? '#0b1329' : '#ffffff',
+          border: isDark ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid #cbd5e1',
           borderRadius: '18px',
           overflow: 'hidden',
-          boxShadow: '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(16, 185, 129, 0.1)',
+          boxShadow: isDark
+            ? '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 30px rgba(16, 185, 129, 0.1)'
+            : '0 4px 16px rgba(15, 23, 42, 0.06)',
         }}
       >
         {/* Header do Painel da Diretoria */}
         <div
           style={{
             padding: '1.5rem 1.85rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '1rem',
-            background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 100%)',
+            background: isDark
+              ? 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 100%)'
+              : 'linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 50%, #ffffff 100%)',
           }}
         >
           <div>
@@ -423,28 +429,28 @@ export default function AdminDashboardPage() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '10px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : '#ecfdf5',
+                  border: isDark ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid #a7f3d0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 15px rgba(16, 185, 129, 0.25)',
+                  boxShadow: isDark ? '0 0 15px rgba(16, 185, 129, 0.25)' : 'none',
                 }}
               >
-                <TrendingUp size={20} color="#34d399" />
+                <TrendingUp size={20} color={isDark ? '#34d399' : '#059669'} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                     Demonstrativo de Ganhos para a Diretoria (DRE Lean • Ciclo 12 Meses)
                   </h3>
                   <span
                     style={{
                       fontSize: '0.675rem',
                       fontWeight: 800,
-                      backgroundColor: 'rgba(16, 185, 129, 0.18)',
-                      color: '#34d399',
-                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.18)' : '#dcfce7',
+                      color: isDark ? '#34d399' : '#15803d',
+                      border: isDark ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid #bbf7d0',
                       padding: '0.15rem 0.55rem',
                       borderRadius: '9999px',
                       letterSpacing: '0.04em',
@@ -453,7 +459,7 @@ export default function AdminDashboardPage() {
                     DIRETORIA EXECUTIVA
                   </span>
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.3rem 0 0', maxWidth: '850px', lineHeight: 1.4 }}>
+                <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.3rem 0 0', maxWidth: '850px', lineHeight: 1.4 }}>
                   Prestação de contas do retorno mensal (média dos 3 meses) e anualizado (12 meses). Projetos vigentes computam nos totais até completarem 1 ano (365 dias). Após esse prazo, o ganho é incorporado à rotina base e deixa de pontuar nos totais anuais correntes.
                 </p>
               </div>
@@ -461,13 +467,19 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Filtros em Abas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#090e1a', padding: '0.35rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: isDark ? '#090e1a' : '#f1f5f9', padding: '0.35rem', borderRadius: '12px', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1' }}>
             <button
               onClick={() => setBoardFilter('ativos')}
               style={{
-                backgroundColor: boardFilter === 'ativos' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
-                border: boardFilter === 'ativos' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid transparent',
-                color: boardFilter === 'ativos' ? '#34d399' : '#94a3b8',
+                backgroundColor: boardFilter === 'ativos'
+                  ? (isDark ? 'rgba(16, 185, 129, 0.25)' : '#dcfce7')
+                  : 'transparent',
+                border: boardFilter === 'ativos'
+                  ? (isDark ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid #86efac')
+                  : '1px solid transparent',
+                color: boardFilter === 'ativos'
+                  ? (isDark ? '#34d399' : '#15803d')
+                  : (isDark ? '#94a3b8' : '#475569'),
                 fontWeight: 800,
                 fontSize: '0.75rem',
                 padding: '0.4rem 0.75rem',
@@ -481,9 +493,15 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => setBoardFilter('expirados')}
               style={{
-                backgroundColor: boardFilter === 'expirados' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
-                border: boardFilter === 'expirados' ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid transparent',
-                color: boardFilter === 'expirados' ? '#fbbf24' : '#94a3b8',
+                backgroundColor: boardFilter === 'expirados'
+                  ? (isDark ? 'rgba(245, 158, 11, 0.25)' : '#fef3c7')
+                  : 'transparent',
+                border: boardFilter === 'expirados'
+                  ? (isDark ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid #fde68a')
+                  : '1px solid transparent',
+                color: boardFilter === 'expirados'
+                  ? (isDark ? '#fbbf24' : '#b45309')
+                  : (isDark ? '#94a3b8' : '#475569'),
                 fontWeight: 800,
                 fontSize: '0.75rem',
                 padding: '0.4rem 0.75rem',
@@ -497,9 +515,15 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => setBoardFilter('todos')}
               style={{
-                backgroundColor: boardFilter === 'todos' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
-                border: boardFilter === 'todos' ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid transparent',
-                color: boardFilter === 'todos' ? '#22d3ee' : '#94a3b8',
+                backgroundColor: boardFilter === 'todos'
+                  ? (isDark ? 'rgba(6, 182, 212, 0.25)' : '#e0f2fe')
+                  : 'transparent',
+                border: boardFilter === 'todos'
+                  ? (isDark ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid #bae6fd')
+                  : '1px solid transparent',
+                color: boardFilter === 'todos'
+                  ? (isDark ? '#22d3ee' : '#0284c7')
+                  : (isDark ? '#94a3b8' : '#475569'),
                 fontWeight: 800,
                 fontSize: '0.75rem',
                 padding: '0.4rem 0.75rem',
@@ -520,29 +544,30 @@ export default function AdminDashboardPage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
             gap: '0.85rem',
             padding: '1rem 1.75rem',
-            backgroundColor: 'rgba(0, 0, 0, 0.35)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : '#f8fafc',
+            borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #cbd5e1',
           }}
         >
           {/* Card 1: Retorno Mensal Vigente */}
           <div
             style={{
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#ffffff',
+              border: `1px solid ${isDark ? 'rgba(16, 185, 129, 0.25)' : '#bbf7d0'}`,
               borderRadius: '12px',
               padding: '0.75rem 1rem',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
-            <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#34d399' : '#15803d', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
               Retorno Mensal Vigente
             </span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', marginTop: '0.2rem' }}>
-              <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+              <strong style={{ fontSize: '1.2rem', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(boardFinancials.activeMonthlyTotal)}
               </strong>
-              <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700 }}>/mês</span>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>/mês</span>
             </div>
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.15rem' }}>
               Média comprovada (3M)
             </span>
           </div>
@@ -550,22 +575,23 @@ export default function AdminDashboardPage() {
           {/* Card 2: Resultado do Ano (12M) */}
           <div
             style={{
-              backgroundColor: 'rgba(6, 182, 212, 0.08)',
-              border: '1px solid rgba(6, 182, 212, 0.25)',
+              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.08)' : '#ffffff',
+              border: `1px solid ${isDark ? 'rgba(6, 182, 212, 0.25)' : '#bae6fd'}`,
               borderRadius: '12px',
               padding: '0.75rem 1rem',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
-            <span style={{ fontSize: '0.675rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
               Resultado do Ano (12M)
             </span>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', marginTop: '0.2rem' }}>
-              <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+              <strong style={{ fontSize: '1.2rem', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)' }}>
                 {formatCurrency(boardFinancials.activeAnnualTotal)}
               </strong>
-              <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>/ano</span>
+              <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 700 }}>/ano</span>
             </div>
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.15rem' }}>
               Economia operacional (Computada)
             </span>
           </div>
@@ -573,19 +599,20 @@ export default function AdminDashboardPage() {
           {/* Card 3: Investimento Total (Capex) */}
           <div
             style={{
-              backgroundColor: 'rgba(244, 63, 94, 0.08)',
-              border: '1px solid rgba(244, 63, 94, 0.25)',
+              backgroundColor: isDark ? 'rgba(244, 63, 94, 0.08)' : '#ffffff',
+              border: `1px solid ${isDark ? 'rgba(244, 63, 94, 0.25)' : '#fecdd3'}`,
               borderRadius: '12px',
               padding: '0.75rem 1rem',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
-            <span style={{ fontSize: '0.675rem', color: '#fb7185', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#fb7185' : '#be123c', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
               Investimento Total (Capex)
             </span>
-            <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+            <strong style={{ fontSize: '1.2rem', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
               {formatCurrency(boardFinancials.activeInvestmentTotal)}
             </strong>
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.15rem' }}>
               Informativo • Não abate de 12m
             </span>
           </div>
@@ -593,27 +620,28 @@ export default function AdminDashboardPage() {
           {/* Card 4: Tempo Médio de Payback */}
           <div
             style={{
-              backgroundColor: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.25)',
+              backgroundColor: isDark ? 'rgba(245, 158, 11, 0.08)' : '#ffffff',
+              border: `1px solid ${isDark ? 'rgba(245, 158, 11, 0.25)' : '#fde68a'}`,
               borderRadius: '12px',
               padding: '0.75rem 1rem',
+              boxShadow: isDark ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
-            <span style={{ fontSize: '0.675rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#fbbf24' : '#b45309', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
               Payback Médio do Portfólio
             </span>
-            <strong style={{ fontSize: '1.2rem', color: '#ffffff', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
+            <strong style={{ fontSize: '1.2rem', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)', display: 'block', marginTop: '0.2rem' }}>
               {boardFinancials.averagePaybackMonths > 0 ? (
                 boardFinancials.averagePaybackMonths >= 12 ? (
-                  <span>{boardFinancials.averagePaybackYears} <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>anos ({boardFinancials.averagePaybackMonths}m)</span></span>
+                  <span>{boardFinancials.averagePaybackYears} <span style={{ fontSize: '0.8rem', color: isDark ? '#fbbf24' : '#b45309' }}>anos ({boardFinancials.averagePaybackMonths}m)</span></span>
                 ) : (
-                  <span>{boardFinancials.averagePaybackMonths} <span style={{ fontSize: '0.8rem', color: '#fbbf24' }}>meses</span></span>
+                  <span>{boardFinancials.averagePaybackMonths} <span style={{ fontSize: '0.8rem', color: isDark ? '#fbbf24' : '#b45309' }}>meses</span></span>
                 )
               ) : (
-                <span style={{ color: '#34d399' }}>⚡ Imediato</span>
+                <span style={{ color: isDark ? '#34d399' : '#15803d' }}>⚡ Imediato</span>
               )}
             </strong>
-            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+            <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.15rem' }}>
               Tempo médio de amortização
             </span>
           </div>
@@ -623,8 +651,8 @@ export default function AdminDashboardPage() {
         <div
           style={{
             padding: '0.65rem 1.75rem',
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : '#ffffff',
+            borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #e2e8f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -633,8 +661,8 @@ export default function AdminDashboardPage() {
             fontSize: '0.75rem',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1' }}>
-            <span style={{ color: '#34d399', fontWeight: 800 }}>●</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: isDark ? '#cbd5e1' : '#475569' }}>
+            <span style={{ color: isDark ? '#34d399' : '#15803d', fontWeight: 800 }}>●</span>
             <span>
               {boardFilter === 'ativos'
                 ? 'Projetos vigentes com retorno operacional computado no exercício de 12 meses.'
@@ -644,17 +672,17 @@ export default function AdminDashboardPage() {
             </span>
           </div>
 
-          <span style={{ color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-            Exibindo <strong style={{ color: '#ffffff' }}>{filteredBoardProjects.length}</strong> de {boardFinancials.projects.length} projetos
+          <span style={{ color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+            Exibindo <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{filteredBoardProjects.length}</strong> de {boardFinancials.projects.length} projetos
           </span>
         </div>
 
         {/* Tabela de Projetos da Diretoria */}
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {filteredBoardProjects.length === 0 ? (
-            <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#94a3b8' }}>
+            <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: isDark ? '#94a3b8' : '#64748b' }}>
               <Clock size={36} color="#64748b" style={{ margin: '0 auto 0.75rem' }} />
-              <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
                 Nenhum projeto encontrado nesta categoria.
               </p>
               <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
@@ -668,7 +696,7 @@ export default function AdminDashboardPage() {
           ) : (
             <table style={{ width: '100%', minWidth: '1300px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
               <thead>
-                <tr style={{ backgroundColor: '#070b14', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <tr style={{ backgroundColor: isDark ? '#070b14' : '#f8fafc', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1', color: isDark ? '#94a3b8' : '#475569', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <th style={{ padding: '0.875rem 1.25rem', minWidth: '260px' }}>Projeto Lean / Setor</th>
                   <th style={{ padding: '0.875rem 1rem', minWidth: '130px', whiteSpace: 'nowrap' }}>Especialista</th>
                   <th style={{ padding: '0.875rem 1rem', minWidth: '120px', whiteSpace: 'nowrap' }}>Homologação</th>
@@ -689,13 +717,15 @@ export default function AdminDashboardPage() {
                     <tr
                       key={p.actionId}
                       style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        backgroundColor: p.isExpired ? 'rgba(0, 0, 0, 0.25)' : 'transparent',
+                        borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid #e2e8f0',
+                        backgroundColor: p.isExpired
+                          ? (isDark ? 'rgba(0, 0, 0, 0.25)' : '#fef2f2')
+                          : 'transparent',
                         opacity: p.isExpired ? 0.85 : 1,
                         transition: 'background-color 0.15s ease',
                       }}
-                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.03)')}
-                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? 'rgba(0, 0, 0, 0.25)' : 'transparent')}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? (isDark ? 'rgba(0, 0, 0, 0.35)' : '#fee2e2') : (isDark ? 'rgba(255, 255, 255, 0.03)' : '#f1f5f9'))}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = p.isExpired ? (isDark ? 'rgba(0, 0, 0, 0.25)' : '#fef2f2') : 'transparent')}
                     >
                       {/* Projeto & Setor */}
                       <td style={{ padding: '1rem 1.25rem', minWidth: '260px' }}>
@@ -704,7 +734,7 @@ export default function AdminDashboardPage() {
                             href={`/admin/projetos/${p.actionId}`}
                             style={{
                               fontWeight: 800,
-                              color: p.isExpired ? '#cbd5e1' : '#ffffff',
+                              color: p.isExpired ? (isDark ? '#cbd5e1' : '#64748b') : (isDark ? '#ffffff' : '#0f172a'),
                               textDecoration: 'none',
                               fontSize: '0.875rem',
                               fontFamily: 'var(--font-heading)',
@@ -715,18 +745,18 @@ export default function AdminDashboardPage() {
                             {p.title}
                           </Link>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.35rem', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontFamily: 'var(--font-mono)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                               {p.protocol}
                             </span>
-                            <span style={{ fontSize: '0.675rem', color: '#475569' }}>•</span>
-                            <span style={{ fontSize: '0.7rem', color: '#cbd5e1', whiteSpace: 'nowrap' }}>{p.sectorName}</span>
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
+                            <span style={{ fontSize: '0.7rem', color: isDark ? '#cbd5e1' : '#475569', whiteSpace: 'nowrap', fontWeight: 600 }}>{p.sectorName}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Responsável */}
                       <td style={{ padding: '1rem 1rem', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a', whiteSpace: 'nowrap' }}>
                           {p.responsibleName}
                         </span>
                       </td>
