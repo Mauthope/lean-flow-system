@@ -196,6 +196,11 @@ export default function AdminProjectDetailPage() {
     }
   }, [action?.tenantId]);
 
+  // Atividades do Plano de Ação 5W2H pendentes de conclusão
+  const uncompletedActivities = useMemo(() => {
+    return (checklistItems || []).filter((i) => !i.completed && i.status !== 'concluida');
+  }, [checklistItems]);
+
   // Acompanhamento do Ciclo Real de 12 Meses (3 Meses Homologação + 9 Meses Consolidação)
   const [followUpModalMonth, setFollowUpModalMonth] = useState<number | null>(null);
   const [followUpValue, setFollowUpValue] = useState<number | ''>('');
@@ -882,6 +887,17 @@ export default function AdminProjectDetailPage() {
 
   const handleAgentSubmitForApproval = () => {
     if (!action || isViewer) return;
+
+    // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
+    if (uncompletedActivities.length > 0) {
+      alert(
+        `⚠️ SUBMISSÃO BLOQUEADA!\n\nExistem ${uncompletedActivities.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompletedActivities
+          .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
+          .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de submeter o projeto para homologação master.`
+      );
+      return;
+    }
+
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: O projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
@@ -918,6 +934,17 @@ export default function AdminProjectDetailPage() {
 
   const handleMasterApprove = async () => {
     if (!action || isViewer) return;
+
+    // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
+    if (uncompletedActivities.length > 0) {
+      alert(
+        `⚠️ HOMOLOGAÇÃO BLOQUEADA!\n\nNão é possível homologar o projeto pois existem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão:\n${uncompletedActivities
+          .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
+          .join('\n')}\n\nTodas as ações 5W2H devem estar finalizadas para a homologação técnica e auditoria.`
+      );
+      return;
+    }
+
     const monthsFilled = getFollowUpMonthsFilledCount(action);
     if (monthsFilled < 3) {
       alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
@@ -951,9 +978,12 @@ export default function AdminProjectDetailPage() {
       }
     }
 
+    const today = new Date().toISOString().split('T')[0];
     const updated = dataService.updateAction(action.id, {
       status: 'concluida',
       pdcaStage: 'act',
+      completedAt: new Date().toISOString(),
+      conclusionDate: today,
       masterApproved: true,
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Gestão Master',
@@ -1068,6 +1098,16 @@ export default function AdminProjectDetailPage() {
 
   const handleSubmeterControladoria = async () => {
     if (!action) return;
+
+    // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
+    if (uncompletedActivities.length > 0) {
+      alert(
+        `⚠️ SUBMISSÃO BLOQUEADA!\n\nNão é permitido enviar ganhos para a Controladoria enquanto houver atividades do Plano de Ação 5W2H pendentes de conclusão.\n\nAtividades pendentes (${uncompletedActivities.length}):\n${uncompletedActivities
+          .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
+          .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de submeter os ganhos para auditoria contábil.`
+      );
+      return;
+    }
 
     // Sincronizar os valores correntes de cada categoria no gainDetails
     const activeGainsList = [
@@ -1252,6 +1292,7 @@ export default function AdminProjectDetailPage() {
 
   const handleToggleChecklistItem = (itemId: string) => {
     if (!action) return;
+    const today = new Date().toISOString().split('T')[0];
     const updated = checklistItems.map((item) => {
       if (item.id === itemId) {
         const nextCompleted = !item.completed;
@@ -1260,6 +1301,8 @@ export default function AdminProjectDetailPage() {
           completed: nextCompleted,
           status: (nextCompleted ? 'concluida' : 'pendente') as any,
           completedAt: nextCompleted ? new Date().toISOString() : undefined,
+          conclusionDate: nextCompleted ? today : undefined,
+          endDate: nextCompleted && !item.endDate ? today : item.endDate,
         };
       }
       return item;
@@ -1579,6 +1622,44 @@ export default function AdminProjectDetailPage() {
                 </span>
               )}
               <PriorityBadge priority={action.priority} />
+              {(action.status === 'concluida' || action.masterApproved) && (action.conclusionDate || action.completedAt) && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: '#34d399',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: '9999px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Projeto homologado e concluído oficialmente"
+                >
+                  <CheckCircle2 size={12} /> Concluído em: {formatDate(action.conclusionDate || action.completedAt?.split('T')[0] || '')}
+                </span>
+              )}
+              {uncompletedActivities.length > 0 && action.status !== 'concluida' && !action.masterApproved && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 800,
+                    color: '#f87171',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: '9999px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Existem atividades 5W2H pendentes de conclusão"
+                >
+                  <AlertTriangle size={12} /> {uncompletedActivities.length} 5W2H pendente(s)
+                </span>
+              )}
             </div>
             <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: '0.25rem 0 0', fontFamily: 'var(--font-heading)' }}>
               {action.title}
@@ -2909,6 +2990,24 @@ export default function AdminProjectDetailPage() {
                                 🏁 Fim: <strong style={{ color: '#ffffff' }}>{formatDate(item.endDate)}</strong>
                               </span>
                             )}
+                            {item.completed && (item.conclusionDate || item.completedAt) && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  padding: '0.1rem 0.45rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                                  color: '#34d399',
+                                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                                }}
+                              >
+                                ✅ Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
+                              </span>
+                            )}
                             {(item.postponedCount || 0) > 0 && (
                               <span
                                 style={{
@@ -4171,18 +4270,61 @@ export default function AdminProjectDetailPage() {
                 </div>
               </div>
 
+              {/* Aviso Poka-Yoke: Submissão Bloqueada por Pendências 5W2H */}
+              {uncompletedActivities.length > 0 && !action.controllershipAudit && (
+                <div
+                  style={{
+                    padding: '0.85rem 1.15rem',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                    color: '#fca5a5',
+                    fontSize: '0.8125rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                  }}
+                >
+                  <AlertTriangle size={18} color="#ef4444" style={{ flexShrink: 0 }} />
+                  <span>
+                    <strong>Submissão Bloqueada à Controladoria:</strong> Existem <strong>{uncompletedActivities.length} atividade(s) 5W2H não concluída(s)</strong> no Passo 2.
+                    Conforme a governança Lean corporativa, todas as ações de campo devem estar finalizadas antes da auditoria e certificação contábil.
+                  </span>
+                </div>
+              )}
+
               {/* Botões de Ação do Card */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 {!action.controllershipAudit ? (
                   <button
                     type="button"
                     onClick={handleSubmeterControladoria}
-                    disabled={submittingControladoria}
+                    disabled={submittingControladoria || uncompletedActivities.length > 0}
                     className="btn btn-primary"
-                    style={{ padding: '0.65rem 1.4rem', borderRadius: '10px', fontWeight: 800, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.45rem', backgroundColor: '#2563eb' }}
+                    style={{
+                      padding: '0.65rem 1.4rem',
+                      borderRadius: '10px',
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      backgroundColor: uncompletedActivities.length > 0 ? '#475569' : '#2563eb',
+                      cursor: uncompletedActivities.length > 0 ? 'not-allowed' : 'pointer',
+                      opacity: uncompletedActivities.length > 0 ? 0.6 : 1,
+                    }}
+                    title={
+                      uncompletedActivities.length > 0
+                        ? `Submissão bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão.`
+                        : undefined
+                    }
                   >
                     <Send size={16} />
-                    {submittingControladoria ? 'Enviando Notificação...' : 'Submeter à Controladoria ➔'}
+                    {submittingControladoria
+                      ? 'Enviando Notificação...'
+                      : uncompletedActivities.length > 0
+                      ? `Submissão Bloqueada (${uncompletedActivities.length} pendências 5W2H)`
+                      : 'Submeter à Controladoria ➔'}
                   </button>
                 ) : action.controllershipAudit.status === 'pendente' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -4976,6 +5118,8 @@ export default function AdminProjectDetailPage() {
           {(() => {
             const monthsFilled = getFollowUpMonthsFilledCount(action);
             const isThreeMonthsDone = monthsFilled === 3;
+            const hasUncompleted = uncompletedActivities.length > 0;
+            const isFullyReady = isThreeMonthsDone && !hasUncompleted;
             const isAwaitingApproval = action.status === 'aguardando_aprovacao' || action.submittedForApproval;
 
             return (
@@ -4988,6 +5132,8 @@ export default function AdminProjectDetailPage() {
                     ? '2px solid rgba(16, 185, 129, 0.5)'
                     : isAwaitingApproval
                     ? '2px solid rgba(168, 85, 247, 0.5)'
+                    : hasUncompleted
+                    ? '2px solid rgba(239, 68, 68, 0.45)'
                     : isThreeMonthsDone
                     ? '2px solid rgba(6, 182, 212, 0.5)'
                     : '1px dashed rgba(255, 255, 255, 0.15)',
@@ -4995,6 +5141,8 @@ export default function AdminProjectDetailPage() {
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isAwaitingApproval
                     ? 'rgba(168, 85, 247, 0.1)'
+                    : hasUncompleted
+                    ? 'rgba(239, 68, 68, 0.06)'
                     : isThreeMonthsDone
                     ? 'rgba(6, 182, 212, 0.06)'
                     : '#0f172a',
@@ -5005,6 +5153,30 @@ export default function AdminProjectDetailPage() {
                   gap: '1.25rem',
                 }}
               >
+                {/* Banner de Bloqueio 5W2H se houver pendências */}
+                {hasUncompleted && !action.masterApproved && (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '0.85rem 1.15rem',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                      border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                      color: '#fca5a5',
+                      fontSize: '0.8125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                    }}
+                  >
+                    <AlertTriangle size={18} color="#ef4444" style={{ flexShrink: 0 }} />
+                    <span>
+                      <strong>Homologação Bloqueada:</strong> Existem <strong>{uncompletedActivities.length} atividade(s) do Plano de Ação 5W2H não concluída(s)</strong> no Passo 2.
+                      Para auditoria interna e governança, todas as contramedidas devem ser finalizadas no Gemba antes da homologação.
+                    </span>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
                   <div
                     style={{
@@ -5015,6 +5187,8 @@ export default function AdminProjectDetailPage() {
                         ? '#10b981'
                         : isAwaitingApproval
                         ? '#9333ea'
+                        : hasUncompleted
+                        ? '#dc2626'
                         : isThreeMonthsDone
                         ? '#0284c7'
                         : '#1e293b',
@@ -5027,7 +5201,7 @@ export default function AdminProjectDetailPage() {
                       boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : isThreeMonthsDone ? '0 0 15px rgba(6, 182, 212, 0.3)' : 'none',
                     }}
                   >
-                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : isThreeMonthsDone ? '🚀' : '🔒'}
+                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : hasUncompleted ? '⚠️' : isThreeMonthsDone ? '🚀' : '🔒'}
                   </div>
 
                   <div>
@@ -5039,6 +5213,8 @@ export default function AdminProjectDetailPage() {
                           ? '#34d399'
                           : isAwaitingApproval
                           ? '#c084fc'
+                          : hasUncompleted
+                          ? '#f87171'
                           : isThreeMonthsDone
                           ? '#38bdf8'
                           : '#94a3b8',
@@ -5050,6 +5226,8 @@ export default function AdminProjectDetailPage() {
                         ? '4.4 Projeto Homologado pela Entidade Master'
                         : isAwaitingApproval
                         ? '4.4 Aguardando Homologação do Gestor Master'
+                        : hasUncompleted
+                        ? `4.4 Homologação Bloqueada (${uncompletedActivities.length} Ação(ões) 5W2H Pendente(s))`
                         : isThreeMonthsDone
                         ? '4.4 Pronto para Envio à Homologação Master'
                         : '4.4 Homologação Master (Bloqueada: Exige 3 Meses)'}
@@ -5060,8 +5238,10 @@ export default function AdminProjectDetailPage() {
                         ? `Validado por ${action.masterApprovedBy || 'Gestor Master'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos e DRE.`
                         : isAwaitingApproval
                         ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)} com a comprovação dos 3 meses de acompanhamento concluída.`
+                        : hasUncompleted
+                        ? `O projeto não pode ser homologado enquanto existirem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão no Passo 2.`
                         : isThreeMonthsDone
-                        ? 'Os 3 meses de acompanhamento foram preenchidos pelo agente! O projeto está 100% pronto para ser enviado à homologação do Gestor Master.'
+                        ? 'Os 3 meses de acompanhamento e todas as ações 5W2H foram finalizadas com sucesso! O projeto está pronto para a homologação do Gestor Master.'
                         : `O agente só pode enviar o projeto para homologação após o preenchimento dos 3 meses de acompanhamento no passo 4.3 acima (Progresso: ${monthsFilled}/3 meses).`}
                     </p>
                   </div>
@@ -5128,28 +5308,32 @@ export default function AdminProjectDetailPage() {
                   ) : currentUser?.role === 'agent' ? (
                     <button
                       type="button"
-                      disabled={!isThreeMonthsDone}
+                      disabled={!isFullyReady}
                       onClick={handleAgentSubmitForApproval}
-                      className={`btn ${isThreeMonthsDone ? 'btn-primary' : 'btn-secondary'}`}
+                      className={`btn ${isFullyReady ? 'btn-primary' : 'btn-secondary'}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        opacity: isThreeMonthsDone ? 1 : 0.6,
-                        cursor: isThreeMonthsDone ? 'pointer' : 'not-allowed',
+                        opacity: isFullyReady ? 1 : 0.6,
+                        cursor: isFullyReady ? 'pointer' : 'not-allowed',
                         backgroundColor: isAwaitingApproval ? '#7c3aed' : undefined,
                         borderColor: isAwaitingApproval ? '#7c3aed' : undefined,
                       }}
                       title={
-                        !isThreeMonthsDone
+                        hasUncompleted
+                          ? `A homologação está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
+                          : !isThreeMonthsDone
                           ? `A submissão só é liberada após o preenchimento dos 3 meses de resultados pelo agente (${monthsFilled}/3 preenchidos).`
                           : undefined
                       }
                     >
-                      {isThreeMonthsDone ? <Send size={15} /> : <AlertTriangle size={15} />}
+                      {isFullyReady ? <Send size={15} /> : <AlertTriangle size={15} />}
                       <span>
                         {isAwaitingApproval
                           ? 'Reenviar para Homologação Master'
+                          : hasUncompleted
+                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H pendentes)`
                           : isThreeMonthsDone
                           ? 'Submeter para Homologação Master'
                           : `Homologação Bloqueada (${monthsFilled}/3 meses)`}
@@ -5176,25 +5360,29 @@ export default function AdminProjectDetailPage() {
                     // Supervisor / Master Manager
                     <button
                       type="button"
-                      disabled={!isThreeMonthsDone}
+                      disabled={!isFullyReady}
                       onClick={handleMasterApprove}
                       className="btn btn-success"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        opacity: isThreeMonthsDone ? 1 : 0.6,
-                        cursor: isThreeMonthsDone ? 'pointer' : 'not-allowed',
+                        opacity: isFullyReady ? 1 : 0.6,
+                        cursor: isFullyReady ? 'pointer' : 'not-allowed',
                       }}
                       title={
-                        !isThreeMonthsDone
+                        hasUncompleted
+                          ? `A homologação master está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
+                          : !isThreeMonthsDone
                           ? `A homologação master só pode ser realizada após a adição dos resultados de 3 meses pelo agente (${monthsFilled}/3 preenchidos).`
                           : 'Homologar projeto e concluir ciclo PDCA'
                       }
                     >
                       <CheckCircle2 size={16} />
                       <span>
-                        {isThreeMonthsDone
+                        {hasUncompleted
+                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H pendentes)`
+                          : isThreeMonthsDone
                           ? 'Homologar Projeto & Concluir Ciclo PDCA'
                           : `Homologação Pendente (${monthsFilled}/3 meses)`}
                       </span>

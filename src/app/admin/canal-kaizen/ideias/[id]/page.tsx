@@ -31,6 +31,7 @@ import {
   Sigma,
   Trash2,
   Eye,
+  AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -351,8 +352,20 @@ export default function KaizenPDCAExecutionPage() {
   };
 
   const handleToggleAction = (chkId: string) => {
+    const today = new Date().toISOString().split('T')[0];
     setChecklist(
-      checklist.map((item) => (item.id === chkId ? { ...item, completed: !item.completed } : item))
+      checklist.map((item) => {
+        if (item.id === chkId) {
+          const nextCompleted = !item.completed;
+          return {
+            ...item,
+            completed: nextCompleted,
+            conclusionDate: nextCompleted ? today : undefined,
+            completedAt: nextCompleted ? new Date().toISOString() : undefined,
+          };
+        }
+        return item;
+      })
     );
   };
 
@@ -364,7 +377,20 @@ export default function KaizenPDCAExecutionPage() {
   // Master Approve Kaizen
   const handleMasterApprove = () => {
     if (!idea || isViewer) return;
+
+    // Bloqueio Poka-Yoke: Ações 5W2H pendentes
+    const uncompleted = checklist.filter((item) => !item.completed);
+    if (uncompleted.length > 0) {
+      alert(
+        `⚠️ HOMOLOGAÇÃO BLOQUEADA!\n\nExistem ${uncompleted.length} ação(ões) do plano 5W2H pendentes de conclusão:\n${uncompleted
+          .map((u) => `• ${u.label || (u as any).text} (${u.responsibleName || 'Equipe'})`)
+          .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de homologar a ideia Kaizen.`
+      );
+      return;
+    }
+
     const finalCost = calculatedSavings > 0 ? calculatedSavings : Number(idea.actualCostAvoided) || Number(idea.estimatedCostAvoided) || 0;
+    const today = new Date().toISOString().split('T')[0];
 
     const updated = dataService.updateKaizenIdea(idea.id, {
       masterApproved: true,
@@ -373,6 +399,8 @@ export default function KaizenPDCAExecutionPage() {
       executionStatus: 'implantada_sucesso',
       pdcaStage: 'act',
       actualCostAvoided: finalCost,
+      conclusionDate: today,
+      completedAt: new Date().toISOString(),
       quarterlyFollowUp: idea.quarterlyFollowUp || {
         enabled: true,
         startedAt: new Date().toISOString(),
@@ -848,6 +876,11 @@ export default function KaizenPDCAExecutionPage() {
                           até {item.endDate || item.plannedEnd}
                         </span>
                       )}
+                      {item.completed && (item.conclusionDate || item.completedAt) && (
+                        <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700 }}>
+                          ✅ Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
+                        </span>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleDeleteAction(item.id)}
@@ -1257,6 +1290,30 @@ export default function KaizenPDCAExecutionPage() {
               </p>
             </div>
 
+            {/* Banner de Bloqueio 5W2H */}
+            {checklist.filter((i) => !i.completed).length > 0 && !idea.masterApproved && (
+              <div
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#fca5a5',
+                  fontSize: '0.8125rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <AlertTriangle size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+                <span>
+                  <strong>Homologação Bloqueada:</strong> Existem <strong>{checklist.filter((i) => !i.completed).length} ação(ões) 5W2H não concluída(s)</strong> no Passo 2.
+                  Conclua todas as atividades antes da homologação final.
+                </span>
+              </div>
+            )}
+
             <div>
               {idea.masterApproved ? (
                 <span
@@ -1296,11 +1353,29 @@ export default function KaizenPDCAExecutionPage() {
                 <button
                   type="button"
                   onClick={handleMasterApprove}
+                  disabled={checklist.filter((i) => !i.completed).length > 0}
                   className="btn btn-success"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem', fontWeight: 800 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.65rem 1.25rem',
+                    fontWeight: 800,
+                    opacity: checklist.filter((i) => !i.completed).length > 0 ? 0.6 : 1,
+                    cursor: checklist.filter((i) => !i.completed).length > 0 ? 'not-allowed' : 'pointer',
+                  }}
+                  title={
+                    checklist.filter((i) => !i.completed).length > 0
+                      ? `Homologação bloqueada: existem ${checklist.filter((i) => !i.completed).length} ação(ões) pendentes no Passo 2.`
+                      : undefined
+                  }
                 >
                   <CheckCircle2 size={18} />
-                  <span>Homologar Ideia Kaizen & Fechar Ciclo</span>
+                  <span>
+                    {checklist.filter((i) => !i.completed).length > 0
+                      ? `Homologação Bloqueada (${checklist.filter((i) => !i.completed).length} 5W2H pendentes)`
+                      : 'Homologar Ideia Kaizen & Fechar Ciclo'}
+                  </span>
                 </button>
               )}
             </div>

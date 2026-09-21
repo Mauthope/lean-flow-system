@@ -123,6 +123,7 @@ export interface ActionChecklistItem {
   durationDays?: number;  // Tempo decorrido em dias
   completed: boolean;
   completedAt?: string;
+  conclusionDate?: string; // Data no formato YYYY-MM-DD em que foi finalizada
 }
 
 // 7 Fontes de Custo Evitado (Ganhos do Projeto)
@@ -408,6 +409,7 @@ export interface LeanAction {
   updatedAt: string;
   startedAt?: string;
   completedAt?: string;
+  conclusionDate?: string; // Data no formato YYYY-MM-DD em que a ação/projeto foi concluído
   dueDate?: string;
 
   // Triage & Rejection
@@ -607,6 +609,8 @@ export interface KaizenIdea {
   masterApproved?: boolean;             // Homologado como Kaizen de Sucesso
   masterApprovedAt?: string;            // Data de homologação
   masterApprovedBy?: string;            // Gestor que homologou
+  completedAt?: string;                 // Data/hora ISO de conclusão
+  conclusionDate?: string;              // Data de conclusão no formato YYYY-MM-DD
   quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses pós-homologação
 }
 

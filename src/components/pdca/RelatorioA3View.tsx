@@ -448,7 +448,13 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                           {item.responsibleName || 'Agente'}
                         </td>
                         <td style={{ padding: '0.35rem 0.45rem', textAlign: 'center', color: '#64748b' }}>
-                          {formatDate(item.endDate || item.startDate)}
+                          {item.completed && (item.conclusionDate || item.completedAt) ? (
+                            <span style={{ color: '#16a34a', fontWeight: 700 }} title="Data de conclusão efetiva">
+                              {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
+                            </span>
+                          ) : (
+                            formatDate(item.endDate || item.startDate)
+                          )}
                         </td>
                         <td style={{ padding: '0.35rem 0.45rem', textAlign: 'center' }}>
                           <span

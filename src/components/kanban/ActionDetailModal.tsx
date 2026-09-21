@@ -94,6 +94,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   const [actualCostInput, setActualCostInput] = useState<string>('');
   const [hoursSavedInput, setHoursSavedInput] = useState<string>('');
   const [rootCauseInput, setRootCauseInput] = useState<string>('');
+  const [conclusionDateInput, setConclusionDateInput] = useState<string>(
+    new Date().toISOString().split('T')[0]
+  );
   const [showCompletionForm, setShowCompletionForm] = useState(false);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
 
@@ -178,6 +181,15 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   const handleStatusChange = (newStatus: ActionStatus) => {
     if (isViewer) return;
     if (newStatus === 'aguardando_aprovacao') {
+      const uncompleted = dataService.getUncompletedActivities(action);
+      if (uncompleted.length > 0) {
+        alert(
+          `Submissão Bloqueada!\n\nExistem ${uncompleted.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompleted
+            .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
+            .join('\n')}\n\nConclua todas as etapas 5W2H antes de submeter o projeto para homologação.`
+        );
+        return;
+      }
       const monthsFilled = getFollowUpMonthsFilledCount(action);
       if (monthsFilled < 3) {
         alert(
@@ -196,6 +208,15 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     }
 
     if (newStatus === 'concluida') {
+      const uncompleted = dataService.getUncompletedActivities(action);
+      if (uncompleted.length > 0) {
+        alert(
+          `Homologação / Conclusão Bloqueada!\n\nExistem ${uncompleted.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompleted
+            .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
+            .join('\n')}\n\nTodas as ações 5W2H devem estar finalizadas no Gemba antes de concluir o projeto.`
+        );
+        return;
+      }
       const monthsFilled = getFollowUpMonthsFilledCount(action);
       if (monthsFilled < 3) {
         alert(
@@ -204,6 +225,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         return;
       }
       setShowCompletionForm(true);
+      setConclusionDateInput(action.conclusionDate || new Date().toISOString().split('T')[0]);
       const defaultAvg = action.quarterlyFollowUp?.averageCostAvoided || action.actualCostAvoided || action.estimatedCostAvoided || '';
       setActualCostInput(String(defaultAvg));
       setHoursSavedInput(String(action.hoursSaved || ''));
@@ -265,6 +287,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
       hoursSaved: hours,
       rootCauseAnalysis: rootCauseInput,
       costBreakdown,
+      conclusionDate: conclusionDateInput,
     });
 
     try {
@@ -441,6 +464,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     dataService.updateActivityRecord(action.id, activityId, {
       status: 'concluida',
       endDate: today,
+      conclusionDate: today,
       completed: true,
       completedAt: new Date().toISOString(),
     });
@@ -608,6 +632,53 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 </select>
               </div>
             )}
+
+            {(action.status === 'concluida' || action.masterApproved) && (action.conclusionDate || action.completedAt) && (
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 800,
+                  color: '#15803d',
+                  backgroundColor: '#dcfce7',
+                  border: '1px solid #86efac',
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
+                title="Data oficial de conclusão da ação"
+              >
+                ✅ Concluído em: {formatDate(action.conclusionDate || action.completedAt?.split('T')[0] || '')}
+              </span>
+            )}
+
+            {(() => {
+              const uncompleted = (action.checklist || []).filter((a) => !a.completed && a.status !== 'concluida');
+              if (action.status === 'concluida') return null;
+              if (uncompleted.length > 0) {
+                return (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      color: '#b91c1c',
+                      backgroundColor: '#fee2e2',
+                      border: '1px solid #fca5a5',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                    title="Existem atividades 5W2H pendentes de conclusão"
+                  >
+                    ⚠️ {uncompleted.length} 5W2H pendente(s)
+                  </span>
+                );
+              }
+              return null;
+            })()}
 
             {(() => {
               const monthsFilled = getFollowUpMonthsFilledCount(action);
@@ -939,7 +1010,24 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             </div>
 
             {/* Total Fields */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label className="form-label" style={{ color: '#065f46', fontWeight: 800 }}>
+                  Data de Conclusão Efetiva:
+                </label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={conclusionDateInput}
+                  onChange={(e) => setConclusionDateInput(e.target.value)}
+                  style={{ fontSize: '1.05rem', fontWeight: 800, color: '#065f46' }}
+                  required
+                />
+                <span style={{ fontSize: '0.7rem', color: '#047857', marginTop: '0.2rem', display: 'block' }}>
+                  Data oficial de conclusão no Gemba.
+                </span>
+              </div>
+
               <div>
                 <label className="form-label" style={{ color: '#065f46', fontWeight: 800 }}>
                   Custo Evitado Real Total (R$):
@@ -1527,6 +1615,13 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                               Fim: <strong>{formatDate(act.endDate)}</strong>
                             </span>
                           )}
+
+                          {isActCompleted && (act.conclusionDate || act.completedAt) && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#16a34a', fontWeight: 700 }}>
+                              <CheckCircle2 size={13} color="#16a34a" />
+                              Concluída em: <strong>{formatDate(act.conclusionDate || act.completedAt?.split('T')[0] || '')}</strong>
+                            </span>
+                          )}
                         </div>
 
                         {/* Sector, Tracking Doc, Reprogrammed & Attachment Badges */}
@@ -1687,13 +1782,15 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                             </button>
                           )}
 
-                          {isActCompleted && (
+                           {isActCompleted && (
                             <button
                               type="button"
                               onClick={() => {
                                 dataService.updateActivityRecord(action.id, act.id, {
                                   status: 'em_andamento',
                                   completed: false,
+                                  completedAt: undefined,
+                                  conclusionDate: undefined,
                                 });
                                 onUpdate();
                               }}

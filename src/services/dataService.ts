@@ -740,6 +740,12 @@ export const dataService = {
       };
     }
 
+    // Garantir data de conclusão quando a ação for finalizada
+    if (merged.status === 'concluida') {
+      if (!merged.completedAt) merged.completedAt = new Date().toISOString();
+      if (!merged.conclusionDate) merged.conclusionDate = new Date().toISOString().split('T')[0];
+    }
+
     merged.updatedAt = new Date().toISOString();
     actions[index] = merged;
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
@@ -999,6 +1005,14 @@ export const dataService = {
 
     const action = actions[index];
     const tenant = this.getCurrentTenant();
+
+    // Poka-Yoke Estrito: Bloquear envio se houver atividades 5W2H não concluídas
+    const uncompleted = this.getUncompletedActivities(action);
+    if (uncompleted.length > 0) {
+      throw new Error(
+        `Submissão bloqueada: existem ${uncompleted.length} atividade(s) 5W2H pendentes de conclusão no projeto.`
+      );
+    }
 
     // Gerar token escopado único (ex: sec_aud_8f9d7c2a_...)
     const token = `sec_aud_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
@@ -1330,6 +1344,7 @@ export const dataService = {
       hoursSaved?: number;
       rootCauseAnalysis?: string;
       costBreakdown?: LeanCostBreakdown;
+      conclusionDate?: string;
     }
   ): LeanAction {
     const actions = this.getActions();
@@ -1350,6 +1365,7 @@ export const dataService = {
 
     if (newStatus === 'concluida') {
       updates.completedAt = now;
+      updates.conclusionDate = extra?.conclusionDate || now.split('T')[0];
       if (extra?.actualCostAvoided !== undefined) {
         updates.actualCostAvoided = Number(extra.actualCostAvoided);
       } else if (item.actualCostAvoided === 0 && item.estimatedCostAvoided > 0) {
@@ -1399,11 +1415,13 @@ export const dataService = {
     const itemIndex = checklist.findIndex((c) => c.id === itemId);
     if (itemIndex !== -1) {
       const isCompleted = !checklist[itemIndex].completed;
+      const today = new Date().toISOString().split('T')[0];
       checklist[itemIndex].completed = isCompleted;
       checklist[itemIndex].completedAt = isCompleted ? new Date().toISOString() : undefined;
+      checklist[itemIndex].conclusionDate = isCompleted ? today : undefined;
       checklist[itemIndex].status = isCompleted ? 'concluida' : 'pendente';
       if (isCompleted && !checklist[itemIndex].endDate) {
-        checklist[itemIndex].endDate = new Date().toISOString().split('T')[0];
+        checklist[itemIndex].endDate = today;
       }
     }
 
@@ -1558,11 +1576,13 @@ export const dataService = {
     const actIndex = checklist.findIndex((c) => c.id === activityId);
     if (actIndex !== -1) {
       const isCompleted = updates.status === 'concluida' || updates.completed === true;
+      const today = new Date().toISOString().split('T')[0];
       checklist[actIndex] = {
         ...checklist[actIndex],
         ...updates,
         completed: isCompleted,
-        completedAt: isCompleted ? (checklist[actIndex].completedAt || new Date().toISOString()) : undefined,
+        completedAt: isCompleted ? (updates.completedAt || checklist[actIndex].completedAt || new Date().toISOString()) : undefined,
+        conclusionDate: isCompleted ? (updates.conclusionDate || checklist[actIndex].conclusionDate || today) : undefined,
       };
     }
 
@@ -1581,6 +1601,13 @@ export const dataService = {
     actions[index].updatedAt = new Date().toISOString();
     setStoredData(STORAGE_KEYS.ACTIONS, actions);
     return actions[index];
+  },
+
+  getUncompletedActivities(actionIdOrAction: string | LeanAction): ActionChecklistItem[] {
+    const action = typeof actionIdOrAction === 'string' ? this.getActionById(actionIdOrAction) : actionIdOrAction;
+    if (!action) return [];
+    const list = action.checklist || [];
+    return list.filter((act) => !act.completed && act.status !== 'concluida');
   },
 
   addChecklistItem(actionId: string, label: string): LeanAction {
@@ -2312,6 +2339,11 @@ export const dataService = {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
+
+    if (updated.executionStatus === 'implantada_sucesso' || updated.masterApproved === true) {
+      if (!updated.completedAt) updated.completedAt = new Date().toISOString();
+      if (!updated.conclusionDate) updated.conclusionDate = new Date().toISOString().split('T')[0];
+    }
 
     ideas[index] = updated;
     setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
