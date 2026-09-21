@@ -483,17 +483,17 @@ export default function HistoricoKaizenPage() {
             <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>• Todo Projeto é um Kaizen</span>
           </div>
 
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-heading)', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
             Acompanhamento & Histórico de Kaizens Concluídos
           </h1>
-          <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '0.25rem 0 0 0' }}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
             Banco de conhecimento unificado com todos os Projetos Lean e Ideias do Chão de Fábrica concluídos ao longo do tempo.
           </p>
         </div>
 
         {/* Action / View Mode */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <div style={{ display: 'flex', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-muted)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
@@ -505,7 +505,7 @@ export default function HistoricoKaizenPage() {
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: viewMode === 'grid' ? '#2563eb' : 'transparent',
-                color: viewMode === 'grid' ? '#ffffff' : '#94a3b8',
+                color: viewMode === 'grid' ? '#ffffff' : 'var(--text-muted)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -524,7 +524,7 @@ export default function HistoricoKaizenPage() {
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: viewMode === 'table' ? '#2563eb' : 'transparent',
-                color: viewMode === 'table' ? '#ffffff' : '#94a3b8',
+                color: viewMode === 'table' ? '#ffffff' : 'var(--text-muted)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -555,81 +555,81 @@ export default function HistoricoKaizenPage() {
       {/* KPI CARDS DO HISTÓRICO */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
         {/* Total Concluídos */}
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
               Kaizens Concluídos
             </span>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <CheckCircle2 size={18} color="#10b981" />
             </div>
           </div>
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-heading)', margin: 0, fontFamily: 'var(--font-mono)' }}>
             {metrics.totalCount}
           </h2>
-          <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
+          <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
             ✓ 100% Homologados na Entidade
           </span>
         </div>
 
         {/* Economia Acumulada */}
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface-card)', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase' }}>
               Custo Evitado Acumulado
             </span>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DollarSign size={18} color="#34d399" />
+              <DollarSign size={18} color="#10b981" />
             </div>
           </div>
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10b981', margin: 0, fontFamily: 'var(--font-mono)' }}>
             {formatCurrency(metrics.totalSavings)}
           </h2>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', marginTop: '0.25rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
             Ganhos anuais comprovados em DRE
           </span>
         </div>
 
         {/* Horas Salvas */}
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
               Horas Poupadas
             </span>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Clock size={18} color="#22d3ee" />
+              <Clock size={18} color="#06b6d4" />
             </div>
           </div>
-          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-mono)' }}>
-            {metrics.totalHours} <span style={{ fontSize: '0.9rem', color: '#94a3b8', fontWeight: 600 }}>h/ano</span>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--text-heading)', margin: 0, fontFamily: 'var(--font-mono)' }}>
+            {metrics.totalHours} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>h/ano</span>
           </h2>
-          <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
+          <span style={{ fontSize: '0.7rem', color: '#0891b2', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
             ⚡ Produtividade de chão de fábrica
           </span>
         </div>
 
         {/* Divisão por Origem */}
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--bg-surface-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
               Origem dos Kaizens
             </span>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Layers size={18} color="#c084fc" />
+              <Layers size={18} color="#9333ea" />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#38bdf8' }}>
-              {metrics.projetoCount} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Projetos</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0284c7' }}>
+              {metrics.projetoCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Projetos</span>
             </span>
-            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>+</span>
-            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fbbf24' }}>
-              {metrics.canalCount} <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Ideias</span>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>+</span>
+            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#d97706' }}>
+              {metrics.canalCount} <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Ideias</span>
             </span>
           </div>
-          <div style={{ marginTop: '0.5rem', width: '100%', height: '6px', backgroundColor: '#090e1a', borderRadius: '9999px', overflow: 'hidden', display: 'flex' }}>
-            <div style={{ width: `${metrics.projetoPercent}%`, backgroundColor: '#38bdf8' }} title={`Projetos Lean: ${metrics.projetoPercent}%`} />
-            <div style={{ width: `${metrics.canalPercent}%`, backgroundColor: '#fbbf24' }} title={`Canal Kaizen: ${metrics.canalPercent}%`} />
+          <div style={{ marginTop: '0.5rem', width: '100%', height: '6px', backgroundColor: 'var(--bg-muted)', borderRadius: '9999px', overflow: 'hidden', display: 'flex' }}>
+            <div style={{ width: `${metrics.projetoPercent}%`, backgroundColor: '#0284c7' }} title={`Projetos Lean: ${metrics.projetoPercent}%`} />
+            <div style={{ width: `${metrics.canalPercent}%`, backgroundColor: '#d97706' }} title={`Canal Kaizen: ${metrics.canalPercent}%`} />
           </div>
         </div>
       </div>
@@ -641,41 +641,41 @@ export default function HistoricoKaizenPage() {
         className="card"
         style={{
           padding: '1.5rem',
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-surface-card)',
           borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           marginBottom: '1.5rem',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BarChart3 size={18} color="#22d3ee" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+              <BarChart3 size={18} color="#0891b2" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-heading)', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 Evolução Mensal de Kaizens Concluídos ({monthlyStats.yearToUse})
               </h3>
             </div>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
+            <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
               Clique em qualquer mês para filtrar a listagem abaixo diretamente naquele período.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             {/* Legend */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', color: '#cbd5e1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ width: '10px', height: '10px', backgroundColor: '#38bdf8', borderRadius: '3px', display: 'inline-block' }} />
+                <span style={{ width: '10px', height: '10px', backgroundColor: '#0284c7', borderRadius: '3px', display: 'inline-block' }} />
                 Projetos PDCA
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ width: '10px', height: '10px', backgroundColor: '#fbbf24', borderRadius: '3px', display: 'inline-block' }} />
+                <span style={{ width: '10px', height: '10px', backgroundColor: '#d97706', borderRadius: '3px', display: 'inline-block' }} />
                 Canal Kaizen
               </span>
             </div>
 
             {/* Year Selector for Chart */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#090e1a', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <Calendar size={13} color="#94a3b8" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: 'var(--bg-muted)', padding: '0.25rem 0.5rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <Calendar size={13} color="var(--text-muted)" />
               <select
                 value={selectedYear}
                 onChange={(e) => {
@@ -685,16 +685,16 @@ export default function HistoricoKaizenPage() {
                 style={{
                   backgroundColor: 'transparent',
                   border: 'none',
-                  color: '#ffffff',
+                  color: 'var(--text-primary)',
                   fontSize: '0.78125rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   outline: 'none',
                 }}
               >
-                <option value="all" style={{ backgroundColor: '#0f172a' }}>Todos os Anos</option>
+                <option value="all">Todos os Anos</option>
                 {availableYears.map((yr) => (
-                  <option key={yr} value={yr} style={{ backgroundColor: '#0f172a' }}>
+                  <option key={yr} value={yr}>
                     Ano {yr}
                   </option>
                 ))}
@@ -751,7 +751,7 @@ export default function HistoricoKaizenPage() {
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 900,
-                    color: m.totalCount > 0 ? (isSelected ? '#22d3ee' : '#ffffff') : '#475569',
+                    color: m.totalCount > 0 ? (isSelected ? '#0891b2' : 'var(--text-heading)') : 'var(--text-muted)',
                     fontFamily: 'var(--font-mono)',
                   }}
                 >
@@ -769,7 +769,7 @@ export default function HistoricoKaizenPage() {
                     justifyContent: 'flex-end',
                     borderRadius: '6px',
                     overflow: 'hidden',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    backgroundColor: 'var(--bg-muted)',
                   }}
                 >
                   {m.totalCount > 0 ? (
@@ -806,7 +806,7 @@ export default function HistoricoKaizenPage() {
                       )}
                     </div>
                   ) : (
-                    <div style={{ height: '4px', width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '2px' }} />
+                    <div style={{ height: '4px', width: '100%', backgroundColor: 'var(--border-subtle)', borderRadius: '2px' }} />
                   )}
                 </div>
 
@@ -814,7 +814,7 @@ export default function HistoricoKaizenPage() {
                 <span
                   style={{
                     fontSize: '0.6875rem',
-                    color: isSelected ? '#22d3ee' : '#94a3b8',
+                    color: isSelected ? '#0891b2' : 'var(--text-muted)',
                     fontWeight: isSelected ? 900 : 600,
                   }}
                 >
@@ -827,13 +827,13 @@ export default function HistoricoKaizenPage() {
 
         {selectedMonth !== 'all' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.75rem' }}>
-            <span style={{ color: '#22d3ee', fontWeight: 700 }}>
+            <span style={{ color: '#0891b2', fontWeight: 700 }}>
               Filtrado por: <strong>{MONTH_NAMES[selectedMonth]} de {monthlyStats.yearToUse}</strong> ({monthlyStats.months[selectedMonth].totalCount} Kaizens • {formatCurrency(monthlyStats.months[selectedMonth].totalSavings)})
             </span>
             <button
               type="button"
               onClick={() => setSelectedMonth('all')}
-              style={{ background: 'none', border: 'none', color: '#94a3b8', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}
             >
               Ver todos os meses do ano
             </button>
@@ -845,11 +845,12 @@ export default function HistoricoKaizenPage() {
       {/* BARRA DE FILTROS AVANÇADOS & SELETORES DE ORIGEM                          */}
       {/* ========================================================================= */}
       <div
+        className="card"
         style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-surface-card)',
           padding: '1rem 1.25rem',
           borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           marginBottom: '1.5rem',
           display: 'flex',
           flexDirection: 'column',
@@ -859,7 +860,7 @@ export default function HistoricoKaizenPage() {
         {/* Top Row: Origin Tabs & Search Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           {/* Origin Tabs */}
-          <div style={{ display: 'flex', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-muted)', padding: '0.25rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
             <button
               type="button"
               onClick={() => setOriginFilter('all')}
@@ -868,7 +869,7 @@ export default function HistoricoKaizenPage() {
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: originFilter === 'all' ? '#2563eb' : 'transparent',
-                color: originFilter === 'all' ? '#ffffff' : '#94a3b8',
+                color: originFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
                 fontSize: '0.75rem',
                 fontWeight: 800,
                 cursor: 'pointer',
@@ -884,7 +885,7 @@ export default function HistoricoKaizenPage() {
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: originFilter === 'projeto' ? '#0284c7' : 'transparent',
-                color: originFilter === 'projeto' ? '#ffffff' : '#94a3b8',
+                color: originFilter === 'projeto' ? '#ffffff' : 'var(--text-muted)',
                 fontSize: '0.75rem',
                 fontWeight: 800,
                 cursor: 'pointer',
@@ -903,7 +904,7 @@ export default function HistoricoKaizenPage() {
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: originFilter === 'canal_kaizen' ? '#d97706' : 'transparent',
-                color: originFilter === 'canal_kaizen' ? '#ffffff' : '#94a3b8',
+                color: originFilter === 'canal_kaizen' ? '#ffffff' : 'var(--text-muted)',
                 fontSize: '0.75rem',
                 fontWeight: 800,
                 cursor: 'pointer',
@@ -925,20 +926,17 @@ export default function HistoricoKaizenPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
-                backgroundColor: '#090e1a',
-                borderColor: 'rgba(255, 255, 255, 0.12)',
-                color: '#ffffff',
                 paddingLeft: '2.2rem',
                 fontSize: '0.8125rem',
               }}
             />
-            <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
           </div>
         </div>
 
         {/* Bottom Row: Dropdown Selectors */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
-          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
             <Filter size={12} /> Filtros:
           </span>
 
@@ -950,7 +948,7 @@ export default function HistoricoKaizenPage() {
               const val = e.target.value;
               setSelectedYear(val === 'all' ? 'all' : Number(val));
             }}
-            style={{ width: 'auto', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.75rem' }}
           >
             <option value="all">Ano: Todos</option>
             {availableYears.map((yr) => (
@@ -966,7 +964,7 @@ export default function HistoricoKaizenPage() {
               const val = e.target.value;
               setSelectedMonth(val === 'all' ? 'all' : Number(val));
             }}
-            style={{ width: 'auto', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.75rem' }}
           >
             <option value="all">Mês: Todos</option>
             {MONTH_NAMES.map((m, idx) => (
@@ -979,7 +977,7 @@ export default function HistoricoKaizenPage() {
             className="form-control form-control-sm"
             value={selectedSector}
             onChange={(e) => setSelectedSector(e.target.value)}
-            style={{ width: 'auto', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.75rem' }}
           >
             <option value="all">Setor: Todos ({availableSectors.length})</option>
             {availableSectors.map((s) => (
@@ -992,7 +990,7 @@ export default function HistoricoKaizenPage() {
             className="form-control form-control-sm"
             value={selectedWaste}
             onChange={(e) => setSelectedWaste(e.target.value)}
-            style={{ width: 'auto', backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', fontSize: '0.75rem' }}
+            style={{ width: 'auto', fontSize: '0.75rem' }}
           >
             <option value="all">Desperdício Lean: Todos</option>
             {Object.entries(WASTE_CATEGORIES).map(([key, item]) => (
@@ -1008,7 +1006,7 @@ export default function HistoricoKaizenPage() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#f87171',
+                color: '#ef4444',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -1021,7 +1019,7 @@ export default function HistoricoKaizenPage() {
             </button>
           )}
 
-          <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#94a3b8' }}>
+          <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Mostrando <strong>{filteredKaizens.length}</strong> de {unifiedKaizens.length} Kaizens
           </div>
         </div>
@@ -1036,13 +1034,13 @@ export default function HistoricoKaizenPage() {
           style={{
             padding: '3rem 2rem',
             textAlign: 'center',
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-surface-card)',
             borderRadius: '16px',
-            border: '1px dashed rgba(255, 255, 255, 0.12)',
+            border: '1px dashed var(--border-subtle)',
           }}
         >
-          <Compass size={42} color="#64748b" style={{ margin: '0 auto 1rem' }} />
-          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+          <Compass size={42} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} />
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-heading)', margin: 0 }}>
             Nenhum Kaizen encontrado com os filtros selecionados
           </h3>
           <p style={{ fontSize: '0.84375rem', color: '#94a3b8', margin: '0.35rem 0 1rem' }}>
@@ -1064,9 +1062,9 @@ export default function HistoricoKaizenPage() {
                 key={k.id}
                 className="card"
                 style={{
-                  backgroundColor: '#0f172a',
+                  backgroundColor: 'var(--bg-surface-card)',
                   borderRadius: '16px',
-                  border: isProject ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)',
+                  border: isProject ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
                   padding: '1.25rem',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1084,7 +1082,7 @@ export default function HistoricoKaizenPage() {
                       style={{
                         fontSize: '0.6875rem',
                         fontWeight: 900,
-                        color: isProject ? '#38bdf8' : '#fbbf24',
+                        color: isProject ? '#0284c7' : '#d97706',
                         backgroundColor: isProject ? 'rgba(56, 189, 248, 0.12)' : 'rgba(245, 158, 11, 0.12)',
                         border: `1px solid ${isProject ? 'rgba(56, 189, 248, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
                         padding: '0.15rem 0.5rem',
@@ -1095,35 +1093,35 @@ export default function HistoricoKaizenPage() {
                       {isProject ? '💎 PROJETO PDCA' : '💡 CANAL KAIZEN'} • {k.protocol}
                     </span>
 
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <Calendar size={11} /> {formatDate(k.completedAt)}
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.35, margin: '0 0 0.5rem 0', fontFamily: 'var(--font-heading)' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-heading)', lineHeight: 1.35, margin: '0 0 0.5rem 0', fontFamily: 'var(--font-heading)' }}>
                     {k.title}
                   </h3>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#cbd5e1', marginBottom: '0.75rem' }}>
-                    <Building2 size={13} color="#94a3b8" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                    <Building2 size={13} color="var(--text-muted)" />
                     <span><strong>Setor:</strong> {k.sectorName}</span>
-                    <span style={{ color: '#64748b' }}>•</span>
-                    <User size={13} color="#94a3b8" />
+                    <span style={{ color: 'var(--text-dim)' }}>•</span>
+                    <User size={13} color="var(--text-muted)" />
                     <span>{k.leaderOrAuthor}</span>
                   </div>
 
                   {/* Indicador / Meta se houver */}
                   {k.targetMetricName && (
-                    <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)', marginBottom: '0.75rem' }}>
-                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+                    <div style={{ backgroundColor: 'var(--bg-muted)', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid var(--border-subtle)', marginBottom: '0.75rem' }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
                         Indicador: {k.targetMetricName}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.2rem' }}>
-                        <span style={{ fontSize: '0.8125rem', color: '#f87171', fontWeight: 700 }}>
+                        <span style={{ fontSize: '0.8125rem', color: '#ef4444', fontWeight: 700 }}>
                           Antes: {k.baselineValue !== undefined ? `${k.baselineValue} ${k.targetMetricUnit || ''}` : '--'}
                         </span>
-                        <ArrowRight size={12} color="#94a3b8" />
-                        <span style={{ fontSize: '0.875rem', color: '#34d399', fontWeight: 900 }}>
+                        <ArrowRight size={12} color="var(--text-muted)" />
+                        <span style={{ fontSize: '0.875rem', color: '#10b981', fontWeight: 900 }}>
                           Atingido: {k.achievedValue !== undefined ? `${k.achievedValue} ${k.targetMetricUnit || ''}` : 'Meta superada'}
                         </span>
                       </div>
@@ -1132,49 +1130,49 @@ export default function HistoricoKaizenPage() {
 
                   {/* Ganhos Financeiros & Horas Salvas */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                      <span style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
+                    <div style={{ backgroundColor: 'var(--bg-muted)', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                      <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
                         Custo Evitado Real
                       </span>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10b981', fontFamily: 'var(--font-mono)' }}>
                         {formatCurrency(k.actualCostAvoided)}
-                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600 }}>/ano</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>/ano</span>
                       </span>
                     </div>
 
-                    <div style={{ backgroundColor: '#090e1a', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                      <span style={{ fontSize: '0.625rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
+                    <div style={{ backgroundColor: 'var(--bg-muted)', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                      <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
                         Horas Salvas
                       </span>
-                      <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0891b2', fontFamily: 'var(--font-mono)' }}>
                         {k.hoursSaved > 0 ? `${k.hoursSaved}h` : 'Otimizado'}
-                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 600 }}>/ano</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>/ano</span>
                       </span>
                     </div>
                   </div>
 
                   {/* Detalhes Expandíveis: Causa Raiz, Yokoten & Lições */}
                   {isExpanded && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', marginBottom: '0.5rem' }}>
                       {k.problemStatement && (
-                        <div style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                          <strong style={{ color: '#22d3ee' }}>🎯 Diagnóstico do Problema:</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          <strong style={{ color: '#0891b2' }}>🎯 Diagnóstico do Problema:</strong>
                           <p style={{ margin: '0.15rem 0 0', lineHeight: 1.35 }}>{k.problemStatement}</p>
                         </div>
                       )}
 
                       {k.fiveWhys && k.fiveWhys.filter(Boolean).length > 0 && (
-                        <div style={{ fontSize: '0.725rem', color: '#cbd5e1', backgroundColor: '#090e1a', padding: '0.5rem', borderRadius: '6px' }}>
-                          <strong style={{ color: '#fbbf24' }}>🔍 5 Porquês (Causa Raiz):</strong>
-                          <p style={{ margin: '0.15rem 0 0', fontStyle: 'italic', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-muted)', padding: '0.5rem', borderRadius: '6px' }}>
+                          <strong style={{ color: '#d97706' }}>🔍 5 Porquês (Causa Raiz):</strong>
+                          <p style={{ margin: '0.15rem 0 0', fontStyle: 'italic', color: 'var(--text-muted)' }}>
                             {k.fiveWhys[k.fiveWhys.length - 1] || k.fiveWhys[0]}
                           </p>
                         </div>
                       )}
 
                       {(k.lessonsLearned || k.yokotenReplication) && (
-                        <div style={{ fontSize: '0.725rem', color: '#cbd5e1', backgroundColor: '#090e1a', padding: '0.5rem', borderRadius: '6px' }}>
-                          <strong style={{ color: '#34d399' }}>📚 Lição Aprendida / Yokoten:</strong>
+                        <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-muted)', padding: '0.5rem', borderRadius: '6px' }}>
+                          <strong style={{ color: '#10b981' }}>📚 Lição Aprendida / Yokoten:</strong>
                           <p style={{ margin: '0.15rem 0 0', lineHeight: 1.35 }}>
                             {k.lessonsLearned || k.yokotenReplication}
                           </p>
@@ -1185,14 +1183,14 @@ export default function HistoricoKaizenPage() {
                 </div>
 
                 {/* Footer com Botões de Ação */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', gap: '0.5rem' }}>
                   <button
                     type="button"
                     onClick={() => setExpandedKaizenId(isExpanded ? null : k.id)}
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: '#94a3b8',
+                      color: 'var(--text-muted)',
                       fontSize: '0.725rem',
                       display: 'flex',
                       alignItems: 'center',
@@ -1260,31 +1258,31 @@ export default function HistoricoKaizenPage() {
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', maxWidth: '320px' }}>
-                      <strong style={{ color: '#ffffff', display: 'block', fontSize: '0.8125rem' }}>{k.title}</strong>
+                      <strong style={{ color: 'var(--text-heading)', display: 'block', fontSize: '0.8125rem' }}>{k.title}</strong>
                       {k.problemStatement && (
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {k.problemStatement}
                         </span>
                       )}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <span style={{ color: '#ffffff', fontWeight: 600, display: 'block' }}>{k.sectorName}</span>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{k.leaderOrAuthor}</span>
+                      <span style={{ color: 'var(--text-heading)', fontWeight: 600, display: 'block' }}>{k.sectorName}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{k.leaderOrAuthor}</span>
                     </td>
 
-                    <td style={{ padding: '0.85rem 1rem', color: '#cbd5e1', fontSize: '0.75rem' }}>
+                    <td style={{ padding: '0.85rem 1rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
                       {formatDate(k.completedAt)}
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10b981', fontFamily: 'var(--font-mono)' }}>
                         {formatCurrency(k.actualCostAvoided)}
                       </span>
                     </td>
 
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#0891b2', fontFamily: 'var(--font-mono)' }}>
                         {k.hoursSaved > 0 ? `${k.hoursSaved}h` : '--'}
                       </span>
                     </td>
@@ -1377,10 +1375,10 @@ export default function HistoricoKaizenPage() {
             maxWidth: 'calc(100vw - 2.5rem)',
             height: '620px',
             maxHeight: 'calc(100vh - 3rem)',
-            backgroundColor: '#0a0f1d',
+            backgroundColor: 'var(--bg-surface-elevated)',
             borderRadius: '20px',
             border: '1.5px solid rgba(168, 85, 247, 0.5)',
-            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.25)',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3), 0 0 30px rgba(168, 85, 247, 0.15)',
             display: 'flex',
             flexDirection: 'column',
             zIndex: 10000,
@@ -1392,7 +1390,7 @@ export default function HistoricoKaizenPage() {
           <div
             style={{
               padding: '0.85rem 1.15rem',
-              background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+              background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
               borderBottom: '1px solid rgba(168, 85, 247, 0.3)',
               display: 'flex',
               alignItems: 'center',
@@ -1405,11 +1403,10 @@ export default function HistoricoKaizenPage() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #9333ea, #2563eb)',
+                  background: 'rgba(255, 255, 255, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 12px rgba(168, 85, 247, 0.5)',
                 }}
               >
                 <BrainCircuit size={20} color="#ffffff" />
@@ -1421,7 +1418,7 @@ export default function HistoricoKaizenPage() {
                   </h4>
                   <span style={{ width: '8px', height: '8px', backgroundColor: '#34d399', borderRadius: '50%', display: 'inline-block' }} />
                 </div>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
                   {unifiedKaizens.length} Kaizens indexados na memória
                 </span>
               </div>
@@ -1434,9 +1431,9 @@ export default function HistoricoKaizenPage() {
                 width: '30px',
                 height: '30px',
                 borderRadius: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 border: 'none',
-                color: '#cbd5e1',
+                color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1474,11 +1471,11 @@ export default function HistoricoKaizenPage() {
                     maxWidth: '88%',
                     padding: '0.75rem 0.95rem',
                     borderRadius: msg.sender === 'user' ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                    backgroundColor: msg.sender === 'user' ? '#7c3aed' : '#1e293b',
-                    color: '#ffffff',
+                    backgroundColor: msg.sender === 'user' ? '#7c3aed' : 'var(--bg-muted)',
+                    color: msg.sender === 'user' ? '#ffffff' : 'var(--text-primary)',
                     fontSize: '0.8125rem',
                     lineHeight: 1.45,
-                    border: msg.sender === 'user' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    border: msg.sender === 'user' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid var(--border-subtle)',
                     whiteSpace: 'pre-wrap',
                   }}
                 >
@@ -1487,7 +1484,7 @@ export default function HistoricoKaizenPage() {
                   {/* Cards de Kaizens citados na resposta */}
                   {msg.matchedKaizens && msg.matchedKaizens.length > 0 && (
                     <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>
                         Kaizens Relacionados:
                       </span>
                       {msg.matchedKaizens.map((mk) => (
@@ -1498,23 +1495,23 @@ export default function HistoricoKaizenPage() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            backgroundColor: '#090e1a',
+                            backgroundColor: 'var(--bg-surface-card)',
                             padding: '0.45rem 0.65rem',
                             borderRadius: '8px',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            border: '1px solid var(--border-subtle)',
                             textDecoration: 'none',
                             gap: '0.5rem',
                           }}
                         >
                           <div style={{ overflow: 'hidden' }}>
-                            <span style={{ fontSize: '0.625rem', color: mk.origin === 'projeto' ? '#38bdf8' : '#fbbf24', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                            <span style={{ fontSize: '0.625rem', color: mk.origin === 'projeto' ? '#0284c7' : '#d97706', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                               {mk.protocol}
                             </span>
-                            <span style={{ fontSize: '0.725rem', color: '#ffffff', fontWeight: 600, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ fontSize: '0.725rem', color: 'var(--text-heading)', fontWeight: 600, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {mk.title}
                             </span>
                           </div>
-                          <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+                          <span style={{ fontSize: '0.725rem', fontWeight: 900, color: '#10b981', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
                             {formatCurrency(mk.actualCostAvoided)}
                           </span>
                         </Link>
@@ -1522,16 +1519,16 @@ export default function HistoricoKaizenPage() {
                     </div>
                   )}
                 </div>
-                <span style={{ fontSize: '0.625rem', color: '#64748b', padding: '0 0.35rem' }}>
+                <span style={{ fontSize: '0.625rem', color: 'var(--text-muted)', padding: '0 0.35rem' }}>
                   {msg.timestamp}
                 </span>
               </div>
             ))}
 
             {isAiThinking && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', backgroundColor: '#1e293b', borderRadius: '12px', width: 'fit-content' }}>
-                <Clock size={13} color="#c084fc" className="animate-spin" />
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Vasculhando memória de Kaizens...</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', backgroundColor: 'var(--bg-muted)', borderRadius: '12px', width: 'fit-content' }}>
+                <Clock size={13} color="#9333ea" className="animate-spin" />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Vasculhando memória de Kaizens...</span>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -1541,8 +1538,8 @@ export default function HistoricoKaizenPage() {
           <div
             style={{
               padding: '0.5rem 0.85rem',
-              backgroundColor: '#080d1a',
-              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              backgroundColor: 'var(--bg-muted)',
+              borderTop: '1px solid var(--border-subtle)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.35rem',
@@ -1561,9 +1558,9 @@ export default function HistoricoKaizenPage() {
                 type="button"
                 onClick={() => handleSendMessage(prompt)}
                 style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#cbd5e1',
+                  backgroundColor: 'var(--bg-surface-card)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-secondary)',
                   padding: '0.2rem 0.5rem',
                   borderRadius: '6px',
                   fontSize: '0.675rem',
@@ -1580,8 +1577,8 @@ export default function HistoricoKaizenPage() {
           <div
             style={{
               padding: '0.75rem 1rem',
-              backgroundColor: '#090e1a',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'var(--bg-surface-card)',
+              borderTop: '1px solid var(--border-subtle)',
             }}
           >
             <form
@@ -1598,9 +1595,6 @@ export default function HistoricoKaizenPage() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 style={{
-                  backgroundColor: '#060a13',
-                  borderColor: 'rgba(168, 85, 247, 0.35)',
-                  color: '#ffffff',
                   fontSize: '0.8125rem',
                 }}
               />

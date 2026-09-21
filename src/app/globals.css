@@ -728,7 +728,191 @@ th, td {
   background-color: rgba(241, 245, 249, 0.6) !important;
 }
 
-/* Modal Helper Styles for Light Mode */
+/* ==========================================================================
+   THEME: REGRAS MESTRES UNIVERSAIS PARA O TEMA CLARO ([data-theme="light"])
+   Garante que todos os cards, formulários, tabelas, modais e containers
+   com estilos inline escuros ou classes legadas se adaptem perfeitamente
+   ao tema claro sem afetar o tema escuro padrão.
+   ========================================================================== */
+
+/* 1. Cards e Superfícies Principais */
+[data-theme="light"] .card,
+[data-theme="light"] [class*="card"]:not(.btn):not([class*="badge"]),
+[data-theme="light"] .card-body {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .card:hover,
+[data-theme="light"] [class*="card"]:not(.btn):not([class*="badge"]):hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .card-header {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 2. Formulários, Inputs, Selects e Textareas */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select,
+[data-theme="light"] .form-textarea {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus,
+[data-theme="light"] .form-textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #0891b2 !important;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.2) !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .form-label {
+  color: #334155 !important;
+}
+
+/* 3. Botões e Ações */
+[data-theme="light"] .btn-secondary {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .btn-primary,
+[data-theme="light"] [class*="btn-primary"] {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .btn-success,
+[data-theme="light"] [class*="btn-success"] {
+  color: #ffffff !important;
+}
+
+/* 4. Sobrescrita de Backgrounds Escuros Inline no DOM (Hex e RGB) */
+[data-theme="light"] [style*="#0f172a"],
+[data-theme="light"] [style*="rgb(15, 23, 42)"],
+[data-theme="light"] [style*="#0d1527"],
+[data-theme="light"] [style*="rgb(13, 21, 39)"],
+[data-theme="light"] [style*="#0b1329"],
+[data-theme="light"] [style*="rgb(11, 19, 41)"],
+[data-theme="light"] [style*="#0c121e"],
+[data-theme="light"] [style*="#0c1322"],
+[data-theme="light"] [style*="#0c1424"],
+[data-theme="light"] [style*="#070b14"],
+[data-theme="light"] [style*="#040711"],
+[data-theme="light"] [style*="#080d1a"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Sub-containers menores, caixas de filtro, caixas de busca e sub-blocos inline */
+[data-theme="light"] [style*="#090e1a"],
+[data-theme="light"] [style*="rgb(9, 14, 26)"],
+[data-theme="light"] [style*="#090d16"],
+[data-theme="light"] [style*="rgb(9, 13, 22)"],
+[data-theme="light"] [style*="#020617"]:not(.btn):not([class*="btn"]),
+[data-theme="light"] [style*="rgb(2, 6, 23)"]:not(.btn):not([class*="btn"]),
+[data-theme="light"] [style*="#060a13"],
+[data-theme="light"] [style*="rgb(6, 10, 19)"],
+[data-theme="light"] [style*="#1e293b"]:not(.btn):not([class*="btn"]),
+[data-theme="light"] [style*="rgb(30, 41, 59)"]:not(.btn):not([class*="btn"]),
+[data-theme="light"] [style*="#131d35"],
+[data-theme="light"] [style*="rgb(19, 29, 53)"],
+[data-theme="light"] [style*="#131e38"],
+[data-theme="light"] [style*="rgb(19, 30, 56)"],
+[data-theme="light"] [style*="#101a33"],
+[data-theme="light"] [style*="rgb(16, 26, 51)"],
+[data-theme="light"] [style*="#101c36"],
+[data-theme="light"] [style*="rgb(16, 28, 54)"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* 5. Títulos e Textos Brancos Inline */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] [style*="color: #ffffff"]:not(.btn):not([class*="btn"]):not(.badge):not([class*="badge"]),
+[data-theme="light"] [style*="color: rgb(255, 255, 255)"]:not(.btn):not([class*="btn"]):not(.badge):not([class*="badge"]),
+[data-theme="light"] [style*="color: #f8fafc"]:not(.btn):not([class*="btn"]):not(.badge):not([class*="badge"]),
+[data-theme="light"] [style*="color: rgb(248, 250, 252)"]:not(.btn):not([class*="btn"]):not(.badge):not([class*="badge"]) {
+  color: #0f172a !important;
+}
+
+/* Textos secundários esmaecidos no tema escuro ajustados para contraste WCAG no tema claro */
+[data-theme="light"] [style*="color: #cbd5e1"],
+[data-theme="light"] [style*="color: rgb(203, 213, 225)"] {
+  color: #334155 !important;
+}
+
+[data-theme="light"] [style*="color: #e2e8f0"],
+[data-theme="light"] [style*="color: rgb(226, 232, 240)"] {
+  color: #475569 !important;
+}
+
+/* 6. Bordas Translúcidas Brancas do Dark Mode convertidas para Bordas Claras */
+[data-theme="light"] [style*="border: 1px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border: 1.5px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border: 2px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border-color: rgba(255, 255, 255"],
+[data-theme="light"] [style*="borderColor: rgba(255, 255, 255"],
+[data-theme="light"] [style*="border: 1px dashed rgba(255, 255, 255"],
+[data-theme="light"] [style*="border-top: 1px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border-bottom: 1px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border-left: 1px solid rgba(255, 255, 255"],
+[data-theme="light"] [style*="border-right: 1px solid rgba(255, 255, 255"] {
+  border-color: #e2e8f0 !important;
+}
+
+/* 7. Trilhas de barras de progresso e fundos de gráficos */
+[data-theme="light"] [style*="background-color: rgba(255, 255, 255, 0.03)"],
+[data-theme="light"] [style*="background-color: rgba(255, 255, 255, 0.05)"],
+[data-theme="light"] [style*="background-color: rgba(255, 255, 255, 0.06)"],
+[data-theme="light"] [style*="background-color: rgba(255, 255, 255, 0.08)"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* 8. Modais e Diálogos */
 [data-theme="light"] .modal-content-surface {
   background-color: #ffffff !important;
   border-color: #e2e8f0 !important;
@@ -739,16 +923,7 @@ th, td {
 [data-theme="light"] .modal-header-surface {
   background-color: #f8fafc !important;
   border-bottom-color: #e2e8f0 !important;
-}
-
-/* Card overrides for Light Mode */
-[data-theme="light"] .card {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="light"] .card-header {
-  background-color: #f8fafc !important;
-  border-bottom-color: #e2e8f0 !important;
+  color: #0f172a !important;
 }
 
 /* ================= GLOBAL PRINT STYLES ================= */
