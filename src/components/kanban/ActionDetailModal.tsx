@@ -390,12 +390,6 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     }
   };
 
-  const handleProceedWithOriginalActivity = () => {
-    if (pendingActivityPayload) {
-      commitNewActivityRecord(pendingActivityPayload);
-    }
-  };
-
   const handleConfirmPostpone = (newEndDate: string, reason: string) => {
     if (!action || !postponeModalActivity) return;
     dataService.postponeActivityDeadline(
@@ -1836,8 +1830,11 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
           originalText={pendingActivityPayload?.label || activityLabel}
           evaluation={qualityEvaluation}
           onAdopt={handleAdoptQualitySuggestion}
-          onProceedAnyway={handleProceedWithOriginalActivity}
           itemTypeLabel="Atividade 5W2H"
+          context={{
+            sectorName: pendingActivityPayload?.responsibleSectorName,
+            projectName: action?.title,
+          }}
         />
       )}
     </Modal>

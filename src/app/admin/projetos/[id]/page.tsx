@@ -1367,12 +1367,6 @@ export default function AdminProjectDetailPage() {
     }
   };
 
-  const handleProceedWithOriginalActivity = () => {
-    if (pendingActivityPayload) {
-      commitNewChecklistItem(pendingActivityPayload);
-    }
-  };
-
   const handleOpenPostponeModal = (item: ActionChecklistItem) => {
     if (isViewer) return;
     setPostponeModalActivity(item);
@@ -6637,8 +6631,11 @@ export default function AdminProjectDetailPage() {
           originalText={pendingActivityPayload?.label || newActionLabel}
           evaluation={qualityEvaluation}
           onAdopt={handleAdoptQualitySuggestion}
-          onProceedAnyway={handleProceedWithOriginalActivity}
           itemTypeLabel="Atividade 5W2H"
+          context={{
+            sectorName: pendingActivityPayload?.responsibleSectorName,
+            projectName: action?.title,
+          }}
         />
       )}
 

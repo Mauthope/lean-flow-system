@@ -389,8 +389,11 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
             setTitle(improvedText);
             executeCreation(improvedText);
           }}
-          onProceedAnyway={() => executeCreation(title.trim())}
           itemTypeLabel="Ação Lean"
+          context={{
+            sectorName: sectors.find((s) => s.id === originSectorId)?.name,
+            projectName: title,
+          }}
         />
       )}
     </Modal>
