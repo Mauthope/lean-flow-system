@@ -30,6 +30,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#06b6d4');
+  const [requiresTrackingDoc, setRequiresTrackingDoc] = useState(false);
+  const [trackingDocType, setTrackingDocType] = useState<'purchase_order' | 'work_order' | 'custom'>('custom');
+  const [trackingDocLabel, setTrackingDocLabel] = useState('');
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
 
   useEffect(() => {
@@ -38,20 +41,40 @@ export const SectorModal: React.FC<SectorModalProps> = ({
       setCode(sector.code);
       setDescription(sector.description || '');
       setColor(sector.color || '#06b6d4');
+      setRequiresTrackingDoc(Boolean(sector.requiresTrackingDoc));
+      setTrackingDocType(sector.trackingDocType || 'custom');
+      setTrackingDocLabel(sector.trackingDocLabel || '');
     } else {
       setName('');
       setCode('');
       setDescription('');
       setColor('#06b6d4');
+      setRequiresTrackingDoc(false);
+      setTrackingDocType('custom');
+      setTrackingDocLabel('');
     }
   }, [sector, isOpen]);
 
   const latestAssessment = sector ? dataService.getLatestSectorAssessment(sector.id) : undefined;
 
+  const handleApplyPreset = (type: 'purchase_order' | 'work_order') => {
+    setRequiresTrackingDoc(true);
+    setTrackingDocType(type);
+    if (type === 'purchase_order') {
+      setTrackingDocLabel('Número da Ordem de Compra (OC / Pedido ERP)');
+    } else {
+      setTrackingDocLabel('Número da Ordem de Serviço (OS Manutenção)');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const activeTenant = currentTenant || dataService.getCurrentTenant();
     const tenantId = activeTenant?.id || 'tenant_rafitec_01';
+
+    const finalLabel = requiresTrackingDoc
+      ? trackingDocLabel.trim() || (trackingDocType === 'purchase_order' ? 'Número da Ordem de Compra (OC)' : 'Número da Ordem de Serviço (OS)')
+      : undefined;
 
     if (sector) {
       dataService.updateSector(sector.id, {
@@ -59,6 +82,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
         code: code.trim().toUpperCase(),
         description: description.trim(),
         color,
+        requiresTrackingDoc,
+        trackingDocType,
+        trackingDocLabel: finalLabel,
       });
     } else {
       dataService.createSector({
@@ -67,6 +93,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
         code: code.trim().toUpperCase(),
         description: description.trim(),
         color,
+        requiresTrackingDoc,
+        trackingDocType,
+        trackingDocLabel: finalLabel,
       });
     }
 
@@ -149,6 +178,118 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                 style={{ width: '120px', fontFamily: 'var(--font-mono)' }}
               />
             </div>
+          </div>
+
+          {/* Seção: Controle de Auditoria Fabril & Rastreamento ERP (OC / OS) */}
+          <div
+            style={{
+              backgroundColor: '#0c121e',
+              border: requiresTrackingDoc ? '1.5px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '12px',
+              padding: '1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+              <div>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    color: requiresTrackingDoc ? '#fbbf24' : '#ffffff',
+                    cursor: 'pointer',
+                    margin: 0,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={requiresTrackingDoc}
+                    onChange={(e) => setRequiresTrackingDoc(e.target.checked)}
+                    style={{ width: '17px', height: '17px', accentColor: '#f59e0b', cursor: 'pointer' }}
+                  />
+                  <span>Exigir Documento de Rastreio (OC / OS) para Atividades deste Setor</span>
+                </label>
+                <p style={{ margin: '0.35rem 0 0 1.6rem', fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                  Auditorias internas de fábrica exigem vínculo formal: Compras deve apontar o número da Ordem de Compra (OC) e Manutenção o número da Ordem de Serviço (OS).
+                </p>
+              </div>
+
+              {requiresTrackingDoc && (
+                <span
+                  style={{
+                    fontSize: '0.6875rem',
+                    fontWeight: 800,
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    color: '#fbbf24',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '6px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Obrigatório no 5W2H
+                </span>
+              )}
+            </div>
+
+            {requiresTrackingDoc && (
+              <div style={{ paddingLeft: '1.6rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {/* Botões de Preenchimento Rápido */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: 600 }}>Modelos Prontos:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('purchase_order')}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      fontSize: '0.725rem',
+                      padding: '0.2rem 0.6rem',
+                      backgroundColor: trackingDocType === 'purchase_order' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                      color: trackingDocType === 'purchase_order' ? '#34d399' : '#cbd5e1',
+                      borderColor: trackingDocType === 'purchase_order' ? '#10b981' : 'rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    🛒 Compras (Nº da OC)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('work_order')}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      fontSize: '0.725rem',
+                      padding: '0.2rem 0.6rem',
+                      backgroundColor: trackingDocType === 'work_order' ? 'rgba(217, 119, 6, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                      color: trackingDocType === 'work_order' ? '#fbbf24' : '#cbd5e1',
+                      borderColor: trackingDocType === 'work_order' ? '#f59e0b' : 'rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    🔧 Manutenção (Nº da OS)
+                  </button>
+                </div>
+
+                {/* Input do Nome do Campo */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: '0 0 0.3rem 0' }}>
+                    Nome do Campo Exibido ao Agente / Chão de Fábrica:
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Ex: Número da Ordem de Compra (OC) ou Número da OS"
+                    value={trackingDocLabel}
+                    onChange={(e) => setTrackingDocLabel(e.target.value)}
+                    style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.15)', color: '#ffffff' }}
+                    required={requiresTrackingDoc}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Seção Exclusiva: Lean Assessment do Setor & Acesso Direto */}

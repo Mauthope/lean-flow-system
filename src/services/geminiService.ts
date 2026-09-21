@@ -1,4 +1,4 @@
-import { Tenant, LeanAction, ActionChecklistItem, StrategicObjective, SenseiStrategicAudit } from '@/lib/types';
+import { Tenant, LeanAction, ActionChecklistItem, StrategicObjective, SenseiStrategicAudit, ActionQualityEvaluation } from '@/lib/types';
 import { SENSEI_KNOWLEDGE_BASE } from '@/data/senseiKnowledgeBase';
 import { STORAGE_KEYS, getStoredData, setStoredData, INITIAL_TENANT } from '@/lib/storage';
 
@@ -1808,4 +1808,87 @@ export function getLocalFallbackStrategicAudit(
   };
 }
 
+// =============================================================================
+// POKA-YOKE DO SENSEI IA: AVALIAÇÃO DE QUALIDADE DE AÇÕES & ATIVIDADES 5W2H
+// =============================================================================
+export function evaluateActionQuality(
+  text: string,
+  context?: { sectorName?: string; projectName?: string }
+): ActionQualityEvaluation {
+  const trimmed = (text || '').trim();
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  const lower = trimmed.toLowerCase();
 
+  // 1. Verbos e termos anti-padrão no chão de fábrica
+  const vagueStarters = [
+    'treinar', 'treinamento', 'avisar', 'falar', 'conversar', 'reunir', 'reunião',
+    'comprar', 'adquirir', 'trocar', 'substituir', 'limpar', 'limpeza', 'organizar',
+    'fazer', 'executar', 'verificar', 'olhar', 'checar', 'acompanhar', 'melhorar', 'arrumar', 'ajustar'
+  ];
+
+  const leanKeywords = [
+    'pop', 'sop', 'lpp', '5s', 'smed', 'poka-yoke', 'poka yoke', 'kanban', 'kaizen',
+    'setup', 'gabarito', 'dispositivo', 'sensor', 'procedimento', 'rotina', 'auditoria',
+    'estudo de tempos', 'cronoanálise', 'pareto', '5 porquês', 'ishikawa', 'fluxo',
+    'parada', 'refugo', 'oee', 'tpm', 'eficácia', 'gargalo', 'meta', 'checklist', 'manutenção autônoma'
+  ];
+
+  const hasLeanKeyword = leanKeywords.some((k) => lower.includes(k));
+  const startsWithVague = vagueStarters.some((v) => lower.startsWith(v));
+  const isVeryShort = words.length < 3;
+  const isShort = words.length < 5;
+
+  let isGeneric = false;
+  let score = 90;
+  let reason = '';
+  let suggestedText = trimmed;
+  const sector = context?.sectorName || 'Fábrica';
+
+  if (isVeryShort) {
+    isGeneric = true;
+    score = 25;
+    reason = 'Ação excessivamente curta e sem método. Falta descrever o entregável técnico e a ferramenta Lean.';
+  } else if (startsWithVague && !hasLeanKeyword && words.length < 7) {
+    isGeneric = true;
+    score = 45;
+    reason = 'Ação com redação vaga/banal. Ações sem procedimento de sustentação (POP/SOP/5S) são reprovadas em auditorias de SGQ e IATF.';
+  } else if (!hasLeanKeyword && words.length < 5) {
+    isGeneric = true;
+    score = 55;
+    reason = 'Falta clareza sobre o método de controle ou critério de verificação técnica da atividade.';
+  }
+
+  // Gerador inteligente de melhoria técnica no padrão Lean 5W2H
+  if (isGeneric) {
+    if (lower.includes('trein') || lower.startsWith('capacit')) {
+      suggestedText = `Capacitar operadores do posto de trabalho no procedimento padrão (POP/SOP) com avaliação prática de retenção no Gemba`;
+    } else if (lower.includes('compr') || lower.includes('adquir') || lower.includes('pedir')) {
+      const item = trimmed.replace(/^(comprar|adquirir|pedir)\s+/i, '');
+      suggestedText = `Emitir requisição técnica e homologar cotação de ${item || 'itens necessários'} com memorial de especificação e prazo de entrega acordado`;
+    } else if (lower.includes('manuten') || lower.includes('consert') || lower.includes('repar') || lower.includes('troc')) {
+      suggestedText = `Abrir Ordem de Serviço (OS) para intervenção mecânica/elétrica com plano de manutenção autônoma (TPM) e teste de liberação`;
+    } else if (lower.includes('limp') || lower.includes('organiz') || lower.includes('5s')) {
+      suggestedText = `Padronizar demarcação visual no posto de trabalho (5S / Gestão Visual) com checklist diário de auditoria operacional`;
+    } else if (lower.includes('avis') || lower.includes('fal') || lower.includes('comunic')) {
+      suggestedText = `Alinhar com a liderança no diálogo diário de melhoria (DDS / Reunião de 5 min) e fixar padrão visual no quadro de gestão`;
+    } else if (lower.includes('verific') || lower.includes('chec') || lower.includes('acompanh')) {
+      suggestedText = `Executar auditoria amostral de conformidade com formulário de verificação e registro de causa raiz no Gemba`;
+    } else if (lower.includes('crono') || lower.includes('temp')) {
+      suggestedText = `Realizar estudo de tempos e métodos (cronoanálise) cronometrando 5 ciclos de trabalho para estratificar VA e NVA`;
+    } else {
+      suggestedText = `Executar ${trimmed.toLowerCase()} conforme especificação técnica do setor ${sector}, validando eficácia com o líder operacional`;
+    }
+  }
+
+  return {
+    isGeneric,
+    score,
+    reason,
+    suggestedText,
+    tips: isGeneric ? [
+      'Indique o documento ou ferramenta (ex: SOP, POP, OS, OC, 5S, Poka-Yoke).',
+      'Defina um critério observável de conclusão ao invés de apenas uma intenção verbal.',
+      'Auditores do SGQ/IATF exigem entregáveis mensuráveis no 5W2H.'
+    ] : undefined,
+  };
+}

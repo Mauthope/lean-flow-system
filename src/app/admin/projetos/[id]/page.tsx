@@ -4,10 +4,14 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel, getDefaultMeasurementDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
+import { ActivityAttachmentModal } from '@/components/kanban/ActivityAttachmentModal';
+import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
+import { evaluateActionQuality } from '@/services/geminiService';
 import {
   ArrowLeft,
   Printer,
@@ -166,6 +170,23 @@ export default function AdminProjectDetailPage() {
   const [newActionSector, setNewActionSector] = useState('');
   const [newActionStart, setNewActionStart] = useState('');
   const [newActionEnd, setNewActionEnd] = useState('');
+  const [newActionTrackingDoc, setNewActionTrackingDoc] = useState('');
+
+  // Modais de Prazos, Anexos e Poka-Yoke do Sensei
+  const [postponeModalActivity, setPostponeModalActivity] = useState<ActionChecklistItem | null>(null);
+  const [attachmentModalActivity, setAttachmentModalActivity] = useState<ActionChecklistItem | null>(null);
+  const [pokaYokeModalOpen, setPokaYokeModalOpen] = useState(false);
+  const [qualityEvaluation, setQualityEvaluation] = useState<ActionQualityEvaluation | null>(null);
+  const [pendingActivityPayload, setPendingActivityPayload] = useState<{
+    label: string;
+    responsibleName: string;
+    responsibleSectorName: string;
+    responsibleSectorId?: string;
+    startDate?: string;
+    endDate?: string;
+    durationDays?: number;
+    trackingDocNumber?: string;
+  } | null>(null);
 
   const availableSectors = useMemo(() => {
     try {
@@ -1248,31 +1269,33 @@ export default function AdminProjectDetailPage() {
     refreshData();
   };
 
-  const handleAddChecklistItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newActionLabel.trim() || !action) return;
+  const trackingReq = useMemo(() => {
+    return dataService.checkSectorRequiresTrackingDoc(newActionSector, action?.tenantId);
+  }, [newActionSector, action?.tenantId]);
 
-    const chosenSector = newActionSector.trim() || action.originSectorName || 'Setor do Projeto';
-    const foundSector = availableSectors.find((s) => s.name.toLowerCase() === chosenSector.toLowerCase());
-
-    let calcDurationDays: number | undefined = undefined;
-    if (newActionStart && newActionEnd) {
-      const s = new Date(newActionStart).getTime();
-      const e = new Date(newActionEnd).getTime();
-      if (e >= s) {
-        calcDurationDays = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)));
-      }
-    }
-
+  const commitNewChecklistItem = (itemData: {
+    label: string;
+    responsibleName: string;
+    responsibleSectorName: string;
+    responsibleSectorId?: string;
+    startDate?: string;
+    endDate?: string;
+    durationDays?: number;
+    trackingDocNumber?: string;
+  }) => {
+    if (!action) return;
     const newItem: ActionChecklistItem = {
       id: 'ck_' + Date.now(),
-      label: newActionLabel.trim(),
-      responsibleName: newActionResp.trim() || action.assignedAgentName || 'Agente',
-      responsibleSectorName: chosenSector,
-      responsibleSectorId: foundSector?.id,
-      startDate: newActionStart.trim() || undefined,
-      endDate: newActionEnd.trim() || undefined,
-      durationDays: calcDurationDays,
+      label: itemData.label,
+      responsibleName: itemData.responsibleName,
+      responsibleSectorName: itemData.responsibleSectorName,
+      responsibleSectorId: itemData.responsibleSectorId,
+      startDate: itemData.startDate,
+      endDate: itemData.endDate,
+      originalEndDate: itemData.endDate,
+      postponedCount: 0,
+      trackingDocNumber: itemData.trackingDocNumber,
+      durationDays: itemData.durationDays,
       status: 'pendente',
       completed: false,
     };
@@ -1285,6 +1308,117 @@ export default function AdminProjectDetailPage() {
     setNewActionSector('');
     setNewActionStart('');
     setNewActionEnd('');
+    setNewActionTrackingDoc('');
+    setPokaYokeModalOpen(false);
+    setQualityEvaluation(null);
+    setPendingActivityPayload(null);
+    refreshData();
+  };
+
+  const handleAddChecklistItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newActionLabel.trim() || !action) return;
+
+    const chosenSector = newActionSector.trim() || action.originSectorName || 'Setor do Projeto';
+    const foundSector = availableSectors.find((s) => s.name.toLowerCase() === chosenSector.toLowerCase());
+
+    // Validação de documento de rastreio (OC / OS) para compras / manutenção
+    const req = dataService.checkSectorRequiresTrackingDoc(chosenSector, action.tenantId);
+    if (req.required && !newActionTrackingDoc.trim()) {
+      alert(`Atenção: O setor "${chosenSector}" exige obrigatoriamente o preenchimento de: ${req.label}`);
+      return;
+    }
+
+    let calcDurationDays: number | undefined = undefined;
+    if (newActionStart && newActionEnd) {
+      const s = new Date(newActionStart).getTime();
+      const e = new Date(newActionEnd).getTime();
+      if (e >= s) {
+        calcDurationDays = Math.max(1, Math.round((e - s) / (1000 * 60 * 60 * 24)));
+      }
+    }
+
+    const payload = {
+      label: newActionLabel.trim(),
+      responsibleName: newActionResp.trim() || action.assignedAgentName || 'Agente',
+      responsibleSectorName: chosenSector,
+      responsibleSectorId: foundSector?.id,
+      startDate: newActionStart.trim() || undefined,
+      endDate: newActionEnd.trim() || undefined,
+      durationDays: calcDurationDays,
+      trackingDocNumber: newActionTrackingDoc.trim() || undefined,
+    };
+
+    // Poka-Yoke do Sensei IA: Avaliar se a ação é genérica
+    const quality = evaluateActionQuality(newActionLabel, { sectorName: chosenSector, projectName: action.title });
+    if (quality.isGeneric) {
+      setQualityEvaluation(quality);
+      setPendingActivityPayload(payload);
+      setPokaYokeModalOpen(true);
+      return;
+    }
+
+    commitNewChecklistItem(payload);
+  };
+
+  const handleAdoptQualitySuggestion = (improvedText: string) => {
+    if (pendingActivityPayload) {
+      commitNewChecklistItem({ ...pendingActivityPayload, label: improvedText });
+    }
+  };
+
+  const handleProceedWithOriginalActivity = () => {
+    if (pendingActivityPayload) {
+      commitNewChecklistItem(pendingActivityPayload);
+    }
+  };
+
+  const handleOpenPostponeModal = (item: ActionChecklistItem) => {
+    if (isViewer) return;
+    setPostponeModalActivity(item);
+  };
+
+  const handleConfirmPostpone = (newEndDate: string, reason: string) => {
+    if (!action || !postponeModalActivity) return;
+    const updated = dataService.postponeActivityDeadline(
+      action.id,
+      postponeModalActivity.id,
+      newEndDate,
+      reason,
+      currentUser?.name || 'Agente Lean'
+    );
+    setAction(updated);
+    setChecklistItems(updated.checklist || []);
+    setPostponeModalActivity(null);
+    refreshData();
+  };
+
+  const handleOpenAttachmentModal = (item: ActionChecklistItem) => {
+    setAttachmentModalActivity(item);
+  };
+
+  const handleSaveActivityAttachment = (attachment: ActivityAttachment) => {
+    if (!action || !attachmentModalActivity) return;
+    const updated = dataService.attachFileToActivity(
+      action.id,
+      attachmentModalActivity.id,
+      attachment
+    );
+    setAction(updated);
+    setChecklistItems(updated.checklist || []);
+    setAttachmentModalActivity(null);
+    refreshData();
+  };
+
+  const handleRemoveActivityAttachment = () => {
+    if (!action || !attachmentModalActivity) return;
+    const updated = dataService.removeActivityAttachment(
+      action.id,
+      attachmentModalActivity.id
+    );
+    setAction(updated);
+    setChecklistItems(updated.checklist || []);
+    setAttachmentModalActivity(null);
     refreshData();
   };
 
@@ -2753,31 +2887,136 @@ export default function AdminProjectDetailPage() {
                                 )}
                               </span>
                             )}
+                            {item.trackingDocNumber && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 800,
+                                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                                  color: '#34d399',
+                                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                                }}
+                                title="Número de documento de controle (Auditoria ERP)"
+                              >
+                                📄 {item.trackingDocNumber}
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: '#94a3b8', flexWrap: 'wrap' }}>
                             <span>👤 {item.responsibleName || 'Agente'}</span>
                             {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
-                            {item.endDate && <span>🏁 Fim: {formatDate(item.endDate)}</span>}
+                            {item.endDate && (
+                              <span>
+                                🏁 Fim: <strong style={{ color: '#ffffff' }}>{formatDate(item.endDate)}</strong>
+                              </span>
+                            )}
+                            {(item.postponedCount || 0) > 0 && (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  padding: '0.1rem 0.45rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.6875rem',
+                                  fontWeight: 700,
+                                  backgroundColor: 'rgba(245, 158, 11, 0.18)',
+                                  color: '#fbbf24',
+                                  border: '1px solid rgba(245, 158, 11, 0.35)',
+                                }}
+                                title={`Reprogramada ${item.postponedCount}x para auditoria interna. Motivo: ${item.postponementReason || 'Não informado'}`}
+                              >
+                                ⚠️ Reprogramada ({item.postponedCount}x • Orig: {item.originalEndDate ? formatDate(item.originalEndDate) : '—'})
+                              </span>
+                            )}
                             {item.durationDays && item.durationDays > 0 && (
                               <span style={{ color: '#38bdf8', fontWeight: 600 }}>⏱️ {item.durationDays} dias</span>
+                            )}
+                            {item.attachment && (
+                              <div
+                                onClick={() => handleOpenAttachmentModal(item)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  padding: '0.1rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                  color: '#22d3ee',
+                                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                                  cursor: 'pointer',
+                                }}
+                                title="Clique para visualizar ou baixar o anexo desta atividade"
+                              >
+                                <Paperclip size={12} />
+                                <span>{item.attachment.name}</span>
+                              </div>
                             )}
                           </div>
                         </div>
                       </div>
 
-                      <span
-                        style={{
-                          fontSize: '0.725rem',
-                          fontWeight: 800,
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '6px',
-                          backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                          color: item.completed ? '#34d399' : '#94a3b8',
-                          border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
-                        }}
-                      >
-                        {item.completed ? 'Concluída ✓' : 'Pendente'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        {!isViewer && !item.completed && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenPostponeModal(item)}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.7rem',
+                              padding: '0.25rem 0.55rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              color: '#fbbf24',
+                              borderColor: 'rgba(245, 158, 11, 0.35)',
+                              backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                            }}
+                            title="Prorrogar prazo desta atividade antes do vencimento para manter 100% de conformidade com auditorias de SGQ/IATF"
+                          >
+                            <Calendar size={12} /> Prorrogar
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAttachmentModal(item)}
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.25rem 0.55rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            color: item.attachment ? '#34d399' : '#cbd5e1',
+                            borderColor: item.attachment ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.12)',
+                          }}
+                          title={item.attachment ? 'Ver / alterar anexo ou cronoanálise' : 'Anexar cronoanálise ou laudo técnico'}
+                        >
+                          <Paperclip size={12} /> {item.attachment ? 'Anexo ✓' : 'Anexar'}
+                        </button>
+
+                        <span
+                          style={{
+                            fontSize: '0.725rem',
+                            fontWeight: 800,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            backgroundColor: item.completed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                            color: item.completed ? '#34d399' : '#94a3b8',
+                            border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                          }}
+                        >
+                          {item.completed ? 'Concluída ✓' : 'Pendente'}
+                        </span>
+                      </div>
                     </div>
                   );
                 })
@@ -2834,8 +3073,8 @@ export default function AdminProjectDetailPage() {
                     />
                     <datalist id="action-sectors-list">
                       {action?.originSectorName && <option value={action.originSectorName} label="Setor do Projeto" />}
-                      <option value="Compras / Suprimentos" label="Dependência Externa" />
-                      <option value="Manutenção Preditiva & TPM" label="Dependência Externa" />
+                      <option value="Compras / Suprimentos" label="Dependência Externa (Exige OC)" />
+                      <option value="Manutenção Preditiva & TPM" label="Dependência Externa (Exige OS)" />
                       <option value="Controladoria & Finanças" label="Dependência Externa" />
                       <option value="Qualidade & Processos" label="Dependência Externa" />
                       <option value="Engenharia / Ferramentaria" label="Dependência Externa" />
@@ -2845,6 +3084,23 @@ export default function AdminProjectDetailPage() {
                       ))}
                     </datalist>
                   </div>
+
+                  {trackingReq.required && (
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 800 }}>
+                        {trackingReq.label}: *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control form-control-sm"
+                        placeholder={trackingReq.docType === 'purchase_order' ? 'Ex: OC-48201' : 'Ex: OS-9912'}
+                        value={newActionTrackingDoc}
+                        onChange={(e) => setNewActionTrackingDoc(e.target.value)}
+                        style={{ backgroundColor: '#060a13', borderColor: 'rgba(245, 158, 11, 0.6)', color: '#ffffff', fontWeight: 600 }}
+                        required
+                      />
+                    </div>
+                  )}
 
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Data Início:</label>
@@ -6344,6 +6600,45 @@ export default function AdminProjectDetailPage() {
             yokotenReplication,
           }}
           onApplyRefinement={handleApplySenseiRefinement}
+        />
+      )}
+
+      {/* Modal de Prorrogação de Prazo para Auditoria */}
+      {postponeModalActivity && (
+        <PostponeDeadlineModal
+          isOpen={Boolean(postponeModalActivity)}
+          onClose={() => setPostponeModalActivity(null)}
+          activityTitle={postponeModalActivity.label}
+          currentEndDate={postponeModalActivity.endDate || postponeModalActivity.originalEndDate}
+          onConfirm={handleConfirmPostpone}
+        />
+      )}
+
+      {/* Modal de Anexos da Atividade (Laudos, Desenhos e Cronoanálise) */}
+      {attachmentModalActivity && (
+        <ActivityAttachmentModal
+          isOpen={Boolean(attachmentModalActivity)}
+          onClose={() => setAttachmentModalActivity(null)}
+          activityTitle={attachmentModalActivity.label}
+          currentAttachment={attachmentModalActivity.attachment}
+          onSaveAttachment={handleSaveActivityAttachment}
+          onRemoveAttachment={handleRemoveActivityAttachment}
+        />
+      )}
+
+      {/* Poka-Yoke do Sensei IA: Ações Genéricas */}
+      {pokaYokeModalOpen && (
+        <SenseiActionPokaYokeModal
+          isOpen={pokaYokeModalOpen}
+          onClose={() => {
+            setPokaYokeModalOpen(false);
+            setQualityEvaluation(null);
+          }}
+          originalText={pendingActivityPayload?.label || newActionLabel}
+          evaluation={qualityEvaluation}
+          onAdopt={handleAdoptQualitySuggestion}
+          onProceedAnyway={handleProceedWithOriginalActivity}
+          itemTypeLabel="Atividade 5W2H"
         />
       )}
 

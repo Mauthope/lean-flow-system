@@ -43,6 +43,9 @@ export interface Sector {
   description?: string;
   color: string; // e.g. '#2563eb'
   iconName?: string;
+  requiresTrackingDoc?: boolean; // Exige OC (Compras), OS (Manutenção) ou controle ERP
+  trackingDocType?: 'purchase_order' | 'work_order' | 'custom';
+  trackingDocLabel?: string;     // Ex: "Número da Ordem de Compra (OC)", "Número da Ordem de Serviço (OS)"
   createdAt: string;
 }
 
@@ -75,6 +78,24 @@ export interface ActionNote {
 
 export type ActivityStatus = 'pendente' | 'em_andamento' | 'concluida';
 
+export interface ActivityAttachment {
+  name: string;
+  url: string;
+  fileType: string;
+  sizeFormatted?: string;
+  uploadedAt: string;
+  isCronoanalise?: boolean;
+  cronoanaliseId?: string;
+}
+
+export interface ActionQualityEvaluation {
+  isGeneric: boolean;
+  score: number; // 0 a 100
+  reason: string;
+  suggestedText: string;
+  tips?: string[];
+}
+
 export interface ActionChecklistItem {
   id: string;
   label: string;
@@ -83,11 +104,20 @@ export interface ActionChecklistItem {
   endDate?: string;   // Data no formato dd/mm/aaaa ou YYYY-MM-DD
   plannedStart?: string;
   plannedEnd?: string;
+  // Auditoria Interna de Prazos & Prorrogações
+  originalEndDate?: string;   // Data de término planejada original
+  postponedCount?: number;    // Quantidade de prorrogações realizadas
+  postponementReason?: string;// Justificativa para a auditoria
+  postponedAt?: string;       // Timestamp da prorrogação
+  postponedBy?: string;       // Nome do usuário que prorrogou
   status?: ActivityStatus;
   responsibleName?: string;
   responsible?: string;
   responsibleSectorId?: string;   // Setor responsável (ex: Compras, Manutenção, Produção)
   responsibleSectorName?: string; // Nome do setor responsável
+  trackingDocNumber?: string;     // Nº da Ordem de Compra (OC) ou Ordem de Serviço (OS)
+  attachment?: ActivityAttachment;// Anexo de evidência / laudo / planilha
+  linkedCronoanaliseId?: string;  // Vínculo com Cronoanálise realizada no sistema
   observations?: string; // Notas de padronização / lições aprendidas
   durationHours?: number; // Tempo em horas
   durationDays?: number;  // Tempo decorrido em dias

@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
+import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, ASSESSMENT_DIMENSIONS_CONFIG, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
 import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
+import { ActivityAttachmentModal } from '@/components/kanban/ActivityAttachmentModal';
+import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
+import { evaluateActionQuality, evaluateProjectStrategicAlignment } from '@/services/geminiService';
 import {
   DollarSign,
   Clock,
@@ -32,9 +36,9 @@ import {
   ExternalLink,
   Target,
   Eye,
+  Paperclip,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { evaluateProjectStrategicAlignment } from '@/services/geminiService';
 
 interface ActionDetailModalProps {
   action: LeanAction | null;
@@ -62,9 +66,29 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   const [activityStartDate, setActivityStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [activityEndDate, setActivityEndDate] = useState('');
   const [activityResponsible, setActivityResponsible] = useState(currentUser?.name || '');
+  const [activitySector, setActivitySector] = useState('');
+  const [activityTrackingDoc, setActivityTrackingDoc] = useState('');
   const [activityHours, setActivityHours] = useState('');
   const [activityObservations, setActivityObservations] = useState('');
   const [activityStatus, setActivityStatus] = useState<ActivityStatus>('pendente');
+
+  // Modais de Prazos, Anexos e Poka-Yoke do Sensei
+  const [postponeModalActivity, setPostponeModalActivity] = useState<ActionChecklistItem | null>(null);
+  const [attachmentModalActivity, setAttachmentModalActivity] = useState<ActionChecklistItem | null>(null);
+  const [pokaYokeModalOpen, setPokaYokeModalOpen] = useState(false);
+  const [qualityEvaluation, setQualityEvaluation] = useState<ActionQualityEvaluation | null>(null);
+  const [pendingActivityPayload, setPendingActivityPayload] = useState<{
+    label: string;
+    startDate?: string;
+    endDate?: string;
+    responsibleName?: string;
+    responsibleSectorName?: string;
+    responsibleSectorId?: string;
+    durationHours?: number;
+    observations?: string;
+    status?: ActivityStatus;
+    trackingDocNumber?: string;
+  } | null>(null);
 
   // Completion Form States & Cost Breakdown
   const [actualCostInput, setActualCostInput] = useState<string>('');
@@ -85,6 +109,18 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
   const [evaluatingAudit, setEvaluatingAudit] = useState(false);
   const allStrategicObjectives = React.useMemo(() => dataService.getStrategicObjectives(), [isOpen]);
+
+  const availableSectors = useMemo(() => {
+    try {
+      return dataService.getSectors(action?.tenantId);
+    } catch {
+      return [];
+    }
+  }, [action?.tenantId, isOpen]);
+
+  const trackingReq = useMemo(() => {
+    return dataService.checkSectorRequiresTrackingDoc(activitySector, action?.tenantId);
+  }, [activitySector, action?.tenantId]);
 
   if (!action) return null;
 
@@ -260,28 +296,137 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     onUpdate();
   };
 
-  const handleAddActivityRecord = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activityLabel.trim() || isViewer) return;
+  const commitNewActivityRecord = (itemData: {
+    label: string;
+    startDate?: string;
+    endDate?: string;
+    responsibleName?: string;
+    responsibleSectorName?: string;
+    responsibleSectorId?: string;
+    durationHours?: number;
+    observations?: string;
+    status?: ActivityStatus;
+    trackingDocNumber?: string;
+  }) => {
+    if (!action) return;
 
     dataService.addActivityRecord(action.id, {
-      label: activityLabel.trim(),
-      startDate: activityStartDate || undefined,
-      endDate: activityEndDate || undefined,
-      responsibleName: activityResponsible.trim() || currentUser?.name || undefined,
-      durationHours: activityHours ? parseFloat(activityHours) : undefined,
-      observations: activityObservations.trim() || undefined,
-      status: activityStatus,
+      label: itemData.label,
+      startDate: itemData.startDate,
+      endDate: itemData.endDate,
+      responsibleName: itemData.responsibleName,
+      responsibleSectorName: itemData.responsibleSectorName,
+      responsibleSectorId: itemData.responsibleSectorId,
+      durationHours: itemData.durationHours,
+      observations: itemData.observations,
+      status: itemData.status || 'pendente',
+      trackingDocNumber: itemData.trackingDocNumber,
     });
 
     // Reset Form
     setActivityLabel('');
     setActivityStartDate(new Date().toISOString().split('T')[0]);
     setActivityEndDate('');
+    setActivityResponsible(currentUser?.name || '');
+    setActivitySector('');
+    setActivityTrackingDoc('');
     setActivityHours('');
     setActivityObservations('');
     setActivityStatus('pendente');
     setShowActivityForm(false);
+    setPokaYokeModalOpen(false);
+    setQualityEvaluation(null);
+    setPendingActivityPayload(null);
+    onUpdate();
+  };
+
+  const handleAddActivityRecord = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activityLabel.trim() || isViewer || !action) return;
+
+    const chosenSector = activitySector.trim() || action.originSectorName || 'Geral';
+    const foundSector = availableSectors.find(
+      (s) => s.name.toLowerCase() === chosenSector.toLowerCase() || s.id === chosenSector
+    );
+
+    // Validação de documento de rastreio (OC / OS) para compras / manutenção
+    const req = dataService.checkSectorRequiresTrackingDoc(chosenSector, action.tenantId);
+    if (req.required && !activityTrackingDoc.trim()) {
+      alert(`Atenção: O setor "${chosenSector}" exige obrigatoriamente o preenchimento de: ${req.label}`);
+      return;
+    }
+
+    const payload = {
+      label: activityLabel.trim(),
+      startDate: activityStartDate || undefined,
+      endDate: activityEndDate || undefined,
+      responsibleName: activityResponsible.trim() || currentUser?.name || undefined,
+      responsibleSectorName: foundSector?.name || chosenSector,
+      responsibleSectorId: foundSector?.id,
+      durationHours: activityHours ? parseFloat(activityHours) : undefined,
+      observations: activityObservations.trim() || undefined,
+      status: activityStatus,
+      trackingDocNumber: activityTrackingDoc.trim() || undefined,
+    };
+
+    // Poka-Yoke do Sensei IA: Avaliar se a ação é genérica
+    const quality = evaluateActionQuality(activityLabel, {
+      sectorName: foundSector?.name || chosenSector,
+      projectName: action.title,
+    });
+    if (quality.isGeneric) {
+      setQualityEvaluation(quality);
+      setPendingActivityPayload(payload);
+      setPokaYokeModalOpen(true);
+      return;
+    }
+
+    commitNewActivityRecord(payload);
+  };
+
+  const handleAdoptQualitySuggestion = (improvedText: string) => {
+    if (pendingActivityPayload) {
+      commitNewActivityRecord({ ...pendingActivityPayload, label: improvedText });
+    }
+  };
+
+  const handleProceedWithOriginalActivity = () => {
+    if (pendingActivityPayload) {
+      commitNewActivityRecord(pendingActivityPayload);
+    }
+  };
+
+  const handleConfirmPostpone = (newEndDate: string, reason: string) => {
+    if (!action || !postponeModalActivity) return;
+    dataService.postponeActivityDeadline(
+      action.id,
+      postponeModalActivity.id,
+      newEndDate,
+      reason,
+      currentUser?.name || 'Agente Lean'
+    );
+    setPostponeModalActivity(null);
+    onUpdate();
+  };
+
+  const handleSaveActivityAttachment = (attachment: ActivityAttachment) => {
+    if (!action || !attachmentModalActivity) return;
+    dataService.attachFileToActivity(
+      action.id,
+      attachmentModalActivity.id,
+      attachment
+    );
+    setAttachmentModalActivity(null);
+    onUpdate();
+  };
+
+  const handleRemoveActivityAttachment = () => {
+    if (!action || !attachmentModalActivity) return;
+    dataService.removeActivityAttachment(
+      action.id,
+      attachmentModalActivity.id
+    );
+    setAttachmentModalActivity(null);
     onUpdate();
   };
 
@@ -1141,17 +1286,17 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <ListTodo size={16} color="#2563eb" />
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0f172a' }}>
-                  Cadastrar Nova Atividade / Etapa de Padronização
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#f8fafc' }}>
+                  Cadastrar Nova Atividade / Etapa 5W2H
                 </h4>
               </div>
 
               <div className="form-group" style={{ margin: '0 0 0.875rem 0' }}>
-                <label className="form-label">Descrição / Nome da Atividade:</label>
+                <label className="form-label" style={{ color: '#cbd5e1' }}>Descrição / Nome da Atividade (5W2H - O Que Fazer):</label>
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="Ex: Treinamento dos operadores no procedimento padrão SOP-04..."
+                  placeholder="Ex: Instalar sensor de presença na calha para evitar acúmulo de matéria..."
                   value={activityLabel}
                   onChange={(e) => setActivityLabel(e.target.value)}
                   required
@@ -1160,7 +1305,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.875rem', marginBottom: '0.875rem' }}>
                 <div>
-                  <label className="form-label">Data de Início:</label>
+                  <label className="form-label" style={{ color: '#cbd5e1' }}>Data de Início:</label>
                   <input
                     type="date"
                     className="form-control"
@@ -1170,7 +1315,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="form-label">Data de Fim (Previsão/Real):</label>
+                  <label className="form-label" style={{ color: '#cbd5e1' }}>Data de Fim (Previsão / Prazo):</label>
                   <input
                     type="date"
                     className="form-control"
@@ -1180,7 +1325,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="form-label">Responsável:</label>
+                  <label className="form-label" style={{ color: '#cbd5e1' }}>Responsável (Quem):</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1189,10 +1334,63 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                     onChange={(e) => setActivityResponsible(e.target.value)}
                   />
                 </div>
+
+                <div>
+                  <label className="form-label" style={{ color: '#cbd5e1' }}>Setor Responsável (Onde):</label>
+                  <select
+                    className="form-select"
+                    value={activitySector}
+                    onChange={(e) => setActivitySector(e.target.value)}
+                    style={{ backgroundColor: '#0f172a', color: '#f8fafc', borderColor: 'rgba(255, 255, 255, 0.15)' }}
+                  >
+                    <option value="">Selecione o Setor...</option>
+                    {availableSectors.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} {s.requiresTrackingDoc ? `(Exige ${s.trackingDocLabel || 'Doc'})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
+              {/* Dynamic Tracking Doc Input if required by sector */}
+              {trackingReq.required && (
+                <div
+                  style={{
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '8px',
+                    padding: '0.75rem 1rem',
+                    marginBottom: '0.875rem',
+                  }}
+                >
+                  <label className="form-label" style={{ color: '#f87171', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <ShieldAlert size={15} />
+                    {trackingReq.label} (Obrigatório para Auditoria):
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder={
+                      trackingReq.docType === 'purchase_order'
+                        ? 'Ex: OC-2026-9814'
+                        : trackingReq.docType === 'work_order'
+                        ? 'Ex: OS-4402-MANUT'
+                        : 'Ex: Nº do documento de controle...'
+                    }
+                    value={activityTrackingDoc}
+                    onChange={(e) => setActivityTrackingDoc(e.target.value)}
+                    required
+                    style={{ borderColor: '#ef4444' }}
+                  />
+                  <span style={{ fontSize: '0.725rem', color: '#fca5a5', marginTop: '0.25rem', display: 'block' }}>
+                    O setor {activitySector} requer comprovação e número de rastreabilidade para conformidade em auditorias IATF/SGQ.
+                  </span>
+                </div>
+              )}
+
               <div className="form-group" style={{ margin: '0 0 1rem 0' }}>
-                <label className="form-label">Observações Técnicas / Lições de Padronização:</label>
+                <label className="form-label" style={{ color: '#cbd5e1' }}>Observações Técnicas / Lições de Padronização:</label>
                 <textarea
                   className="form-textarea"
                   rows={2}
@@ -1310,7 +1508,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                           {act.label}
                         </h4>
 
-                        {/* Dates Row */}
+                        {/* Dates & Audit Badges Row */}
                         <div
                           style={{
                             display: 'flex',
@@ -1337,6 +1535,80 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                           )}
                         </div>
 
+                        {/* Sector, Tracking Doc, Reprogrammed & Attachment Badges */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.45rem' }}>
+                          {act.responsibleSectorName && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                                color: '#2563eb',
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(59, 130, 246, 0.25)',
+                              }}
+                            >
+                              🏢 {act.responsibleSectorName}
+                            </span>
+                          )}
+
+                          {act.trackingDocNumber && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                color: '#059669',
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(16, 185, 129, 0.25)',
+                              }}
+                            >
+                              📋 Doc: {act.trackingDocNumber}
+                            </span>
+                          )}
+
+                          {act.postponedCount && act.postponedCount > 0 ? (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                                color: '#d97706',
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '4px',
+                                border: '1px solid rgba(245, 158, 11, 0.3)',
+                              }}
+                              title={`Reprogramada ${act.postponedCount}x para auditoria interna. Motivo: ${act.postponementReason || 'Não informado'}`}
+                            >
+                              ⚠️ Reprogramada ({act.postponedCount}x) {act.originalEndDate ? `[Original: ${formatDate(act.originalEndDate)}]` : ''}
+                            </span>
+                          ) : null}
+
+                          {act.attachment && (
+                            <span
+                              onClick={() => setAttachmentModalActivity(act)}
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                backgroundColor: act.attachment.isCronoanalise ? 'rgba(168, 85, 247, 0.12)' : 'rgba(6, 182, 212, 0.12)',
+                                color: act.attachment.isCronoanalise ? '#9333ea' : '#0891b2',
+                                padding: '0.12rem 0.5rem',
+                                borderRadius: '4px',
+                                border: act.attachment.isCronoanalise ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(6, 182, 212, 0.3)',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                              }}
+                              title="Clique para visualizar ou alterar o anexo"
+                            >
+                              <Paperclip size={11} /> {act.attachment.name} {act.attachment.isCronoanalise ? '(Cronoanálise)' : ''}
+                            </span>
+                          )}
+                        </div>
+
                         {/* Observations snippet */}
                         {act.observations && (
                           <div
@@ -1356,7 +1628,47 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                       {/* Action buttons on activity */}
                       {!isViewer && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {/* Prorrogar Prazo para Auditoria (Zero NCs) */}
+                          {!isActCompleted && (
+                            <button
+                              type="button"
+                              onClick={() => setPostponeModalActivity(act)}
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.25rem 0.55rem',
+                                color: '#b45309',
+                                borderColor: 'rgba(245, 158, 11, 0.4)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                              }}
+                              title="Reprogramar data final para evitar NC em auditoria de prazos vencidos"
+                            >
+                              <Clock size={12} /> Prorrogar
+                            </button>
+                          )}
+
+                          {/* Anexo / Cronoanálise */}
+                          <button
+                            type="button"
+                            onClick={() => setAttachmentModalActivity(act)}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '0.25rem 0.55rem',
+                              color: act.attachment ? '#0891b2' : '#64748b',
+                              borderColor: act.attachment ? 'rgba(6, 182, 212, 0.4)' : '#e2e8f0',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                            }}
+                            title={act.attachment ? 'Ver anexo ou cronoanálise vinculada' : 'Anexar documento ou vincular estudo de Cronoanálise'}
+                          >
+                            <Paperclip size={12} /> {act.attachment ? 'Anexo' : 'Anexar'}
+                          </button>
+
                           {isActPending && (
                             <button
                               type="button"
@@ -1489,6 +1801,45 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Modal de Prorrogação de Prazo para Auditoria */}
+      {postponeModalActivity && (
+        <PostponeDeadlineModal
+          isOpen={Boolean(postponeModalActivity)}
+          onClose={() => setPostponeModalActivity(null)}
+          activityTitle={postponeModalActivity.label}
+          currentEndDate={postponeModalActivity.endDate || postponeModalActivity.originalEndDate}
+          onConfirm={handleConfirmPostpone}
+        />
+      )}
+
+      {/* Modal de Anexos da Atividade (Laudos, Desenhos e Cronoanálise) */}
+      {attachmentModalActivity && (
+        <ActivityAttachmentModal
+          isOpen={Boolean(attachmentModalActivity)}
+          onClose={() => setAttachmentModalActivity(null)}
+          activityTitle={attachmentModalActivity.label}
+          currentAttachment={attachmentModalActivity.attachment}
+          onSaveAttachment={handleSaveActivityAttachment}
+          onRemoveAttachment={handleRemoveActivityAttachment}
+        />
+      )}
+
+      {/* Poka-Yoke do Sensei IA: Ações Genéricas */}
+      {pokaYokeModalOpen && (
+        <SenseiActionPokaYokeModal
+          isOpen={pokaYokeModalOpen}
+          onClose={() => {
+            setPokaYokeModalOpen(false);
+            setQualityEvaluation(null);
+          }}
+          originalText={pendingActivityPayload?.label || activityLabel}
+          evaluation={qualityEvaluation}
+          onAdopt={handleAdoptQualitySuggestion}
+          onProceedAnyway={handleProceedWithOriginalActivity}
+          itemTypeLabel="Atividade 5W2H"
+        />
+      )}
     </Modal>
   );
 };

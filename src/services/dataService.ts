@@ -9,6 +9,7 @@ import {
   LeanWasteCategory,
   LeanCostBreakdown,
   ActionChecklistItem,
+  ActivityAttachment,
   MonthlyResultEntry,
   QuarterlyFollowUp,
   KaizenIdea,
@@ -461,8 +462,59 @@ export const dataService = {
   // ================= SECTORS =================
   getSectors(tenantId?: string): Sector[] {
     const all = getStoredData<Sector[]>(STORAGE_KEYS.SECTORS, INITIAL_SECTORS);
-    if (!tenantId) return all;
-    return all.filter((s) => s.tenantId === tenantId);
+    // Garantir que Compras e Manutenção tenham os parâmetros de controle fabril mesmo em caches locais antigos
+    const normalized = all.map((s) => {
+      const lower = s.name.toLowerCase();
+      if (s.requiresTrackingDoc === undefined) {
+        if (lower.includes('compras') || lower.includes('suprimento')) {
+          return {
+            ...s,
+            requiresTrackingDoc: true,
+            trackingDocType: 'purchase_order' as const,
+            trackingDocLabel: s.trackingDocLabel || 'Número da Ordem de Compra (OC)',
+          };
+        }
+        if (lower.includes('manuten') || lower.includes('tpm')) {
+          return {
+            ...s,
+            requiresTrackingDoc: true,
+            trackingDocType: 'work_order' as const,
+            trackingDocLabel: s.trackingDocLabel || 'Número da Ordem de Serviço (OS)',
+          };
+        }
+      }
+      return s;
+    });
+
+    if (!tenantId) return normalized;
+    return normalized.filter((s) => s.tenantId === tenantId);
+  },
+
+  checkSectorRequiresTrackingDoc(
+    sectorNameOrId?: string,
+    tenantId?: string
+  ): { required: boolean; label: string; docType?: string } {
+    if (!sectorNameOrId) return { required: false, label: '' };
+    const sectors = this.getSectors(tenantId);
+    const trimmed = sectorNameOrId.trim().toLowerCase();
+    const found = sectors.find(
+      (s) => s.id === sectorNameOrId || s.name.toLowerCase() === trimmed || s.code.toLowerCase() === trimmed
+    );
+    if (found && found.requiresTrackingDoc) {
+      return {
+        required: true,
+        label: found.trackingDocLabel || (found.trackingDocType === 'purchase_order' ? 'Número da Ordem de Compra (OC)' : 'Número da Ordem de Serviço (OS)'),
+        docType: found.trackingDocType,
+      };
+    }
+    // Heurística de retaguarda se o setor foi digitado livremente
+    if (trimmed.includes('compras') || trimmed.includes('suprimento')) {
+      return { required: true, label: 'Número da Ordem de Compra (OC)', docType: 'purchase_order' };
+    }
+    if (trimmed.includes('manuten') || trimmed.includes('tpm') || trimmed.includes('ferramentaria')) {
+      return { required: true, label: 'Número da Ordem de Serviço (OS)', docType: 'work_order' };
+    }
+    return { required: false, label: '' };
   },
 
   getSectorById(id: string): Sector | undefined {
@@ -1368,6 +1420,11 @@ export const dataService = {
       startDate?: string;
       endDate?: string;
       responsibleName?: string;
+      responsibleSectorId?: string;
+      responsibleSectorName?: string;
+      trackingDocNumber?: string;
+      attachment?: ActivityAttachment;
+      linkedCronoanaliseId?: string;
       observations?: string;
       durationHours?: number;
       status?: 'pendente' | 'em_andamento' | 'concluida';
@@ -1385,7 +1442,14 @@ export const dataService = {
       label: activity.label,
       startDate: activity.startDate || new Date().toISOString().split('T')[0],
       endDate: activity.endDate,
+      originalEndDate: activity.endDate,
+      postponedCount: 0,
       responsibleName: activity.responsibleName,
+      responsibleSectorId: activity.responsibleSectorId,
+      responsibleSectorName: activity.responsibleSectorName,
+      trackingDocNumber: activity.trackingDocNumber,
+      attachment: activity.attachment,
+      linkedCronoanaliseId: activity.linkedCronoanaliseId,
       observations: activity.observations,
       durationHours: activity.durationHours,
       status: activity.status || 'pendente',
@@ -1393,6 +1457,88 @@ export const dataService = {
       completedAt: isCompleted ? new Date().toISOString() : undefined,
     });
 
+    actions[index].checklist = checklist;
+    actions[index].updatedAt = new Date().toISOString();
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    return actions[index];
+  },
+
+  postponeActivityDeadline(
+    actionId: string,
+    activityId: string,
+    newEndDate: string,
+    reason: string,
+    authorName?: string
+  ): LeanAction {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.id === actionId);
+    if (index === -1) throw new Error('Ação não encontrada');
+
+    const checklist = actions[index].checklist || [];
+    const actIndex = checklist.findIndex((c) => c.id === activityId);
+    if (actIndex === -1) throw new Error('Atividade não encontrada');
+
+    const item = checklist[actIndex];
+    const prevEndDate = item.endDate || item.originalEndDate;
+
+    checklist[actIndex] = {
+      ...item,
+      originalEndDate: item.originalEndDate || prevEndDate,
+      endDate: newEndDate,
+      postponedCount: (item.postponedCount || 0) + 1,
+      postponementReason: reason.trim(),
+      postponedAt: new Date().toISOString(),
+      postponedBy: authorName,
+    };
+
+    // Adiciona nota de auditoria transparente na timeline da ação
+    const auditNote = {
+      id: generateId('note'),
+      authorId: 'sys_audit',
+      authorName: authorName || 'Auditoria SGQ / Lean',
+      authorRole: 'admin' as const,
+      text: `📅 Reprogramação de Prazo (Auditoria): A atividade "${item.label}" teve a data final prorrogada de ${prevEndDate ? new Date(prevEndDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Não informada'} para ${new Date(newEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}. Justificativa: "${reason.trim()}".`,
+      createdAt: new Date().toISOString(),
+    };
+    actions[index].notes = [...(actions[index].notes || []), auditNote];
+
+    actions[index].checklist = checklist;
+    actions[index].updatedAt = new Date().toISOString();
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    return actions[index];
+  },
+
+  attachFileToActivity(
+    actionId: string,
+    activityId: string,
+    attachment: ActivityAttachment
+  ): LeanAction {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.id === actionId);
+    if (index === -1) throw new Error('Ação não encontrada');
+
+    const checklist = actions[index].checklist || [];
+    const actIndex = checklist.findIndex((c) => c.id === activityId);
+    if (actIndex === -1) throw new Error('Atividade não encontrada');
+
+    checklist[actIndex].attachment = attachment;
+    actions[index].checklist = checklist;
+    actions[index].updatedAt = new Date().toISOString();
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    return actions[index];
+  },
+
+  removeActivityAttachment(actionId: string, activityId: string): LeanAction {
+    const actions = this.getActions();
+    const index = actions.findIndex((a) => a.id === actionId);
+    if (index === -1) throw new Error('Ação não encontrada');
+
+    const checklist = actions[index].checklist || [];
+    const actIndex = checklist.findIndex((c) => c.id === activityId);
+    if (actIndex === -1) throw new Error('Atividade não encontrada');
+
+    delete checklist[actIndex].attachment;
+    delete checklist[actIndex].linkedCronoanaliseId;
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
     setStoredData(STORAGE_KEYS.ACTIONS, actions);

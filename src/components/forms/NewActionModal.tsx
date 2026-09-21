@@ -8,12 +8,15 @@ import {
   ASSESSMENT_DIMENSIONS_CONFIG,
   STRATEGIC_PILLARS_CONFIG,
   StrategicObjective,
+  ActionQualityEvaluation,
 } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { WASTE_CATEGORIES } from '@/lib/utils';
 import { PlusCircle, DollarSign, UserCheck, Building, Target, Sparkles } from 'lucide-react';
+import { evaluateActionQuality } from '@/services/geminiService';
+import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
 
 interface NewActionModalProps {
   isOpen: boolean;
@@ -41,6 +44,10 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   const [estimatedCostAvoided, setEstimatedCostAvoided] = useState<string>('20000');
   const [dueDate, setDueDate] = useState('');
 
+  // Poka-Yoke do Sensei para ações genéricas
+  const [pokaYokeOpen, setPokaYokeOpen] = useState(false);
+  const [qualityEvaluation, setQualityEvaluation] = useState<ActionQualityEvaluation | null>(null);
+
   React.useEffect(() => {
     if (isOpen) {
       const currentSectors = dataService.getSectors();
@@ -55,6 +62,8 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       setPriority('media');
       setEstimatedCostAvoided('20000');
       setDueDate('');
+      setPokaYokeOpen(false);
+      setQualityEvaluation(null);
     }
   }, [isOpen]);
 
@@ -63,8 +72,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
     setAssessmentDimensionId(dataService.getDefaultAssessmentDimensionForWaste(cat));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeCreation = (finalTitle: string) => {
     if (!currentTenant) return;
 
     const selectedObj = strategicObjectiveId
@@ -75,7 +83,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
     dataService.createActionByAdmin({
       tenantId: currentTenant.id,
-      title,
+      title: finalTitle,
       description,
       strategicObjectiveId: selectedObj?.id,
       strategicObjectiveName: selectedObj ? `${selectedObj.code} - ${selectedObj.title}` : undefined,
@@ -98,8 +106,29 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       ],
     });
 
+    setPokaYokeOpen(false);
+    setQualityEvaluation(null);
     onSuccess();
     onClose();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentTenant || !title.trim()) return;
+
+    const selectedSector = sectors.find((s) => s.id === originSectorId);
+    const quality = evaluateActionQuality(title.trim(), {
+      sectorName: selectedSector?.name,
+      projectName: title.trim(),
+    });
+
+    if (quality.isGeneric) {
+      setQualityEvaluation(quality);
+      setPokaYokeOpen(true);
+      return;
+    }
+
+    executeCreation(title.trim());
   };
 
   return (
@@ -346,6 +375,24 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           </button>
         </div>
       </form>
+
+      {pokaYokeOpen && (
+        <SenseiActionPokaYokeModal
+          isOpen={pokaYokeOpen}
+          onClose={() => {
+            setPokaYokeOpen(false);
+            setQualityEvaluation(null);
+          }}
+          originalText={title}
+          evaluation={qualityEvaluation}
+          onAdopt={(improvedText) => {
+            setTitle(improvedText);
+            executeCreation(improvedText);
+          }}
+          onProceedAnyway={() => executeCreation(title.trim())}
+          itemTypeLabel="Ação Lean"
+        />
+      )}
     </Modal>
   );
 };
