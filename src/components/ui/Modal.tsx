@@ -49,7 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        backgroundColor: 'rgba(2, 6, 23, 0.82)',
+        backgroundColor: 'var(--bg-modal-overlay, rgba(2, 6, 23, 0.82))',
         backdropFilter: 'blur(8px)',
       }}
       onClick={(e) => {
@@ -57,9 +57,10 @@ export const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
+        className="modal-content-surface"
         style={{
-          backgroundColor: '#0d1527',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          backgroundColor: 'var(--bg-modal, #0d1527)',
+          border: '1px solid var(--border-modal, rgba(255, 255, 255, 0.12))',
           borderRadius: '16px',
           width: '100%',
           maxWidth: maxWidth === '4xl' ? '1000px' : maxWidth === '2xl' ? '850px' : maxWidth === 'lg' ? '680px' : '520px',
@@ -69,37 +70,39 @@ export const Modal: React.FC<ModalProps> = ({
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(6, 182, 212, 0.15)',
           animation: 'fadeIn 0.2s ease-out',
           overflow: 'hidden',
-          color: '#f8fafc',
+          color: 'var(--text-primary, #f8fafc)',
         }}
       >
         {/* Header */}
         <div
+          className="modal-header-surface"
           style={{
             padding: '1.25rem 1.75rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-surface, #0f172a)',
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-heading, #ffffff)', fontFamily: 'var(--font-heading)', margin: 0 }}>
               {title}
             </h3>
             {subtitle && (
-              <p style={{ fontSize: '0.78125rem', color: '#94a3b8', marginTop: '0.2rem', margin: 0 }}>
+              <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted, #94a3b8)', marginTop: '0.2rem', margin: 0 }}>
                 {subtitle}
               </p>
             )}
           </div>
           <button
             onClick={onClose}
+            aria-label="Fechar modal"
             style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'var(--bg-surface-elevated, rgba(255, 255, 255, 0.06))',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
               cursor: 'pointer',
-              color: '#94a3b8',
+              color: 'var(--text-muted, #94a3b8)',
               padding: '0.375rem',
               borderRadius: '8px',
               display: 'flex',
@@ -108,12 +111,12 @@ export const Modal: React.FC<ModalProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-              e.currentTarget.style.color = '#ffffff';
+              e.currentTarget.style.backgroundColor = 'var(--border-strong, rgba(255, 255, 255, 0.15))';
+              e.currentTarget.style.color = 'var(--text-primary, #ffffff)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
-              e.currentTarget.style.color = '#94a3b8';
+              e.currentTarget.style.backgroundColor = 'var(--bg-surface-elevated, rgba(255, 255, 255, 0.06))';
+              e.currentTarget.style.color = 'var(--text-muted, #94a3b8)';
             }}
           >
             <X size={18} />
@@ -126,7 +129,7 @@ export const Modal: React.FC<ModalProps> = ({
             padding: '1.75rem',
             overflowY: 'auto',
             flex: 1,
-            backgroundColor: '#0d1527',
+            backgroundColor: 'var(--bg-modal, #0d1527)',
           }}
         >
           {children}

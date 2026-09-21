@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface StatsCardProps {
   title: string;
@@ -22,14 +23,20 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   trend,
   accentColor = '#06b6d4',
 }) => {
+  const { isDark } = useTheme();
+
   return (
     <div
       style={{
-        background: `radial-gradient(circle at 95% 10%, ${accentColor}18 0%, #0f172a 65%)`,
-        border: `1px solid ${accentColor}30`,
+        background: isDark
+          ? `radial-gradient(circle at 95% 10%, ${accentColor}18 0%, #0f172a 65%)`
+          : `radial-gradient(circle at 95% 10%, ${accentColor}10 0%, #ffffff 70%)`,
+        border: `1px solid ${isDark ? `${accentColor}30` : `${accentColor}35`}`,
         borderRadius: '16px',
         padding: '1.2rem 1.35rem',
-        boxShadow: `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`,
+        boxShadow: isDark
+          ? `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`
+          : `0 4px 15px rgba(0, 0, 0, 0.05), 0 0 10px ${accentColor}08`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -40,13 +47,17 @@ export const StatsCard: React.FC<StatsCardProps> = ({
       }}
       onMouseOver={(e) => {
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = `0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px ${accentColor}25`;
+        e.currentTarget.style.boxShadow = isDark
+          ? `0 12px 30px -5px rgba(0, 0, 0, 0.6), 0 0 25px ${accentColor}25`
+          : `0 8px 25px -3px rgba(0, 0, 0, 0.08), 0 0 15px ${accentColor}15`;
         e.currentTarget.style.borderColor = `${accentColor}60`;
       }}
       onMouseOut={(e) => {
         e.currentTarget.style.transform = 'none';
-        e.currentTarget.style.boxShadow = `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`;
-        e.currentTarget.style.borderColor = `${accentColor}30`;
+        e.currentTarget.style.boxShadow = isDark
+          ? `0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px ${accentColor}10`
+          : `0 4px 15px rgba(0, 0, 0, 0.05), 0 0 10px ${accentColor}08`;
+        e.currentTarget.style.borderColor = isDark ? `${accentColor}30` : `${accentColor}35`;
       }}
     >
       {/* Delicate Top Glowing Line */}
@@ -123,7 +134,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
           style={{
             fontSize: 'clamp(1.25rem, 1.8vw, 1.55rem)',
             fontWeight: 900,
-            color: '#ffffff',
+            color: 'var(--text-heading, #ffffff)',
             margin: 0,
             fontFamily: 'var(--font-heading)',
             letterSpacing: '-0.02em',

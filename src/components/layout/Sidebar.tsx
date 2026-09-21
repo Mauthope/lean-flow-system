@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Modal } from '@/components/ui/Modal';
 import {
   LayoutDashboard,
@@ -37,6 +38,8 @@ import {
   Target,
   Factory,
   Eye,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 interface NavItem {
@@ -54,6 +57,7 @@ interface NavSection {
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { currentUser, currentTenant, isMobileMenuOpen, setIsMobileMenuOpen, isSidebarCollapsed, toggleSidebar } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
@@ -177,17 +181,17 @@ export const Sidebar: React.FC = () => {
         className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
         style={{
           width: isSidebarCollapsed ? '72px' : '260px',
-          backgroundColor: '#060a13',
-          color: '#f8fafc',
+          backgroundColor: 'var(--bg-sidebar)',
+          color: 'var(--text-primary)',
           display: 'flex',
           flexDirection: 'column',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRight: '1px solid var(--border-subtle)',
           flexShrink: 0,
           height: '100vh',
           position: 'sticky',
           top: 0,
           zIndex: 95,
-          transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease',
+          transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease, background-color 0.2s ease',
           overflow: 'hidden',
         }}
       >
@@ -195,7 +199,7 @@ export const Sidebar: React.FC = () => {
         <div
           style={{
             padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.15rem 1.15rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.65rem',
@@ -548,19 +552,63 @@ export const Sidebar: React.FC = () => {
         <div
           style={{
             padding: isSidebarCollapsed ? '0.75rem 0.35rem' : '0.75rem 0.85rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.5rem',
-            backgroundColor: '#090e1a',
+            gap: '0.45rem',
+            backgroundColor: 'var(--bg-sidebar)',
           }}
         >
+          {/* Theme Quick Switcher in Sidebar */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+              padding: isSidebarCollapsed ? '0.45rem 0' : '0.45rem 0.65rem',
+              borderRadius: '8px',
+              border: '1px solid var(--border-subtle)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: '0.725rem',
+              fontWeight: 600,
+              transition: 'all 0.15s ease',
+            }}
+            title={isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              {isDark ? <Sun size={14} color="#fbbf24" /> : <Moon size={14} color="#0284c7" />}
+              {!isSidebarCollapsed && (
+                <span>
+                  {isDark ? 'Tema Escuro' : 'Tema Claro'}
+                </span>
+              )}
+            </div>
+            {!isSidebarCollapsed && (
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  fontWeight: 800,
+                  color: isDark ? '#38bdf8' : '#0284c7',
+                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.12)',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: '4px',
+                }}
+              >
+                {isDark ? 'Mudar p/ Claro' : 'Mudar p/ Escuro'}
+              </span>
+            )}
+          </button>
+
           {/* Creator Pill */}
           <div
             onClick={() => setShowAuthorModal(true)}
             style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : '#f8fafc',
+              border: '1px solid var(--border-subtle)',
               padding: isSidebarCollapsed ? '0.5rem 0' : '0.5rem 0.65rem',
               borderRadius: '9px',
               display: 'flex',
@@ -571,12 +619,12 @@ export const Sidebar: React.FC = () => {
               transition: 'all 0.15s ease',
             }}
             onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 1)';
+              e.currentTarget.style.backgroundColor = isDark ? 'rgba(15, 23, 42, 1)' : '#ffffff';
               e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.35)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+              e.currentTarget.style.backgroundColor = isDark ? 'rgba(15, 23, 42, 0.9)' : '#f8fafc';
+              e.currentTarget.style.borderColor = 'var(--border-subtle)';
             }}
             title="Desenvolvido por Mauricio Grigol"
           >

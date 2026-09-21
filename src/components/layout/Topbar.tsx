@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   RefreshCw,
   Plus,
@@ -10,6 +11,8 @@ import {
   Menu,
   LogOut,
   Factory,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
@@ -21,6 +24,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 }) => {
   const router = useRouter();
   const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const isAdmin = currentUser?.role === 'admin';
   const isViewer = currentUser?.role === 'viewer';
@@ -101,6 +105,32 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           }}
         >
           <RefreshCw size={14} color="#94a3b8" />
+        </button>
+
+        {/* Quick Theme Switcher (Sol / Lua) */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="btn btn-secondary btn-sm"
+          title={isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+          aria-label={isDark ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+          style={{
+            padding: '0.4rem 0.65rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            borderRadius: '8px',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#ffffff',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1',
+            color: isDark ? '#fbbf24' : '#0284c7',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {isDark ? <Sun size={14} color="#fbbf24" /> : <Moon size={14} color="#0284c7" />}
+          <span style={{ fontSize: '0.725rem', fontWeight: 700 }}>
+            {isDark ? 'Claro' : 'Escuro'}
+          </span>
         </button>
 
         {/* Multi-Tenant Quick Switcher for Developer / Master */}
