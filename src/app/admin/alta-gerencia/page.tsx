@@ -36,6 +36,8 @@ import {
   X,
   Check,
   AlertCircle,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -46,6 +48,7 @@ export default function AltaGerenciaPage() {
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedPillar, setSelectedPillar] = useState<string>('todos');
   const [expandedObjectiveId, setExpandedObjectiveId] = useState<string | null>(null);
+  const [layoutMode, setLayoutMode] = useState<'grid' | 'list'>('grid');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -549,12 +552,113 @@ export default function AltaGerenciaPage() {
         })}
       </div>
 
-      {/* 4. GRID DE DIRETRIZES DA ALTA GERÊNCIA & PROJETOS CONVERGENTES */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* 4. BARRA DE CONTROLE & VISUALIZAÇÃO DAS DIRETRIZES */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          marginTop: '0.25rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <Target size={18} style={{ color: '#38bdf8' }} /> Diretrizes Corporativas & Desdobramento Hoshin
+          </h3>
+          <span
+            style={{
+              fontSize: '0.725rem',
+              fontWeight: 700,
+              backgroundColor: 'rgba(56, 189, 248, 0.15)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              padding: '0.15rem 0.55rem',
+              borderRadius: '9999px',
+            }}
+          >
+            {filteredObjectives.length} {filteredObjectives.length === 1 ? 'meta ativa' : 'metas ativas'}
+          </span>
+        </div>
+
+        {/* Alternador de Layout: Grade Multi-Coluna vs Lista Ampla */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            backgroundColor: '#020617',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '10px',
+            padding: '3px',
+            gap: '3px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setLayoutMode('grid')}
+            title="Visualização em Grade Multi-Coluna (lado a lado)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.35rem 0.7rem',
+              borderRadius: '7px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: layoutMode === 'grid' ? '#2563eb' : 'transparent',
+              color: layoutMode === 'grid' ? '#ffffff' : '#94a3b8',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <LayoutGrid size={14} />
+            <span>Grade Multi-Coluna</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setLayoutMode('list')}
+            title="Visualização em Lista Linear (largura total)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.35rem 0.7rem',
+              borderRadius: '7px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: layoutMode === 'list' ? '#2563eb' : 'transparent',
+              color: layoutMode === 'list' ? '#ffffff' : '#94a3b8',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <List size={14} />
+            <span>Lista</span>
+          </button>
+        </div>
+      </div>
+
+      {/* GRID DE DIRETRIZES DA ALTA GERÊNCIA & PROJETOS CONVERGENTES */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            layoutMode === 'grid'
+              ? 'repeat(auto-fit, minmax(460px, 1fr))'
+              : '1fr',
+          gap: '1.25rem',
+          alignItems: 'start',
+        }}
+      >
         {filteredObjectives.length === 0 ? (
           <div
             className="card"
             style={{
+              gridColumn: '1 / -1',
               padding: '3rem 2rem',
               textAlign: 'center',
               backgroundColor: '#0f172a',
@@ -604,20 +708,23 @@ export default function AltaGerenciaPage() {
                   background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%)',
                   overflow: 'hidden',
                   transition: 'all 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '100%',
                 }}
               >
                 {/* Cabeçalho do Card da Diretriz */}
-                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <div style={{ padding: '1.25rem 1.35rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <span
                         style={{
-                          fontSize: '0.725rem',
+                          fontSize: '0.7rem',
                           fontWeight: 800,
                           backgroundColor: pillarConfig.bg,
                           color: pillarConfig.color,
                           border: `1px solid ${pillarConfig.border}`,
-                          padding: '0.2rem 0.6rem',
+                          padding: '0.2rem 0.55rem',
                           borderRadius: '8px',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -631,31 +738,31 @@ export default function AltaGerenciaPage() {
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
-                          fontSize: '0.75rem',
+                          fontSize: '0.725rem',
                           fontWeight: 800,
                           color: '#38bdf8',
                           backgroundColor: 'rgba(56, 189, 248, 0.1)',
                           border: '1px solid rgba(56, 189, 248, 0.25)',
-                          padding: '0.2rem 0.5rem',
+                          padding: '0.15rem 0.45rem',
                           borderRadius: '6px',
                         }}
                       >
                         {objective.code}
                       </span>
 
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
                         Patrocinador: <strong style={{ color: '#e2e8f0' }}>{objective.sponsor}</strong>
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {isAdmin && (
                         <>
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(objective)}
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.725rem' }}
                             title="Editar diretriz corporativa"
                           >
                             <Edit3 size={13} />
@@ -664,7 +771,7 @@ export default function AltaGerenciaPage() {
                             type="button"
                             onClick={() => handleDeleteObjective(objective.id, objective.title)}
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', color: '#f87171' }}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.725rem', color: '#f87171' }}
                             title="Excluir diretriz"
                           >
                             <Trash2 size={13} />
@@ -674,9 +781,9 @@ export default function AltaGerenciaPage() {
 
                       <span
                         style={{
-                          fontSize: '0.75rem',
+                          fontSize: '0.725rem',
                           fontWeight: 800,
-                          padding: '0.25rem 0.65rem',
+                          padding: '0.2rem 0.6rem',
                           borderRadius: '9999px',
                           backgroundColor: fulfillmentPercent >= 100 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(56, 189, 248, 0.15)',
                           color: fulfillmentPercent >= 100 ? '#4ade80' : '#38bdf8',
@@ -692,16 +799,17 @@ export default function AltaGerenciaPage() {
                   <div>
                     <h3
                       style={{
-                        fontSize: '1.25rem',
+                        fontSize: '1.15rem',
                         fontWeight: 900,
                         color: '#ffffff',
                         margin: 0,
                         fontFamily: 'var(--font-heading)',
+                        lineHeight: 1.35,
                       }}
                     >
                       {objective.title}
                     </h3>
-                    <p style={{ fontSize: '0.825rem', color: '#94a3b8', margin: '0.35rem 0 0', lineHeight: 1.45 }}>
+                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0.35rem 0 0', lineHeight: 1.45 }}>
                       {objective.description}
                     </p>
                   </div>
@@ -712,30 +820,30 @@ export default function AltaGerenciaPage() {
                       backgroundColor: 'rgba(2, 6, 23, 0.7)',
                       border: '1px solid rgba(255, 255, 255, 0.08)',
                       borderRadius: '12px',
-                      padding: '1rem',
+                      padding: '0.85rem 1rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '0.65rem',
+                      gap: '0.6rem',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600 }}>Aderência dos Projetos:</span>
-                        <strong style={{ fontSize: '1.25rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8', fontWeight: 600 }}>Aderência dos Projetos:</span>
+                        <strong style={{ fontSize: '1.2rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
                           {averageAdherenceScore}%
                         </strong>
                         {objective.targetValue ? (
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
                             (Realizado: {formatValue(currentRealizedValue)} / Meta: <strong style={{ color: '#cbd5e1' }}>{formatValue(objective.targetValue)}</strong>)
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
                             ({linkedProjects.length} iniciativas • Custo Evitado: {formatCurrency(linkedProjects.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0))})
                           </span>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontSize: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.725rem' }}>
                         <span style={{ color: '#34d399', fontWeight: 700 }}>
                           ✓ {completedProjectsCount} concluído(s)
                         </span>
@@ -767,36 +875,36 @@ export default function AltaGerenciaPage() {
                       borderRadius: '10px',
                       padding: '0.75rem 1rem',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '0.75rem',
+                      flexDirection: 'column',
+                      gap: '0.65rem',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Sparkles size={16} style={{ color: '#38bdf8', flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                      <Sparkles size={16} style={{ color: '#38bdf8', flexShrink: 0, marginTop: '2px' }} />
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic', lineHeight: 1.45 }}>
                         "{senseiExecutiveSynthesis}"
                       </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setExpandedObjectiveId(isExpanded ? null : objective.id)}
-                      className="btn btn-secondary btn-sm"
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: '#38bdf8',
-                        borderColor: 'rgba(56, 189, 248, 0.3)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                      }}
-                    >
-                      <span>{isExpanded ? 'Ocultar Projetos' : `Ver Projetos Vinculados (${linkedProjects.length})`}</span>
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedObjectiveId(isExpanded ? null : objective.id)}
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          color: '#38bdf8',
+                          borderColor: 'rgba(56, 189, 248, 0.3)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <span>{isExpanded ? 'Ocultar Projetos' : `Ver Projetos Vinculados (${linkedProjects.length})`}</span>
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -806,18 +914,21 @@ export default function AltaGerenciaPage() {
                     style={{
                       backgroundColor: 'rgba(2, 6, 23, 0.95)',
                       borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                      padding: '1.5rem',
+                      padding: '1.25rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.85rem',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Layers size={16} style={{ color: '#38bdf8' }} />
-                        <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                          Projetos Kaizen & PDCA Conectados a esta Diretriz ({linkedProjects.length})
+                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                          Projetos Kaizen Conectados ({linkedProjects.length})
                         </h4>
                       </div>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                        Cada ação deve justificar sua contribuição técnica ao desafio corporativo
+                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        Contribuição técnica ao desafio corporativo
                       </span>
                     </div>
 
@@ -843,7 +954,7 @@ export default function AltaGerenciaPage() {
                         </Link>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '460px', overflowY: 'auto', paddingRight: '0.35rem' }}>
                         {linkedProjects.map((proj) => {
                           const savings = proj.actualCostAvoided || proj.estimatedCostAvoided || 0;
                           return (
@@ -853,26 +964,26 @@ export default function AltaGerenciaPage() {
                                 backgroundColor: '#0f172a',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                 borderRadius: '12px',
-                                padding: '1.15rem',
+                                padding: '1rem',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '0.65rem',
+                                gap: '0.6rem',
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.725rem', fontWeight: 800, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                                     {proj.protocol || proj.id}
                                   </span>
-                                  <strong style={{ fontSize: '0.9rem', color: '#ffffff' }}>
+                                  <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>
                                     {proj.title}
                                   </strong>
-                                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                  <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
                                     • {proj.originSectorName || 'Setor'}
                                   </span>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                   <span
                                     style={{
                                       fontSize: '0.7rem',
@@ -895,7 +1006,7 @@ export default function AltaGerenciaPage() {
                                   <Link
                                     href={`/admin/projetos/${proj.id}`}
                                     className="btn btn-secondary btn-sm"
-                                    style={{ fontSize: '0.725rem', padding: '0.25rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                                    style={{ fontSize: '0.725rem', padding: '0.2rem 0.45rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                                     title="Abrir página completa do projeto"
                                   >
                                     <ExternalLink size={12} /> Abrir
@@ -904,7 +1015,7 @@ export default function AltaGerenciaPage() {
                                   <Link
                                     href={`/admin/projetos/${proj.id}/relatorio-a3`}
                                     className="btn btn-secondary btn-sm"
-                                    style={{ fontSize: '0.725rem', padding: '0.25rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                                    style={{ fontSize: '0.725rem', padding: '0.2rem 0.45rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
                                     title="Ver Relatório A3"
                                   >
                                     <FileText size={12} /> A3
@@ -918,7 +1029,7 @@ export default function AltaGerenciaPage() {
                                   backgroundColor: 'rgba(2, 6, 23, 0.7)',
                                   border: '1px solid rgba(59, 130, 246, 0.2)',
                                   borderRadius: '8px',
-                                  padding: '0.75rem',
+                                  padding: '0.7rem 0.85rem',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   gap: '0.35rem',
