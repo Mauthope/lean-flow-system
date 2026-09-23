@@ -217,12 +217,23 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         );
         return;
       }
-      const monthsFilled = getFollowUpMonthsFilledCount(action);
-      if (monthsFilled < 3) {
+      // Poka-Yoke de Governança: Se tiver ganho monetário, exige aprovação da Controladoria
+      const hasGain = dataService.hasMonetaryGain(action);
+      if (hasGain && !dataService.isControllershipApproved(action)) {
         alert(
-          `Homologação / Conclusão Bloqueada!\n\nA homologação master exige a comprovação prévia dos 3 meses de acompanhamento pelo agente (atualmente ${monthsFilled}/3 meses preenchidos).\n\nAbra a "Página Completa" do projeto para lançar as medições.`
+          '⚠️ CONCLUSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados. Pela governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e homologados pelo auditor contábil antes da conclusão final.\n\nPor favor, abra a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
         );
         return;
+      }
+
+      if (hasGain) {
+        const monthsFilled = getFollowUpMonthsFilledCount(action);
+        if (monthsFilled < 3) {
+          alert(
+            `Homologação / Conclusão Bloqueada!\n\nA homologação de projetos com retorno financeiro exige a comprovação prévia dos 3 meses de acompanhamento pelo agente (atualmente ${monthsFilled}/3 meses preenchidos).\n\nAbra a "Página Completa" do projeto para lançar as medições.`
+          );
+          return;
+        }
       }
       setShowCompletionForm(true);
       setConclusionDateInput(action.conclusionDate || new Date().toISOString().split('T')[0]);
@@ -270,6 +281,15 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     if (isViewer) return;
     const cost = parseFloat(actualCostInput.replace(/[^0-9.]/g, '')) || 0;
     const hours = parseFloat(hoursSavedInput) || 0;
+
+    // Validação de Governança: Se houver ganho financeiro declarado, exige Controladoria
+    const willHaveGain = cost > 0 || dataService.hasMonetaryGain(action);
+    if (willHaveGain && !dataService.isControllershipApproved(action)) {
+      alert(
+        '⚠️ HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nFoi identificado um ganho financeiro declarado. Conforme a regra de governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e certificados pelo auditor contábil antes de concluir.\n\nPor favor, acesse a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
+      );
+      return;
+    }
 
     const costBreakdown = {
       laborSavings: parseFloat(cbLabor) || 0,
@@ -700,6 +720,117 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                   title="Acompanhamento obrigatório de 3 meses pelo agente para homologação"
                 >
                   📅 {monthsFilled}/3 meses {monthsFilled === 3 ? '✓ (Pronto)' : '(Aferição)'}
+                </span>
+              );
+            })()}
+
+            {(() => {
+              const hasGain = dataService.hasMonetaryGain(action);
+              const isApproved = dataService.isControllershipApproved(action);
+              const auditStatus = action.controllershipAudit?.status;
+
+              if (hasGain) {
+                if (isApproved) {
+                  return (
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: '#15803d',
+                        backgroundColor: '#dcfce7',
+                        border: '1px solid #86efac',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                      }}
+                      title="Ganhos financeiros homologados pela Controladoria"
+                    >
+                      🏛️ Controladoria: Homologada ✓
+                    </span>
+                  );
+                }
+                if (auditStatus === 'pendente') {
+                  return (
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: '#b45309',
+                        backgroundColor: '#fef3c7',
+                        border: '1px solid #fde68a',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                      }}
+                      title="Aguardando parecer do auditor contábil"
+                    >
+                      🏛️ Controladoria: Em Análise ⏳
+                    </span>
+                  );
+                }
+                if (auditStatus === 'rejeitado') {
+                  return (
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: '#b91c1c',
+                        backgroundColor: '#fee2e2',
+                        border: '1px solid #fca5a5',
+                        padding: '0.2rem 0.5rem',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                      }}
+                      title="Controladoria solicitou ajustes de premissas"
+                    >
+                      🏛️ Controladoria: Ajustes ❌
+                    </span>
+                  );
+                }
+                return (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 800,
+                      color: '#b45309',
+                      backgroundColor: '#fef3c7',
+                      border: '1px solid #fde68a',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                    }}
+                    title="Projeto com retorno financeiro: envio à Controladoria é obrigatório"
+                  >
+                    🏛️ Controladoria: Obrigatória ⚠️
+                  </span>
+                );
+              }
+
+              return (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    color: '#64748b',
+                    backgroundColor: '#f1f5f9',
+                    border: '1px solid #cbd5e1',
+                    padding: '0.2rem 0.5rem',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Projeto sem retorno monetário direto: envio à Controladoria dispensado"
+                >
+                  🏛️ Controladoria: Dispensada
                 </span>
               );
             })()}

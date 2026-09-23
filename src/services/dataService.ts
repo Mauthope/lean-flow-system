@@ -992,6 +992,98 @@ export const dataService = {
   // AUDITORIA E HOMOLOGAÇÃO PRÉVIA PELA CONTROLADORIA
   // ===================================================================
 
+  // Verifica se um projeto/ação possui algum ganho monetário identificado
+  hasMonetaryGain(action: LeanAction | null | undefined): boolean {
+    if (!action) return false;
+
+    // 1. Custo Evitado Real ou Estimado
+    if ((Number(action.actualCostAvoided) || 0) > 0) return true;
+    if ((Number(action.estimatedCostAvoided) || 0) > 0) return true;
+
+    // 2. Breakdown das 7 fontes de ganho
+    if (action.costBreakdown) {
+      const cb = action.costBreakdown;
+      const sum =
+        (Number(cb.laborSavings) || 0) +
+        (Number(cb.productionIncrease) || 0) +
+        (Number(cb.scrapReduction) || 0) +
+        (Number(cb.machineDowntime) || 0) +
+        (Number(cb.toolingAndEnergy) || 0) +
+        (Number(cb.logisticsAndFreight) || 0) +
+        (Number(cb.otherSavings) || 0);
+      if (sum > 0) return true;
+    }
+
+    // 3. Memória de cálculo por categoria (gainDetails)
+    if (action.gainDetails) {
+      const sumGains = Object.values(action.gainDetails).reduce(
+        (acc, g) => acc + (Number(g?.value) || 0),
+        0
+      );
+      if (sumGains > 0) return true;
+    }
+
+    // 4. Auditoria da Controladoria com valor original submetido
+    if ((Number(action.controllershipAudit?.originalEstimatedCostAvoided) || 0) > 0) return true;
+
+    // 5. Acompanhamento trimestral/mensal com valores declarados
+    if (action.quarterlyFollowUp) {
+      if ((Number(action.quarterlyFollowUp.averageCostAvoided) || 0) > 0) return true;
+      const m1 = Number(action.quarterlyFollowUp.month1?.value) || 0;
+      const m2 = Number(action.quarterlyFollowUp.month2?.value) || 0;
+      const m3 = Number(action.quarterlyFollowUp.month3?.value) || 0;
+      if (m1 > 0 || m2 > 0 || m3 > 0) return true;
+    }
+
+    return false;
+  },
+
+  // Verifica se o parecer da Controladoria está formalmente homologado/aprovado
+  isControllershipApproved(action: LeanAction | null | undefined): boolean {
+    if (!action) return false;
+    return (
+      action.controllershipAudit?.status === 'aprovado' ||
+      action.controllershipAudit?.status === 'ajustado_e_aprovado'
+    );
+  },
+
+  // Validação central de Poka-Yoke corporativo para conclusão/homologação
+  canFinalizeOrHomologate(action: LeanAction | null | undefined): { allowed: boolean; reason?: string } {
+    if (!action) return { allowed: false, reason: 'Projeto não encontrado.' };
+
+    const uncompleted = this.getUncompletedActivities(action);
+    if (uncompleted.length > 0) {
+      return {
+        allowed: false,
+        reason: `Existem ${uncompleted.length} atividade(s) 5W2H pendentes de conclusão no Gemba.`,
+      };
+    }
+
+    // Regra Corporativa: Ganho Monetário exige obrigatoriamente parecer da Controladoria
+    if (this.hasMonetaryGain(action)) {
+      if (!action.controllershipAudit) {
+        return {
+          allowed: false,
+          reason: 'Este projeto possui ganhos monetários identificados. É OBRIGATÓRIO submeter à Controladoria para auditoria contábil antes da homologação final.',
+        };
+      }
+      if (action.controllershipAudit.status === 'pendente') {
+        return {
+          allowed: false,
+          reason: 'Aguardando parecer da Controladoria sobre os ganhos financeiros submetidos.',
+        };
+      }
+      if (action.controllershipAudit.status === 'rejeitado') {
+        return {
+          allowed: false,
+          reason: `A Controladoria solicitou revisão das premissas financeiras: "${action.controllershipAudit.rejectionReason || 'Revisão necessária'}".`,
+        };
+      }
+    }
+
+    return { allowed: true };
+  },
+
   // Submeter ganhos financeiros do projeto à Controladoria
   async submitActionToControladoria(
     actionId: string,
@@ -1006,11 +1098,18 @@ export const dataService = {
     const action = actions[index];
     const tenant = this.getCurrentTenant();
 
-    // Poka-Yoke Estrito: Bloquear envio se houver atividades 5W2H não concluídas
+    // Poka-Yoke Estrito 1: Bloquear envio se houver atividades 5W2H não concluídas
     const uncompleted = this.getUncompletedActivities(action);
     if (uncompleted.length > 0) {
       throw new Error(
         `Submissão bloqueada: existem ${uncompleted.length} atividade(s) 5W2H pendentes de conclusão no projeto.`
+      );
+    }
+
+    // Poka-Yoke Estrito 2: Envio à Controladoria é exclusivo para projetos com ganho monetário
+    if (!this.hasMonetaryGain(action)) {
+      throw new Error(
+        'Este projeto não possui ganhos monetários identificados. Conforme a regra de governança corporativa, o envio à Controladoria é dispensado.'
       );
     }
 
@@ -1364,6 +1463,16 @@ export const dataService = {
     }
 
     if (newStatus === 'concluida') {
+      const willHaveGain =
+        (extra?.actualCostAvoided !== undefined && Number(extra.actualCostAvoided) > 0) ||
+        this.hasMonetaryGain(item);
+
+      if (willHaveGain && !this.isControllershipApproved(item)) {
+        throw new Error(
+          'Conclusão bloqueada: projetos com ganhos monetários identificados devem ser submetidos à Controladoria e homologados pelo auditor contábil antes da conclusão final.'
+        );
+      }
+
       updates.completedAt = now;
       updates.conclusionDate = extra?.conclusionDate || now.split('T')[0];
       if (extra?.actualCostAvoided !== undefined) {

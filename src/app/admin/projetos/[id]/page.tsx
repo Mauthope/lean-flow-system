@@ -30,6 +30,7 @@ import {
   FileCheck,
   FileCheck2,
   ShieldCheck,
+  ShieldAlert,
   Zap,
   HelpCircle,
   Sparkles,
@@ -478,6 +479,32 @@ export default function AdminProjectDetailPage() {
   const provenNetAnnualSavings = Math.max(0, provenAnnualSavings - totalInvestmentCost);
   const provenNetMonthlySavings = Math.round(provenNetAnnualSavings / 12);
 
+  // Governança Corporativa: Regra de Ganho Monetário e Auditoria da Controladoria
+  const hasMonetaryGain = Boolean(
+    totalGrossSavings > 0 ||
+    (Number(action?.actualCostAvoided) || 0) > 0 ||
+    (Number(action?.estimatedCostAvoided) || 0) > 0 ||
+    (Number(action?.controllershipAudit?.originalEstimatedCostAvoided) || 0) > 0 ||
+    (action?.quarterlyFollowUp?.averageCostAvoided && action.quarterlyFollowUp.averageCostAvoided > 0)
+  );
+
+  const identifiedGainValue =
+    totalGrossSavings > 0
+      ? totalGrossSavings
+      : (Number(action?.actualCostAvoided) || 0) > 0
+      ? Number(action?.actualCostAvoided)
+      : action?.controllershipAudit?.approvedEstimatedCostAvoided ||
+        action?.controllershipAudit?.originalEstimatedCostAvoided ||
+        Number(action?.estimatedCostAvoided) ||
+        0;
+
+  const isControllershipApproved = Boolean(
+    action?.controllershipAudit?.status === 'aprovado' ||
+    action?.controllershipAudit?.status === 'ajustado_e_aprovado'
+  );
+
+  const isControllershipSatisfied = !hasMonetaryGain || isControllershipApproved;
+
   const homologatedAtDate =
     action?.masterApprovedAt ||
     action?.completedAt ||
@@ -890,7 +917,7 @@ export default function AdminProjectDetailPage() {
   const handleAgentSubmitForApproval = () => {
     if (!action || isViewer) return;
 
-    // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
+    // Bloqueio Poka-Yoke 1: Atividades 5W2H pendentes
     if (uncompletedActivities.length > 0) {
       alert(
         `⚠️ SUBMISSÃO BLOQUEADA!\n\nExistem ${uncompletedActivities.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompletedActivities
@@ -900,10 +927,30 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    const monthsFilled = getFollowUpMonthsFilledCount(action);
-    if (monthsFilled < 3) {
-      alert(`Atenção: O projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
+    // Bloqueio Poka-Yoke 2: Regra de Governança Corporativa da Controladoria
+    if (hasMonetaryGain && !isControllershipApproved) {
+      if (!action.controllershipAudit) {
+        alert(
+          `⚠️ SUBMISSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados no valor de ${formatCurrency(identifiedGainValue)}.\n\nRegra Obrigatória: Projetos com retorno financeiro devem ser submetidos à Controladoria e homologados pelo auditor contábil no Passo 4.2b antes do envio para Homologação Master.`
+        );
+      } else if (action.controllershipAudit.status === 'pendente') {
+        alert(
+          `⏳ AGUARDANDO PARECER DA CONTROLADORIA!\n\nO projeto foi enviado para a Controladoria e está sob análise do auditor contábil.\n\nAssim que os ganhos forem homologados no portal, a submissão para Homologação Master será liberada.`
+        );
+      } else if (action.controllershipAudit.status === 'rejeitado') {
+        alert(
+          `❌ PARECER DA CONTROLADORIA PENDENTE DE AJUSTES!\n\nA Controladoria solicitou revisão das premissas financeiras:\n"${action.controllershipAudit.rejectionReason || 'Revisão necessária'}".\n\nPor favor, revise os cálculos no Passo 4.2b e ressubmeta à Controladoria.`
+        );
+      }
       return;
+    }
+
+    if (hasMonetaryGain) {
+      const monthsFilled = getFollowUpMonthsFilledCount(action);
+      if (monthsFilled < 3) {
+        alert(`Atenção: O projeto com retorno financeiro só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
+        return;
+      }
     }
 
     // Se ainda não tinha diretriz vinculada, o Sensei IA conecta automaticamente
@@ -937,7 +984,7 @@ export default function AdminProjectDetailPage() {
   const handleMasterApprove = async () => {
     if (!action || isViewer) return;
 
-    // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
+    // Bloqueio Poka-Yoke 1: Atividades 5W2H pendentes
     if (uncompletedActivities.length > 0) {
       alert(
         `⚠️ HOMOLOGAÇÃO BLOQUEADA!\n\nNão é possível homologar o projeto pois existem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão:\n${uncompletedActivities
@@ -947,10 +994,30 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    const monthsFilled = getFollowUpMonthsFilledCount(action);
-    if (monthsFilled < 3) {
-      alert(`Atenção: A homologação master só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
+    // Bloqueio Poka-Yoke 2: Regra de Governança Corporativa da Controladoria
+    if (hasMonetaryGain && !isControllershipApproved) {
+      if (!action.controllershipAudit) {
+        alert(
+          `⚠️ HOMOLOGAÇÃO MASTER BLOQUEADA!\n\nEste projeto possui ganhos monetários identificados (${formatCurrency(identifiedGainValue)}). Pela política corporativa, é OBRIGATÓRIO submeter à Controladoria e obter a certificação contábil no Passo 4.2b antes da validação final do Gestor Master.`
+        );
+      } else if (action.controllershipAudit.status === 'pendente') {
+        alert(
+          `⏳ AGUARDANDO PARECER DA CONTROLADORIA!\n\nA homologação master não pode ser realizada enquanto a Controladoria não emitir o parecer de certificação dos ganhos financeiros.\n\nNotificação enviada para: ${action.controllershipAudit.emailSentTo || 'auditor'}.`
+        );
+      } else if (action.controllershipAudit.status === 'rejeitado') {
+        alert(
+          `❌ HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nMotivo da recusa contábil: "${action.controllershipAudit.rejectionReason}".\n\nO projeto precisa ter suas premissas ajustadas no Passo 4.2b antes da validação final.`
+        );
+      }
       return;
+    }
+
+    if (hasMonetaryGain) {
+      const monthsFilled = getFollowUpMonthsFilledCount(action);
+      if (monthsFilled < 3) {
+        alert(`Atenção: A homologação master de projetos com retorno financeiro só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
+        return;
+      }
     }
 
     let currentObjectiveId = action.strategicObjectiveId;
@@ -4233,20 +4300,24 @@ export default function AdminProjectDetailPage() {
             style={{
               padding: '1.75rem',
               borderRadius: '16px',
-              backgroundColor: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+              backgroundColor: !hasMonetaryGain
+                ? '#0f172a'
+                : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
                 ? 'rgba(16, 185, 129, 0.08)'
                 : action.controllershipAudit?.status === 'pendente'
                 ? 'rgba(245, 158, 11, 0.08)'
                 : action.controllershipAudit?.status === 'rejeitado'
                 ? 'rgba(239, 68, 68, 0.08)'
-                : '#0f172a',
-              border: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                : 'rgba(245, 158, 11, 0.05)',
+              border: !hasMonetaryGain
+                ? '1px dashed rgba(255, 255, 255, 0.15)'
+                : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
                 ? '2px solid rgba(16, 185, 129, 0.45)'
                 : action.controllershipAudit?.status === 'pendente'
                 ? '2px solid rgba(245, 158, 11, 0.45)'
                 : action.controllershipAudit?.status === 'rejeitado'
                 ? '2px solid rgba(239, 68, 68, 0.45)'
-                : '1px solid rgba(59, 130, 246, 0.3)',
+                : '2px solid rgba(245, 158, 11, 0.45)',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem',
@@ -4259,20 +4330,22 @@ export default function AdminProjectDetailPage() {
                     width: '46px',
                     height: '46px',
                     borderRadius: '12px',
-                    backgroundColor: action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                    backgroundColor: !hasMonetaryGain
+                      ? 'rgba(59, 130, 246, 0.15)'
+                      : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
                       ? 'rgba(16, 185, 129, 0.2)'
                       : action.controllershipAudit?.status === 'pendente'
                       ? 'rgba(245, 158, 11, 0.2)'
                       : action.controllershipAudit?.status === 'rejeitado'
                       ? 'rgba(239, 68, 68, 0.2)'
-                      : 'rgba(59, 130, 246, 0.2)',
-                    border: `1px solid ${action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? 'rgba(16, 185, 129, 0.4)' : action.controllershipAudit?.status === 'pendente' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(59, 130, 246, 0.4)'}`,
+                      : 'rgba(245, 158, 11, 0.2)',
+                    border: `1px solid ${!hasMonetaryGain ? 'rgba(59, 130, 246, 0.3)' : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? 'rgba(16, 185, 129, 0.4)' : action.controllershipAudit?.status === 'pendente' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <FileCheck2 size={24} color={action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? '#34d399' : action.controllershipAudit?.status === 'pendente' ? '#fbbf24' : '#60a5fa'} />
+                  <FileCheck2 size={24} color={!hasMonetaryGain ? '#60a5fa' : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado' ? '#34d399' : action.controllershipAudit?.status === 'pendente' ? '#fbbf24' : '#f59e0b'} />
                 </div>
 
                 <div>
@@ -4280,7 +4353,11 @@ export default function AdminProjectDetailPage() {
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                       4.2b Governança Financeira & Auditoria da Controladoria
                     </h3>
-                    {action.controllershipAudit?.status === 'aprovado' ? (
+                    {!hasMonetaryGain ? (
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ✓ DISPENSADO (PROJETO SEM GANHO MONETÁRIO)
+                      </span>
+                    ) : action.controllershipAudit?.status === 'aprovado' ? (
                       <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
                         ✓ GANHOS HOMOLOGADOS PELA CONTROLADORIA
                       </span>
@@ -4297,25 +4374,27 @@ export default function AdminProjectDetailPage() {
                         ✕ NECESSITA REVISÃO DE PREMISSAS
                       </span>
                     ) : (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        SUBMISSÃO PRÉVIA NECESSÁRIA
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
+                        ⚠️ ENVIO OBRIGATÓRIO ({formatCurrency(identifiedGainValue)})
                       </span>
                     )}
                   </div>
                   <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '750px', lineHeight: 1.5 }}>
-                    {action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
+                    {!hasMonetaryGain
+                      ? 'Este projeto não possui ganhos monetários diretos declarados (ações focadas em 5S, ergonomia, segurança, conformidade ou padronização de processos). Pela governança corporativa, o envio à Controladoria é dispensado e a Homologação Master está liberada diretamente.'
+                      : action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado'
                       ? `Ganhos certificados por ${action.controllershipAudit.reviewedBy} (${action.controllershipAudit.reviewerRole || 'Controladoria'}) em ${formatDateTime(action.controllershipAudit.reviewedAt)}. Baseline financeiro liberado para o acompanhamento trimestral.`
                       : action.controllershipAudit?.status === 'pendente'
                       ? `Notificação com link escopado enviada para ${action.controllershipAudit.emailSentTo} em ${formatDateTime(action.controllershipAudit.submittedAt)}. O auditor analisará as 7 fontes de economia.`
                       : action.controllershipAudit?.status === 'rejeitado'
                       ? `Parecer da Controladoria: "${action.controllershipAudit.rejectionReason}". O projeto deve ser reavaliado no Gemba e ressubmetido.`
-                      : 'Antes de iniciar o acompanhamento de 3 meses, projetos com impacto financeiro passam pela homologação prévia da Controladoria via link exclusivo com memorial de cálculo.'}
+                      : `Este projeto possui retorno financeiro apurado (${formatCurrency(identifiedGainValue)}/ano). Pela regra de governança corporativa, é OBRIGATÓRIO submeter os ganhos para auditoria contábil antes da Homologação Master final.`}
                   </p>
                 </div>
               </div>
 
               {/* Aviso Poka-Yoke: Submissão Bloqueada por Pendências 5W2H */}
-              {uncompletedActivities.length > 0 && !action.controllershipAudit && (
+              {hasMonetaryGain && uncompletedActivities.length > 0 && !action.controllershipAudit && (
                 <div
                   style={{
                     padding: '0.85rem 1.15rem',
@@ -4339,7 +4418,24 @@ export default function AdminProjectDetailPage() {
 
               {/* Botões de Ação do Card */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                {!action.controllershipAudit ? (
+                {!hasMonetaryGain ? (
+                  <span
+                    style={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 700,
+                      color: '#93c5fd',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      padding: '0.55rem 1rem',
+                      borderRadius: '8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                    }}
+                  >
+                    <CheckCircle2 size={16} color="#60a5fa" /> Auditoria Dispensada (Sem Retorno Monetário)
+                  </span>
+                ) : !action.controllershipAudit ? (
                   <button
                     type="button"
                     onClick={handleSubmeterControladoria}
@@ -5163,8 +5259,12 @@ export default function AdminProjectDetailPage() {
             const monthsFilled = getFollowUpMonthsFilledCount(action);
             const isThreeMonthsDone = monthsFilled === 3;
             const hasUncompleted = uncompletedActivities.length > 0;
-            const isFullyReady = isThreeMonthsDone && !hasUncompleted;
+            const isControllershipSatisfied = !hasMonetaryGain || isControllershipApproved;
+            const isFollowUpSatisfied = hasMonetaryGain ? isThreeMonthsDone : true;
+            const isFullyReady = !hasUncompleted && isControllershipSatisfied && isFollowUpSatisfied;
             const isAwaitingApproval = action.status === 'aguardando_aprovacao' || action.submittedForApproval;
+            const isBlockedByControladoria = hasMonetaryGain && !isControllershipApproved;
+            const isBlockedByFollowUp = hasMonetaryGain && !isThreeMonthsDone;
 
             return (
               <div
@@ -5178,18 +5278,22 @@ export default function AdminProjectDetailPage() {
                     ? '2px solid rgba(168, 85, 247, 0.5)'
                     : hasUncompleted
                     ? '2px solid rgba(239, 68, 68, 0.45)'
-                    : isThreeMonthsDone
+                    : isBlockedByControladoria
+                    ? '2px solid rgba(245, 158, 11, 0.5)'
+                    : isBlockedByFollowUp
                     ? '2px solid rgba(6, 182, 212, 0.5)'
-                    : '1px dashed rgba(255, 255, 255, 0.15)',
+                    : '2px solid rgba(16, 185, 129, 0.4)',
                   backgroundColor: action.masterApproved
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isAwaitingApproval
                     ? 'rgba(168, 85, 247, 0.1)'
                     : hasUncompleted
                     ? 'rgba(239, 68, 68, 0.06)'
-                    : isThreeMonthsDone
+                    : isBlockedByControladoria
+                    ? 'rgba(245, 158, 11, 0.06)'
+                    : isBlockedByFollowUp
                     ? 'rgba(6, 182, 212, 0.06)'
-                    : '#0f172a',
+                    : 'rgba(16, 185, 129, 0.05)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -5221,6 +5325,65 @@ export default function AdminProjectDetailPage() {
                   </div>
                 )}
 
+                {/* Banner de Bloqueio da Controladoria por Ganho Monetário */}
+                {isBlockedByControladoria && !action.masterApproved && !hasUncompleted && (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '0.85rem 1.15rem',
+                      borderRadius: '10px',
+                      backgroundColor: action.controllershipAudit?.status === 'pendente'
+                        ? 'rgba(245, 158, 11, 0.15)'
+                        : action.controllershipAudit?.status === 'rejeitado'
+                        ? 'rgba(239, 68, 68, 0.15)'
+                        : 'rgba(245, 158, 11, 0.15)',
+                      border: `1.5px solid ${action.controllershipAudit?.status === 'pendente'
+                        ? 'rgba(245, 158, 11, 0.4)'
+                        : action.controllershipAudit?.status === 'rejeitado'
+                        ? 'rgba(239, 68, 68, 0.4)'
+                        : 'rgba(245, 158, 11, 0.4)'}`,
+                      color: action.controllershipAudit?.status === 'rejeitado' ? '#fca5a5' : '#fde68a',
+                      fontSize: '0.8125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                    }}
+                  >
+                    <ShieldAlert size={18} color={action.controllershipAudit?.status === 'rejeitado' ? '#ef4444' : '#f59e0b'} style={{ flexShrink: 0 }} />
+                    <span>
+                      <strong>Homologação Bloqueada pela Controladoria:</strong> Este projeto possui retorno monetário identificado ({formatCurrency(identifiedGainValue)}).
+                      {!action.controllershipAudit
+                        ? ' Conforme as diretrizes corporativas, é OBRIGATÓRIO submeter este projeto para auditoria da Controladoria no Passo 4.2b antes da homologação final.'
+                        : action.controllershipAudit.status === 'pendente'
+                        ? ` Notificação enviada em ${formatDateTime(action.controllershipAudit.submittedAt)}. Aguardando parecer do auditor contábil.`
+                        : ` A Controladoria solicitou ajustes contábeis: "${action.controllershipAudit.rejectionReason}". Revise os cálculos no Passo 4.2b.`}
+                    </span>
+                  </div>
+                )}
+
+                {/* Banner Informativo: Projeto sem Ganho Financeiro (Dispensado) */}
+                {!hasMonetaryGain && !action.masterApproved && !hasUncompleted && (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 1rem',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                      border: '1px solid rgba(59, 130, 246, 0.25)',
+                      color: '#93c5fd',
+                      fontSize: '0.78125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <CheckCircle2 size={16} color="#60a5fa" style={{ flexShrink: 0 }} />
+                    <span>
+                      <strong>Auditoria da Controladoria Dispensada:</strong> Projeto orientado a melhorias operacionais sem ganho monetário direto (5S / Segurança / Ergonomia / Padronização). Homologação técnica liberada diretamente.
+                    </span>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
                   <div
                     style={{
@@ -5233,19 +5396,21 @@ export default function AdminProjectDetailPage() {
                         ? '#9333ea'
                         : hasUncompleted
                         ? '#dc2626'
-                        : isThreeMonthsDone
+                        : isBlockedByControladoria
+                        ? '#d97706'
+                        : isBlockedByFollowUp
                         ? '#0284c7'
-                        : '#1e293b',
+                        : '#10b981',
                       color: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 900,
                       fontSize: '1.35rem',
-                      boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : isThreeMonthsDone ? '0 0 15px rgba(6, 182, 212, 0.3)' : 'none',
+                      boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : isFullyReady ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
                     }}
                   >
-                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : hasUncompleted ? '⚠️' : isThreeMonthsDone ? '🚀' : '🔒'}
+                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : hasUncompleted ? '⚠️' : isBlockedByControladoria ? '🏛️' : isBlockedByFollowUp ? '🔒' : '🚀'}
                   </div>
 
                   <div>
@@ -5259,9 +5424,11 @@ export default function AdminProjectDetailPage() {
                           ? '#c084fc'
                           : hasUncompleted
                           ? '#f87171'
-                          : isThreeMonthsDone
-                          ? '#38bdf8'
-                          : '#94a3b8',
+                          : isBlockedByControladoria
+                          ? '#fbbf24'
+                          : isBlockedByFollowUp
+                          ? '#94a3b8'
+                          : '#34d399',
                         margin: 0,
                         fontFamily: 'var(--font-heading)',
                       }}
@@ -5272,21 +5439,27 @@ export default function AdminProjectDetailPage() {
                         ? '4.4 Aguardando Homologação do Gestor Master'
                         : hasUncompleted
                         ? `4.4 Homologação Bloqueada (${uncompletedActivities.length} Ação(ões) 5W2H Pendente(s))`
-                        : isThreeMonthsDone
-                        ? '4.4 Pronto para Envio à Homologação Master'
-                        : '4.4 Homologação Master (Bloqueada: Exige 3 Meses)'}
+                        : isBlockedByControladoria
+                        ? '4.4 Homologação Bloqueada (Exige Parecer da Controladoria)'
+                        : isBlockedByFollowUp
+                        ? `4.4 Homologação Master (Acompanhamento: ${monthsFilled}/3 Meses)`
+                        : '4.4 Pronto para Homologação Master'}
                     </h4>
 
                     <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', lineHeight: 1.4 }}>
                       {action.masterApproved
                         ? `Validado por ${action.masterApprovedBy || 'Gestor Master'} em ${formatDateTime(action.masterApprovedAt)}. Custo evitado integrado oficialmente aos relatórios executivos e DRE.`
                         : isAwaitingApproval
-                        ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)} com a comprovação dos 3 meses de acompanhamento concluída.`
+                        ? `Submetido por ${action.submittedForApprovalBy || action.assignedAgentName || 'Agente'} em ${formatDateTime(action.submittedForApprovalAt || action.updatedAt)}.`
                         : hasUncompleted
                         ? `O projeto não pode ser homologado enquanto existirem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão no Passo 2.`
-                        : isThreeMonthsDone
-                        ? 'Os 3 meses de acompanhamento e todas as ações 5W2H foram finalizadas com sucesso! O projeto está pronto para a homologação do Gestor Master.'
-                        : `O agente só pode enviar o projeto para homologação após o preenchimento dos 3 meses de acompanhamento no passo 4.3 acima (Progresso: ${monthsFilled}/3 meses).`}
+                        : isBlockedByControladoria
+                        ? `Este projeto possui ganho monetário identificado (${formatCurrency(identifiedGainValue)}). O envio e parecer aprovado da Controladoria no Passo 4.2b são obrigatórios.`
+                        : isBlockedByFollowUp
+                        ? `O agente deve registrar os 3 meses de acompanhamento no Passo 4.3 acima (Progresso: ${monthsFilled}/3 meses) para comprovação da sustentação fabril.`
+                        : !hasMonetaryGain
+                        ? 'Todas as ações 5W2H foram finalizadas com sucesso e o envio à Controladoria está dispensado. O projeto está 100% pronto para homologação técnica.'
+                        : 'Os 3 meses de acompanhamento, ações 5W2H e certificação da Controladoria foram concluídos com sucesso! O projeto está pronto para a homologação do Gestor Master.'}
                     </p>
                   </div>
                 </div>
@@ -5361,13 +5534,15 @@ export default function AdminProjectDetailPage() {
                         gap: '0.5rem',
                         opacity: isFullyReady ? 1 : 0.6,
                         cursor: isFullyReady ? 'pointer' : 'not-allowed',
-                        backgroundColor: isAwaitingApproval ? '#7c3aed' : undefined,
-                        borderColor: isAwaitingApproval ? '#7c3aed' : undefined,
+                        backgroundColor: isAwaitingApproval ? '#7c3aed' : isFullyReady ? '#2563eb' : undefined,
+                        borderColor: isAwaitingApproval ? '#7c3aed' : isFullyReady ? '#2563eb' : undefined,
                       }}
                       title={
                         hasUncompleted
                           ? `A homologação está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
-                          : !isThreeMonthsDone
+                          : isBlockedByControladoria
+                          ? `Submissão bloqueada: projetos com ganho financeiro (${formatCurrency(identifiedGainValue)}) exigem aprovação da Controladoria no Passo 4.2b.`
+                          : isBlockedByFollowUp
                           ? `A submissão só é liberada após o preenchimento dos 3 meses de resultados pelo agente (${monthsFilled}/3 preenchidos).`
                           : undefined
                       }
@@ -5377,10 +5552,12 @@ export default function AdminProjectDetailPage() {
                         {isAwaitingApproval
                           ? 'Reenviar para Homologação Master'
                           : hasUncompleted
-                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H pendentes)`
-                          : isThreeMonthsDone
-                          ? 'Submeter para Homologação Master'
-                          : `Homologação Bloqueada (${monthsFilled}/3 meses)`}
+                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H)`
+                          : isBlockedByControladoria
+                          ? 'Homologação Bloqueada (Aguardando Controladoria)'
+                          : isBlockedByFollowUp
+                          ? `Homologação Bloqueada (${monthsFilled}/3 meses)`
+                          : 'Submeter para Homologação Master'}
                       </span>
                     </button>
                   ) : isViewer ? (
@@ -5417,18 +5594,22 @@ export default function AdminProjectDetailPage() {
                       title={
                         hasUncompleted
                           ? `A homologação master está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
-                          : !isThreeMonthsDone
+                          : isBlockedByControladoria
+                          ? `Homologação bloqueada: projetos com ganho monetário (${formatCurrency(identifiedGainValue)}) exigem parecer aprovado da Controladoria no Passo 4.2b.`
+                          : isBlockedByFollowUp
                           ? `A homologação master só pode ser realizada após a adição dos resultados de 3 meses pelo agente (${monthsFilled}/3 preenchidos).`
                           : 'Homologar projeto e concluir ciclo PDCA'
                       }
                     >
-                      <CheckCircle2 size={16} />
+                      {isFullyReady ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
                       <span>
                         {hasUncompleted
-                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H pendentes)`
-                          : isThreeMonthsDone
-                          ? 'Homologar Projeto & Concluir Ciclo PDCA'
-                          : `Homologação Pendente (${monthsFilled}/3 meses)`}
+                          ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H)`
+                          : isBlockedByControladoria
+                          ? 'Homologação Bloqueada (Aguardando Controladoria)'
+                          : isBlockedByFollowUp
+                          ? `Homologação Bloqueada (${monthsFilled}/3 meses)`
+                          : 'Homologar Projeto & Concluir Ciclo PDCA'}
                       </span>
                     </button>
                   )}

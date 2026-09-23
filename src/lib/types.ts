@@ -257,7 +257,8 @@ export type ControllershipAuditStatus =
   | 'pendente'
   | 'aprovado'
   | 'ajustado_e_aprovado'
-  | 'rejeitado';
+  | 'rejeitado'
+  | 'dispensado';
 
 // Detalhamento e Memória de Cálculo de Ganhos Financeiros (Auditoria Controladoria)
 export interface GainProofAttachment {
