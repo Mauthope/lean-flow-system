@@ -94,34 +94,59 @@ function updateTenantAiSettingsDirect(settings: Partial<{ geminiApiKey?: string;
 }
 
 export function getGeminiApiKey(): string {
-  if (typeof window !== 'undefined') {
-    // 1. Tenta chave da Entidade atual
-    try {
-      const tenant = getStoredData<Tenant | null>(STORAGE_KEYS.CURRENT_TENANT, null);
-      if (tenant?.aiSettings?.geminiApiKey && tenant.aiSettings.geminiApiKey.trim()) {
-        return tenant.aiSettings.geminiApiKey.trim();
-      }
-    } catch {
-      // continua
-    }
-
-    // 2. Tenta override local
-    const localKey = localStorage.getItem(STORAGE_KEY);
-    if (localKey && localKey.trim()) return localKey.trim();
-  }
-  return process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+  // SecOps Compliance: A chave do Gemini agora reside exclusivamente no servidor backend (/api/ai/sensei)
+  return 'configured_in_backend';
 }
 
 export function saveGeminiApiKey(key: string): void {
+  // SecOps Compliance: Chaves de API não devem ser gravadas em texto puro no localStorage do navegador
   if (typeof window !== 'undefined') {
-    if (!key || !key.trim()) {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(STORAGE_WORKING_MODEL_KEY);
-    } else {
-      localStorage.setItem(STORAGE_KEY, key.trim());
-      updateTenantAiSettingsDirect({ geminiApiKey: key.trim() });
-    }
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_WORKING_MODEL_KEY);
   }
+}
+
+export async function callSenseiBackend({
+  prompt,
+  contents,
+  systemInstruction,
+  model = 'gemini-1.5-flash',
+  temperature = 0.5,
+  maxTokens = 1200,
+  responseMimeType,
+}: {
+  prompt?: string;
+  contents?: any[];
+  systemInstruction?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  responseMimeType?: string;
+}): Promise<string | null> {
+  try {
+    const res = await fetch('/api/ai/sensei', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'generate',
+        prompt,
+        contents,
+        systemInstruction,
+        model,
+        temperature,
+        maxTokens,
+        responseMimeType,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.text || null;
+    }
+  } catch (err) {
+    console.warn('[Sensei Backend] Erro na requisição de IA segura:', err);
+  }
+  return null;
 }
 
 export function getVoicePreference(): string {
@@ -270,7 +295,7 @@ export function formatTextForHumanSpeech(text: string): string {
 // VALIDAÇÃO DA CHAVE (GEMINI + GOOGLE CLOUD TEXT-TO-SPEECH NEURAL2)
 // =============================================================================
 export async function validateGeminiApiKey(
-  key: string
+  key?: string
 ): Promise<{
   valid: boolean;
   ttsEnabled: boolean;
@@ -279,127 +304,37 @@ export async function validateGeminiApiKey(
   workingModel?: string;
   isKeyRestricted?: boolean;
 }> {
-  if (!key || !key.trim()) {
-    return { valid: false, ttsEnabled: false, error: 'Chave não informada.' };
-  }
-
-  const cleanKey = key.trim();
-
-  // 1. Testa o Google Cloud Text-to-Speech (Neural2)
-  let ttsEnabled = false;
-  let ttsError = '';
-  let isKeyRestricted = false;
-
   try {
-    const ttsRes = await fetch(
-      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${cleanKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: { text: 'Olá' },
-          voice: { languageCode: 'pt-BR', name: 'pt-BR-Neural2-B' },
-          audioConfig: { audioEncoding: 'MP3' },
-        }),
-      }
-    );
+    const res = await fetch('/api/ai/sensei', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'validate' }),
+    });
 
-    if (ttsRes.ok) {
-      ttsEnabled = true;
-    } else {
-      const errData = await ttsRes.json().catch(() => ({}));
-      const rawMsg = errData?.error?.message || '';
-      console.warn('[Sensei TTS Validation Response]:', ttsRes.status, errData);
-
-      if (
-        rawMsg.includes('Requests to this API texttospeech.googleapis.com') ||
-        rawMsg.includes('blocked') ||
-        rawMsg.includes('PERMISSION_DENIED') ||
-        rawMsg.includes('restricted')
-      ) {
-        isKeyRestricted = true;
-        ttsError =
-          'Sua chave está com Restrição de API. No Google Cloud Console -> Credenciais -> Clique na sua chave -> Em "Restrições de API", marque "Não restringir chave" ou adicione "Cloud Text-to-Speech API".';
-      } else {
-        ttsError = rawMsg || 'API Cloud Text-to-Speech precisa ser autorizada para esta chave.';
-      }
+    if (res.ok) {
+      return {
+        valid: true,
+        ttsEnabled: true,
+        workingModel: 'gemini-1.5-flash',
+        isKeyRestricted: false,
+      };
     }
+
+    const errData = await res.json().catch(() => ({}));
+    return {
+      valid: false,
+      ttsEnabled: false,
+      error:
+        errData.error ||
+        'Chave de API do Gemini precisa ser configurada nas variáveis de ambiente do servidor (GEMINI_API_KEY).',
+    };
   } catch (e: any) {
-    ttsError = e?.message || 'Erro de conexão com Text-to-Speech.';
+    return {
+      valid: false,
+      ttsEnabled: false,
+      error: e?.message || 'Falha ao conectar com o serviço seguro do Sensei.',
+    };
   }
-
-  // 2. Testa a inteligência do Gemini (ListModels / Endpoints v1beta e v1)
-  let textValid = false;
-  let workingModel = 'gemini-1.5-flash';
-
-  try {
-    const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`
-    );
-
-    if (listRes.ok) {
-      const listData = await listRes.json();
-      const models = (listData.models || [])
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((m: any) =>
-          (m.supportedGenerationMethods || []).includes('generateContent')
-        )
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((m: any) => m.name.replace('models/', ''));
-
-      if (models.length > 0) {
-        workingModel =
-          models.find((m: string) => m.includes('1.5-flash')) ||
-          models.find((m: string) => m.includes('2.0-flash')) ||
-          models[0];
-        textValid = true;
-      }
-    }
-  } catch {
-    // continua
-  }
-
-  if (!textValid) {
-    const candidateEndpoints = [
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${cleanKey}`,
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`,
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${cleanKey}`,
-    ];
-
-    for (const url of candidateEndpoints) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: 'Ping' }] }],
-            generationConfig: { maxOutputTokens: 5 },
-          }),
-        });
-
-        if (res.ok) {
-          textValid = true;
-          break;
-        }
-      } catch {
-        // continua
-      }
-    }
-  }
-
-  if (typeof window !== 'undefined' && textValid) {
-    localStorage.setItem(STORAGE_WORKING_MODEL_KEY, workingModel);
-  }
-
-  return {
-    valid: textValid || ttsEnabled,
-    ttsEnabled,
-    workingModel,
-    isKeyRestricted,
-    error: !textValid && !ttsEnabled ? 'Chave de API não autorizada no Google Cloud.' : undefined,
-    ttsError: !ttsEnabled ? ttsError : undefined,
-  };
 }
 
 // =============================================================================
@@ -411,7 +346,7 @@ export async function synthesizeSpeechGoogleCloud({
   voiceName,
 }: {
   text: string;
-  apiKey: string;
+  apiKey?: string;
   voiceName?: string;
 }): Promise<{ audioBase64: string | null; voiceUsed?: string; error?: string }> {
   try {
@@ -420,48 +355,30 @@ export async function synthesizeSpeechGoogleCloud({
       selectedVoice = 'pt-BR-Neural2-B';
     }
 
-    // Formata o texto para fala humana ultra-natural (100% PT-BR)
     const speechOptimizedText = formatTextForHumanSpeech(text);
 
-    const res = await fetch(
-      `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey.trim()}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: { text: speechOptimizedText },
-          voice: {
-            languageCode: 'pt-BR',
-            name: selectedVoice,
-          },
-          audioConfig: {
-            audioEncoding: 'MP3',
-            speakingRate: 1.0,
-            pitch: 0.0,
-            sampleRateHertz: 24000,
-          },
-        }),
-      }
-    );
+    const res = await fetch('/api/ai/sensei', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'tts',
+        text: speechOptimizedText,
+        voiceName: selectedVoice,
+      }),
+    });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      const errMessage =
-        errData?.error?.message ||
-        `Erro ${res.status}: Cloud Text-to-Speech não autorizado para esta chave.`;
-      console.warn('[Sensei TTS Error]:', errMessage);
-      return { audioBase64: null, error: errMessage };
+    if (res.ok) {
+      const data = await res.json();
+      return { audioBase64: data.audioContent, voiceUsed: data.voiceUsed || selectedVoice };
     }
 
-    const data = await res.json();
-    if (data?.audioContent) {
-      console.log(`[Sensei TTS Sucesso]: Áudio gerado com ${selectedVoice}`);
-      return { audioBase64: data.audioContent, voiceUsed: selectedVoice };
-    }
-
-    return { audioBase64: null, error: 'Áudio não retornado pelo Google Cloud TTS.' };
+    const errData = await res.json().catch(() => ({}));
+    const errMessage =
+      errData?.error || `Erro ${res.status}: Síntese de voz não autorizada ou indisponível.`;
+    console.warn('[Sensei TTS Error]:', errMessage);
+    return { audioBase64: null, error: errMessage };
   } catch (err: any) {
-    return { audioBase64: null, error: err?.message || 'Falha de conexão com Cloud TTS.' };
+    return { audioBase64: null, error: err?.message || 'Falha de conexão com backend TTS.' };
   }
 }
 
@@ -670,40 +587,13 @@ PERGUNTA FEITA NA SALA DE APRESENTAÇÃO:
 
 SUA RESPOSTA DIDÁTICA, NATURAL E HUMANA COMO CO-APRESENTADOR (2 a 3 frases faladas 100% em português brasileiro, com números por extenso e zero termos em inglês):`;
 
-  const candidateModels = [
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-2.0-flash',
-    'gemini-1.5-pro',
-    'gemini-pro',
-  ];
+  const backendReply = await callSenseiBackend({
+    prompt: promptText,
+    temperature: 0.5,
+    maxTokens: 250,
+  });
 
-  for (const model of candidateModels) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              temperature: 0.5,
-              maxOutputTokens: 250,
-            },
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (text) return text;
-      }
-    } catch {
-      // continua
-    }
-  }
+  if (backendReply) return backendReply;
 
   return getLocalFallbackAnswer(question, project);
 }
@@ -811,37 +701,19 @@ RESPONDA ESTRITAMENTE EM JSON VÁLIDO COM A SEGUINTE ESTRUTURA:
   "executiveDiagnosis": "texto explicativo e encorajador do Sensei..."
 }`;
 
-  if (effectiveKey) {
-    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-    for (const model of candidateModels) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 1800,
-                responseMimeType: 'application/json',
-              },
-            }),
-          }
-        );
+  const rawText = await callSenseiBackend({
+    prompt,
+    temperature: 0.3,
+    maxTokens: 1800,
+    responseMimeType: 'application/json',
+  });
 
-        if (response.ok) {
-          const data = await response.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (rawText) {
-            const parsed = JSON.parse(rawText);
-            return parsed;
-          }
-        }
-      } catch (err) {
-        console.warn(`[Sensei Copilot] Falha com modelo ${model}:`, err);
-      }
+  if (rawText) {
+    try {
+      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (err) {
+      console.warn('[Sensei Copilot] Falha ao analisar JSON retornado:', err);
     }
   }
 
@@ -930,40 +802,22 @@ SEU COMPORTAMENTO COMO CONSULTOR LEAN:
 - Quando sugerir fórmulas ou cálculos, explique o significado prático para a fábrica.
 - Seja conciso e direto ao ponto (respostas ricas em 2 a 4 parágrafos bem estruturados).`;
 
-  if (effectiveKey) {
-    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-    for (const model of candidateModels) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                { role: 'user', parts: [{ text: systemInstruction }] },
-                { role: 'model', parts: [{ text: 'Entendido! Sou o Sensei, seu copiloto de Lean Manufacturing. Como posso te apoiar com este projeto hoje?' }] },
-                ...history,
-                { role: 'user', parts: [{ text: message }] },
-              ],
-              generationConfig: {
-                temperature: 0.6,
-                maxOutputTokens: 800,
-              },
-            }),
-          }
-        );
+  const historyParts = history.map((h) => ({
+    role: h.role === 'model' ? 'model' : 'user',
+    parts: [{ text: h.parts?.[0]?.text || '' }],
+  }));
 
-        if (response.ok) {
-          const data = await response.json();
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (reply) return reply;
-        }
-      } catch (err) {
-        console.warn(`[Sensei Chat] Falha com modelo ${model}:`, err);
-      }
-    }
-  }
+  const backendReply = await callSenseiBackend({
+    systemInstruction,
+    contents: [
+      ...historyParts,
+      { role: 'user', parts: [{ text: message }] },
+    ],
+    temperature: 0.6,
+    maxTokens: 800,
+  });
+
+  if (backendReply) return backendReply;
 
   // Fallback Local de Chat
   const lower = message.toLowerCase();
@@ -1045,40 +899,22 @@ DIRETRIZES DA SUA TUTORIA:
 4. Se o aluno pedir simulação de questão de prova sobre o artigo, formule uma pergunta estilo especialista com 5 alternativas e dê o gabarito comentado.
 5. Mantenha respostas concisas, ricas e bem pontuadas (2 a 4 parágrafos).`;
 
-  if (effectiveKey) {
-    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-    for (const model of candidateModels) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                { role: 'user', parts: [{ text: systemInstruction }] },
-                { role: 'model', parts: [{ text: `Olá! Sou o Sensei. Estou aqui para te ajudar a dominar tudo sobre "${article.title}". Qual é a sua dúvida ou o que gostaria de aprofundar agora?` }] },
-                ...history,
-                { role: 'user', parts: [{ text: message }] },
-              ],
-              generationConfig: {
-                temperature: 0.6,
-                maxOutputTokens: 800,
-              },
-            }),
-          }
-        );
+  const historyParts = history.map((h) => ({
+    role: h.role === 'model' ? 'model' : 'user',
+    parts: [{ text: h.parts?.[0]?.text || '' }],
+  }));
 
-        if (response.ok) {
-          const data = await response.json();
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (reply) return reply;
-        }
-      } catch (err) {
-        console.warn(`[Sensei Article Chat] Falha com modelo ${model}:`, err);
-      }
-    }
-  }
+  const backendReply = await callSenseiBackend({
+    systemInstruction,
+    contents: [
+      ...historyParts,
+      { role: 'user', parts: [{ text: message }] },
+    ],
+    temperature: 0.6,
+    maxTokens: 800,
+  });
+
+  if (backendReply) return backendReply;
 
   // Fallback Local de Tutoria do Artigo
   const lower = message.toLowerCase();
@@ -1180,55 +1016,37 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
   }
 }`;
 
-  if (effectiveKey) {
-    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-    for (const model of candidateModels) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-              generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 2500,
-                responseMimeType: 'application/json',
-              },
-            }),
-          }
-        );
+  const rawText = await callSenseiBackend({
+    prompt: systemPrompt,
+    temperature: 0.4,
+    maxTokens: 2500,
+    responseMimeType: 'application/json',
+  });
 
-        if (response.ok) {
-          const data = await response.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (rawText) {
-            const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
-            const parsed = JSON.parse(cleanJson);
-            if (parsed && parsed.title && parsed.content && parsed.content.introduction) {
-              return {
-                title: parsed.title || topic,
-                category: parsed.category || category,
-                readTimeMinutes: Number(parsed.readTimeMinutes) || targetTime,
-                minReadTimeSeconds: Number(parsed.minReadTimeSeconds) || minSeconds,
-                icon: parsed.icon || (category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚'),
-                summary: parsed.summary || `Guia completo sobre ${topic}, desenvolvido pelo Sensei IA.`,
-                content: {
-                  introduction: parsed.content.introduction,
-                  keyConcepts: Array.isArray(parsed.content.keyConcepts) ? parsed.content.keyConcepts : [],
-                  howToApply: Array.isArray(parsed.content.howToApply) ? parsed.content.howToApply : [],
-                  factoryExample: parsed.content.factoryExample || '',
-                  bestPractices: Array.isArray(parsed.content.bestPractices) ? parsed.content.bestPractices : [],
-                  quizHint: parsed.content.quizHint || '',
-                },
-              };
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`[Sensei Generate Article] Erro com modelo ${model}:`, err);
+  if (rawText) {
+    try {
+      const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      if (parsed && parsed.title && parsed.content && parsed.content.introduction) {
+        return {
+          title: parsed.title || topic,
+          category: parsed.category || category,
+          readTimeMinutes: Number(parsed.readTimeMinutes) || targetTime,
+          minReadTimeSeconds: Number(parsed.minReadTimeSeconds) || minSeconds,
+          icon: parsed.icon || (category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚'),
+          summary: parsed.summary || `Guia completo sobre ${topic}, desenvolvido pelo Sensei IA.`,
+          content: {
+            introduction: parsed.content.introduction,
+            keyConcepts: Array.isArray(parsed.content.keyConcepts) ? parsed.content.keyConcepts : [],
+            howToApply: Array.isArray(parsed.content.howToApply) ? parsed.content.howToApply : [],
+            factoryExample: parsed.content.factoryExample || '',
+            bestPractices: Array.isArray(parsed.content.bestPractices) ? parsed.content.bestPractices : [],
+            quizHint: parsed.content.quizHint || '',
+          },
+        };
       }
+    } catch (err) {
+      console.warn('[Sensei Generate Article] Erro com resposta JSON do backend:', err);
     }
   }
 
@@ -1465,54 +1283,36 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato:
   }
 }`;
 
-  if (effectiveKey) {
-    const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-pro'];
-    for (const model of candidateModels) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                { role: 'user', parts: [{ text: systemInstruction }] },
-                ...chatHistory.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
-                { role: 'user', parts: [{ text: `Aplique a seguinte instrução ao artigo: "${userFeedback}"` }] },
-              ],
-              generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 2500,
-                responseMimeType: 'application/json',
-              },
-            }),
-          }
-        );
+  const rawText = await callSenseiBackend({
+    systemInstruction,
+    contents: [
+      ...chatHistory.map((h) => ({ role: h.role, parts: [{ text: h.text }] })),
+      { role: 'user', parts: [{ text: `Aplique a seguinte instrução ao artigo: "${userFeedback}"` }] },
+    ],
+    temperature: 0.3,
+    maxTokens: 2500,
+    responseMimeType: 'application/json',
+  });
 
-        if (response.ok) {
-          const data = await response.json();
-          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-          if (rawText) {
-            const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
-            const parsed = JSON.parse(cleanJson);
-            if (parsed && parsed.updatedArticle && parsed.replyMessage) {
-              return {
-                replyMessage: parsed.replyMessage,
-                updatedArticle: {
-                  ...currentArticle,
-                  ...parsed.updatedArticle,
-                  content: {
-                    ...currentArticle.content,
-                    ...parsed.updatedArticle.content,
-                  },
-                },
-              };
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`[Sensei Refine Article] Erro com modelo ${model}:`, err);
+  if (rawText) {
+    try {
+      const cleanJson = rawText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      if (parsed && parsed.updatedArticle && parsed.replyMessage) {
+        return {
+          replyMessage: parsed.replyMessage,
+          updatedArticle: {
+            ...currentArticle,
+            ...parsed.updatedArticle,
+            content: {
+              ...currentArticle.content,
+              ...parsed.updatedArticle.content,
+            },
+          },
+        };
       }
+    } catch (err) {
+      console.warn('[Sensei Refine Article] Erro com modelo/backend:', err);
     }
   }
 
@@ -1652,51 +1452,34 @@ Por favor, responda EXCLUSIVAMENTE em formato JSON puro (sem marcação extra) c
 }
 `.trim();
 
-  const candidateModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+  const rawText = await callSenseiBackend({
+    prompt: promptText,
+    temperature: 0.3,
+    maxTokens: 500,
+  });
 
-  for (const model of candidateModels) {
+  if (rawText) {
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 500,
-            },
-          }),
-        }
-      );
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.justification && typeof parsed.alignmentScore === 'number') {
+          const suggestions = Array.isArray(parsed.improvementSuggestions) && parsed.improvementSuggestions.length > 0
+            ? parsed.improvementSuggestions
+            : fallbackAudit.improvementSuggestions;
 
-      if (response.ok) {
-        const data = await response.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-        if (rawText) {
-          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.justification && typeof parsed.alignmentScore === 'number') {
-              const suggestions = Array.isArray(parsed.improvementSuggestions) && parsed.improvementSuggestions.length > 0
-                ? parsed.improvementSuggestions
-                : fallbackAudit.improvementSuggestions;
-
-              return {
-                justification: parsed.justification.trim(),
-                alignmentScore: Math.min(100, Math.max(35, Math.round(parsed.alignmentScore))),
-                contributionSummary: parsed.contributionSummary?.trim() || fallbackAudit.contributionSummary,
-                improvementSuggestions: suggestions,
-                evaluatedAt: now,
-                modelUsed: `Sensei IA • Gemini (${model})`,
-              };
-            }
-          }
+          return {
+            justification: parsed.justification.trim(),
+            alignmentScore: Math.min(100, Math.max(35, Math.round(parsed.alignmentScore))),
+            contributionSummary: parsed.contributionSummary?.trim() || fallbackAudit.contributionSummary,
+            improvementSuggestions: suggestions,
+            evaluatedAt: now,
+            modelUsed: `Sensei IA • Gemini (Backend Seguro)`,
+          };
         }
       }
     } catch {
-      // Falha de rede ou timeout, tenta próximo modelo ou fallback local
+      // continua para fallback
     }
   }
 

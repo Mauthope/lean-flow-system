@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User, Tenant, UserRole } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { initializeLocalStorage } from '@/lib/storage';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -101,13 +102,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    // Default fallback to first user or keep logged out
-    const users = dataService.getUsers();
-    if (users.length > 0) {
-      dataService.setCurrentUser(users[0]);
-      setCurrentUser(users[0]);
+  const logout = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.warn('[SecOps Logout] Falha ao deslogar do Supabase:', err);
     }
+
+    if (typeof window !== 'undefined') {
+      // SecOps Item 8: Expurgar credenciais e dados locais para proteger terminais industriais compartilhados
+      const sensitiveKeys = [
+        'lean_flow_current_user',
+        'gemini_api_key',
+        'gemini_working_model',
+        'gemini_voice_pref',
+      ];
+      sensitiveKeys.forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
+      window.location.href = '/login';
+    }
+
+    setCurrentUser(null);
     setDataVersion((v) => v + 1);
   };
 

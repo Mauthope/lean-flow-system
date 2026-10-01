@@ -284,102 +284,80 @@ CREATE TABLE IF NOT EXISTS public.controllership_audits (
 CREATE INDEX IF NOT EXISTS idx_controllership_audits_token ON public.controllership_audits(token);
 
 -- =============================================================================
--- 10. POLÍTICAS DE ROW LEVEL SECURITY (RLS) MULTI-TENANT E ROOT MASTER
+-- 10. ESQUEMA PRIVADO & FUNÇÕES DE APOIO (BLINDAGEM CONTRA EXPOSIÇÃO REST)
 -- =============================================================================
-ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sectors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.lean_actions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.action_checklists ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.kaizen_ideas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tpm_machines ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tpm_tags ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tpm_audits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.strategic_objectives ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.controllership_audits ENABLE ROW LEVEL SECURITY;
+CREATE SCHEMA IF NOT EXISTS private;
+GRANT USAGE ON SCHEMA private TO authenticated;
 
--- Função auxiliar que determina se o usuário é Root Master
-CREATE OR REPLACE FUNCTION public.is_master_user() 
-RETURNS BOOLEAN AS $$
-BEGIN
+-- Função auxiliar interna: determina se o usuário autenticado é Root Master
+CREATE OR REPLACE FUNCTION private.is_master_user() 
+RETURNS BOOLEAN 
+LANGUAGE plpgsql SECURITY DEFINER 
+SET search_path = public
+AS $$ 
+BEGIN 
     RETURN EXISTS (
-        SELECT 1 FROM public.profiles
+        SELECT 1 FROM public.profiles 
         WHERE id = auth.uid() AND is_master = true
-    );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+    ); 
+END; 
+$$;
 
--- Função auxiliar que retorna o tenant_id do usuário atual
-CREATE OR REPLACE FUNCTION public.current_user_tenant_id() 
-RETURNS TEXT AS $$
-BEGIN
+-- Função auxiliar interna: retorna o tenant_id do usuário autenticado
+CREATE OR REPLACE FUNCTION private.current_user_tenant_id() 
+RETURNS TEXT 
+LANGUAGE plpgsql SECURITY DEFINER 
+SET search_path = public
+AS $$ 
+BEGIN 
     RETURN (
-        SELECT tenant_id FROM public.profiles
-        WHERE id = auth.uid()
+        SELECT tenant_id FROM public.profiles 
+        WHERE id = auth.uid() 
         LIMIT 1
-    );
+    ); 
+END; 
+$$;
+
+REVOKE ALL ON FUNCTION private.is_master_user() FROM public, anon;
+GRANT EXECUTE ON FUNCTION private.is_master_user() TO authenticated;
+
+REVOKE ALL ON FUNCTION private.current_user_tenant_id() FROM public, anon;
+GRANT EXECUTE ON FUNCTION private.current_user_tenant_id() TO authenticated;
+
+-- =============================================================================
+-- 11. TRAVAS DE SEGURANÇA E AUDITORIA (TRIGGERS)
+-- =============================================================================
+
+-- 11.1 Trava de Domínio Corporativo Obrigatório (@rafitec.com.br / @vaccaro.com.br)
+CREATE OR REPLACE FUNCTION public.handle_before_user_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    user_domain TEXT;
+BEGIN
+    user_domain := split_part(lower(NEW.email), '@', 2);
+    IF user_domain NOT IN ('rafitec.com.br', 'vaccaro.com.br') THEN
+        RAISE EXCEPTION 'Acesso negado: Somente e-mails corporativos dos domínios autorizados (@rafitec.com.br ou @vaccaro.com.br) são permitidos.';
+    END IF;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Regras para Tenants: Master vê todos, usuários normais veem o seu
-CREATE POLICY "Tenants visibilidade" ON public.tenants
-    FOR SELECT USING (public.is_master_user() OR id = public.current_user_tenant_id());
+REVOKE EXECUTE ON FUNCTION public.handle_before_user_insert() FROM public, anon, authenticated;
 
-CREATE POLICY "Tenants master gerenciamento" ON public.tenants
-    FOR ALL USING (public.is_master_user());
+DROP TRIGGER IF EXISTS on_auth_user_before_insert ON auth.users;
+CREATE TRIGGER on_auth_user_before_insert
+    BEFORE INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_before_user_insert();
 
--- Regras para Profiles
-CREATE POLICY "Profiles visibilidade" ON public.profiles
-    FOR SELECT USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
-CREATE POLICY "Profiles auto-atualização" ON public.profiles
-    FOR UPDATE USING (id = auth.uid());
-
-CREATE POLICY "Profiles master gerenciamento" ON public.profiles
-    FOR ALL USING (public.is_master_user());
-
--- Regras para Setores
-CREATE POLICY "Sectors isolamento" ON public.sectors
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para Ações Lean (Kanban)
-CREATE POLICY "Lean Actions isolamento" ON public.lean_actions
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para Checklists 5W2H
-CREATE POLICY "Checklists isolamento" ON public.action_checklists
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para Canal Kaizen
-CREATE POLICY "Kaizen Ideas isolamento" ON public.kaizen_ideas
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para TPM
-CREATE POLICY "TPM Machines isolamento" ON public.tpm_machines
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
-CREATE POLICY "TPM Tags isolamento" ON public.tpm_tags
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
-CREATE POLICY "TPM Audits isolamento" ON public.tpm_audits
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para Objetivos Estratégicos
-CREATE POLICY "Strategic Objectives isolamento" ON public.strategic_objectives
-    FOR ALL USING (public.is_master_user() OR tenant_id = public.current_user_tenant_id());
-
--- Regras para Controladoria (Permite leitura e atualização anônima por Token Escopado Seguro)
-CREATE POLICY "Controladoria token leitura" ON public.controllership_audits
-    FOR SELECT USING (true);
-
-CREATE POLICY "Controladoria token atualizacao" ON public.controllership_audits
-    FOR UPDATE USING (status = 'pendente' OR auth.role() = 'authenticated');
-
--- =============================================================================
--- 11. TRIGGER PARA CRIAÇÃO AUTOMÁTICA DE PERFIL NO SUPABASE AUTH
--- =============================================================================
+-- 11.2 Trigger para Criação de Perfil e Prevenção de Elevação de Privilégios
 CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
     default_tenant_id TEXT;
     is_root_email BOOLEAN;
@@ -400,9 +378,9 @@ BEGIN
     ) VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'tenant_id', default_tenant_id),
-        NEW.email,
+        lower(NEW.email),
         COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-        CASE WHEN is_root_email THEN 'admin' ELSE COALESCE(NEW.raw_user_meta_data->>'role', 'agent') END,
+        CASE WHEN is_root_email THEN 'admin' ELSE 'agent' END,
         CASE WHEN is_root_email THEN 'Gestor Master de Entidades & Administrador' ELSE 'Agente de Melhoria Contínua' END,
         CASE WHEN is_root_email THEN 'Diretoria / Governança' ELSE 'Operações' END,
         is_root_email,
@@ -414,16 +392,278 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Dispara o trigger sempre que um usuário for criado no Supabase Auth
+REVOKE EXECUTE ON FUNCTION public.handle_new_auth_user() FROM public, anon, authenticated;
+
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
 
+-- 11.3 Trigger de Integridade e Autoria para Homologação Master (ISO 9001 / SGQ)
+CREATE OR REPLACE FUNCTION public.validate_master_approval()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    current_user_is_master BOOLEAN;
+    current_user_name TEXT;
+BEGIN
+    IF (NEW.master_approved = true AND (OLD.master_approved IS DISTINCT FROM true)) THEN
+        SELECT is_master, name INTO current_user_is_master, current_user_name
+        FROM public.profiles
+        WHERE id = auth.uid();
+
+        IF current_user_is_master IS NOT TRUE THEN
+            RAISE EXCEPTION 'Acesso negado: Apenas usuários com perfil Master podem homologar a aprovação executiva de ações.';
+        END IF;
+
+        NEW.master_approved_at := now();
+        NEW.master_approver_name := COALESCE(current_user_name, 'Administrador Master');
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.validate_master_approval() FROM public, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_validate_master_approval ON public.lean_actions;
+CREATE TRIGGER trg_validate_master_approval
+    BEFORE UPDATE ON public.lean_actions
+    FOR EACH ROW EXECUTE FUNCTION public.validate_master_approval();
+
 -- =============================================================================
--- 12. SEED INICIAL (ENTIDADE PRINCIPAL RAFITEC)
+-- 12. POLÍTICAS DE ROW LEVEL SECURITY (RLS) RIGOROSAS (TO authenticated APENAS)
+-- =============================================================================
+ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sectors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lean_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.action_checklists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kaizen_ideas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tpm_machines ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tpm_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tpm_audits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.strategic_objectives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.controllership_audits ENABLE ROW LEVEL SECURITY;
+
+-- Tenants
+CREATE POLICY "tenants_select_auth" ON public.tenants
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR id = private.current_user_tenant_id());
+
+CREATE POLICY "tenants_master_all" ON public.tenants
+    FOR ALL TO authenticated
+    USING (private.is_master_user());
+
+-- Profiles
+CREATE POLICY "profiles_select_auth" ON public.profiles
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "profiles_update_self" ON public.profiles
+    FOR UPDATE TO authenticated
+    USING (id = auth.uid())
+    WITH CHECK (id = auth.uid());
+
+CREATE POLICY "profiles_master_all" ON public.profiles
+    FOR ALL TO authenticated
+    USING (private.is_master_user());
+
+-- Sectors
+CREATE POLICY "sectors_select_auth" ON public.sectors
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "sectors_admin_write" ON public.sectors
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )));
+
+-- Lean Actions
+CREATE POLICY "lean_actions_select_auth" ON public.lean_actions
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "lean_actions_insert_auth" ON public.lean_actions
+    FOR INSERT TO authenticated
+    WITH CHECK (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+CREATE POLICY "lean_actions_update_auth" ON public.lean_actions
+    FOR UPDATE TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+CREATE POLICY "lean_actions_delete_auth" ON public.lean_actions
+    FOR DELETE TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )));
+
+-- Checklists 5W2H
+CREATE POLICY "checklists_select_auth" ON public.action_checklists
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "checklists_write_auth" ON public.action_checklists
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+-- Kaizen Ideas
+CREATE POLICY "kaizen_select_auth" ON public.kaizen_ideas
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "kaizen_write_auth" ON public.kaizen_ideas
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+-- TPM Machines, Tags, Audits
+CREATE POLICY "tpm_machines_select_auth" ON public.tpm_machines
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "tpm_machines_admin_write" ON public.tpm_machines
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )));
+
+CREATE POLICY "tpm_tags_select_auth" ON public.tpm_tags
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "tpm_tags_write_auth" ON public.tpm_tags
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+CREATE POLICY "tpm_audits_select_auth" ON public.tpm_audits
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "tpm_audits_write_auth" ON public.tpm_audits
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'agent')
+    )));
+
+-- Strategic Objectives
+CREATE POLICY "strategic_objectives_select_auth" ON public.strategic_objectives
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "strategic_objectives_admin_write" ON public.strategic_objectives
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )));
+
+-- Controladoria (Apenas usuários autenticados da entidade ou Master)
+CREATE POLICY "controllership_audits_select_auth" ON public.controllership_audits
+    FOR SELECT TO authenticated
+    USING (private.is_master_user() OR tenant_id = private.current_user_tenant_id());
+
+CREATE POLICY "controllership_audits_admin_write" ON public.controllership_audits
+    FOR ALL TO authenticated
+    USING (private.is_master_user() OR (tenant_id = private.current_user_tenant_id() AND EXISTS (
+        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+    )));
+
+-- =============================================================================
+-- 13. FUNÇÕES RPC PRIVADAS DE AUDITORIA POR TOKEN (CONTROLADORIA)
+-- =============================================================================
+CREATE OR REPLACE FUNCTION private.get_audit_by_token(p_token TEXT)
+RETURNS SETOF public.controllership_audits
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT * FROM public.controllership_audits
+    WHERE token = p_token
+    LIMIT 1;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION private.submit_audit_decision(
+    p_token TEXT,
+    p_status TEXT,
+    p_approved_estimated NUMERIC,
+    p_approved_breakdown JSONB,
+    p_approved_costs JSONB,
+    p_reviewer_name TEXT,
+    p_reviewer_email TEXT,
+    p_reviewer_role TEXT,
+    p_audit_notes TEXT,
+    p_rejection_reason TEXT
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_audit_id UUID;
+    v_current_status TEXT;
+BEGIN
+    SELECT id, status INTO v_audit_id, v_current_status
+    FROM public.controllership_audits
+    WHERE token = p_token
+    FOR UPDATE;
+
+    IF v_audit_id IS NULL THEN
+        RAISE EXCEPTION 'Auditoria não encontrada para o token informado.';
+    END IF;
+
+    IF v_current_status <> 'pendente' THEN
+        RAISE EXCEPTION 'Esta auditoria já foi avaliada anteriormente.';
+    END IF;
+
+    IF p_status NOT IN ('aprovado', 'ajustado_e_aprovado', 'rejeitado') THEN
+        RAISE EXCEPTION 'Status de decisão inválido.';
+    END IF;
+
+    UPDATE public.controllership_audits
+    SET
+        status = p_status,
+        approved_estimated_cost_avoided = p_approved_estimated,
+        approved_breakdown = p_approved_breakdown,
+        approved_project_costs = p_approved_costs,
+        reviewed_at = now(),
+        reviewed_by = p_reviewer_name,
+        reviewer_email = p_reviewer_email,
+        reviewer_role = p_reviewer_role,
+        audit_notes = p_audit_notes,
+        rejection_reason = p_rejection_reason,
+        updated_at = now()
+    WHERE id = v_audit_id;
+
+    RETURN TRUE;
+END;
+$$;
+
+-- =============================================================================
+-- 14. REVOGAÇÃO GERAL DE PRIVILÉGIOS PARA VISITANTES ANÔNIMOS (SECOPS COMPLIANCE)
+-- =============================================================================
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon;
+
+-- =============================================================================
+-- 15. SEED INICIAL (ENTIDADE PRINCIPAL RAFITEC)
 -- =============================================================================
 INSERT INTO public.tenants (id, name, slug, cnpj_or_code, plan, ai_settings)
 VALUES (
@@ -442,13 +682,3 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Setores Iniciais Rafitec
-INSERT INTO public.sectors (id, tenant_id, name, code, description, color, requires_control_document, control_document_name)
-VALUES
-    ('sec_rafitec_extrusao', 'tenant_rafitec_01', 'Extrusão & Fiação PP', 'EXT', 'Extrusoras de fita plana, dosagem de resina, estiramento e bobinamento', '#0284c7', true, 'Ordem de Serviço (OS)'),
-    ('sec_rafitec_tecelagem', 'tenant_rafitec_01', 'Tecelagem Circular & Planos', 'TEC', 'Teares circulares, controle de trama/urdume, redução de paradas', '#2563eb', true, 'Ordem de Serviço (OS)'),
-    ('sec_rafitec_laminacao', 'tenant_rafitec_01', 'Laminação & Revestimento', 'LAM', 'Extrusora de laminação, adesão de filme PE/PP, impressão', '#7c3aed', false, 'Ordem de Serviço (OS)'),
-    ('sec_rafitec_acabamento', 'tenant_rafitec_01', 'Corte, Costura & Big Bags', 'ACAB', 'Corte automático, células de costura de alças, colocação de liners', '#059669', false, 'Ordem de Compra (OC)'),
-    ('sec_rafitec_qualidade', 'tenant_rafitec_01', 'Qualidade & Laboratório', 'QUAL', 'Testes de tração, gramatura, fator de segurança 5:1/6:1 e 5S', '#0891b2', false, 'Ordem de Compra (OC)'),
-    ('sec_rafitec_compras', 'tenant_rafitec_01', 'Compras & Suprimentos', 'COMP', 'Gestão de fornecedores de matéria-prima, peças de reposição e MRO', '#d97706', true, 'Ordem de Compra (OC)')
-ON CONFLICT (id) DO NOTHING;
