@@ -632,7 +632,7 @@ export interface TpmMachine {
   brandModel?: string;                   // ex: "Barmag EvoTape 1200"
   criticality: TpmMachineCriticality;     // A (Crítica), B (Média), C (Baixa)
   status: TpmMachineStatus;
-  currentAuditScore: number;             // Nota da última auditoria (0 a 100)
+  currentAuditScore?: number;            // Nota da última auditoria (0 a 100)
   lastAuditDate?: string;
   tpmPhase: number;                      // Selo de Fase TPM (1 a 4). 1 = Fase 1, 2 = Fase 2, 3 = Fase 3, 4 = Fase 4 (Excelência)
   tpmPhaseHistory?: {
