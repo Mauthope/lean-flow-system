@@ -323,71 +323,91 @@ export default function LoginPage() {
               Selecione o Agente Operacional:
             </label>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {agentUsers.map((user) => (
-                <div
-                  key={user.id}
-                  onClick={() => handleLoginAgent(user.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
-                    e.currentTarget.style.borderColor = '#34d399';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <img
-                      src={user.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
-                      alt={user.name}
-                      style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: '2px solid #10b981',
-                      }}
-                    />
-                    <div>
-                      <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
-                        {user.name}
-                      </strong>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                        {user.sectorName || 'Agente'} • Operação Kaizen
-                      </span>
-                    </div>
-                  </div>
-
-                  <span
+            {agentUsers.length === 0 ? (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px dashed rgba(16, 185, 129, 0.3)',
+                  textAlign: 'center',
+                }}
+              >
+                <Users size={24} color="#34d399" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700, margin: 0 }}>
+                  Nenhum agente cadastrado ainda
+                </p>
+                <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                  O Gestor Master pode cadastrar agentes operacionais no painel de Usuários & Acessos.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {agentUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleLoginAgent(user.id)}
                     style={{
-                      fontSize: '0.725rem',
-                      fontWeight: 800,
-                      backgroundColor: 'rgba(16, 185, 129, 0.25)',
-                      color: '#6ee7b7',
-                      padding: '0.25rem 0.65rem',
-                      borderRadius: '6px',
-                      border: '1px solid rgba(52, 211, 153, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
+                      e.currentTarget.style.borderColor = '#34d399';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    Acessar →
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={user.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'}
+                        alt={user.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid #10b981',
+                        }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                          {user.name}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                          {user.sectorName || 'Agente'} • Operação Kaizen
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: '0.725rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                        color: '#6ee7b7',
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(52, 211, 153, 0.4)',
+                      }}
+                    >
+                      Acessar →
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

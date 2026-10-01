@@ -532,7 +532,7 @@ export default function LeanToolsIndexPage() {
                     </div>
 
                     <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0', fontFamily: 'var(--font-heading)' }}>
-                      Parabéns, {currentUser?.name || 'Juliana Mendes'}! Você é uma Agente Qualificada.
+                      Parabéns, {currentUser?.name || 'Agente'}! Você é um(a) Agente Qualificado(a).
                     </h3>
 
                     <p style={{ fontSize: '0.875rem', color: '#d1fae5', margin: '0.2rem 0 0.85rem', maxWidth: '680px', lineHeight: 1.45 }}>
