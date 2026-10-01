@@ -73,8 +73,37 @@ export default function AdminSetoresPage() {
       </div>
 
       {/* Sectors Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
-        {sectors.map((sec) => {
+      {sectors.length === 0 ? (
+        <div
+          className="card"
+          style={{
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            backgroundColor: isDark ? '#090d16' : '#ffffff',
+            borderRadius: '16px',
+            border: isDark ? '1px dashed rgba(255, 255, 255, 0.15)' : '1px dashed #cbd5e1',
+          }}
+        >
+          <Building2 size={40} color="#0284c7" style={{ margin: '0 auto 0.75rem' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.5rem' }}>
+            Nenhum setor cadastrado ainda
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: isDark ? '#94a3b8' : '#64748b', maxWidth: '440px', margin: '0 auto 1.25rem' }}>
+            Cadastre os setores da sua fábrica para direcionar fluxos de demandas, realizar avaliações 5S e alocar projetos Kaizen.
+          </p>
+          {!isViewer && (
+            <button
+              onClick={handleCreateNew}
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <Plus size={16} /> Cadastrar Primeiro Setor
+            </button>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
+          {sectors.map((sec) => {
           const stats = metrics.bySector.find((s) => s.sectorId === sec.id);
           const latestAssessment = dataService.getLatestSectorAssessment(sec.id);
 
@@ -246,7 +275,8 @@ export default function AdminSetoresPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Sector Modal (Cadastro/Edição) */}
       <SectorModal

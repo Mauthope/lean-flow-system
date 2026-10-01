@@ -1663,8 +1663,30 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-          {metrics.bySector.map((sec, idx) => {
+        {metrics.bySector.length === 0 ? (
+          <div
+            style={{
+              padding: '2.5rem 1.5rem',
+              textAlign: 'center',
+              backgroundColor: '#090e1a',
+              borderRadius: '12px',
+              border: '1px dashed rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <Building2 size={32} color="#06b6d4" style={{ margin: '0 auto 0.5rem' }} />
+            <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+              Nenhum setor cadastrado ainda
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.25rem 0 0.85rem' }}>
+              Cadastre os setores industriais para mapear as economias e projetos por departamento.
+            </p>
+            <Link href="/admin/setores" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              Cadastrar Setores
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+            {metrics.bySector.map((sec, idx) => {
             const accent = SECTOR_ACCENTS[idx % SECTOR_ACCENTS.length];
             const maxSectorCost = Math.max(...metrics.bySector.map((s) => s.costAvoided), 1);
             const sectorPct = Math.round((sec.costAvoided / maxSectorCost) * 100);
@@ -1739,7 +1761,8 @@ export default function AdminDashboardPage() {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

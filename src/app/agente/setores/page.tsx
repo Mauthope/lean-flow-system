@@ -90,8 +90,28 @@ export default function AgentSetoresPage() {
       </div>
 
       {/* Grid de Polígonos de Maturidade Lean (Um Polígono por Setor) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '1.35rem' }}>
-        {sectors.map((sec) => {
+      {sectors.length === 0 ? (
+        <div
+          className="card"
+          style={{
+            padding: '3rem 2rem',
+            textAlign: 'center',
+            backgroundColor: '#090d16',
+            borderRadius: '16px',
+            border: '1px dashed rgba(255, 255, 255, 0.15)',
+          }}
+        >
+          <Building2 size={40} color="#06b6d4" style={{ margin: '0 auto 0.75rem' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.5rem' }}>
+            Nenhum setor cadastrado ainda
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', maxWidth: '440px', margin: '0 auto' }}>
+            O Gestor Master pode cadastrar os setores fabris no painel de administração para liberar os polígonos de maturidade 5S.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: '1.35rem' }}>
+          {sectors.map((sec) => {
           const stats = metrics.bySector.find((s) => s.sectorId === sec.id);
           const latestAssessment = dataService.getLatestSectorAssessment(sec.id);
 
@@ -262,7 +282,8 @@ export default function AgentSetoresPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* MODAL DE ASSESSMENT GEMBA DIRETO (Sem intermediação) */}
       {assessmentSector && (

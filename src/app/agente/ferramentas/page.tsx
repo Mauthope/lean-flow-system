@@ -851,14 +851,34 @@ export default function LeanToolsIndexPage() {
           </div>
 
           {/* Grid de Cards de Artigos */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '1.25rem',
-            }}
-          >
-            {filteredArticles.map((article) => {
+          {filteredArticles.length === 0 ? (
+            <div
+              style={{
+                padding: '3rem 2rem',
+                textAlign: 'center',
+                backgroundColor: '#0f172a',
+                borderRadius: '16px',
+                border: '1px dashed rgba(255, 255, 255, 0.1)',
+                color: '#94a3b8',
+              }}
+            >
+              <BookOpen size={36} color="#a855f7" style={{ margin: '0 auto 0.75rem' }} />
+              <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                Nenhum artigo encontrado
+              </h4>
+              <p style={{ fontSize: '0.8125rem', margin: '0.35rem 0 0' }}>
+                A grade da Academia Lean está sendo preparada para a capacitação da equipe.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '1.25rem',
+              }}
+            >
+              {filteredArticles.map((article) => {
               const isRead = readArticleIds.includes(article.id);
               const isValidated = validatedArticleIds.includes(article.id);
               const isCompleted = isRead || isValidated;
@@ -993,7 +1013,8 @@ export default function LeanToolsIndexPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
