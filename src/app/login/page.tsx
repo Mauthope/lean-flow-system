@@ -10,27 +10,19 @@ import {
   Users,
   Lock,
   ArrowLeft,
-  Building2,
-  Mail,
-  Key,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
   Eye,
-  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginAs, refreshData } = useAuth();
+  const { loginAs } = useAuth();
 
-  const [loginMode, setLoginMode] = useState<'corporate' | 'simulation'>('corporate');
-  const [activeSimTab, setActiveSimTab] = useState<'master' | 'agents' | 'viewers'>('master');
-
-  // Formulário Corporativo
-  const [email, setEmail] = useState('mauricio.grigol@rafitec.com.br');
-  const [password, setPassword] = useState('');
+  const [activeTab, setActiveTab] = useState<'master' | 'agents' | 'viewers'>('master');
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
@@ -74,7 +66,9 @@ export default function LoginPage() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
         handleSessionUser(session.user.id);
       }
@@ -85,126 +79,6 @@ export default function LoginPage() {
       subscription.unsubscribe();
     };
   }, [loginAs, router]);
-
-  const handleCorporateLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError(null);
-    setAuthSuccess(null);
-
-    const cleanEmail = email.trim().toLowerCase();
-    const isDomainAllowed =
-      cleanEmail.endsWith('@rafitec.com.br') || cleanEmail.endsWith('@vaccaro.com.br');
-
-    if (!isDomainAllowed) {
-      setAuthError(
-        'Política de Segurança (PSI Grupo Vaccaro): Apenas e-mails corporativos @rafitec.com.br ou @vaccaro.com.br são permitidos.'
-      );
-      return;
-    }
-
-    if (!password || password.length < 6) {
-      setAuthError('Por favor informe a senha de acesso (mínimo 6 caracteres).');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (isSupabaseConfigured()) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password,
-        });
-
-        if (error) {
-          setAuthError(
-            error.message === 'Invalid login credentials'
-              ? 'Credenciais incorretas ou senha ainda não cadastrada.'
-              : error.message
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-
-          if (profile) {
-            loginAs(profile.id);
-            if (profile.role === 'admin' || profile.is_master) {
-              router.push('/admin/dashboard');
-            } else {
-              router.push('/agente/kanban');
-            }
-            return;
-          }
-        }
-      }
-
-      // Fallback em caso de modo local/desenvolvimento
-      const users = dataService.getUsers();
-      const matched = users.find((u) => u.email.toLowerCase() === cleanEmail);
-      if (matched) {
-        loginAs(matched.id);
-        router.push(matched.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
-      } else {
-        setAuthError(
-          'Usuário não encontrado na base. Se for seu primeiro acesso, clique em "Definir / Redefinir Senha".'
-        );
-      }
-    } catch (err: any) {
-      setAuthError(err?.message || 'Falha na autenticação corporativa.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRequestPasswordReset = async () => {
-    const cleanEmail = email.trim().toLowerCase();
-    if (
-      !cleanEmail ||
-      (!cleanEmail.endsWith('@rafitec.com.br') && !cleanEmail.endsWith('@vaccaro.com.br'))
-    ) {
-      setAuthError(
-        'Informe um e-mail corporativo válido (@rafitec.com.br) para receber as instruções de senha.'
-      );
-      return;
-    }
-
-    setIsLoading(true);
-    setAuthError(null);
-    setAuthSuccess(null);
-
-    try {
-      if (isSupabaseConfigured()) {
-        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-          redirectTo:
-            typeof window !== 'undefined'
-              ? `${window.location.origin}/login`
-              : 'https://fluxo-lean-system.vercel.app/login',
-        });
-
-        if (error) {
-          setAuthError(error.message);
-        } else {
-          setAuthSuccess(
-            `E-mail de confirmação enviado para ${cleanEmail}! Acesse sua caixa corporativa para definir sua senha de acesso.`
-          );
-        }
-      } else {
-        setAuthSuccess(
-          `Modo de simulação: Em produção com Supabase, o link de definição de senha é enviado com token seguro para ${cleanEmail}.`
-        );
-      }
-    } catch (err: any) {
-      setAuthError(err?.message || 'Falha ao solicitar instruções de senha.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleMicrosoftSso = async () => {
     setAuthError(null);
@@ -231,7 +105,7 @@ export default function LoginPage() {
         }
       } else {
         setAuthError(
-          'Integração Microsoft Entra ID (SSO Corporativo): Disponível com Supabase em produção. Para testar localmente, utilize o login por e-mail/senha ou a simulação.'
+          'Integração Microsoft Entra ID (SSO Corporativo): Disponível em produção com Supabase conectado. Para navegar no modo atual, clique diretamente no perfil desejado abaixo.'
         );
       }
     } catch (err: any) {
@@ -274,7 +148,7 @@ export default function LoginPage() {
         overflow: 'hidden',
       }}
     >
-      {/* Background Ambient Glow */}
+      {/* Background Ambient Glow Orbs */}
       <div
         style={{
           position: 'absolute',
@@ -286,6 +160,34 @@ export default function LoginPage() {
           background:
             'radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 70%)',
           filter: 'blur(90px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '10%',
+          right: '25%',
+          width: '450px',
+          height: '450px',
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Grid Overlay */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage:
+            'linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
           pointerEvents: 'none',
           zIndex: 0,
         }}
@@ -323,7 +225,7 @@ export default function LoginPage() {
         style={{
           width: '100%',
           maxWidth: '540px',
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backgroundColor: 'rgba(15, 23, 42, 0.72)',
           backdropFilter: 'blur(28px)',
           WebkitBackdropFilter: 'blur(28px)',
           borderRadius: '24px',
@@ -366,76 +268,8 @@ export default function LoginPage() {
             {tenant.name}
           </h1>
           <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.35rem' }}>
-            Portal de Acesso Seguro • Sistema FluxoLean 4.0
+            Portal de Acesso • Sistema FluxoLean 4.0
           </p>
-        </div>
-
-        {/* Mode Selector (Corporativo vs Simulação Local) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.4rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-            padding: '0.35rem',
-            borderRadius: '14px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            marginBottom: '1.75rem',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setLoginMode('corporate')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.4rem',
-              padding: '0.65rem 0.5rem',
-              borderRadius: '10px',
-              border:
-                loginMode === 'corporate'
-                  ? '1px solid rgba(96, 165, 250, 0.5)'
-                  : '1px solid transparent',
-              backgroundColor:
-                loginMode === 'corporate' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
-              color: loginMode === 'corporate' ? '#93c5fd' : '#94a3b8',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Shield size={15} />
-            <span>Acesso Corporativo</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setLoginMode('simulation')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.4rem',
-              padding: '0.65rem 0.5rem',
-              borderRadius: '10px',
-              border:
-                loginMode === 'simulation'
-                  ? '1px solid rgba(168, 85, 247, 0.5)'
-                  : '1px solid transparent',
-              backgroundColor:
-                loginMode === 'simulation' ? 'rgba(168, 85, 247, 0.25)' : 'transparent',
-              color: loginMode === 'simulation' ? '#d8b4fe' : '#94a3b8',
-              fontWeight: 800,
-              fontSize: '0.8125rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <Sparkles size={15} />
-            <span>Simulação Local</span>
-          </button>
         </div>
 
         {/* FEEDBACK MESSAGES */}
@@ -481,520 +315,589 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* MODO 1: LOGIN CORPORATIVO SEGURO */}
-        {loginMode === 'corporate' && (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {/* ============================================================= */}
-            {/* BOTÃO EM DESTAQUE MÁXIMO: MICROSOFT ENTRA ID (SSO CORPORATIVO) */}
-            {/* ============================================================= */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <button
-                type="button"
-                onClick={handleMicrosoftSso}
-                disabled={isLoading}
+        {/* ============================================================= */}
+        {/* BOTÃO EM DESTAQUE: ACESSO CORPORATIVO MICROSOFT (SSO ENTRA ID) */}
+        {/* ============================================================= */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div
+            onClick={handleMicrosoftSso}
+            style={{
+              padding: '1rem 1.15rem',
+              borderRadius: '16px',
+              border: '1.5px solid rgba(59, 130, 246, 0.55)',
+              backgroundColor: 'rgba(37, 99, 235, 0.12)',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 0 25px rgba(37, 99, 235, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.22)';
+              e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.85)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.12)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.55)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              {/* Logotipo Oficial Microsoft em moldura branca nítida */}
+              <div
                 style={{
-                  position: 'relative',
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '1.1rem 1.25rem',
-                  borderRadius: '16px',
-                  background:
-                    'linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(30, 58, 138, 0.25) 50%, rgba(15, 23, 42, 0.75) 100%)',
-                  border: '1.5px solid rgba(96, 165, 250, 0.65)',
-                  boxShadow:
-                    '0 10px 35px rgba(37, 99, 235, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.35)',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  overflow: 'hidden',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow =
-                    '0 16px 45px rgba(37, 99, 235, 0.55), inset 0 1.5px 3px rgba(255, 255, 255, 0.6)';
-                  e.currentTarget.style.borderColor = 'rgba(147, 197, 253, 0.95)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow =
-                    '0 10px 35px rgba(37, 99, 235, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.35)';
-                  e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.65)';
-                }}
-              >
-                {/* Linha de brilho superior */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '8%',
-                    right: '8%',
-                    height: '1px',
-                    background:
-                      'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent)',
-                  }}
-                />
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  {/* Caixa com Logotipo Oficial Microsoft em Alta Definição */}
-                  <div
-                    style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '12px',
-                      backgroundColor: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.35)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 21 21"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <rect x="1" y="1" width="9" height="9" fill="#F25022" />
-                      <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
-                      <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
-                      <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
-                    </svg>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '3px' }}>
-                      <span
-                        style={{
-                          fontSize: '0.96875rem',
-                          fontWeight: 800,
-                          color: '#ffffff',
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
-                        Entrar com Conta Microsoft
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.625rem',
-                          fontWeight: 900,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: '999px',
-                          backgroundColor: 'rgba(16, 185, 129, 0.25)',
-                          color: '#6ee7b7',
-                          border: '1px solid rgba(16, 185, 129, 0.5)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                          boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)',
-                        }}
-                      >
-                        Recomendado TI
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.78125rem', color: '#93c5fd', fontWeight: 600 }}>
-                      Acesso corporativo seguro com seu e-mail @rafitec.com.br
-                    </div>
-                  </div>
-                </div>
-
-                {/* Seta indicadora de ação rápida */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: '#93c5fd',
-                    fontSize: '1.1rem',
-                    fontWeight: 800,
-                    flexShrink: 0,
-                  }}
-                >
-                  →
-                </div>
-              </button>
-            </div>
-
-            {/* DIVISOR: OU ACESSE COM E-MAIL E SENHA */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                margin: '0.5rem 0 1.25rem 0',
-              }}
-            >
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
-              <span
-                style={{
-                  fontSize: '0.71875rem',
-                  color: '#64748b',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}
-              >
-                ou acesse com e-mail e senha
-              </span>
-              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
-            </div>
-
-            {/* FORMULÁRIO TRADICIONAL DE CONTINGÊNCIA */}
-            <form onSubmit={handleCorporateLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.78125rem',
-                    fontWeight: 700,
-                    color: '#cbd5e1',
-                    marginBottom: '0.4rem',
-                  }}
-                >
-                  E-mail Corporativo (@rafitec.com.br)
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Mail
-                    size={16}
-                    style={{
-                      position: 'absolute',
-                      left: '0.85rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#64748b',
-                    }}
-                  />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu.nome@rafitec.com.br"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                      borderRadius: '12px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#ffffff',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.78125rem',
-                    fontWeight: 700,
-                    color: '#cbd5e1',
-                    marginBottom: '0.4rem',
-                  }}
-                >
-                  Senha de Acesso
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Key
-                    size={16}
-                    style={{
-                      position: 'absolute',
-                      left: '0.85rem',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#64748b',
-                    }}
-                  />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                      borderRadius: '12px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      color: '#ffffff',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  backgroundColor: '#ffffff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
-                  padding: '0.85rem',
-                  borderRadius: '12px',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  fontWeight: 800,
-                  fontSize: '0.9375rem',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)',
-                  marginTop: '0.5rem',
-                  transition: 'all 0.15s ease',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                  flexShrink: 0,
                 }}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Autenticando...</span>
-                  </>
-                ) : (
-                  <span>Acessar com E-mail e Senha →</span>
-                )}
-              </button>
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 21 21"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                  <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                </svg>
+              </div>
 
-              <button
-                type="button"
-                onClick={handleRequestPasswordReset}
-                disabled={isLoading}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#38bdf8',
-                  fontSize: '0.78125rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  padding: '0.25rem',
-                  marginTop: '0.25rem',
-                }}
-              >
-                Primeiro Acesso ou Esqueceu a Senha? Clique aqui para enviar link ao e-mail
-              </button>
-            </form>
-
-            {/* SecOps Notice */}
-            <div
-              style={{
-                marginTop: '1.25rem',
-                padding: '0.75rem',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                fontSize: '0.71875rem',
-                color: '#64748b',
-                lineHeight: 1.45,
-                textAlign: 'center',
-              }}
-            >
-              🔒 <strong>Ambiente Protegido por PSI</strong> • Tráfego HTTPS/TLS criptografado • Políticas RLS ativas • Bloqueio de cadastros não homologados.
-            </div>
-          </div>
-        )}
-
-        {/* MODO 2: SIMULAÇÃO LOCAL (DEMO / TESTES) */}
-        {loginMode === 'simulation' && (
-          <div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '0.35rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                padding: '0.3rem',
-                borderRadius: '12px',
-                marginBottom: '1.25rem',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setActiveSimTab('master')}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeSimTab === 'master' ? 'rgba(37, 99, 235, 0.35)' : 'transparent',
-                  color: activeSimTab === 'master' ? '#93c5fd' : '#94a3b8',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Master
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSimTab('agents')}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeSimTab === 'agents' ? 'rgba(16, 185, 129, 0.35)' : 'transparent',
-                  color: activeSimTab === 'agents' ? '#6ee7b7' : '#94a3b8',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Agentes ({agentUsers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSimTab('viewers')}
-                style={{
-                  padding: '0.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: activeSimTab === 'viewers' ? 'rgba(168, 85, 247, 0.35)' : 'transparent',
-                  color: activeSimTab === 'viewers' ? '#d8b4fe' : '#94a3b8',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Diretoria ({viewerUsers.length})
-              </button>
-            </div>
-
-            {activeSimTab === 'master' && (
-              <div
-                onClick={handleLoginMaster}
-                style={{
-                  padding: '1.25rem',
-                  borderRadius: '16px',
-                  border: '1.5px solid rgba(59, 130, 246, 0.5)',
-                  backgroundColor: 'rgba(37, 99, 235, 0.15)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <strong style={{ fontSize: '1rem', color: '#ffffff', display: 'block' }}>
-                      {masterUser?.name || 'Mauricio Grigol'}
-                    </strong>
-                    <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
-                      Administrador Geral • {masterUser?.email}
-                    </span>
-                  </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '2px' }}>
+                  <strong style={{ fontSize: '0.9375rem', color: '#ffffff' }}>
+                    Entrar com Conta Microsoft
+                  </strong>
                   <span
                     style={{
-                      fontSize: '0.75rem',
+                      fontSize: '0.625rem',
                       fontWeight: 800,
-                      backgroundColor: '#2563eb',
-                      color: '#ffffff',
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '8px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                      color: '#6ee7b7',
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(52, 211, 153, 0.4)',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    Simular Acesso →
+                    Recomendado TI
                   </span>
                 </div>
+                <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
+                  SSO Oficial • Office 365 • @rafitec.com.br
+                </span>
               </div>
-            )}
+            </div>
 
-            {activeSimTab === 'agents' && (
-              <div>
-                {agentUsers.length === 0 ? (
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '8px',
+                boxShadow: '0 0 15px rgba(37, 99, 235, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                flexShrink: 0,
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={13} className="animate-spin" />
+                  <span>Conectando...</span>
+                </>
+              ) : (
+                <span>Acessar via SSO →</span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* DIVISOR FLUXOLEAN */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1.35rem',
+          }}
+        >
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+          <span
+            style={{
+              fontSize: '0.6875rem',
+              color: '#64748b',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}
+          >
+            ou selecione o perfil de acesso
+          </span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.1)' }} />
+        </div>
+
+        {/* Access Selector Tabs (Entidade Master vs Agentes vs Diretoria) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '0.4rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.04)',
+            padding: '0.35rem',
+            borderRadius: '14px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            marginBottom: '1.75rem',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setActiveTab('master')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
+              borderRadius: '10px',
+              border:
+                activeTab === 'master'
+                  ? '1px solid rgba(96, 165, 250, 0.5)'
+                  : '1px solid transparent',
+              backgroundColor:
+                activeTab === 'master' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+              color: activeTab === 'master' ? '#93c5fd' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '0.78125rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'master' ? '0 0 15px rgba(37, 99, 235, 0.3)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Shield size={14} />
+            <span>Master</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('agents')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
+              borderRadius: '10px',
+              border:
+                activeTab === 'agents'
+                  ? '1px solid rgba(52, 211, 153, 0.5)'
+                  : '1px solid transparent',
+              backgroundColor:
+                activeTab === 'agents' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
+              color: activeTab === 'agents' ? '#6ee7b7' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '0.78125rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'agents' ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Users size={14} />
+            <span>Agentes ({agentUsers.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('viewers')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              padding: '0.65rem 0.4rem',
+              borderRadius: '10px',
+              border:
+                activeTab === 'viewers'
+                  ? '1px solid rgba(168, 85, 247, 0.5)'
+                  : '1px solid transparent',
+              backgroundColor:
+                activeTab === 'viewers' ? 'rgba(168, 85, 247, 0.25)' : 'transparent',
+              color: activeTab === 'viewers' ? '#d8b4fe' : '#94a3b8',
+              fontWeight: 800,
+              fontSize: '0.78125rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'viewers' ? '0 0 15px rgba(168, 85, 247, 0.3)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Eye size={14} />
+            <span>Diretoria ({viewerUsers.length})</span>
+          </button>
+        </div>
+
+        {/* TAB 1: ENTIDADE MASTER */}
+        {activeTab === 'master' && (
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div
+              onClick={handleLoginMaster}
+              style={{
+                padding: '1.25rem',
+                borderRadius: '16px',
+                border: '1.5px solid rgba(59, 130, 246, 0.5)',
+                backgroundColor: 'rgba(37, 99, 235, 0.15)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 0 25px rgba(37, 99, 235, 0.2)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div
                     style={{
-                      padding: '1.5rem',
-                      textAlign: 'center',
-                      borderRadius: '14px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px dashed rgba(255, 255, 255, 0.1)',
-                      color: '#94a3b8',
-                      fontSize: '0.8125rem',
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '12px',
+                      backgroundColor: '#2563eb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontWeight: 900,
+                      fontSize: '1.2rem',
                     }}
                   >
-                    Nenhum agente cadastrado no momento. Cadastre agentes reais no painel Master.
+                    RF
                   </div>
-                ) : (
-                  agentUsers.map((u) => (
-                    <div
-                      key={u.id}
-                      onClick={() => handleLoginAgent(u.id)}
-                      style={{
-                        padding: '0.85rem',
-                        borderRadius: '12px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        marginBottom: '0.5rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>{u.name}</strong>
-                        <span style={{ display: 'block', fontSize: '0.71875rem', color: '#6ee7b7' }}>{u.email}</span>
-                      </div>
-                      <span style={{ fontSize: '0.71875rem', color: '#6ee7b7' }}>Acessar →</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+                  <div>
+                    <strong style={{ fontSize: '1.05rem', color: '#ffffff', display: 'block' }}>
+                      {tenant.name}
+                    </strong>
+                    <span style={{ fontSize: '0.75rem', color: '#93c5fd' }}>
+                      Entidade Master • Gestão Industrial & ROI
+                    </span>
+                  </div>
+                </div>
 
-            {activeSimTab === 'viewers' && (
-              <div>
-                {viewerUsers.length === 0 ? (
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    padding: '0.35rem 0.85rem',
+                    borderRadius: '8px',
+                    boxShadow: '0 0 15px rgba(37, 99, 235, 0.5)',
+                  }}
+                >
+                  Entrar como Master →
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: '0.78125rem',
+                  color: '#cbd5e1',
+                  margin: '0.5rem 0 0',
+                  lineHeight: 1.4,
+                }}
+              >
+                Controle integral da plataforma: Dashboard executivo, triagem de sugestões Kaizen, memória financeira de 7 fontes de custo evitado, TPM e auditorias.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: AGENTES DA ENTIDADE */}
+        {activeTab === 'agents' && (
+          <div style={{ marginBottom: '1.75rem' }}>
+            <label
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#94a3b8',
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: '0.6rem',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Selecione o Agente Operacional:
+            </label>
+
+            {agentUsers.length === 0 ? (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px dashed rgba(16, 185, 129, 0.3)',
+                  textAlign: 'center',
+                }}
+              >
+                <Users size={24} color="#34d399" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700, margin: 0 }}>
+                  Nenhum agente cadastrado ainda
+                </p>
+                <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                  O Gestor Master pode cadastrar agentes operacionais no painel de Usuários & Acessos.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                {agentUsers.map((user) => (
                   <div
+                    key={user.id}
+                    onClick={() => handleLoginAgent(user.id)}
                     style={{
-                      padding: '1.5rem',
-                      textAlign: 'center',
-                      borderRadius: '14px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px dashed rgba(255, 255, 255, 0.1)',
-                      color: '#94a3b8',
-                      fontSize: '0.8125rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.18)';
+                      e.currentTarget.style.borderColor = '#34d399';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    Nenhum visualizador cadastrado no momento.
-                  </div>
-                ) : (
-                  viewerUsers.map((u) => (
-                    <div
-                      key={u.id}
-                      onClick={() => handleLoginViewer(u.id)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={
+                          user.avatarUrl ||
+                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                        }
+                        alt={user.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid #10b981',
+                        }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                          {user.name}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
+                          {user.sectorName || 'Agente'} • Operação Kaizen
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
                       style={{
-                        padding: '0.85rem',
-                        borderRadius: '12px',
-                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                        border: '1px solid rgba(168, 85, 247, 0.3)',
-                        marginBottom: '0.5rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
+                        fontSize: '0.725rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                        color: '#6ee7b7',
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(52, 211, 153, 0.4)',
                       }}
                     >
-                      <div>
-                        <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>{u.name}</strong>
-                        <span style={{ display: 'block', fontSize: '0.71875rem', color: '#d8b4fe' }}>{u.email}</span>
-                      </div>
-                      <span style={{ fontSize: '0.71875rem', color: '#d8b4fe' }}>Acessar →</span>
-                    </div>
-                  ))
-                )}
+                      Acessar →
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         )}
+
+        {/* TAB 3: DIRETORIA & CONSULTA EXECUTIVA (SOMENTE LEITURA) */}
+        {activeTab === 'viewers' && (
+          <div style={{ marginBottom: '1.75rem' }}>
+            <div style={{ marginBottom: '0.85rem' }}>
+              <span style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 700, display: 'block' }}>
+                Acessos de Diretoria & Gerência de Fábrica
+              </span>
+              <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+                Acompanhamento executivo de KPIs, Hoshin Kanri, Kanban e ROI em modo estritamente somente leitura.
+              </p>
+            </div>
+
+            {viewerUsers.length === 0 ? (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px dashed rgba(168, 85, 247, 0.3)',
+                  textAlign: 'center',
+                }}
+              >
+                <Eye size={24} color="#c084fc" style={{ margin: '0 auto 0.5rem' }} />
+                <p style={{ fontSize: '0.8125rem', color: '#ffffff', fontWeight: 700, margin: 0 }}>
+                  Nenhum visualizador cadastrado
+                </p>
+                <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                  O supervisor da planta pode criar acessos para a diretoria na tela de Gestão de Equipe & Acessos.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.65rem',
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  paddingRight: '0.25rem',
+                }}
+              >
+                {viewerUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    onClick={() => handleLoginViewer(user.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(168, 85, 247, 0.25)',
+                      backgroundColor: 'rgba(168, 85, 247, 0.06)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.16)';
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.06)';
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.25)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <img
+                        src={
+                          user.avatarUrl ||
+                          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+                        }
+                        alt={user.name}
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: '2px solid #a855f7',
+                        }}
+                      />
+                      <div>
+                        <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+                          {user.name}
+                        </strong>
+                        <span style={{ fontSize: '0.725rem', color: '#c084fc' }}>
+                          {user.jobTitle || 'Diretor Industrial'} • Consulta Executiva
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: '0.725rem',
+                        fontWeight: 800,
+                        backgroundColor: 'rgba(168, 85, 247, 0.25)',
+                        color: '#d8b4fe',
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(168, 85, 247, 0.4)',
+                      }}
+                    >
+                      Acessar →
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unique Link Info for the Factory */}
+        <div
+          style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed rgba(255, 255, 255, 0.15)',
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            color: '#94a3b8',
+            lineHeight: 1.5,
+            textAlign: 'center',
+          }}
+        >
+          🔗 Link de Coleta de Demandas:{' '}
+          <Link
+            href={`/d/${tenant.slug}`}
+            target="_blank"
+            style={{ color: '#38bdf8', fontWeight: 700, textDecoration: 'none' }}
+          >
+            /d/{tenant.slug} ↗
+          </Link>
+        </div>
+
+        {/* Esqueci Minha Senha / Recuperar Acesso */}
+        <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+          <Link
+            href="/recuperar-senha"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              color: '#94a3b8',
+              fontSize: '0.8125rem',
+              textDecoration: 'none',
+              fontWeight: 600,
+              transition: 'color 0.15s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = '#22d3ee')}
+            onMouseOut={(e) => (e.currentTarget.style.color = '#94a3b8')}
+          >
+            <Lock size={13} />
+            <span>Esqueceu sua senha? Recuperar acesso</span>
+          </Link>
+        </div>
       </div>
 
       {/* Footer Info */}
@@ -1009,7 +912,7 @@ export default function LoginPage() {
         }}
       >
         <p style={{ margin: 0 }}>
-          Desenvolvido por <strong>Mauricio Grigol</strong> • Sistema Homologado Lean Flow
+          Desenvolvido por <strong>Mauricio Grigol</strong> • Consultor Lean & Dev Full Stack
         </p>
       </div>
     </div>
