@@ -848,30 +848,6 @@ export default function LoginPage() {
                 Primeiro Acesso ou Esqueceu a Senha? Clique aqui para enviar link ao e-mail
               </button>
             </form>
-
-            {/* SecOps Notice Sem Emojis */}
-            <div
-              style={{
-                marginTop: '1.25rem',
-                padding: '0.7rem 0.85rem',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                fontSize: '0.71875rem',
-                color: 'var(--text-dim, #64748b)',
-                lineHeight: 1.45,
-                textAlign: 'center',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.45rem',
-              }}
-            >
-              <Lock size={12} color="var(--primary, #06b6d4)" style={{ flexShrink: 0 }} />
-              <span>
-                Ambiente Protegido por PSI • Tráfego HTTPS/TLS criptografado • Políticas RLS ativas.
-              </span>
-            </div>
           </div>
         )}
 
