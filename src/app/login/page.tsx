@@ -586,7 +586,7 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2px' }}>
+                    <div style={{ marginBottom: '2px' }}>
                       <strong
                         style={{
                           fontSize: '0.875rem',
@@ -597,21 +597,6 @@ export default function LoginPage() {
                       >
                         Entrar com Conta Microsoft
                       </strong>
-                      <span
-                        style={{
-                          fontSize: '0.625rem',
-                          fontWeight: 700,
-                          backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                          color: '#22d3ee',
-                          padding: '0.15rem 0.45rem',
-                          borderRadius: '4px',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em',
-                        }}
-                      >
-                        Recomendado TI
-                      </span>
                     </div>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>
                       Acesso corporativo seguro com seu e-mail @rafitec.com.br
