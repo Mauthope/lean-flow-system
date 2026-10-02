@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
@@ -40,6 +40,51 @@ export default function LoginPage() {
   const masterUser = tenantUsers.find((u) => u.role === 'admin') || tenantUsers[0];
   const agentUsers = tenantUsers.filter((u) => u.role === 'agent');
   const viewerUsers = tenantUsers.filter((u) => u.role === 'viewer');
+
+  // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    let isMounted = true;
+
+    const handleSessionUser = async (userId: string) => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (profile && isMounted) {
+          loginAs(profile.id);
+          if (profile.role === 'admin' || profile.is_master) {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/agente/kanban');
+          }
+        }
+      } catch (err) {
+        console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        handleSessionUser(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        handleSessionUser(session.user.id);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loginAs, router]);
 
   const handleCorporateLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,10 +206,39 @@ export default function LoginPage() {
     }
   };
 
-  const handleMicrosoftSso = () => {
-    setAuthError(
-      'Integração Microsoft Entra ID (SSO Corporativo): Recomendada pelo SecOps. Em processo de homologação junto à equipe de TI/Infraestrutura.'
-    );
+  const handleMicrosoftSso = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    setIsLoading(true);
+
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'azure',
+          options: {
+            scopes: 'email profile offline_access',
+            redirectTo:
+              typeof window !== 'undefined'
+                ? `${window.location.origin}/login`
+                : 'https://fluxo-lean-system.vercel.app/login',
+          },
+        });
+
+        if (error) {
+          setAuthError(
+            `Integração Microsoft Entra ID: ${error.message}. (Aguardando ativação do provedor Azure no Supabase pela equipe de TI/Infraestrutura).`
+          );
+        }
+      } else {
+        setAuthError(
+          'Integração Microsoft Entra ID (SSO Corporativo): Disponível com Supabase em produção. Para testar localmente, utilize o login por e-mail/senha ou a simulação.'
+        );
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Falha ao iniciar autenticação com Microsoft.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLoginMaster = () => {
@@ -551,23 +625,33 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleMicrosoftSso}
+                disabled={isLoading}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.5rem',
-                  padding: '0.65rem',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#cbd5e1',
-                  fontSize: '0.78125rem',
+                  gap: '0.65rem',
+                  padding: '0.75rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  color: '#ffffff',
+                  fontSize: '0.8125rem',
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  marginTop: '0.25rem',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  marginTop: '0.35rem',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                 }}
               >
-                <span>Entrar com Conta Microsoft Corporativa (Entra ID / SSO)</span>
+                {/* Ícone Oficial Microsoft 4-Square */}
+                <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+                  <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+                </svg>
+                <span>Entrar com Conta Microsoft Corporativa (Office 365 / Entra ID)</span>
               </button>
             </div>
 
