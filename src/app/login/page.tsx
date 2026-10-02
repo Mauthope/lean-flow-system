@@ -48,7 +48,7 @@ export default function LoginPage() {
 
     let isMounted = true;
 
-    const handleSessionUser = async (userId: string) => {
+    const handleSessionUser = async (userId: string, userEmail?: string) => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
@@ -57,12 +57,47 @@ export default function LoginPage() {
           .single();
 
         if (profile && isMounted) {
-          loginAs(profile.id);
-          if (profile.role === 'admin' || profile.is_master) {
-            router.push('/admin/dashboard');
-          } else {
-            router.push('/agente/kanban');
+          const effectiveEmail = (profile.email || userEmail || '').trim().toLowerCase();
+
+          // 1. Busca se o agente já foi pré-cadastrado no sistema pelo Master (por e-mail corporativo ou ID)
+          let matchedUser =
+            dataService.getUserByIdOrEmail(effectiveEmail) ||
+            dataService.getUserByIdOrEmail(profile.id);
+
+          // 2. Se o agente já existe (ex: criado no painel de agentes com seus setores e cargos definidos),
+          // o sistema reconhece ele instantaneamente e preserva todas as suas atribuições
+          if (matchedUser) {
+            loginAs(matchedUser.id);
+            if (
+              matchedUser.role === 'admin' ||
+              matchedUser.isMaster ||
+              profile.role === 'admin' ||
+              profile.is_master
+            ) {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/agente/kanban');
+            }
+            return;
           }
+
+          // 3. Se for um colaborador da Rafitec que fez o primeiro login via Microsoft e ainda não havia sido pré-cadastrado,
+          // o sistema provisiona ele automaticamente como Agente Lean vinculado à fábrica
+          const currentTenant = dataService.getCurrentTenant();
+          const newUser = dataService.createUser({
+            tenantId: currentTenant.id,
+            name:
+              profile.name ||
+              (effectiveEmail ? effectiveEmail.split('@')[0].replace('.', ' ') : 'Colaborador Rafitec'),
+            email: effectiveEmail,
+            role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
+            isMaster: profile.is_master || false,
+            jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
+            active: true,
+          });
+
+          loginAs(newUser.id);
+          router.push(newUser.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
         }
       } catch (err) {
         console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
@@ -71,7 +106,7 @@ export default function LoginPage() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        handleSessionUser(session.user.id);
+        handleSessionUser(session.user.id, session.user.email);
       }
     });
 
@@ -79,7 +114,7 @@ export default function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
-        handleSessionUser(session.user.id);
+        handleSessionUser(session.user.id, session.user.email);
       }
     });
 
@@ -136,8 +171,26 @@ export default function LoginPage() {
             .single();
 
           if (profile) {
-            loginAs(profile.id);
-            if (profile.role === 'admin' || profile.is_master) {
+            const effectiveEmail = (profile.email || data.user.email || cleanEmail).trim().toLowerCase();
+            let matchedUser =
+              dataService.getUserByIdOrEmail(effectiveEmail) ||
+              dataService.getUserByIdOrEmail(profile.id);
+
+            if (!matchedUser) {
+              const currentTenant = dataService.getCurrentTenant();
+              matchedUser = dataService.createUser({
+                tenantId: currentTenant.id,
+                name: profile.name || cleanEmail.split('@')[0],
+                email: effectiveEmail,
+                role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
+                isMaster: profile.is_master || false,
+                jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
+                active: true,
+              });
+            }
+
+            loginAs(matchedUser.id);
+            if (matchedUser.role === 'admin' || matchedUser.isMaster) {
               router.push('/admin/dashboard');
             } else {
               router.push('/agente/kanban');

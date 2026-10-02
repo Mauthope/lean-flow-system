@@ -567,6 +567,20 @@ export const dataService = {
     return this.getUsers().find((u) => u.id === id);
   },
 
+  getUserByEmail(email: string): User | undefined {
+    if (!email) return undefined;
+    const clean = email.trim().toLowerCase();
+    return this.getUsers().find((u) => u.email && u.email.trim().toLowerCase() === clean);
+  },
+
+  getUserByIdOrEmail(idOrEmail: string): User | undefined {
+    if (!idOrEmail) return undefined;
+    const clean = idOrEmail.trim().toLowerCase();
+    return this.getUsers().find(
+      (u) => u.id === idOrEmail || (u.email && u.email.trim().toLowerCase() === clean)
+    );
+  },
+
   createUser(user: Omit<User, 'id' | 'createdAt'>): User {
     const users = this.getUsers();
     

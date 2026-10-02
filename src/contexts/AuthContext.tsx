@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSession();
   }, [loadSession, dataVersion]);
 
-  const loginAs = (userId: string) => {
-    const user = dataService.getUserById(userId);
+  const loginAs = (userIdOrEmail: string) => {
+    const user = dataService.getUserByIdOrEmail(userIdOrEmail);
     if (user) {
       dataService.setCurrentUser(user);
       setCurrentUser(user);
