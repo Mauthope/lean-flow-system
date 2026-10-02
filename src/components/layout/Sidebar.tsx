@@ -40,6 +40,7 @@ import {
   Eye,
   Sun,
   Moon,
+  Network,
 } from 'lucide-react';
 
 interface NavItem {
@@ -73,6 +74,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { href: '/admin/dashboard', label: 'Dashboard Lean', icon: LayoutDashboard },
         { href: '/admin/alta-gerencia', label: 'Alta Gerência', icon: Target, badge: 'Hoshin' },
+        { href: '/admin/arvore', label: 'Árvore', icon: Network, badge: 'Espinha' },
         { href: '/admin/kanban', label: 'Kanban Geral', icon: Kanban },
         { href: '/admin/triagem', label: 'Triagem de Demandas', icon: Inbox, badge: 'Público' },
       ],
@@ -111,6 +113,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { href: '/admin/dashboard', label: 'Dashboard Lean', icon: LayoutDashboard },
         { href: '/admin/alta-gerencia', label: 'Alta Gerência', icon: Target, badge: 'Hoshin' },
+        { href: '/admin/arvore', label: 'Árvore', icon: Network, badge: 'Espinha' },
         { href: '/admin/kanban', label: 'Kanban Geral', icon: Kanban },
       ],
     },
@@ -137,6 +140,7 @@ export const Sidebar: React.FC = () => {
       label: 'Meu Trabalho',
       items: [
         { href: '/agente/kanban', label: 'Meu Kanban', icon: Kanban },
+        { href: '/agente/arvore', label: 'Árvore', icon: Network, badge: 'Espinha' },
         { href: '/agente/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
         { href: '/agente/relatorio-pessoal', label: 'Minhas Entregas & ROI', icon: TrendingUp },
       ],
