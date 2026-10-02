@@ -483,127 +483,289 @@ export default function LoginPage() {
 
         {/* MODO 1: LOGIN CORPORATIVO SEGURO */}
         {loginMode === 'corporate' && (
-          <form onSubmit={handleCorporateLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* ============================================================= */}
+            {/* BOTÃO EM DESTAQUE MÁXIMO: MICROSOFT ENTRA ID (SSO CORPORATIVO) */}
+            {/* ============================================================= */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                onClick={handleMicrosoftSso}
+                disabled={isLoading}
                 style={{
-                  display: 'block',
-                  fontSize: '0.78125rem',
-                  fontWeight: 700,
-                  color: '#cbd5e1',
-                  marginBottom: '0.4rem',
+                  position: 'relative',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '1.1rem 1.25rem',
+                  borderRadius: '16px',
+                  background:
+                    'linear-gradient(135deg, rgba(37, 99, 235, 0.25) 0%, rgba(30, 58, 138, 0.25) 50%, rgba(15, 23, 42, 0.75) 100%)',
+                  border: '1.5px solid rgba(96, 165, 250, 0.65)',
+                  boxShadow:
+                    '0 10px 35px rgba(37, 99, 235, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.35)',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  overflow: 'hidden',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow =
+                    '0 16px 45px rgba(37, 99, 235, 0.55), inset 0 1.5px 3px rgba(255, 255, 255, 0.6)';
+                  e.currentTarget.style.borderColor = 'rgba(147, 197, 253, 0.95)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow =
+                    '0 10px 35px rgba(37, 99, 235, 0.35), inset 0 1.5px 2px rgba(255, 255, 255, 0.35)';
+                  e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.65)';
                 }}
               >
-                E-mail Corporativo (@rafitec.com.br)
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail
-                  size={16}
+                {/* Linha de brilho superior */}
+                <div
                   style={{
                     position: 'absolute',
-                    left: '0.85rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#64748b',
+                    top: 0,
+                    left: '8%',
+                    right: '8%',
+                    height: '1px',
+                    background:
+                      'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent)',
                   }}
                 />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu.nome@rafitec.com.br"
-                  required
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {/* Caixa com Logotipo Oficial Microsoft em Alta Definição */}
+                  <div
+                    style={{
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '12px',
+                      backgroundColor: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.35)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 21 21"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                      <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                      <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                      <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '3px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.96875rem',
+                          fontWeight: 800,
+                          color: '#ffffff',
+                          letterSpacing: '-0.01em',
+                        }}
+                      >
+                        Entrar com Conta Microsoft
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.625rem',
+                          fontWeight: 900,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '999px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.25)',
+                          color: '#6ee7b7',
+                          border: '1px solid rgba(16, 185, 129, 0.5)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)',
+                        }}
+                      >
+                        Recomendado TI
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.78125rem', color: '#93c5fd', fontWeight: 600 }}>
+                      Acesso corporativo seguro com seu e-mail @rafitec.com.br
+                    </div>
+                  </div>
+                </div>
+
+                {/* Seta indicadora de ação rápida */}
+                <div
                   style={{
-                    width: '100%',
-                    padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#ffffff',
-                    fontSize: '0.875rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#93c5fd',
+                    fontSize: '1.1rem',
+                    fontWeight: 800,
+                    flexShrink: 0,
                   }}
-                />
-              </div>
+                >
+                  →
+                </div>
+              </button>
             </div>
 
-            <div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '0.78125rem',
-                  fontWeight: 700,
-                  color: '#cbd5e1',
-                  marginBottom: '0.4rem',
-                }}
-              >
-                Senha de Acesso
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Key
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: '0.85rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#64748b',
-                  }}
-                />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 0.85rem 0.75rem 2.4rem',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    color: '#ffffff',
-                    fontSize: '0.875rem',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
+            {/* DIVISOR: OU ACESSE COM E-MAIL E SENHA */}
+            <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.85rem',
-                borderRadius: '12px',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '0.9375rem',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)',
-                marginTop: '0.5rem',
-                transition: 'all 0.15s ease',
+                gap: '0.85rem',
+                margin: '0.5rem 0 1.25rem 0',
               }}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Autenticando...</span>
-                </>
-              ) : (
-                <span>Acessar Plataforma →</span>
-              )}
-            </button>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+              <span
+                style={{
+                  fontSize: '0.71875rem',
+                  color: '#64748b',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                ou acesse com e-mail e senha
+              </span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+            </div>
 
-            {/* Ações de Recuperação e SSO */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+            {/* FORMULÁRIO TRADICIONAL DE CONTINGÊNCIA */}
+            <form onSubmit={handleCorporateLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.78125rem',
+                    fontWeight: 700,
+                    color: '#cbd5e1',
+                    marginBottom: '0.4rem',
+                  }}
+                >
+                  E-mail Corporativo (@rafitec.com.br)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '0.85rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#64748b',
+                    }}
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu.nome@rafitec.com.br"
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.85rem 0.75rem 2.4rem',
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#ffffff',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.78125rem',
+                    fontWeight: 700,
+                    color: '#cbd5e1',
+                    marginBottom: '0.4rem',
+                  }}
+                >
+                  Senha de Acesso
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Key
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '0.85rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#64748b',
+                    }}
+                  />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 0.85rem 0.75rem 2.4rem',
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      color: '#ffffff',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.85rem',
+                  borderRadius: '12px',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 800,
+                  fontSize: '0.9375rem',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 0 20px rgba(37, 99, 235, 0.4)',
+                  marginTop: '0.5rem',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Autenticando...</span>
+                  </>
+                ) : (
+                  <span>Acessar com E-mail e Senha →</span>
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={handleRequestPasswordReset}
@@ -617,48 +779,17 @@ export default function LoginPage() {
                   cursor: 'pointer',
                   textAlign: 'center',
                   padding: '0.25rem',
+                  marginTop: '0.25rem',
                 }}
               >
                 Primeiro Acesso ou Esqueceu a Senha? Clique aqui para enviar link ao e-mail
               </button>
-
-              <button
-                type="button"
-                onClick={handleMicrosoftSso}
-                disabled={isLoading}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.65rem',
-                  padding: '0.75rem',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.18)',
-                  color: '#ffffff',
-                  fontSize: '0.8125rem',
-                  fontWeight: 700,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  marginTop: '0.35rem',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                }}
-              >
-                {/* Ícone Oficial Microsoft 4-Square */}
-                <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                  <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-                  <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-                </svg>
-                <span>Entrar com Conta Microsoft Corporativa (Office 365 / Entra ID)</span>
-              </button>
-            </div>
+            </form>
 
             {/* SecOps Notice */}
             <div
               style={{
-                marginTop: '1rem',
+                marginTop: '1.25rem',
                 padding: '0.75rem',
                 borderRadius: '10px',
                 backgroundColor: 'rgba(255, 255, 255, 0.02)',
@@ -671,7 +802,7 @@ export default function LoginPage() {
             >
               🔒 <strong>Ambiente Protegido por PSI</strong> • Tráfego HTTPS/TLS criptografado • Políticas RLS ativas • Bloqueio de cadastros não homologados.
             </div>
-          </form>
+          </div>
         )}
 
         {/* MODO 2: SIMULAÇÃO LOCAL (DEMO / TESTES) */}
