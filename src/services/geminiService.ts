@@ -326,7 +326,7 @@ export async function validateGeminiApiKey(
       ttsEnabled: false,
       error:
         errData.error ||
-        'Chave de API do Gemini precisa ser configurada nas variáveis de ambiente do servidor (GEMINI_API_KEY).',
+        'Chave de API de IA precisa ser configurada nas variáveis de ambiente do servidor (AI_API_KEY ou GEMINI_API_KEY).',
     };
   } catch (e: any) {
     return {

@@ -19,12 +19,13 @@ export async function POST(req: NextRequest) {
       voiceName,
     } = body;
 
-    // A chave de API fica armazenada exclusivamente no ambiente de servidor
-    const apiKey = (process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim();
+    // SecOps: A chave de API fica armazenada exclusivamente no ambiente seguro de servidor.
+    // Suporte agnóstico a chaves de IA: AI_API_KEY prioritária, com compatibilidade para GEMINI_API_KEY.
+    const apiKey = (process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim();
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'Chave de API do Gemini não configurada no servidor (GEMINI_API_KEY).' },
+        { error: 'Chave de API de IA não configurada no servidor (configure AI_API_KEY ou GEMINI_API_KEY nas variáveis de ambiente).' },
         { status: 500 }
       );
     }

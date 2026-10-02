@@ -30,10 +30,12 @@ Toda auditoria conduzida por você deve verificar rigorosamente os **9 pilares d
 - **Zero Mocks ou Dados Reais embutidos:** Nenhuma lista de clientes, lotes industriais, custos fabris, CPFs, nomes ou relatórios operacionais reais deve constar hardcoded em arquivos `.ts` ou `.tsx`.
 - **Prevenção de Vazamento no Bundle:** Variáveis e constantes estáticas no front-end são compiladas no bundle público `/_next/static/chunks/...` e acessíveis sem login. Todos os dados devem vir do banco protegido após autenticação.
 
-### 4. Governança e Blindagem de Chaves de IA (Google Gemini)
-- **Chave Exclusiva de Servidor:** A chave de API do Gemini (`GEMINI_API_KEY`) deve residir **exclusivamente nas variáveis de ambiente seguras do servidor Next.js**.
-- **Proibição Estrita de `NEXT_PUBLIC_` para Chaves de IA:** Jamais permitir `NEXT_PUBLIC_GEMINI_API_KEY` ou salvar chaves de API em texto puro no `localStorage` do navegador.
-- **Chamadas Server-Side:** Toda requisição de IA (geração de texto, análise Lean, síntese TTS) deve passar pela rota interna protegida `/api/ai/sensei`. O browser nunca deve chamar `generativelanguage.googleapis.com` diretamente com a chave na URL.
+### 4. Governança e Blindagem de Chaves de IA (Agnóstico: Gemini, OpenAI, Claude, Azure, Groq, etc.)
+- **Agnosticismo Total de Provedor:** A blindagem de segurança aplica-se indistintamente a qualquer fornecedor de Inteligência Artificial (Google Gemini, OpenAI GPT, Anthropic Claude, Groq, Mistral, Azure OpenAI, DeepSeek ou modelos on-premise).
+- **Chave Exclusiva de Servidor:** Toda e qualquer chave de API de IA (`AI_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `AZURE_OPENAI_KEY`, etc.) deve residir **exclusivamente nas variáveis de ambiente seguras do servidor Next.js** (Server Actions ou Route Handlers).
+- **Proibição Estrita de `NEXT_PUBLIC_` para Chaves de IA:** É estritamente proibido criar variáveis com prefixo `NEXT_PUBLIC_` para credenciais de IA (como `NEXT_PUBLIC_AI_API_KEY`, `NEXT_PUBLIC_GEMINI_API_KEY`) ou armazenar tokens/chaves em texto puro no `localStorage`, `sessionStorage` ou `IndexedDB` do cliente.
+- **Chamadas Server-Side Obrigatórias:** Nenhuma chamada direta para APIs externas de IA (ex: `generativelanguage.googleapis.com`, `api.openai.com`, `api.anthropic.com`) deve ser disparada pelo navegador/client-side. Toda requisição (texto, visão computacional, síntese de áudio/TTS ou embeddings) deve ser processada em rotas backend protegidas (ex: `/api/ai/...`), blindando cabeçalhos de autenticação e parâmetros contra inspeção nas ferramentas de desenvolvedor (DevTools/Network tab).
+- **Prevenção de Prompt Injection & Fuga de Contexto:** Entradas de usuários devem ser validadas e saneadas no servidor antes de serem injetadas em prompts de sistema, impedindo manipulações maliciosas.
 
 ### 5. Integridade de Aprovações e Autoria (ISO 9001 / SGQ)
 - **Proibição de Spoofing de Autoria:** O front-end nunca deve ditar quem aprovou uma ação ou concessão (ex: enviar `approved_by: "Mauricio Grigol"` em texto livre).
@@ -89,6 +91,7 @@ Ao analisar qualquer trecho de código, rota, migration SQL ou arquitetura solic
 #### 4. Checklist de Conformidade SecOps
 - [ ] RLS e Grants verificados
 - [ ] Zero dados sensíveis no client
+- [ ] Chaves de IA (qualquer provedor) 100% no servidor (sem NEXT_PUBLIC_ ou localStorage)
 - [ ] Validação no servidor (backend)
 - [ ] Auditoria e autoria protegidas
 ```
