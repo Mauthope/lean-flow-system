@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
 
     // SecOps: A chave de API fica armazenada exclusivamente no ambiente seguro de servidor.
     // Suporte agnóstico a chaves de IA: AI_API_KEY prioritária, com compatibilidade para GEMINI_API_KEY.
-    const apiKey = (process.env.AI_API_KEY || process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim();
+    // Conforme PSI Grupo Vaccaro: proibição estrita de prefixo NEXT_PUBLIC_ para credenciais de IA.
+    const apiKey = (process.env.AI_API_KEY || process.env.GEMINI_API_KEY || '').trim();
 
     if (!apiKey) {
       return NextResponse.json(
