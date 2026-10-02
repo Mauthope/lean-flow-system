@@ -465,6 +465,28 @@ export default function LoginPage() {
           >
             Portal de Acesso Seguro • Sistema FluxoLean 4.0
           </p>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              marginTop: '0.75rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.28)',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.78125rem',
+                color: 'var(--text-muted, #94a3b8)',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Desenvolvido por <strong style={{ color: '#ffffff', fontWeight: 600 }}>Mauricio Grigol</strong>
+            </span>
+          </div>
         </div>
 
         {/* Access Selector Tabs (Acesso Corporativo vs Simulação Local) */}
@@ -1233,21 +1255,67 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Footer Info Sem Emojis */}
+      {/* Footer Info Sem Emojis - Bem Visível */}
       <div
         style={{
           textAlign: 'center',
           marginTop: '1.75rem',
-          color: 'var(--text-dim, #64748b)',
-          fontSize: '0.78125rem',
-          fontFamily: 'var(--font-sans)',
           position: 'relative',
           zIndex: 10,
         }}
       >
-        <p style={{ margin: 0 }}>
-          Desenvolvido por <strong>Mauricio Grigol</strong> • Consultor Lean & Dev Full Stack
-        </p>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            padding: '0.55rem 1.25rem',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+          }}
+        >
+          <div
+            style={{
+              width: '22px',
+              height: '22px',
+              borderRadius: '6px',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)',
+              color: '#020617',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-heading)',
+              boxShadow: '0 0 10px rgba(6, 182, 212, 0.4)',
+            }}
+          >
+            MG
+          </div>
+          <span
+            style={{
+              fontSize: '0.84375rem',
+              color: '#f1f5f9',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Desenvolvido por <strong style={{ color: '#ffffff', fontWeight: 700 }}>Mauricio Grigol</strong>
+          </span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.25)' }}>•</span>
+          <span
+            style={{
+              fontSize: '0.8125rem',
+              color: '#94a3b8',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Consultor Lean & Dev Full Stack
+          </span>
+        </div>
       </div>
     </div>
   );
