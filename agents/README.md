@@ -1,10 +1,10 @@
-# 🤖 Diretório de Instruções de Agentes de IA (Lean Flow System)
+# Diretório de Instruções de Agentes de IA (Lean Flow System)
 
 Este diretório foi criado para armazenar arquivos com **instruções, diretrizes e papéis especializados para Agentes de IA**, auxiliando no desenvolvimento contínuo, governança, segurança e expansão do **Fluxo Lean System**.
 
 ---
 
-## 📁 Como Funciona
+## Como Funciona
 
 Você pode criar arquivos `.md` (Markdown) nesta pasta para definir agentes com papéis específicos. Sempre que iniciarmos um trabalho ou você me pedir para atuar com base em um agente (ex: *"aja como o agente revisor de segurança"* ou *"consulte as instruções do analista lean"*), eu lerei e seguirei estritamente as regras definidas no arquivo correspondente.
 
@@ -12,18 +12,18 @@ Além disso, o arquivo raiz `AGENTS.md` instrui o assistente a sempre consultar 
 
 ---
 
-## 🛠️ Sugestões de Agentes para este Projeto
+## Sugestões de Agentes para este Projeto
 
 | Arquivo Recomendado | Especialidade / Papel | Quando Usar |
 | :--- | :--- | :--- |
-| `auditor-seguranca.md` | **SecOps & Governança (Grupo Vaccaro / PSI)** | Para revisar código, queries SQL, RLS e autenticação antes de publicar. |
-| `especialista-lean.md` | **Engenharia Lean & TPM Fabril** | Para validar regras de cálculo de OEE, 8 Desperdícios, 5W2H, Hoshin Kanri e matrizes. |
-| `arquiteto-frontend.md` | **UI/UX Industrial & Performance** | Para criação de telas, componentes acessíveis e visualização para operadores de fábrica. |
-| `engenheiro-backend.md` | **Next.js API & Supabase PostgreSQL** | Para criação de rotas, triggers, RPCs seguras e migrations. |
+| `security-expert.md` | **SecOps & Governança (Grupo Vaccaro / PSI)** | Para revisar código, queries SQL, RLS e autenticação antes de publicar. |
+| `designer.md` | **Design System Executivo & UI Obsidian Navy** | Para criação de telas, componentes acessíveis, iconografia e harmonia visual. |
+| `copywriter.md` | **UX Writing & Redação Industrial** | Para padronização de textos, mensagens, microcopy e vocabulário Lean/TPS. |
+| `cleancod.md` | **Clean Code, SOLID & Otimização de Tokens** | Para refatorações, modularização, desacoplamento e tipagem TypeScript estrita. |
 
 ---
 
-## 📋 Modelo de Criação
+## Modelo de Criação
 
 Para criar um novo agente, você pode duplicar o arquivo [`TEMPLATE_AGENTE.md`](./TEMPLATE_AGENTE.md) e preencher as seções:
 

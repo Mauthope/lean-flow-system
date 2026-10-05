@@ -19,6 +19,8 @@ import {
   Printer,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
+  CornerDownRight,
   AlertTriangle,
   Lightbulb,
   CheckCircle2,
@@ -340,7 +342,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
               >
                 {assessments.map((asm, idx) => (
                   <option key={asm.id} value={asm.id}>
-                    {idx === 0 ? '⭐ Vigente: ' : 'Histórico: '}
+                    {idx === 0 ? '[Vigente] ' : '[Histórico] '}
                     {formatDate(asm.assessmentDate)} • Score {asm.overallScore}% ({asm.evaluatorName})
                   </option>
                 ))}
@@ -737,8 +739,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
-                ⭐ Ponto Forte
+              <span style={{ fontSize: '0.65rem', color: '#34d399', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Award size={12} /> Ponto Forte
               </span>
               <div
                 style={{
@@ -910,7 +912,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     gap: '0.25rem',
                   }}
                 >
-                  Ver Plano Completo ↓
+                  <ChevronDown size={13} />
+                  <span>Ver Plano Completo</span>
                 </a>
               </div>
             </div>
@@ -1059,7 +1062,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                           gap: '0.4rem',
                         }}
                       >
-                        <span style={{ color: '#fbbf24', fontWeight: 800 }}>↳</span>
+                        <CornerDownRight size={13} color="#fbbf24" style={{ flexShrink: 0 }} />
                         <span>{cause}</span>
                       </div>
                     ))}
@@ -1393,8 +1396,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                             <div style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
                               {completedCount > 0 ? `${completedCount} concluído(s)` : `${totalProjects} em andamento`}
                             </div>
-                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
-                              {isExpanded ? 'Ocultar detalhes ↑' : 'Ver projetos e critérios ↓'}
+                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
+                              <span>{isExpanded ? 'Ocultar detalhes' : 'Ver projetos e critérios'}</span>
+                              {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                             </span>
                           </div>
                         ) : totalProjects > 0 ? (
@@ -1405,15 +1409,17 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                             <div style={{ fontSize: '0.675rem', color: '#64748b' }}>
                               Em andamento
                             </div>
-                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.15rem' }}>
-                              {isExpanded ? 'Ocultar detalhes ↑' : 'Ver projetos e critérios ↓'}
+                            <span style={{ fontSize: '0.65rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
+                              <span>{isExpanded ? 'Ocultar detalhes' : 'Ver projetos e critérios'}</span>
+                              {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                             </span>
                           </div>
                         ) : (
                           <div>
                             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>Sem Kaizen ativo</span>
-                            <div style={{ fontSize: '0.65rem', color: isExpanded ? '#22d3ee' : '#94a3b8', marginTop: '0.15rem' }}>
-                              {isExpanded ? 'Ocultar critérios ↑' : 'Ver critérios ↓'}
+                            <div style={{ fontSize: '0.65rem', color: isExpanded ? '#22d3ee' : '#94a3b8', marginTop: '0.15rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <span>{isExpanded ? 'Ocultar critérios' : 'Ver critérios'}</span>
+                              {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                             </div>
                           </div>
                         )}

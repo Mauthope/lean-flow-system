@@ -148,7 +148,7 @@ RESEND_API_KEY=re_1234567890abcdef
 
 - **Sem travas:** Mesmo sem as variáveis acima, o sistema gera o token escopado normalmente.
 - **Link direto na tela:** Ao submeter um projeto, a UI exibe os botões:
-  1. `🔗 Abrir Portal do Controlador`: abre diretamente a tela `/controladoria/auditoria/[token]`.
-  2. `📋 Copiar Link`: copia o link seguro para simular o recebimento em outro navegador.
-  3. `⚡ Aprovar (Modo Teste)`: atalho para testes imediatos pelo administrador.
+  1. `Abrir Portal do Controlador`: abre diretamente a tela `/controladoria/auditoria/[token]`.
+  2. `Copiar Link`: copia o link seguro para simular o recebimento em outro navegador.
+  3. `Aprovar (Modo Teste)`: atalho para testes imediatos pelo administrador.
 - **Console:** Um log corporativo formatado simula exatamente o envio do e-mail no console do navegador.

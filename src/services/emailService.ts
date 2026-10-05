@@ -122,7 +122,7 @@ export function generateAuditEmailHtml(params: ControladoriaInviteParams): strin
 
       <div class="btn-container">
         <a href="${auditUrl}" target="_blank" class="btn">
-          Auditar & Homologar Ganhos Financeiros →
+          Auditar & Homologar Ganhos Financeiros
         </a>
       </div>
 

@@ -45,7 +45,7 @@ Modelos de IA possuem janelas de contexto pagas e limitadas por tokens. Arquivos
 - Tipagem explícita em retornos de funções públicas e Server Actions.
 
 ```typescript
-// ❌ ANTI-PATTERN: Variáveis booleanas ambíguas e tipagem any
+// [ANTI-PATTERN]: Variáveis booleanas ambíguas e tipagem any
 interface UserState {
   user: any;
   loading: boolean;
@@ -53,7 +53,7 @@ interface UserState {
   success: boolean;
 }
 
-// ✅ CLEAN LEAN PATTERN: Discriminated Union com estado inequívoco
+// [CLEAN LEAN]: Discriminated Union com estado inequívoco
 export type AsyncState<TData, TError = string> =
   | { status: "idle" }
   | { status: "loading" }
@@ -69,14 +69,14 @@ export type AsyncState<TData, TError = string> =
 - **Eliminação de Re-renderizações Desnecessárias:** Passagem de props primitivas ou estabilizadas via `useCallback`/`useMemo` apenas quando houver impacto mensurável de render.
 
 ```tsx
-// ❌ ANTI-PATTERN: Layout inteiro forçado para Client Component só por causa de um botão
+// [ANTI-PATTERN]: Layout inteiro forçado para Client Component só por causa de um botão
 "use client";
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState("dark");
   return <div>{/* 500 linhas de JSX aqui */}</div>;
 }
 
-// ✅ CLEAN LEAN PATTERN: Layout no Servidor + Micro-componente Client isolado
+// [CLEAN LEAN]: Layout no Servidor + Micro-componente Client isolado
 // src/app/dashboard/layout.tsx (Server Component - 0 KB de JS para o cliente)
 import { Header } from "./_components/header";
 
@@ -109,7 +109,7 @@ export function ThemeTrigger() {
 Comentários devem explicar o **PORQUÊ** de uma decisão incomum ou regra de negócio complexa, nunca o **O QUÊ** o código já torna óbvio.
 
 ```typescript
-// ❌ COMENTÁRIO LIXO: Polui o arquivo e consome tokens de IA à toa
+// [ANTI-PATTERN / COMENTÁRIO LIXO]: Polui o arquivo e consome tokens de IA à toa
 // Esta função calcula o total
 // Recebe a lista de itens
 // Retorna a soma
@@ -117,7 +117,7 @@ function calculateTotal(items: CartItem[]) {
   return items.reduce((acc, item) => acc + item.price, 0);
 }
 
-// ✅ CLEAN TSDOC: Explica restrição de domínio e formato esperado
+// [CLEAN TSDOC]: Explica restrição de domínio e formato esperado
 /**
  * Calcula o valor líquido do inquilino deduzindo taxas regulatórias municipais.
  * @see Regra Tributária Art. 42 / Instrução Normativa 2026
@@ -151,7 +151,7 @@ export function fail<E = Error>(error: E): Result<never, E> {
 ---
 
 ### 3.5. Proibição Absoluta de Emojis nos Sistemas e Aplicações
-- **Zero Emojis na UI e no Código do Sistema:** É expressamente proibido o uso de emojis (ex: 🚀, 💡, ⚠️, ❌, ✅, 📊, 🔒, 🛠️, etc.) em qualquer camada das aplicações: botões, modais, headers, cards, labels, toasts, notificações, placeholders, retornos de erro da API ou logs.
+- **Zero Emojis na UI e no Código do Sistema:** É expressamente proibido o uso de emojis em qualquer camada das aplicações: botões, modais, headers, cards, labels, toasts, notificações, placeholders, retornos de erro da API ou logs.
 - **Substituição Obrigatória por Ícones Vetoriais:** Todas as sinalizações visuais e indicadores de status DEVEM utilizar exclusivamente ícones SVG profissionais da biblioteca `lucide-react` (ex: `CheckCircle2`, `AlertTriangle`, `TrendingUp`, `ShieldCheck`, `ArrowRight`, `Loader2`).
 - **Motivações Técnicas e de Qualidade:**
   1. **Consistência Cross-Platform:** Emojis são renderizados de maneira completamente heterogênea e desalinhada entre Windows, macOS, Linux, iOS e Android.
@@ -179,7 +179,7 @@ Ao ser acionado para revisar, refatorar ou inspecionar um módulo, o `cleancod` 
 
 ## 5. Exemplo de Refatoração: Antes vs Depois
 
-### ❌ Antes (Código Típico com Lixo, Monolítico e Tóxico para Tokens de IA):
+### [ANTES] (Código Típico com Lixo, Monolítico e Tóxico para Tokens de IA):
 ```tsx
 // 280 linhas em um arquivo só misturando fetch, filtros, modais e estilos inline
 export default function UserList() {
@@ -215,7 +215,7 @@ export default function UserList() {
 }
 ```
 
-### ✅ Depois (Estruturado pelo `cleancod` — Modular, Rápido e Barato em Tokens):
+### [DEPOIS] (Estruturado pelo `cleancod` — Modular, Rápido e Barato em Tokens):
 ```tsx
 // 1. Hook de dados isolado (src/hooks/use-users.ts - 35 linhas)
 export function useUsers(searchTerm: string) {

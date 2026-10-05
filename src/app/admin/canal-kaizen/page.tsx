@@ -952,10 +952,13 @@ export default function AdminCanalKaizenPage() {
                                 fontFamily: 'var(--font-mono)',
                                 fontWeight: 800,
                                 textDecoration: 'none',
-                                display: 'inline-block',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                               }}
                             >
-                              {idea.protocol} →
+                              <span>{idea.protocol}</span>
+                              <ArrowRight size={12} />
                             </Link>
                             <Link
                               href={`/admin/canal-kaizen/ideias/${idea.id}`}

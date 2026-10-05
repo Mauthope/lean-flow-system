@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowLeft,
+  ArrowRight,
   Send,
   Building2,
   User,
@@ -149,7 +150,8 @@ export default function NovaIdeiaKaizenPage() {
             gap: '0.35rem',
           }}
         >
-          Área do Gestor →
+          <span>Área do Gestor</span>
+          <ArrowRight size={13} />
         </Link>
       </div>
 

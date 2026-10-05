@@ -778,8 +778,8 @@ export default function EstudoDeTemposPage() {
                           </span>
                         </div>
                         {active && (
-                          <div style={{ fontSize: '0.725rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800, marginTop: '0.1rem' }}>
-                            ⏱️ {formatTime(active.elapsedMs)} {isRunning ? '(gravando...)' : '(pausado)'}
+                          <div style={{ fontSize: '0.725rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800, marginTop: '0.1rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <Clock size={12} /> {formatTime(active.elapsedMs)} {isRunning ? '(gravando...)' : '(pausado)'}
                           </div>
                         )}
                       </div>

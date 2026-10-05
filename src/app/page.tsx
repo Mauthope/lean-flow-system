@@ -498,8 +498,9 @@ export default function LandingPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase' }}>
-                    ⏱️ Cronoanálise & Eficiência
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Timer size={13} />
+                    Cronoanálise & Eficiência
                   </span>
                   <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>Ciclo #4</span>
                 </div>

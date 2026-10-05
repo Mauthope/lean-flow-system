@@ -285,9 +285,12 @@ export default function AdminDashboardPage() {
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 fontFamily: 'var(--font-mono)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
-              ⏱️ {metrics.averageCycleDays}d CICLO MÉDIO
+              <Clock size={11} /> {metrics.averageCycleDays}d CICLO MÉDIO
             </span>
           </div>
 

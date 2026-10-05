@@ -32,8 +32,8 @@ Usuários de sistemas não leem blocos de texto; eles escaneiam a tela procurand
 
 ### 2.2. Microcopy de Ação (CTAs, Botões e Links)
 - **Verbos Claros e Específicos:** O rótulo do botão deve declarar exatamente o que vai acontecer ao clicar.
-  - ❌ *Ruim:* "Clique aqui", "Enviar", "OK", "Processar".
-  - ✅ *Excelente:* "Exportar Relatório PDF", "Cadastrar Inquilino", "Salvar Parâmetros", "Confirmar Apontamento".
+  - [EVITAR]: "Clique aqui", "Enviar", "OK", "Processar".
+  - [RECOMENDADO]: "Exportar Relatório PDF", "Cadastrar Inquilino", "Salvar Parâmetros", "Confirmar Apontamento".
 - **Sem Falsa Promessa:** Não usar termos que gerem ambiguidade se a ação for destrutiva ou demorada.
 
 ### 2.3. Empty States, Modais e Mensagens de Feedback
@@ -42,11 +42,11 @@ Usuários de sistemas não leem blocos de texto; eles escaneiam a tela procurand
   2. *Como resolver:* "Inicie um novo apontamento para começar o monitoramento."
   3. *Ação imediata:* Botão "Criar Primeira Inspeção".
 - **Mensagens de Erro e Toasts:** Devem ser humanas e orientadas à solução, sem códigos crípticos expostos:
-  - ❌ *Ruim:* "Error 500: Database connection failure in tenant resolver."
-  - ✅ *Excelente:* "Não foi possível carregar as informações da empresa. Verifique sua conexão ou tente novamente."
+  - [EVITAR]: "Error 500: Database connection failure in tenant resolver."
+  - [RECOMENDADO]: "Não foi possível carregar as informações da empresa. Verifique sua conexão ou tente novamente."
 
 ### 2.4. Proibição Absoluta de Emojis
-- Seguindo a governança obrigatória do ecossistema, **o copywriter nunca utiliza emojis** (🚀, ⚠️, ❌, ✅, etc.) em nenhuma redação.
+- Seguindo a governança obrigatória do ecossistema, **o copywriter nunca utiliza emojis** em nenhuma redação.
 - O tom de clareza, seriedade e dinamismo é construído pela escolha vocabular impecável e pela parceria com o `designer`, que insere o ícone vetorial SVG (`lucide-react`) correto.
 
 ---
@@ -71,7 +71,7 @@ Quando uma tela ou bloco de cards for planejado (ex: resumo de KPIs, cartões de
 
 ## 4. Tabela de Padrões: Antes vs Depois
 
-| Componente | ❌ Redação Típica / Poluída | ✅ Padrão Aprovado (Copywriter + Designer) |
+| Componente | [EVITAR] Redação Típica / Poluída | [RECOMENDADO] Padrão Aprovado (Copywriter + Designer) |
 | :--- | :--- | :--- |
 | **Card de KPI** | "Neste card você pode visualizar a porcentagem total de defeitos encontrados no setor de costura no mês atual: 3.2%" | **Título:** Defeitos no Mês<br>**Valor:** 3,2%<br>**Apoio:** -0,4% vs mês anterior *(Ícone `TrendingDown` ao lado)* |
 | **Modal de Confirmação** | "Atenção!! Tem certeza que deseja deletar este inquilino do sistema? Essa operação não pode ser desfeita e você vai perder tudo!" | **Título:** Excluir Inquilino<br>**Corpo:** Todos os dados da empresa serão removidos permanentemente. Esta ação não pode ser desfeita.<br>**Botão Secundário:** Manter Inquilino<br>**Botão Primário:** Excluir Definitivamente |

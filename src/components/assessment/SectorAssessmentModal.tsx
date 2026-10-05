@@ -1046,7 +1046,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                   cursor: currentGlobalQuestionNumber === 1 && !isReviewSlide ? 'not-allowed' : 'pointer',
                 }}
               >
-                <ChevronLeft size={15} /> Anterior [←]
+                <ChevronLeft size={15} /> Anterior
               </button>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.7rem' }}>

@@ -9,6 +9,7 @@ import { KaizenIdea, ActionChecklistItem, LeanCostBreakdown } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   ArrowLeft,
+  ArrowRight,
   Lightbulb,
   CheckCircle2,
   Calendar,
@@ -804,8 +805,10 @@ export default function KaizenPDCAExecutionPage() {
                 setActiveTab('do');
               }}
               className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
             >
-              Avançar para D • DO (Execução) →
+              <span>Avançar para D • DO (Execução)</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -1024,8 +1027,10 @@ export default function KaizenPDCAExecutionPage() {
                 setActiveTab('check');
               }}
               className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
             >
-              Avançar para C • CHECK (Ganhos & ROI) →
+              <span>Avançar para C • CHECK (Ganhos & ROI)</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>
@@ -1188,8 +1193,10 @@ export default function KaizenPDCAExecutionPage() {
                 setActiveTab('act');
               }}
               className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
             >
-              Salvar & Avançar para A • ACT (Padronização & 3 Meses) →
+              <span>Salvar & Avançar para A • ACT (Padronização & 3 Meses)</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </div>

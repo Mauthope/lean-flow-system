@@ -1,4 +1,4 @@
-# 👤 [Nome do Agente Especializado]
+# [Nome do Agente Especializado]
 
 ## 1. Identidade & Objetivo
 - **Papel:** [Ex: Especialista em Manutenção Produtiva Total (TPM) e OEE]
