@@ -53,55 +53,65 @@ export default function LoginPage() {
 
     const handleSessionUser = async (userId: string, userEmail?: string) => {
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (profile && isMounted) {
-          const effectiveEmail = (profile.email || userEmail || '').trim().toLowerCase();
-
-          // 1. Busca se o agente já foi pré-cadastrado no sistema pelo Master (por e-mail corporativo ou ID)
-          let matchedUser =
-            dataService.getUserByIdOrEmail(effectiveEmail) ||
-            dataService.getUserByIdOrEmail(profile.id);
-
-          // 2. Se o agente já existe (ex: criado no painel de agentes com seus setores e cargos definidos),
-          // o sistema reconhece ele instantaneamente e preserva todas as suas atribuições
-          if (matchedUser) {
-            loginAs(matchedUser.id);
-            if (
-              matchedUser.role === 'admin' ||
-              matchedUser.isMaster ||
-              profile.role === 'admin' ||
-              profile.is_master
-            ) {
-              router.push('/admin/dashboard');
-            } else {
-              router.push('/agente/kanban');
-            }
-            return;
-          }
-
-          // 3. Se for um colaborador da Rafitec que fez o primeiro login via Microsoft e ainda não havia sido pré-cadastrado,
-          // o sistema provisiona ele automaticamente como Agente Lean vinculado à fábrica
-          const currentTenant = dataService.getCurrentTenant();
-          const newUser = dataService.createUser({
-            tenantId: currentTenant.id,
-            name:
-              profile.name ||
-              (effectiveEmail ? effectiveEmail.split('@')[0].replace('.', ' ') : 'Colaborador Rafitec'),
-            email: effectiveEmail,
-            role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
-            isMaster: profile.is_master || false,
-            jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
-            active: true,
-          });
-
-          loginAs(newUser.id);
-          router.push(newUser.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
+        let profile = null;
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          profile = data;
+        } catch (profileErr) {
+          console.warn('[SSO Callback] Perfil ainda sincronizando no banco:', profileErr);
         }
+
+        if (!isMounted) return;
+
+        const effectiveEmail = (profile?.email || userEmail || '').trim().toLowerCase();
+        if (!effectiveEmail) return;
+
+        // 1. Busca se o agente já foi pré-cadastrado no sistema pelo Master (por e-mail corporativo ou ID)
+        let matchedUser =
+          dataService.getUserByIdOrEmail(effectiveEmail) ||
+          dataService.getUserByIdOrEmail(userId);
+
+        // 2. Se o agente já existe (ex: criado no painel de agentes com seus setores e cargos definidos),
+        // o sistema reconhece ele instantaneamente e preserva todas as suas atribuições
+        if (matchedUser) {
+          loginAs(matchedUser.id);
+          if (
+            matchedUser.role === 'admin' ||
+            matchedUser.isMaster ||
+            profile?.role === 'admin' ||
+            profile?.is_master ||
+            effectiveEmail === 'mauricio.grigol@rafitec.com.br'
+          ) {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/agente/kanban');
+          }
+          return;
+        }
+
+        // 3. Se for um colaborador da Rafitec que fez o primeiro login via Microsoft e ainda não havia sido pré-cadastrado,
+        // o sistema provisiona ele automaticamente como Agente Lean vinculado à fábrica
+        const currentTenant = dataService.getCurrentTenant();
+        const isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
+        const role = profile?.role === 'admin' || isMaster ? 'admin' : 'agent';
+        const newUser = dataService.createUser({
+          tenantId: currentTenant.id,
+          name:
+            profile?.name ||
+            (effectiveEmail ? effectiveEmail.split('@')[0].replace('.', ' ') : 'Colaborador Rafitec'),
+          email: effectiveEmail,
+          role: role,
+          isMaster: isMaster,
+          jobTitle: role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
+          active: true,
+        });
+
+        loginAs(newUser.id);
+        router.push(newUser.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
       } catch (err) {
         console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
       }
@@ -278,8 +288,8 @@ export default function LoginPage() {
             scopes: 'email profile offline_access',
             redirectTo:
               typeof window !== 'undefined'
-                ? `${window.location.origin}/login`
-                : 'https://fluxo-lean-system.vercel.app/login',
+                ? window.location.origin
+                : 'https://fluxo-lean-system.vercel.app',
           },
         });
 
