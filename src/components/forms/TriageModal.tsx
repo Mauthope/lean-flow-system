@@ -49,7 +49,7 @@ export const TriageModal: React.FC<TriageModalProps> = ({
   const [priority, setPriority] = useState<ActionPriority>('media');
   const [wasteCategory, setWasteCategory] = useState<LeanWasteCategory>('espera');
   const [strategicObjectiveId, setStrategicObjectiveId] = useState('');
-  const [assessmentDimensionId, setAssessmentDimensionId] = useState<LeanAssessmentDimensionId>('tpm_oee');
+  const [assessmentDimensionIds, setAssessmentDimensionIds] = useState<LeanAssessmentDimensionId[]>(['tpm_oee']);
   const [refinedTitle, setRefinedTitle] = useState('');
   const [refinedDescription, setRefinedDescription] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -62,9 +62,11 @@ export const TriageModal: React.FC<TriageModalProps> = ({
       setWasteCategory(cat);
       setAssignedAgentId(action.assignedAgentId || (allAgents[0]?.id || ''));
       setStrategicObjectiveId(action.strategicObjectiveId || (strategicObjectives[0]?.id || ''));
-      setAssessmentDimensionId(
-        action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(cat)
-      );
+      const defaultDim = dataService.getDefaultAssessmentDimensionForWaste(cat);
+      const initialDims = action.assessmentDimensionIds && action.assessmentDimensionIds.length > 0
+        ? action.assessmentDimensionIds
+        : [action.assessmentDimensionId || defaultDim];
+      setAssessmentDimensionIds(initialDims);
       setRefinedTitle(action.title || '');
       setRefinedDescription(action.description || '');
       setDecision('approve');
@@ -76,7 +78,18 @@ export const TriageModal: React.FC<TriageModalProps> = ({
 
   const handleWasteChange = (cat: LeanWasteCategory) => {
     setWasteCategory(cat);
-    setAssessmentDimensionId(dataService.getDefaultAssessmentDimensionForWaste(cat));
+    const def = dataService.getDefaultAssessmentDimensionForWaste(cat);
+    setAssessmentDimensionIds((prev) => (prev.includes(def) ? prev : [def, ...prev]));
+  };
+
+  const handleToggleDimension = (dimId: LeanAssessmentDimensionId) => {
+    setAssessmentDimensionIds((prev) => {
+      if (prev.includes(dimId)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((d) => d !== dimId);
+      }
+      return [...prev, dimId];
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,7 +110,8 @@ export const TriageModal: React.FC<TriageModalProps> = ({
         decision === 'approve' && selectedObj
           ? `${selectedObj.code} - ${selectedObj.title}`
           : undefined,
-      assessmentDimensionId: decision === 'approve' ? assessmentDimensionId : undefined,
+      assessmentDimensionId: decision === 'approve' ? assessmentDimensionIds[0] : undefined,
+      assessmentDimensionIds: decision === 'approve' ? assessmentDimensionIds : undefined,
       refinedTitle: decision === 'approve' ? refinedTitle : undefined,
       refinedDescription: decision === 'approve' ? refinedDescription : undefined,
       rejectionReason: decision === 'reject' ? rejectionReason : undefined,
@@ -344,21 +358,21 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                   }}
                 >
                   <Target size={14} color={isDark ? '#22d3ee' : '#0369a1'} />
-                  <span>Eixo Alvo do Lean Assessment:</span>
+                  <span>Eixos Alvo do Lean Assessment:</span>
                 </label>
                 <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-                  Os ganhos deste Kaizen formarão o valor auditado deste eixo no setor
+                  Selecione um ou mais eixos impactados por este projeto Kaizen
                 </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
                 {(Object.entries(ASSESSMENT_DIMENSIONS_CONFIG) as [LeanAssessmentDimensionId, typeof ASSESSMENT_DIMENSIONS_CONFIG[LeanAssessmentDimensionId]][]).map(([dimId, config]) => {
-                  const isSelected = assessmentDimensionId === dimId;
+                  const isSelected = assessmentDimensionIds.includes(dimId);
                   return (
                     <button
                       type="button"
                       key={dimId}
-                      onClick={() => setAssessmentDimensionId(dimId)}
+                      onClick={() => handleToggleDimension(dimId)}
                       style={{
                         backgroundColor: isSelected
                           ? (isDark ? 'rgba(34, 211, 238, 0.2)' : '#e0f2fe')
@@ -376,9 +390,14 @@ export const TriageModal: React.FC<TriageModalProps> = ({
                         transition: 'all 0.15s',
                       }}
                     >
-                      <strong style={{ fontSize: '0.775rem', color: isSelected ? (isDark ? '#ffffff' : '#0369a1') : (isDark ? '#cbd5e1' : '#334155') }}>
-                        {config.shortName}
-                      </strong>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <strong style={{ fontSize: '0.775rem', color: isSelected ? (isDark ? '#ffffff' : '#0369a1') : (isDark ? '#cbd5e1' : '#334155') }}>
+                          {config.shortName}
+                        </strong>
+                        {isSelected && (
+                          <span style={{ fontSize: '0.65rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 800 }}>✓</span>
+                        )}
+                      </div>
                       <span style={{ fontSize: '0.65rem', color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.2 }}>
                         {config.description}
                       </span>

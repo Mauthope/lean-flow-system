@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, ASSESSMENT_DIMENSIONS_CONFIG, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
+import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
 import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
@@ -546,28 +546,35 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             <PriorityBadge priority={action.priority} />
             <WasteCategoryBadge category={action.wasteCategory} />
             {(() => {
-              const dimId = action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(action.wasteCategory);
-              const dimConfig = ASSESSMENT_DIMENSIONS_CONFIG[dimId];
-              return dimConfig ? (
-                <span
-                  style={{
-                    fontSize: '0.725rem',
-                    fontWeight: 700,
-                    backgroundColor: 'rgba(6, 182, 212, 0.12)',
-                    color: '#0891b2',
-                    border: '1px solid rgba(8, 145, 178, 0.3)',
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '20px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                  }}
-                  title="Eixo do Lean Assessment que este Kaizen alavanca"
-                >
-                  <span>{dimConfig.icon}</span>
-                  <span>Eixo: {dimConfig.shortName}</span>
-                </span>
-              ) : null;
+              const dimIds: LeanAssessmentDimensionId[] =
+                action.assessmentDimensionIds && action.assessmentDimensionIds.length > 0
+                  ? action.assessmentDimensionIds
+                  : [action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(action.wasteCategory)];
+
+              return dimIds.map((dimId) => {
+                const dimConfig = ASSESSMENT_DIMENSIONS_CONFIG[dimId];
+                if (!dimConfig) return null;
+                return (
+                  <span
+                    key={dimId}
+                    style={{
+                      fontSize: '0.725rem',
+                      fontWeight: 700,
+                      backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                      color: '#0891b2',
+                      border: '1px solid rgba(8, 145, 178, 0.3)',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '20px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                    title="Eixo do Lean Assessment que este Kaizen alavanca"
+                  >
+                    <span>Eixo: {dimConfig.shortName}</span>
+                  </span>
+                );
+              });
             })()}
 
             {action.strategicObjectiveName && (

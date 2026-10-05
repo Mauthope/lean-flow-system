@@ -2100,8 +2100,10 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               {sectorSavings.completed.map((action) => {
                 const val = action.actualCostAvoided || action.estimatedCostAvoided || 0;
-                const dimId = action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(action.wasteCategory);
-                const dimConfig = ASSESSMENT_DIMENSIONS_CONFIG[dimId];
+                const dimIds: LeanAssessmentDimensionId[] =
+                  action.assessmentDimensionIds && action.assessmentDimensionIds.length > 0
+                    ? action.assessmentDimensionIds
+                    : [action.assessmentDimensionId || dataService.getDefaultAssessmentDimensionForWaste(action.wasteCategory)];
 
                 return (
                   <div
@@ -2125,25 +2127,29 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                       <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                         ({action.protocol})
                       </span>
-                      {dimConfig && (
-                        <span
-                          style={{
-                            fontSize: '0.675rem',
-                            fontWeight: 700,
-                            backgroundColor: 'rgba(6, 182, 212, 0.12)',
-                            color: '#22d3ee',
-                            border: '1px solid rgba(6, 182, 212, 0.3)',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: '12px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                          }}
-                        >
-                          <span>{dimConfig.icon}</span>
-                          <span>{dimConfig.shortName}</span>
-                        </span>
-                      )}
+                      {dimIds.map((dimId) => {
+                        const dimConfig = ASSESSMENT_DIMENSIONS_CONFIG[dimId];
+                        if (!dimConfig) return null;
+                        return (
+                          <span
+                            key={dimId}
+                            style={{
+                              fontSize: '0.675rem',
+                              fontWeight: 700,
+                              backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                              color: '#22d3ee',
+                              border: '1px solid rgba(6, 182, 212, 0.3)',
+                              padding: '0.15rem 0.5rem',
+                              borderRadius: '12px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                            }}
+                          >
+                            <span>{dimConfig.shortName}</span>
+                          </span>
+                        );
+                      })}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', fontFamily: 'var(--font-mono)' }}>

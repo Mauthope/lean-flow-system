@@ -389,7 +389,8 @@ export interface LeanAction {
   title: string;
   description: string;
   wasteCategory: LeanWasteCategory;
-  assessmentDimensionId?: LeanAssessmentDimensionId; // Eixo do Lean Assessment que este projeto alavanca
+  assessmentDimensionId?: LeanAssessmentDimensionId; // Eixo primário do Lean Assessment (compatibilidade)
+  assessmentDimensionIds?: LeanAssessmentDimensionId[]; // Múltiplos eixos do Lean Assessment que este projeto alavanca
   strategicObjectiveId?: string;                     // ID do Objetivo Estratégico da Alta Gerência (Hoshin Kanri)
   strategicObjectiveName?: string;                   // Título/Nome do Objetivo Estratégico da Alta Gerência
   senseiStrategicAudit?: SenseiStrategicAudit;       // Parecer e Justificativa de Alinhamento do Sensei IA

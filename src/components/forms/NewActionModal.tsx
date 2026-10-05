@@ -37,7 +37,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   const [description, setDescription] = useState('');
   const [strategicObjectiveId, setStrategicObjectiveId] = useState('');
   const [wasteCategory, setWasteCategory] = useState<LeanWasteCategory>('espera');
-  const [assessmentDimensionId, setAssessmentDimensionId] = useState<LeanAssessmentDimensionId>('tpm_oee');
+  const [assessmentDimensionIds, setAssessmentDimensionIds] = useState<LeanAssessmentDimensionId[]>(['tpm_oee']);
   const [originSectorId, setOriginSectorId] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [priority, setPriority] = useState<ActionPriority>('media');
@@ -54,7 +54,7 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       setDescription('');
       setStrategicObjectiveId(currentObjectives[0]?.id || '');
       setWasteCategory('espera');
-      setAssessmentDimensionId('tpm_oee');
+      setAssessmentDimensionIds(['tpm_oee']);
       setOriginSectorId(currentSectors[0]?.id || '');
       setAssignedAgentId(allAgents[0]?.id || '');
       setPriority('media');
@@ -65,7 +65,18 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
   const handleWasteChange = (cat: LeanWasteCategory) => {
     setWasteCategory(cat);
-    setAssessmentDimensionId(dataService.getDefaultAssessmentDimensionForWaste(cat));
+    const def = dataService.getDefaultAssessmentDimensionForWaste(cat);
+    setAssessmentDimensionIds((prev) => (prev.includes(def) ? prev : [def, ...prev]));
+  };
+
+  const handleToggleDimension = (dimId: LeanAssessmentDimensionId) => {
+    setAssessmentDimensionIds((prev) => {
+      if (prev.includes(dimId)) {
+        if (prev.length === 1) return prev;
+        return prev.filter((d) => d !== dimId);
+      }
+      return [...prev, dimId];
+    });
   };
 
   const executeCreation = (finalTitle: string) => {
@@ -82,7 +93,8 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       strategicObjectiveId: selectedObj?.id,
       strategicObjectiveName: selectedObj ? `${selectedObj.code} - ${selectedObj.title}` : undefined,
       wasteCategory,
-      assessmentDimensionId,
+      assessmentDimensionId: assessmentDimensionIds[0] || 'tpm_oee',
+      assessmentDimensionIds: assessmentDimensionIds,
       originSectorId,
       assignedAgentId: assignedAgentId || undefined,
       priority,
@@ -288,21 +300,21 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
             <label className="form-label" style={{ color: '#22d3ee', margin: 0, fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <Target size={14} color="#22d3ee" />
-              <span>Eixo Alvo do Lean Assessment:</span>
+              <span>Eixos Alvo do Lean Assessment:</span>
             </label>
             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-              Os ganhos deste Kaizen formarão o valor auditado deste eixo no setor
+              Selecione um ou mais eixos impactados por este projeto Kaizen
             </span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem' }}>
             {(Object.entries(ASSESSMENT_DIMENSIONS_CONFIG) as [LeanAssessmentDimensionId, typeof ASSESSMENT_DIMENSIONS_CONFIG[LeanAssessmentDimensionId]][]).map(([dimId, config]) => {
-              const isSelected = assessmentDimensionId === dimId;
+              const isSelected = assessmentDimensionIds.includes(dimId);
               return (
                 <button
                   type="button"
                   key={dimId}
-                  onClick={() => setAssessmentDimensionId(dimId)}
+                  onClick={() => handleToggleDimension(dimId)}
                   style={{
                     backgroundColor: isSelected ? 'rgba(34, 211, 238, 0.2)' : '#020617',
                     border: isSelected ? '1.5px solid #22d3ee' : '1px solid rgba(255, 255, 255, 0.1)',
@@ -316,11 +328,13 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
                     transition: 'all 0.15s',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '1rem' }}>{config.icon}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     <strong style={{ fontSize: '0.775rem', color: isSelected ? '#ffffff' : '#cbd5e1' }}>
                       {config.shortName}
                     </strong>
+                    {isSelected && (
+                      <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800 }}>✓</span>
+                    )}
                   </div>
                   <span style={{ fontSize: '0.65rem', color: '#94a3b8', lineHeight: 1.2 }}>
                     {config.description}

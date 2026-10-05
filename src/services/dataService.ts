@@ -1440,6 +1440,7 @@ export const dataService = {
       strategicObjectiveId?: string;
       strategicObjectiveName?: string;
       assessmentDimensionId?: LeanAssessmentDimensionId;
+      assessmentDimensionIds?: LeanAssessmentDimensionId[];
       refinedTitle?: string;
       refinedDescription?: string;
     }
@@ -1457,6 +1458,15 @@ export const dataService = {
         agent = this.getUserById(decision.assignedAgentId);
       }
 
+      const effectiveDimensionIds =
+        decision.assessmentDimensionIds && decision.assessmentDimensionIds.length > 0
+          ? decision.assessmentDimensionIds
+          : decision.assessmentDimensionId
+          ? [decision.assessmentDimensionId]
+          : item.assessmentDimensionIds && item.assessmentDimensionIds.length > 0
+          ? item.assessmentDimensionIds
+          : [this.getDefaultAssessmentDimensionForWaste(decision.wasteCategory || item.wasteCategory)];
+
       actions[index] = {
         ...item,
         title: decision.refinedTitle?.trim() || item.title,
@@ -1467,10 +1477,8 @@ export const dataService = {
         assignedAgentAvatar: agent?.avatarUrl || item.assignedAgentAvatar,
         strategicObjectiveId: decision.strategicObjectiveId || item.strategicObjectiveId,
         strategicObjectiveName: decision.strategicObjectiveName || item.strategicObjectiveName,
-        assessmentDimensionId:
-          decision.assessmentDimensionId ||
-          item.assessmentDimensionId ||
-          this.getDefaultAssessmentDimensionForWaste(decision.wasteCategory || item.wasteCategory),
+        assessmentDimensionId: effectiveDimensionIds[0],
+        assessmentDimensionIds: effectiveDimensionIds,
         priority: decision.priority || item.priority,
         estimatedCostAvoided: decision.estimatedCostAvoided ?? item.estimatedCostAvoided ?? 0,
         wasteCategory: decision.wasteCategory || item.wasteCategory,
@@ -4511,19 +4519,23 @@ export const dataService = {
     }>);
 
     allActions.forEach((action) => {
-      const dimId: LeanAssessmentDimensionId =
-        action.assessmentDimensionId || this.getDefaultAssessmentDimensionForWaste(action.wasteCategory);
+      const dimIds: LeanAssessmentDimensionId[] =
+        action.assessmentDimensionIds && action.assessmentDimensionIds.length > 0
+          ? action.assessmentDimensionIds
+          : [action.assessmentDimensionId || this.getDefaultAssessmentDimensionForWaste(action.wasteCategory)];
 
-      if (result[dimId]) {
-        result[dimId].actions.push(action);
-        const cost = action.actualCostAvoided || action.estimatedCostAvoided || 0;
-        const hours = action.hoursSaved || 0;
-        result[dimId].totalCostAvoided += cost;
-        result[dimId].totalHoursSaved += hours;
-        if (action.status === 'concluida') {
-          result[dimId].completedActions.push(action);
+      dimIds.forEach((dimId) => {
+        if (result[dimId]) {
+          result[dimId].actions.push(action);
+          const cost = action.actualCostAvoided || action.estimatedCostAvoided || 0;
+          const hours = action.hoursSaved || 0;
+          result[dimId].totalCostAvoided += cost;
+          result[dimId].totalHoursSaved += hours;
+          if (action.status === 'concluida') {
+            result[dimId].completedActions.push(action);
+          }
         }
-      }
+      });
     });
 
     return result;
