@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { WASTE_CATEGORIES } from '@/lib/utils';
-import { PlusCircle, DollarSign, UserCheck, Building, Target, Sparkles } from 'lucide-react';
+import { PlusCircle, UserCheck, Building, Target, Sparkles } from 'lucide-react';
 import { evaluateActionQuality } from '@/services/geminiService';
 import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
 
@@ -41,8 +41,6 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   const [originSectorId, setOriginSectorId] = useState('');
   const [assignedAgentId, setAssignedAgentId] = useState('');
   const [priority, setPriority] = useState<ActionPriority>('media');
-  const [estimatedCostAvoided, setEstimatedCostAvoided] = useState<string>('20000');
-  const [dueDate, setDueDate] = useState('');
 
   // Poka-Yoke do Sensei para ações genéricas
   const [pokaYokeOpen, setPokaYokeOpen] = useState(false);
@@ -60,8 +58,6 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       setOriginSectorId(currentSectors[0]?.id || '');
       setAssignedAgentId(allAgents[0]?.id || '');
       setPriority('media');
-      setEstimatedCostAvoided('20000');
-      setDueDate('');
       setPokaYokeOpen(false);
       setQualityEvaluation(null);
     }
@@ -79,8 +75,6 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       ? strategicObjectives.find((o) => o.id === strategicObjectiveId)
       : undefined;
 
-    const estCost = parseFloat(estimatedCostAvoided.replace(/[^0-9.]/g, '')) || 0;
-
     dataService.createActionByAdmin({
       tenantId: currentTenant.id,
       title: finalTitle,
@@ -94,10 +88,10 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       priority,
       status: 'aberta',
       isPublicDemand: false,
-      estimatedCostAvoided: estCost,
+      estimatedCostAvoided: 0,
       actualCostAvoided: 0,
       hoursSaved: 0,
-      dueDate: dueDate || undefined,
+      dueDate: undefined,
       notes: [],
       checklist: [
         { id: 'ck_init_1', label: 'Mapeamento do estado atual e coleta de dados', completed: false },
@@ -337,28 +331,6 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Custo Evitado Estimado (R$):</label>
-            <input
-              type="number"
-              className="form-control"
-              placeholder="Ex: 20000"
-              value={estimatedCostAvoided}
-              onChange={(e) => setEstimatedCostAvoided(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="form-label" style={{ color: '#cbd5e1' }}>Data Limite (Prazo):</label>
-            <input
-              type="date"
-              className="form-control"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-        </div>
 
         <div
           style={{
