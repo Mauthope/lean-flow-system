@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
 import { getUserHierarchyInfo, isMasterUser, isEntityManager } from '@/lib/types';
+import { UserProfileModal } from '@/components/forms/UserProfileModal';
 
 export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?: () => void }> = ({
   title,
@@ -26,6 +27,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const router = useRouter();
   const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
+
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const isMaster = isMasterUser(currentUser);
   const isEntityMgr = isEntityManager(currentUser);
@@ -213,15 +216,27 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           </button>
         )}
 
-        {/* User Card */}
+        {/* User Card (Clicável para editar foto e dados do perfil) */}
         <div
+          onClick={() => setIsProfileModalOpen(true)}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '0.55rem',
             paddingLeft: '0.75rem',
             borderLeft: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+            cursor: 'pointer',
+            padding: '0.35rem 0.5rem 0.35rem 0.75rem',
+            borderRadius: '8px',
+            transition: 'all 0.15s ease',
           }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+          title="Clique para alterar sua foto de perfil e dados de usuário"
         >
           <img
             src={
@@ -257,7 +272,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
           {/* Logout / Switch User Button */}
           <button
-            onClick={handleLogout}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLogout();
+            }}
             className="btn btn-secondary btn-sm"
             style={{
               display: 'inline-flex',
@@ -277,6 +295,12 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           </button>
         </div>
       </div>
+
+      {/* Modal de Edição de Perfil do Usuário Logado */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </header>
   );
 };

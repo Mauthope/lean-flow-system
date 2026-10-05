@@ -24,6 +24,7 @@ import {
   Eye,
   Shield,
 } from 'lucide-react';
+import { AvatarSelector, CURATED_AVATARS } from '@/components/ui/AvatarSelector';
 
 interface AgentModalProps {
   agent: User | null;
@@ -32,14 +33,6 @@ interface AgentModalProps {
   onSuccess: () => void;
   initialRole?: 'agent' | 'viewer';
 }
-
-const DEFAULT_AVATARS = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-];
 
 export const AgentModal: React.FC<AgentModalProps> = ({
   agent,
@@ -76,7 +69,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       setEmail(agent.email);
       setJobTitle(agent.jobTitle || '');
       setPhone(agent.phone || '');
-      setAvatarUrl(agent.avatarUrl || DEFAULT_AVATARS[0]);
+      setAvatarUrl(agent.avatarUrl || CURATED_AVATARS[0]);
       setActive(agent.active);
 
       // Initialize sectors
@@ -100,7 +93,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       setEmail('');
       setJobTitle(isViewerRole ? 'Diretor Industrial' : 'Especialista Lean');
       setPhone('');
-      setAvatarUrl(isViewerRole ? DEFAULT_AVATARS[4] : DEFAULT_AVATARS[0]);
+      setAvatarUrl(isViewerRole ? CURATED_AVATARS[4] : CURATED_AVATARS[0]);
       setActive(true);
       setAllSectors(true); // By default new agent or viewer can act/view plant-wide
       setSelectedSectorIds(currentSectors.map((s) => s.id));
@@ -162,12 +155,12 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     if (!agent) {
       if (newRole === 'viewer') {
         if (!jobTitle || jobTitle === 'Especialista Lean') setJobTitle('Diretor Industrial');
-        if (avatarUrl === DEFAULT_AVATARS[0]) setAvatarUrl(DEFAULT_AVATARS[4]);
+        if (avatarUrl === CURATED_AVATARS[0]) setAvatarUrl(CURATED_AVATARS[4]);
         setAllSectors(true);
         setSelectedSectorIds(sectors.map((s) => s.id));
       } else {
         if (!jobTitle || jobTitle === 'Diretor Industrial') setJobTitle('Especialista Lean');
-        if (avatarUrl === DEFAULT_AVATARS[4]) setAvatarUrl(DEFAULT_AVATARS[0]);
+        if (avatarUrl === CURATED_AVATARS[4]) setAvatarUrl(CURATED_AVATARS[0]);
       }
     }
   };
@@ -375,102 +368,14 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         </div>
 
         {/* CARREGAMENTO DE FOTO DO USUÁRIO */}
-        <div
-          style={{
-            backgroundColor: isDark ? '#090e1a' : '#f8fafc',
-            borderRadius: '12px',
-            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
-            padding: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.25rem',
-          }}
-        >
-          {/* Avatar Preview */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <img
-              src={avatarUrl || (role === 'viewer' ? DEFAULT_AVATARS[4] : DEFAULT_AVATARS[0])}
-              alt="Foto do Membro"
-              style={{
-                width: '68px',
-                height: '68px',
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: `2.5px solid ${role === 'viewer' ? '#a855f7' : (isDark ? '#22d3ee' : '#0284c7')}`,
-                boxShadow: `0 0 15px ${role === 'viewer' ? 'rgba(168, 85, 247, 0.4)' : 'rgba(6, 182, 212, 0.35)'}`,
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                position: 'absolute',
-                bottom: '-4px',
-                right: '-4px',
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                backgroundColor: role === 'viewer' ? '#8b5cf6' : '#2563eb',
-                border: `2px solid ${isDark ? '#090e1a' : '#ffffff'}`,
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-              title="Carregar nova foto"
-            >
-              <Camera size={13} />
-            </button>
-          </div>
-
-          {/* Upload Controls */}
-          <div style={{ flex: 1 }}>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginBottom: '0.2rem' }}>
-              {role === 'viewer' ? 'Foto do Diretor / Visualizador' : 'Foto do Agente Lean'}
-            </span>
-            <p style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0 0 0.5rem 0' }}>
-              Carregue uma imagem do seu dispositivo (PNG, JPG ou WEBP até 4MB).
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="btn btn-secondary btn-sm"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-              >
-                <Upload size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
-                <span>Carregar Foto</span>
-              </button>
-
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={() => setAvatarUrl(DEFAULT_AVATARS[0])}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: isDark ? '#94a3b8' : '#64748b',
-                    fontSize: '0.7rem',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                  }}
-                >
-                  Restaurar Padrão
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <AvatarSelector
+          value={avatarUrl}
+          onChange={setAvatarUrl}
+          accentColor={role === 'viewer' ? '#a855f7' : (isDark ? '#22d3ee' : '#0284c7')}
+          label={role === 'viewer' ? 'Foto do Diretor / Visualizador' : 'Foto do Agente Lean'}
+          helperText="Carregue uma foto da sua máquina, cole um link direto ou escolha da galeria executiva."
+          defaultFallback={role === 'viewer' ? CURATED_AVATARS[4] : CURATED_AVATARS[0]}
+        />
 
         {/* NOME COMPLETO & EMAIL */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

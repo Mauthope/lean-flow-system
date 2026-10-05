@@ -20,7 +20,10 @@ import {
   AlertCircle,
   Plus,
   Crown,
+  Edit2,
+  Save,
 } from 'lucide-react';
+import { AvatarSelector, CURATED_AVATARS } from '@/components/ui/AvatarSelector';
 
 interface TenantManagersModalProps {
   tenant: Tenant | null;
@@ -28,14 +31,6 @@ interface TenantManagersModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const DEFAULT_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-];
 
 export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
   tenant,
@@ -48,12 +43,13 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
   const [activeTab, setActiveTab] = useState<'list' | 'create'>('list');
 
-  // New Manager Form Fields
+  // Form Fields (Novo ou Edição)
+  const [editingManagerId, setEditingManagerId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(CURATED_AVATARS[0]);
   const [formError, setFormError] = useState<string | null>(null);
 
   const managers = useMemo(() => {
@@ -63,7 +59,28 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
   if (!tenant) return null;
 
-  const handleCreateManager = (e: React.FormEvent) => {
+  const handleStartEdit = (manager: User) => {
+    setEditingManagerId(manager.id);
+    setName(manager.name);
+    setEmail(manager.email);
+    setJobTitle(manager.jobTitle || '');
+    setPhone(manager.phone || '');
+    setSelectedAvatar(manager.avatarUrl || CURATED_AVATARS[0]);
+    setFormError(null);
+    setActiveTab('create');
+  };
+
+  const handleResetForm = () => {
+    setEditingManagerId(null);
+    setName('');
+    setEmail('');
+    setJobTitle('');
+    setPhone('');
+    setSelectedAvatar(CURATED_AVATARS[0]);
+    setFormError(null);
+  };
+
+  const handleSaveManager = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -78,27 +95,33 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const existing = dataService.getUserByEmail(cleanEmail);
-    if (existing) {
-      setFormError(`Já existe um usuário cadastrado com o e-mail "${cleanEmail}".`);
-      return;
+
+    if (editingManagerId) {
+      dataService.updateUser(editingManagerId, {
+        name: name.trim(),
+        email: cleanEmail,
+        jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+        phone: phone.trim(),
+        avatarUrl: selectedAvatar,
+      });
+    } else {
+      const existing = dataService.getUserByEmail(cleanEmail);
+      if (existing) {
+        setFormError(`Já existe um usuário cadastrado com o e-mail "${cleanEmail}".`);
+        return;
+      }
+
+      dataService.createTenantManager({
+        tenantId: tenant.id,
+        name: name.trim(),
+        email: cleanEmail,
+        jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+        phone: phone.trim(),
+        avatarUrl: selectedAvatar,
+      });
     }
 
-    dataService.createTenantManager({
-      tenantId: tenant.id,
-      name: name.trim(),
-      email: cleanEmail,
-      jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
-      phone: phone.trim(),
-      avatarUrl: selectedAvatar,
-    });
-
-    // Reset Form
-    setName('');
-    setEmail('');
-    setJobTitle('');
-    setPhone('');
-    setSelectedAvatar(DEFAULT_AVATARS[0]);
+    handleResetForm();
     setActiveTab('list');
     onSuccess();
   };
@@ -188,7 +211,16 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
           <button
             type="button"
-            onClick={() => setActiveTab('create')}
+            onClick={() => {
+              if (activeTab === 'create' && editingManagerId) {
+                handleResetForm();
+              } else if (activeTab === 'create') {
+                setActiveTab('list');
+              } else {
+                handleResetForm();
+                setActiveTab('create');
+              }
+            }}
             style={{
               padding: '0.5rem 1rem',
               borderRadius: '8px',
@@ -204,8 +236,8 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
               transition: 'all 0.15s ease',
             }}
           >
-            <UserPlus size={15} />
-            <span>+ Cadastrar Novo Gestor</span>
+            {editingManagerId ? <Edit2 size={15} /> : <UserPlus size={15} />}
+            <span>{editingManagerId ? 'Editar Gestor' : '+ Cadastrar Novo Gestor'}</span>
           </button>
         </div>
 
@@ -257,7 +289,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                     <img
-                      src={manager.avatarUrl || DEFAULT_AVATARS[0]}
+                      src={manager.avatarUrl || CURATED_AVATARS[0]}
                       alt={manager.name}
                       style={{
                         width: '42px',
@@ -332,6 +364,25 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                     <button
                       type="button"
+                      onClick={() => handleStartEdit(manager)}
+                      className="btn btn-secondary btn-sm"
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '0.35rem 0.65rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        color: isDark ? '#22d3ee' : '#0284c7',
+                        borderColor: isDark ? 'rgba(6, 182, 212, 0.3)' : '#bae6fd',
+                      }}
+                      title="Editar foto de perfil, cargo ou dados deste gestor"
+                    >
+                      <Edit2 size={13} />
+                      <span>Editar</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleToggleStatus(manager)}
                       className="btn btn-secondary btn-sm"
                       style={{
@@ -368,9 +419,9 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
           </div>
         )}
 
-        {/* TAB 2: FORMULÁRIO DE CADASTRO DE NOVO GESTOR */}
+        {/* TAB 2: FORMULÁRIO DE CADASTRO OU EDIÇÃO DE GESTOR */}
         {activeTab === 'create' && (
-          <form onSubmit={handleCreateManager} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <form onSubmit={handleSaveManager} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {formError && (
               <div
                 style={{
@@ -450,37 +501,23 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
               </div>
             </div>
 
-            {/* Avatar Selector */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78125rem', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', marginBottom: '0.35rem' }}>
-                Foto de Perfil Executiva
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                {DEFAULT_AVATARS.map((av, idx) => (
-                  <img
-                    key={idx}
-                    src={av}
-                    alt={`Avatar ${idx + 1}`}
-                    onClick={() => setSelectedAvatar(av)}
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      cursor: 'pointer',
-                      border: selectedAvatar === av ? '2px solid #06b6d4' : '2px solid transparent',
-                      boxShadow: selectedAvatar === av ? '0 0 10px rgba(6, 182, 212, 0.4)' : 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+            {/* Avatar Selector Completo: Upload, Galeria e URL */}
+            <AvatarSelector
+              value={selectedAvatar}
+              onChange={setSelectedAvatar}
+              accentColor="#06b6d4"
+              label="Foto do Gestor da Unidade"
+              helperText="Carregue uma foto da sua máquina, cole um link direto ou escolha da galeria executiva."
+              defaultFallback={CURATED_AVATARS[0]}
+            />
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem' }}>
               <button
                 type="button"
-                onClick={() => setActiveTab('list')}
+                onClick={() => {
+                  handleResetForm();
+                  setActiveTab('list');
+                }}
                 className="btn btn-secondary"
                 style={{ fontSize: '0.8125rem' }}
               >
@@ -491,7 +528,8 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
                 className="btn btn-primary"
                 style={{ fontSize: '0.8125rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
-                <UserPlus size={15} /> Cadastrar Gestor da Unidade
+                {editingManagerId ? <Save size={15} /> : <UserPlus size={15} />}
+                <span>{editingManagerId ? 'Salvar Alterações do Gestor' : 'Cadastrar Gestor da Unidade'}</span>
               </button>
             </div>
           </form>
