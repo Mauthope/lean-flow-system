@@ -1,70 +1,361 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   Shield,
-  UserCheck,
-  ArrowRight,
-  TrendingUp,
-  Sparkles,
-  Zap,
-  Timer,
-  Settings,
-  Radio,
-  FileCheck,
-  BarChart3,
+  Users,
   Lock,
-  Layers,
-  ChevronRight,
-  CheckCircle2,
-  Sliders,
-  Calculator,
-  Search,
-  Activity,
-  Cpu,
+  ArrowLeft,
+  ArrowRight,
   Eye,
-  Workflow,
-  Target,
-  Award,
-  Building2,
+  Mail,
+  Key,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
   ExternalLink,
-  Play,
-  Flame,
-  Clock,
-  DollarSign,
-  Kanban,
-  Trash2,
-  FileText,
+  Building2,
 } from 'lucide-react';
+import Link from 'next/link';
+import { isMasterUser, isEntityManager, isAgentUser, isViewerUser } from '@/lib/types';
 
-export default function LandingPage() {
+export default function LoginPage() {
   const router = useRouter();
-  const [activeFeatureTab, setActiveFeatureTab] = useState<'crono' | 'roi' | 'kanban' | 'hub'>('crono');
+  const { loginAs } = useAuth();
+
+  const [loginMode, setLoginMode] = useState<'corporate' | 'simulation'>('corporate');
+  const [activeSimTab, setActiveSimTab] = useState<'master' | 'managers' | 'agents' | 'viewers'>('master');
+
+  // Formulário Corporativo
+  const [email, setEmail] = useState('mauricio.grigol@rafitec.com.br');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authSuccess, setAuthSuccess] = useState<string | null>(null);
+
+  const tenant = dataService.getCurrentTenant();
+  const allUsers = dataService.getUsers();
+  const masterUser = dataService.getMasterUser() || allUsers.find(isMasterUser) || allUsers[0];
+  const entityManagers = allUsers.filter(isEntityManager);
+  const agentUsers = allUsers.filter((u) => isAgentUser(u) && u.tenantId === tenant.id);
+  const viewerUsers = allUsers.filter(isViewerUser);
+
+  // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    let isMounted = true;
+
+    const handleSessionUser = async (userId: string, userEmail?: string) => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+
+        if (profile && isMounted) {
+          const effectiveEmail = (profile.email || userEmail || '').trim().toLowerCase();
+
+          // 1. Busca se o agente já foi pré-cadastrado no sistema pelo Master (por e-mail corporativo ou ID)
+          let matchedUser =
+            dataService.getUserByIdOrEmail(effectiveEmail) ||
+            dataService.getUserByIdOrEmail(profile.id);
+
+          // 2. Se o agente já existe (ex: criado no painel de agentes com seus setores e cargos definidos),
+          // o sistema reconhece ele instantaneamente e preserva todas as suas atribuições
+          if (matchedUser) {
+            loginAs(matchedUser.id);
+            if (
+              matchedUser.role === 'admin' ||
+              matchedUser.isMaster ||
+              profile.role === 'admin' ||
+              profile.is_master
+            ) {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/agente/kanban');
+            }
+            return;
+          }
+
+          // 3. Se for um colaborador da Rafitec que fez o primeiro login via Microsoft e ainda não havia sido pré-cadastrado,
+          // o sistema provisiona ele automaticamente como Agente Lean vinculado à fábrica
+          const currentTenant = dataService.getCurrentTenant();
+          const newUser = dataService.createUser({
+            tenantId: currentTenant.id,
+            name:
+              profile.name ||
+              (effectiveEmail ? effectiveEmail.split('@')[0].replace('.', ' ') : 'Colaborador Rafitec'),
+            email: effectiveEmail,
+            role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
+            isMaster: profile.is_master || false,
+            jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
+            active: true,
+          });
+
+          loginAs(newUser.id);
+          router.push(newUser.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
+        }
+      } catch (err) {
+        console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        handleSessionUser(session.user.id, session.user.email);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+        handleSessionUser(session.user.id, session.user.email);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loginAs, router]);
+
+  const handleCorporateLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setAuthSuccess(null);
+
+    const cleanEmail = email.trim().toLowerCase();
+    const isDomainAllowed =
+      cleanEmail.endsWith('@rafitec.com.br') || cleanEmail.endsWith('@vaccaro.com.br');
+
+    if (!isDomainAllowed) {
+      setAuthError(
+        'Política de Segurança (PSI Grupo Vaccaro): Apenas e-mails corporativos @rafitec.com.br ou @vaccaro.com.br são permitidos.'
+      );
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setAuthError('Por favor informe a senha de acesso (mínimo 6 caracteres).');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
+
+        if (error) {
+          setAuthError(
+            error.message === 'Invalid login credentials'
+              ? 'Credenciais incorretas ou senha ainda não cadastrada.'
+              : error.message
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        if (data.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profile) {
+            const effectiveEmail = (profile.email || data.user.email || cleanEmail).trim().toLowerCase();
+            let matchedUser =
+              dataService.getUserByIdOrEmail(effectiveEmail) ||
+              dataService.getUserByIdOrEmail(profile.id);
+
+            if (!matchedUser) {
+              const currentTenant = dataService.getCurrentTenant();
+              matchedUser = dataService.createUser({
+                tenantId: currentTenant.id,
+                name: profile.name || cleanEmail.split('@')[0],
+                email: effectiveEmail,
+                role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
+                isMaster: profile.is_master || false,
+                jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
+                active: true,
+              });
+            }
+
+            loginAs(matchedUser.id);
+            if (matchedUser.role === 'admin' || matchedUser.isMaster) {
+              router.push('/admin/dashboard');
+            } else {
+              router.push('/agente/kanban');
+            }
+            return;
+          }
+        }
+      }
+
+      // Fallback em caso de modo local/desenvolvimento
+      const users = dataService.getUsers();
+      const matched = users.find((u) => u.email.toLowerCase() === cleanEmail);
+      if (matched) {
+        loginAs(matched.id);
+        router.push(matched.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
+      } else {
+        setAuthError(
+          'Usuário não encontrado na base. Se for seu primeiro acesso, clique em "Definir / Redefinir Senha".'
+        );
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Falha na autenticação corporativa.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    const cleanEmail = email.trim().toLowerCase();
+    if (
+      !cleanEmail ||
+      (!cleanEmail.endsWith('@rafitec.com.br') && !cleanEmail.endsWith('@vaccaro.com.br'))
+    ) {
+      setAuthError(
+        'Informe um e-mail corporativo válido (@rafitec.com.br) para receber as instruções de senha.'
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    setAuthError(null);
+    setAuthSuccess(null);
+
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+          redirectTo:
+            typeof window !== 'undefined'
+              ? `${window.location.origin}/login`
+              : 'https://fluxo-lean-system.vercel.app/login',
+        });
+
+        if (error) {
+          setAuthError(error.message);
+        } else {
+          setAuthSuccess(
+            `E-mail de confirmação enviado para ${cleanEmail}! Acesse sua caixa corporativa para definir sua senha de acesso.`
+          );
+        }
+      } else {
+        setAuthSuccess(
+          `Modo de simulação: Em produção com Supabase, o link de definição de senha é enviado com token seguro para ${cleanEmail}.`
+        );
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Falha ao solicitar instruções de senha.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMicrosoftSso = async () => {
+    setAuthError(null);
+    setAuthSuccess(null);
+    setIsLoading(true);
+
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'azure',
+          options: {
+            scopes: 'email profile offline_access',
+            redirectTo:
+              typeof window !== 'undefined'
+                ? `${window.location.origin}/login`
+                : 'https://fluxo-lean-system.vercel.app/login',
+          },
+        });
+
+        if (error) {
+          setAuthError(
+            `Integração Microsoft Entra ID: ${error.message}. (Aguardando ativação do provedor Azure no Supabase pela equipe de TI/Infraestrutura).`
+          );
+        }
+      } else {
+        setAuthError(
+          'Integração Microsoft Entra ID (SSO Corporativo): Disponível com Supabase em produção. Para testar localmente, utilize a Simulação Local.'
+        );
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Falha ao iniciar autenticação com Microsoft.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLoginMaster = () => {
+    if (masterUser) {
+      loginAs(masterUser.id);
+    }
+    router.push('/admin/dashboard');
+  };
+
+  const handleLoginManager = (userId: string) => {
+    const user = dataService.getUserById(userId);
+    if (user && user.tenantId) {
+      const targetTenant = dataService.getTenantById(user.tenantId);
+      if (targetTenant) {
+        dataService.setCurrentTenant(targetTenant);
+      }
+    }
+    loginAs(userId);
+    router.push('/admin/dashboard');
+  };
+
+  const handleLoginAgent = (userId: string) => {
+    loginAs(userId);
+    router.push('/agente/kanban');
+  };
+
+  const handleLoginViewer = (userId: string) => {
+    loginAs(userId);
+    router.push('/admin/dashboard');
+  };
 
   return (
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#020617',
-        color: '#ffffff',
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        backgroundColor: 'var(--bg-primary, #060a13)',
+        color: 'var(--text-primary, #f8fafc)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1rem',
+        fontFamily: 'var(--font-sans)',
         position: 'relative',
-        overflowX: 'hidden',
+        overflow: 'hidden',
       }}
     >
-      {/* Dynamic Liquid Glass Background Lighting */}
+      {/* Background Ambient Glow Orbs */}
       <div
         style={{
           position: 'absolute',
-          top: '-150px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '900px',
-          height: '600px',
+          top: '15%',
+          left: '30%',
+          width: '500px',
+          height: '500px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, rgba(6, 182, 212, 0.18) 40%, rgba(147, 51, 234, 0.08) 70%, transparent 85%)',
+          background:
+            'radial-gradient(circle, rgba(6, 182, 212, 0.16) 0%, rgba(14, 165, 233, 0.08) 50%, transparent 70%)',
           filter: 'blur(100px)',
           pointerEvents: 'none',
           zIndex: 0,
@@ -73,975 +364,1127 @@ export default function LandingPage() {
       <div
         style={{
           position: 'absolute',
-          top: '35%',
-          right: '-10%',
-          width: '650px',
-          height: '650px',
+          bottom: '10%',
+          right: '25%',
+          width: '450px',
+          height: '450px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(6, 182, 212, 0.22) 0%, rgba(59, 130, 246, 0.12) 50%, transparent 75%)',
-          filter: 'blur(110px)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          top: '65%',
-          left: '-10%',
-          width: '600px',
-          height: '600px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, rgba(37, 99, 235, 0.1) 50%, transparent 75%)',
-          filter: 'blur(100px)',
+          background:
+            'radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%)',
+          filter: 'blur(90px)',
           pointerEvents: 'none',
           zIndex: 0,
         }}
       />
 
-      {/* Futuristic Grid Layer */}
+      {/* Grid Overlay */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           backgroundImage:
-            'linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
+            'linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
           pointerEvents: 'none',
           zIndex: 0,
-          maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 85%)',
-          WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 85%)',
         }}
       />
 
-      {/* Top Navbar with Liquid Glass Effect */}
-      <header
+      {/* Top Corporate Badge */}
+      <div
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(2, 6, 23, 0.65)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)',
+          width: '100%',
+          maxWidth: '520px',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'relative',
+          zIndex: 10,
         }}
       >
-        <div
+        <span
           style={{
-            maxWidth: '1360px',
-            margin: '0 auto',
-            padding: '1rem 1.5rem',
-            display: 'flex',
+            fontSize: '0.725rem',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted, #94a3b8)',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '0.4rem',
           }}
         >
-          {/* Brand Logo */}
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', textDecoration: 'none' }}>
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '14px',
-                background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 900,
-                fontSize: '1.25rem',
-                color: '#ffffff',
-                boxShadow: '0 0 25px rgba(59, 130, 246, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-              }}
-            >
-              FL
-            </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span
-                  style={{
-                    fontWeight: 900,
-                    fontSize: '1.35rem',
-                    letterSpacing: '-0.02em',
-                    color: '#ffffff',
-                    textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-                  }}
-                >
-                  FluxoLean
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 900,
-                    backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                    border: '1px solid rgba(6, 182, 212, 0.5)',
-                    color: '#38bdf8',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '9999px',
-                    letterSpacing: '0.06em',
-                    boxShadow: '0 0 12px rgba(6, 182, 212, 0.3)',
-                  }}
-                >
-                  4.0 PRO
-                </span>
-              </div>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', letterSpacing: '0.02em' }}>
-                Operational Excellence & Multi-Entity Lean Platform
-              </span>
-            </div>
-          </Link>
+          <Shield size={13} color="#06b6d4" /> Sistema Lean Flow • Governança Industrial
+        </span>
+        <span
+          style={{
+            fontSize: '0.675rem',
+            fontWeight: 800,
+            backgroundColor: 'rgba(6, 182, 212, 0.15)',
+            color: '#22d3ee',
+            border: '1px solid rgba(6, 182, 212, 0.3)',
+            padding: '0.15rem 0.45rem',
+            borderRadius: '6px',
+          }}
+        >
+          Rafitec S.A.
+        </span>
+      </div>
 
-          {/* Desktop Nav Links */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '1.75rem' }} className="hidden md:flex">
-            <a href="#solucoes" style={{ color: '#e2e8f0', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}>
-              Soluções
-            </a>
-            <a href="#cronoanalise" style={{ color: '#e2e8f0', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}>
-              Cronoanálise
-            </a>
-            <a href="#custo-evitado" style={{ color: '#e2e8f0', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}>
-              Motor de ROI
-            </a>
-            <a href="#arquiteto" style={{ color: '#e2e8f0', fontSize: '0.875rem', textDecoration: 'none', fontWeight: 600, transition: 'color 0.15s' }}>
-              Autor & Arquiteto
-            </a>
-          </nav>
-
-          {/* Action CTAs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '0.6rem 1.35rem',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '0.875rem',
-                textDecoration: 'none',
-                boxShadow: '0 0 25px rgba(37, 99, 235, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Lock size={14} />
-              <span>Acessar Plataforma</span>
-            </Link>
+      {/* Main Glass Login Card */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '520px',
+          backgroundColor: 'rgba(15, 23, 42, 0.82)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRadius: '20px',
+          padding: '2.25rem 2rem',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65)',
+          border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
+        {/* Header with Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div
+            style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)',
+              color: '#020617',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '1.3rem',
+              fontFamily: 'var(--font-heading)',
+              margin: '0 auto 0.85rem',
+              boxShadow: '0 0 25px rgba(6, 182, 212, 0.4)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+            }}
+          >
+            RF
           </div>
-        </div>
-      </header>
-
-      {/* MAIN CONTENT WRAPPER */}
-      <main style={{ position: 'relative', zIndex: 10, maxWidth: '1360px', margin: '0 auto', padding: '4rem 1.5rem 6rem' }}>
-        
-        {/* ==================== HERO SECTION (LIQUID GLASS) ==================== */}
-        <section style={{ textAlign: 'center', maxWidth: '1000px', margin: '0 auto 5.5rem' }}>
-          
-          {/* Liquid Glass Badge */}
+          <h1
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: 'var(--text-heading, #ffffff)',
+              fontFamily: 'var(--font-heading)',
+              letterSpacing: '-0.02em',
+              margin: 0,
+            }}
+          >
+            {tenant.name}
+          </h1>
+          <p
+            style={{
+              fontSize: '0.8125rem',
+              color: 'var(--text-muted, #94a3b8)',
+              marginTop: '0.3rem',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Portal de Acesso Seguro • Sistema FluxoLean 4.0
+          </p>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '0.6rem',
-              padding: '0.5rem 1.25rem',
+              gap: '0.45rem',
+              marginTop: '0.75rem',
+              padding: '0.35rem 0.85rem',
               borderRadius: '9999px',
-              backgroundColor: 'rgba(15, 23, 42, 0.65)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 0 30px rgba(56, 189, 248, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
-              color: '#ffffff',
-              fontSize: '0.84375rem',
-              fontWeight: 800,
-              marginBottom: '2rem',
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.28)',
             }}
           >
             <span
               style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#38bdf8',
-                boxShadow: '0 0 10px #38bdf8',
-                display: 'inline-block',
-              }}
-            />
-            <span style={{ color: '#ffffff' }}>Engenharia Lean & Arquitetura por</span>
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #38bdf8, #818cf8)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontWeight: 900,
+                fontSize: '0.78125rem',
+                color: 'var(--text-muted, #94a3b8)',
+                fontFamily: 'var(--font-sans)',
               }}
             >
-              Mauricio Grigol
+              Desenvolvido por <strong style={{ color: '#ffffff', fontWeight: 600 }}>Mauricio Grigol</strong>
             </span>
           </div>
+        </div>
 
-          {/* MAIN HERO TITLE - HIGH CONTRAST & LIQUID SHINE */}
-          <h1
-            style={{
-              fontSize: 'clamp(2.5rem, 5.8vw, 4.4rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.035em',
-              lineHeight: 1.12,
-              marginBottom: '1.75rem',
-              color: '#ffffff',
-              textShadow: '0 4px 30px rgba(0, 0, 0, 0.8)',
-            }}
-          >
-            <span style={{ color: '#ffffff', display: 'inline-block' }}>
-              A Inteligência Operacional que Transforma
-            </span>{' '}
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #38bdf8 0%, #60a5fa 40%, #c084fc 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                filter: 'drop-shadow(0 0 35px rgba(56, 189, 248, 0.4))',
-                display: 'inline-block',
-              }}
-            >
-              Chão de Fábrica
-            </span>{' '}
-            <span style={{ color: '#ffffff', display: 'inline-block' }}>
-              em Lucro e Eficiência
-            </span>
-          </h1>
-
-          {/* Subtitle with High Contrast */}
-          <p
-            style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
-              color: '#cbd5e1',
-              lineHeight: 1.7,
-              maxWidth: '840px',
-              margin: '0 auto 2.75rem',
-              textShadow: '0 2px 15px rgba(0, 0, 0, 0.7)',
-              fontWeight: 500,
-            }}
-          >
-            Plataforma 4.0 desenvolvida para padronizar postos de trabalho, executar cronoanálises com validação estatística \(N&apos;\), priorizar planos de ação Kaizen e mensurar múltiplos custos evitados em tempo real com links exclusivos para cada entidade fabril.
-          </p>
-
-          {/* Hero Action Buttons (Liquid Glow) */}
-          <div
+        {/* Access Selector Tabs (Acesso Corporativo vs Simulação Local) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.35rem',
+            backgroundColor: 'var(--bg-input, #0d1527)',
+            padding: '0.3rem',
+            borderRadius: '12px',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+            marginBottom: '1.5rem',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setLoginMode('corporate')}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '1.25rem',
-              flexWrap: 'wrap',
-              marginBottom: '3rem',
+              gap: '0.45rem',
+              padding: '0.6rem 0.5rem',
+              borderRadius: '9px',
+              border:
+                loginMode === 'corporate'
+                  ? '1px solid rgba(6, 182, 212, 0.4)'
+                  : '1px solid transparent',
+              backgroundColor:
+                loginMode === 'corporate' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+              color: loginMode === 'corporate' ? '#22d3ee' : 'var(--text-muted, #94a3b8)',
+              fontWeight: 600,
+              fontFamily: 'var(--font-heading)',
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-                color: '#ffffff',
-                padding: '1rem 2.4rem',
-                borderRadius: '16px',
-                fontWeight: 900,
-                fontSize: '1.05rem',
-                textDecoration: 'none',
-                boxShadow: '0 12px 35px rgba(37, 99, 235, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.35)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <span>Entrar na Plataforma</span>
-              <ArrowRight size={19} />
-            </Link>
+            <Shield size={14} />
+            <span>Acesso Corporativo</span>
+          </button>
 
-            <a
-              href="#solucoes"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.22)',
-                color: '#ffffff',
-                padding: '1rem 2rem',
-                borderRadius: '16px',
-                fontWeight: 800,
-                fontSize: '1.05rem',
-                textDecoration: 'none',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <Zap size={18} color="#38bdf8" />
-              <span>Conhecer Soluções & Módulos</span>
-            </a>
-          </div>
-
-          {/* Multi-Tenant Information Pill */}
-          <div
+          <button
+            type="button"
+            onClick={() => setLoginMode('simulation')}
             style={{
-              maxWidth: '720px',
-              margin: '0 auto 4rem',
-              backgroundColor: 'rgba(15, 23, 42, 0.7)',
-              backdropFilter: 'blur(25px)',
-              WebkitBackdropFilter: 'blur(25px)',
-              padding: '1rem 1.5rem',
-              borderRadius: '18px',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
-              textAlign: 'left',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              padding: '0.6rem 0.5rem',
+              borderRadius: '9px',
+              border:
+                loginMode === 'simulation'
+                  ? '1px solid rgba(168, 85, 247, 0.4)'
+                  : '1px solid transparent',
+              backgroundColor:
+                loginMode === 'simulation' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+              color: loginMode === 'simulation' ? '#c084fc' : 'var(--text-muted, #94a3b8)',
+              fontWeight: 600,
+              fontFamily: 'var(--font-heading)',
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '12px',
-                backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Building2 size={20} color="#38bdf8" />
-            </div>
-            <div>
-              <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
-                Links Únicos & Isolamento por Entidade Fabril
-              </strong>
-              <span style={{ fontSize: '0.78125rem', color: '#cbd5e1', lineHeight: 1.4, display: 'block' }}>
-                Cada fábrica cadastrada pelo Master possui seu link exclusivo (ex: <code style={{ color: '#38bdf8' }}>/d/[slug]</code>) e QR Code para operadores enviarem demandas direto para sua triagem interna.
-              </span>
-            </div>
-          </div>
+            <Sparkles size={14} />
+            <span>Simulação Local</span>
+          </button>
+        </div>
 
-          {/* ==================== LIQUID GLASS INTERACTIVE DASHBOARD MOCKUP ==================== */}
+        {/* FEEDBACK MESSAGES */}
+        {authError && (
           <div
             style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(30px)',
-              WebkitBackdropFilter: 'blur(30px)',
-              borderRadius: '28px',
-              border: '1px solid rgba(255, 255, 255, 0.18)',
-              padding: '2rem',
-              boxShadow: '0 30px 80px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
-              textAlign: 'left',
-              position: 'relative',
-              overflow: 'hidden',
+              padding: '0.75rem 0.9rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '10px',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.55rem',
+              color: '#f87171',
+              fontSize: '0.8125rem',
+              lineHeight: 1.45,
             }}
           >
-            {/* Top Gloss Highlights on Mockup */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: '20%',
-                right: '20%',
-                height: '1px',
-                background: 'linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent)',
-              }}
-            />
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{authError}</span>
+          </div>
+        )}
 
-            {/* Mockup Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span
+        {authSuccess && (
+          <div
+            style={{
+              padding: '0.75rem 0.9rem',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '10px',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.55rem',
+              color: '#34d399',
+              fontSize: '0.8125rem',
+              lineHeight: 1.45,
+            }}
+          >
+            <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{authSuccess}</span>
+          </div>
+        )}
+
+        {/* MODO 1: LOGIN CORPORATIVO */}
+        {loginMode === 'corporate' && (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {/* BOTÃO MICROSOFT SSO OFICIAL */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div
+                onClick={handleMicrosoftSso}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '12px',
+                  backgroundColor: 'var(--bg-input, #0d1527)',
+                  border: '1px solid var(--border-input, rgba(255, 255, 255, 0.12))',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease-in-out',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-surface-elevated, #131d35)';
+                  e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+                  e.currentTarget.style.boxShadow = '0 0 16px rgba(6, 182, 212, 0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                  e.currentTarget.style.borderColor = 'var(--border-input, rgba(255, 255, 255, 0.12))';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                  {/* Logotipo Oficial Microsoft em moldura nítida */}
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 21 21"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                      <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                      <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                      <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <div style={{ marginBottom: '2px' }}>
+                      <strong
+                        style={{
+                          fontSize: '0.875rem',
+                          color: '#ffffff',
+                          fontFamily: 'var(--font-heading)',
+                          fontWeight: 700,
+                        }}
+                      >
+                        Entrar com Conta Microsoft
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>
+                      Acesso corporativo seguro com seu e-mail @rafitec.com.br
+                    </span>
+                  </div>
+                </div>
+
+                <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 800,
-                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '9999px',
+                    justifyContent: 'center',
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#22d3ee',
+                    flexShrink: 0,
                   }}
                 >
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-                  SISTEMA FLUXOLEAN OPERANDO EM TEMPO REAL
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444', opacity: 0.8 }} />
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#f59e0b', opacity: 0.8 }} />
-                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10b981', opacity: 0.8 }} />
-              </div>
-            </div>
-
-            {/* Mockup Grid Data Display */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
-              {/* Box 1: Cronoanálise Live */}
-              <div
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
-                  borderRadius: '18px',
-                  padding: '1.25rem',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Timer size={13} />
-                    Cronoanálise & Eficiência
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700 }}>Ciclo #4</span>
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.5rem' }}>
-                  78.4% <span style={{ fontSize: '0.8125rem', color: '#34d399', fontWeight: 700 }}>VA (Valor Agregado)</span>
-                </div>
-                {/* Liquid Progress Bar */}
-                <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', overflow: 'hidden', display: 'flex' }}>
-                  <div style={{ width: '78.4%', backgroundColor: '#10b981', boxShadow: '0 0 10px #10b981' }} />
-                  <div style={{ width: '12.1%', backgroundColor: '#f59e0b' }} />
-                  <div style={{ width: '9.5%', backgroundColor: '#ef4444' }} />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.4rem' }}>
-                  <span style={{ color: '#34d399', fontWeight: 700 }}>VA: 78.4%</span>
-                  <span style={{ color: '#fbbf24', fontWeight: 700 }}>NNVA: 12.1%</span>
-                  <span style={{ color: '#f87171', fontWeight: 700 }}>NVA: 9.5%</span>
+                  <ArrowRight size={14} />
                 </div>
               </div>
-
-              {/* Box 2: Custo Evitado */}
-              <div
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(52, 211, 153, 0.25)',
-                  borderRadius: '18px',
-                  padding: '1.25rem',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <DollarSign size={13} /> Custo Evitado Homologado
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 800 }}>+24% vs Meta</span>
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#34d399', marginBottom: '0.25rem' }}>
-                  R$ 148.500,00
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0 }}>
-                  Economia consolidada em 7 vetores com 342h operacionais reaproveitadas.
-                </p>
-              </div>
-
-              {/* Box 3: Kanban & Fluxo */}
-              <div
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(168, 85, 247, 0.25)',
-                  borderRadius: '18px',
-                  padding: '1.25rem',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Kanban size={13} /> Fluxo de Demandas Kaizen
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>100% Digital</span>
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.25rem' }}>
-                  85% Concluídas
-                </div>
-                <p style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0 }}>
-                  Triagem ágil de sugestões com planos de ação 5W2H e padronização SOP.
-                </p>
-              </div>
             </div>
-          </div>
-        </section>
 
-        {/* ==================== STATS METRICS (LIQUID PILL GRID) ==================== */}
-        <section
-          style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.45)',
-            backdropFilter: 'blur(25px)',
-            WebkitBackdropFilter: 'blur(25px)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            marginBottom: '6.5rem',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '2rem',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Ganho em Postos
-            </span>
-            <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0', textShadow: '0 2px 15px rgba(56, 189, 248, 0.5)' }}>
-              +35%
-            </div>
-            <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', margin: 0 }}>Produtividade & Vazão de Peças</p>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Eliminação de Paradas
-            </span>
-            <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0', textShadow: '0 2px 15px rgba(52, 211, 153, 0.5)' }}>
-              -40%
-            </div>
-            <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', margin: 0 }}>Redução em Setup e Esperas</p>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#fbbf24', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Vetores Financeiros
-            </span>
-            <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0', textShadow: '0 2px 15px rgba(245, 158, 11, 0.5)' }}>
-              7 Fontes
-            </div>
-            <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', margin: 0 }}>Mensuração Real de Custo Evitado</p>
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              Confiabilidade
-            </span>
-            <div style={{ fontSize: '2.75rem', fontWeight: 900, color: '#ffffff', margin: '0.25rem 0', textShadow: '0 2px 15px rgba(192, 132, 252, 0.5)' }}>
-              99%
-            </div>
-            <p style={{ fontSize: '0.84375rem', color: '#cbd5e1', margin: 0 }}>Validação Amostral Estatística \(N&apos;\)</p>
-          </div>
-        </section>
-
-        {/* ==================== INTERACTIVE SOLUTIONS SHOWCASE ==================== */}
-        <section id="solucoes" style={{ marginBottom: '6.5rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <span
+            {/* DIVISOR */}
+            <div
               style={{
-                fontSize: '0.75rem',
-                fontWeight: 800,
-                color: '#38bdf8',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                padding: '0.35rem 0.85rem',
-                borderRadius: '9999px',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                margin: '0.25rem 0 1.25rem 0',
               }}
             >
-              Arquitetura Modular
-            </span>
-            <h2 style={{ fontSize: 'clamp(2rem, 3.8vw, 3rem)', fontWeight: 900, color: '#ffffff', marginTop: '0.85rem', letterSpacing: '-0.025em' }}>
-              O Ecossistema Completo de Melhoria Contínua
-            </h2>
-            <p style={{ fontSize: '1.05rem', color: '#cbd5e1', maxWidth: '680px', margin: '0.6rem auto 0' }}>
-              Explore as ferramentas modulares que conectam operadores de posto, engenheiros e supervisores.
-            </p>
-          </div>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle, rgba(255, 255, 255, 0.08))' }} />
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  color: 'var(--text-dim, #64748b)',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                ou acesse com e-mail e senha
+              </span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle, rgba(255, 255, 255, 0.08))' }} />
+            </div>
 
-          {/* Interactive Feature Tabs */}
+            {/* FORMULÁRIO DE E-MAIL E SENHA */}
+            <form onSubmit={handleCorporateLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.78125rem',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary, #cbd5e1)',
+                    marginBottom: '0.35rem',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  E-mail Corporativo (@rafitec.com.br)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '0.85rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-dim, #64748b)',
+                    }}
+                  />
+                  <input
+                    type="email"
+                    className="form-control"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu.nome@rafitec.com.br"
+                    required
+                    style={{
+                      paddingLeft: '2.4rem',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.78125rem',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary, #cbd5e1)',
+                    marginBottom: '0.35rem',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  Senha de Acesso
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Key
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '0.85rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-dim, #64748b)',
+                    }}
+                  />
+                  <input
+                    type="password"
+                    className="form-control"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    required
+                    style={{
+                      paddingLeft: '2.4rem',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '0.7rem',
+                  fontSize: '0.875rem',
+                  marginTop: '0.35rem',
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Autenticando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Acessar com E-mail e Senha</span>
+                    <ArrowRight size={15} />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRequestPasswordReset}
+                disabled={isLoading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary, #06b6d4)',
+                  fontSize: '0.78125rem',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  padding: '0.25rem',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.color = 'var(--primary-hover, #22d3ee)')}
+                onMouseOut={(e) => (e.currentTarget.style.color = 'var(--primary, #06b6d4)')}
+              >
+                Primeiro Acesso ou Esqueceu a Senha? Clique aqui para enviar link ao e-mail
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* MODO 2: SIMULAÇÃO LOCAL (DEMO / TESTES) */}
+        {loginMode === 'simulation' && (
+          <div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '0.3rem',
+                backgroundColor: 'var(--bg-input, #0d1527)',
+                padding: '0.3rem',
+                borderRadius: '10px',
+                border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                marginBottom: '1.25rem',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveSimTab('master')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
+                  borderRadius: '8px',
+                  border:
+                    activeSimTab === 'master'
+                      ? '1px solid rgba(6, 182, 212, 0.4)'
+                      : '1px solid transparent',
+                  backgroundColor:
+                    activeSimTab === 'master' ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                  color: activeSimTab === 'master' ? '#22d3ee' : 'var(--text-muted, #94a3b8)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.71875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Shield size={12} />
+                <span>Master</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSimTab('managers')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
+                  borderRadius: '8px',
+                  border:
+                    activeSimTab === 'managers'
+                      ? '1px solid rgba(56, 189, 248, 0.4)'
+                      : '1px solid transparent',
+                  backgroundColor:
+                    activeSimTab === 'managers' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  color: activeSimTab === 'managers' ? '#38bdf8' : 'var(--text-muted, #94a3b8)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.71875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Building2 size={12} />
+                <span>Gestores ({entityManagers.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSimTab('agents')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
+                  borderRadius: '8px',
+                  border:
+                    activeSimTab === 'agents'
+                      ? '1px solid rgba(16, 185, 129, 0.4)'
+                      : '1px solid transparent',
+                  backgroundColor:
+                    activeSimTab === 'agents' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                  color: activeSimTab === 'agents' ? '#34d399' : 'var(--text-muted, #94a3b8)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.71875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Users size={12} />
+                <span>Agentes ({agentUsers.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSimTab('viewers')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
+                  borderRadius: '8px',
+                  border:
+                    activeSimTab === 'viewers'
+                      ? '1px solid rgba(168, 85, 247, 0.4)'
+                      : '1px solid transparent',
+                  backgroundColor:
+                    activeSimTab === 'viewers' ? 'rgba(168, 85, 247, 0.15)' : 'transparent',
+                  color: activeSimTab === 'viewers' ? '#c084fc' : 'var(--text-muted, #94a3b8)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.71875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Eye size={12} />
+                <span>Diretoria ({viewerUsers.length})</span>
+              </button>
+            </div>
+
+            {/* TAB 1: MASTER (GRAU 1) */}
+            {activeSimTab === 'master' && (
+              <div
+                onClick={handleLoginMaster}
+                style={{
+                  padding: '1.15rem',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  marginBottom: '1rem',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.6)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.35)';
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0.45rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)',
+                        color: '#020617',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '1.1rem',
+                        fontFamily: 'var(--font-heading)',
+                      }}
+                    >
+                      MG
+                    </div>
+                    <div>
+                      <strong style={{ fontSize: '0.96875rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                        {masterUser?.name || 'Mauricio Grigol'}
+                      </strong>
+                      <span style={{ fontSize: '0.75rem', color: '#22d3ee', fontWeight: 600 }}>
+                        Grau 1 • Gestor Master de Entidades
+                      </span>
+                    </div>
+                  </div>
+
+                  <span
+                    className="btn btn-primary"
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '0.35rem 0.75rem',
+                    }}
+                  >
+                    Acessar Master <ArrowRight size={13} />
+                  </span>
+                </div>
+                <p
+                  style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-muted, #94a3b8)',
+                    margin: '0.45rem 0 0',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Acesso com governança de entidades: cadastra plantas fabris e os Gestores de cada Unidade (Grau 2). Possui visão unificada de todas as plantas industriais.
+                </p>
+              </div>
+            )}
+
+            {/* TAB 2: GESTORES DA PLANTA (GRAU 2) */}
+            {activeSimTab === 'managers' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
+                {entityManagers.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '1.5rem',
+                      textAlign: 'center',
+                      borderRadius: '10px',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  >
+                    <Building2 size={24} color="#38bdf8" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Gestor de Planta Cadastrado
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      Acesse como Gestor Master (Grau 1) e utilize o menu &ldquo;Gestão de Entidades&rdquo; para cadastrar gestores locais.
+                    </p>
+                  </div>
+                ) : (
+                  entityManagers.map((user) => {
+                    const userTenant = dataService.getTenantById(user.tenantId);
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => handleLoginManager(user.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(56, 189, 248, 0.25)',
+                          backgroundColor: 'var(--bg-input, #0d1527)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.12)';
+                          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                          <img
+                            src={
+                              user.avatarUrl ||
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                            }
+                            alt={user.name}
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '2px solid #38bdf8',
+                            }}
+                          />
+                          <div>
+                            <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                              {user.name}
+                            </strong>
+                            <span style={{ fontSize: '0.71875rem', color: '#38bdf8' }}>
+                              {userTenant ? userTenant.name : 'Planta Fabril'} • {user.jobTitle || 'Gestor da Entidade'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{
+                            fontSize: '0.71875rem',
+                            fontWeight: 700,
+                            backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                            color: '#38bdf8',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(56, 189, 248, 0.35)',
+                          }}
+                        >
+                          Acessar Planta
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
+            {/* TAB 3: AGENTES (GRAU 3) */}
+            {activeSimTab === 'agents' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
+                {agentUsers.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '1.5rem',
+                      textAlign: 'center',
+                      borderRadius: '10px',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  >
+                    <Users size={24} color="#34d399" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Agente Lean Cadastrado Nesta Unidade
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      O Gestor da Unidade (Grau 2) cadastra e gerencia a equipe de facilitadores no painel &ldquo;Equipe & Agentes&rdquo;.
+                    </p>
+                  </div>
+                ) : (
+                  agentUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleLoginAgent(user.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                        backgroundColor: 'var(--bg-input, #0d1527)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={user.name}
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #10b981',
+                          }}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                            {user.name}
+                          </strong>
+                          <span style={{ fontSize: '0.71875rem', color: 'var(--text-muted, #94a3b8)' }}>
+                            {user.sectorName || 'Fábrica'} • {user.jobTitle || 'Agente Lean'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.71875rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          color: '#34d399',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                        }}
+                      >
+                        Acessar
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* TAB 4: DIRETORIA (CONSULTA) */}
+            {activeSimTab === 'viewers' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
+                {viewerUsers.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '1.5rem',
+                      textAlign: 'center',
+                      borderRadius: '10px',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  >
+                    <Eye size={24} color="#c084fc" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Perfil de Consulta Cadastrado
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      Cadastre perfis executivos de visualização somente leitura para Diretoria e Conselho no painel de equipe.
+                    </p>
+                  </div>
+                ) : (
+                  viewerUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleLoginViewer(user.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                        backgroundColor: 'var(--bg-input, #0d1527)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={user.name}
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #a855f7',
+                          }}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                            {user.name}
+                          </strong>
+                          <span style={{ fontSize: '0.71875rem', color: '#c084fc' }}>
+                            {user.jobTitle || 'Diretoria'} • Consulta Executiva
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.71875rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                          color: '#c084fc',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(168, 85, 247, 0.35)',
+                        }}
+                      >
+                        Acessar
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Link de Coleta de Demandas */}
+        <div
+          style={{
+            padding: '0.65rem 0.85rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.08))',
+            borderRadius: '10px',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted, #94a3b8)',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem',
+            marginTop: '0.75rem',
+          }}
+        >
+          <ExternalLink size={13} color="var(--primary, #06b6d4)" />
+          <span>Link de Coleta de Demandas:</span>
+          <Link
+            href={`/d/${tenant.slug}`}
+            target="_blank"
+            style={{
+              color: 'var(--primary, #06b6d4)',
+              fontWeight: 600,
+              textDecoration: 'none',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            /d/{tenant.slug}
+          </Link>
+        </div>
+
+        {/* Recuperar Acesso */}
+        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <Link
+            href="/recuperar-senha"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              color: 'var(--text-muted, #94a3b8)',
+              fontSize: '0.8125rem',
+              textDecoration: 'none',
+              fontWeight: 500,
+              fontFamily: 'var(--font-sans)',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = 'var(--primary-hover, #22d3ee)')}
+            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-muted, #94a3b8)')}
+          >
+            <Lock size={13} />
+            <span>Esqueceu sua senha? Recuperar acesso</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer Info Sem Emojis - Bem Visível */}
+      <div
+        style={{
+          textAlign: 'center',
+          marginTop: '1.75rem',
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+            padding: '0.55rem 1.25rem',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+          }}
+        >
           <div
             style={{
+              width: '22px',
+              height: '22px',
+              borderRadius: '6px',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)',
+              color: '#020617',
+              fontSize: '0.6875rem',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.75rem',
-              flexWrap: 'wrap',
-              marginBottom: '2.5rem',
+              fontFamily: 'var(--font-heading)',
+              boxShadow: '0 0 10px rgba(6, 182, 212, 0.4)',
             }}
           >
-            {[
-              { key: 'crono', label: 'Cronoanálise Yamazumi' },
-              { key: 'roi', label: 'Motor de Custo Evitado' },
-              { key: 'kanban', label: 'Kanban & Triagem' },
-              { key: 'hub', label: 'Hub de Ferramentas Lean' },
-            ].map((tab) => {
-              const isSelected = activeFeatureTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveFeatureTab(tab.key as any)}
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.35)' : 'rgba(255, 255, 255, 0.05)',
-                    border: isSelected ? '1px solid rgba(96, 165, 250, 0.7)' : '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: '14px',
-                    padding: '0.85rem 1.5rem',
-                    color: isSelected ? '#ffffff' : '#cbd5e1',
-                    fontWeight: 800,
-                    fontSize: '0.9375rem',
-                    cursor: 'pointer',
-                    backdropFilter: 'blur(16px)',
-                    boxShadow: isSelected ? '0 0 25px rgba(37, 99, 235, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4)' : 'none',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+            MG
           </div>
-
-          {/* Tab Content Display (Liquid Glass Container) */}
-          <div
+          <span
             style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.55)',
-              backdropFilter: 'blur(30px)',
-              WebkitBackdropFilter: 'blur(30px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '28px',
-              padding: '2.75rem',
-              boxShadow: '0 30px 80px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
+              fontSize: '0.84375rem',
+              color: '#f1f5f9',
+              fontFamily: 'var(--font-sans)',
             }}
           >
-            {activeFeatureTab === 'crono' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8', fontSize: '0.8125rem', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                    <Timer size={16} /> Estudo de Tempos Industrial
-                  </div>
-                  <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.85rem', lineHeight: 1.2 }}>
-                    Cronoanálise Digital com Classificação VA / NVA / NNVA
-                  </h3>
-                  <p style={{ fontSize: '0.95rem', color: '#cbd5e1', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-                    Multi-cronômetro digital em tempo real que permite classificar tomadas de tempo em <strong>Valor Agregado (VA)</strong>, <strong>Desperdício (NVA)</strong> e <strong>Não Agrega Valor mas Necessário (NNVA)</strong>.
-                  </p>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.9rem', color: '#e2e8f0' }}>
-                      <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span><strong>Amostragens por Ciclos Separados:</strong> Fechamento e cálculo de eficiência por ciclo de trabalho.</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.9rem', color: '#e2e8f0' }}>
-                      <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span><strong>Motor Estatístico N&apos;:</strong> Fórmula de confiabilidade industrial [(z · s) / (e · x̄)]² com memória de cálculo passo a passo.</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.9rem', color: '#e2e8f0' }}>
-                      <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <span><strong>Exportação CSV para Excel:</strong> Planilhas prontas para balanceamento de linhas e auditorias industriais.</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div
-                  style={{
-                    backgroundColor: 'rgba(3, 7, 18, 0.7)',
-                    border: '1px solid rgba(56, 189, 248, 0.3)',
-                    borderRadius: '20px',
-                    padding: '1.75rem',
-                    boxShadow: '0 15px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#38bdf8' }}>DIAGNÓSTICO ESTATÍSTICO</span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.25)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.15rem 0.6rem', borderRadius: '6px' }}>
-                      95% CONFIABILIDADE
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
-                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: '12px' }}>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>Tempo Médio (x̄)</span>
-                      <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>42.8s</p>
-                    </div>
-                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: '12px' }}>
-                      <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>Eficiência VA (%)</span>
-                      <p style={{ fontSize: '1.5rem', fontWeight: 900, color: '#34d399', margin: 0 }}>74.2%</p>
-                    </div>
-                  </div>
-                  <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '12px', padding: '1rem', fontSize: '0.8125rem', color: '#e0f2fe' }}>
-                    <strong>Memória de Cálculo:</strong> N&apos; = [(1,960 × 3,42) / (0,05 × 42,8)]² = 9,81 → 10 tomadas necessárias.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeFeatureTab === 'roi' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#34d399', fontSize: '0.8125rem', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                    <TrendingUp size={16} /> Retorno Financeiro Comprovado
-                  </div>
-                  <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.85rem', lineHeight: 1.2 }}>
-                    Motor de Custo Evitado em 7 Fontes Financeiras
-                  </h3>
-                  <p style={{ fontSize: '0.95rem', color: '#cbd5e1', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-                    O sistema converte horas poupadas e perdas eliminadas em Reais (R$), permitindo emitir relatórios executivos formatados em A3 / PDF para diretoria.
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <TrendingUp size={14} color="#34d399" /> Aumento de Produção
-                    </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Trash2 size={14} color="#22d3ee" /> Redução de Refugo
-                    </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Clock size={14} color="#38bdf8" /> Horas & Mão de Obra
-                    </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Cpu size={14} color="#fbbf24" /> Paradas de Máquina (OEE)
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    backgroundColor: 'rgba(3, 7, 18, 0.7)',
-                    border: '1px solid rgba(52, 211, 153, 0.3)',
-                    borderRadius: '20px',
-                    padding: '1.75rem',
-                    boxShadow: '0 15px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-                  }}
-                >
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
-                    Demonstrativo Executivo de Projeto
-                  </span>
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: 900, color: '#ffffff', margin: '0.5rem 0' }}>
-                    Eliminação de Gargalo na Linha de Usinagem
-                  </h4>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#34d399', margin: '0.5rem 0' }}>
-                    R$ 48.250,00 <span style={{ fontSize: '0.8125rem', color: '#94a3b8', fontWeight: 600 }}>/ ano</span>
-                  </div>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>
-                    120h operacionais reaproveitadas e redução de 95% no tempo de espera do posto.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeFeatureTab === 'kanban' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem', alignItems: 'center' }}>
-                <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#60a5fa', fontSize: '0.8125rem', fontWeight: 800, marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                    <Layers size={16} /> Triagem & Execução
-                  </div>
-                  <h3 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#ffffff', marginBottom: '0.85rem', lineHeight: 1.2 }}>
-                    Kanban 4.0 & Triagem por Fábrica
-                  </h3>
-                  <p style={{ fontSize: '0.95rem', color: '#cbd5e1', lineHeight: 1.65, marginBottom: '1.5rem' }}>
-                    Controle de fluxo de trabalho de ponta a ponta: colaboradores registram sugestões no link exclusivo da sua entidade, supervisores realizam triagem com classificação de desperdício e agentes executam checklists com datas e status.
-                  </p>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#e2e8f0' }}>
-                      <CheckCircle2 size={18} color="#60a5fa" />
-                      <span>Link exclusivo por fábrica para engajar os postos de trabalho</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#60a5fa' }}>
-                      <CheckCircle2 size={18} color="#60a5fa" />
-                      <span>Triagem com aprovação, recusa justificada ou encaminhamento</span>
-                    </li>
-                    <li style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', color: '#60a5fa' }}>
-                      <CheckCircle2 size={18} color="#60a5fa" />
-                      <span>Layout responsivo adaptado para tablets e smartphones de chão de fábrica</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div
-                  style={{
-                    backgroundColor: 'rgba(3, 7, 18, 0.7)',
-                    border: '1px solid rgba(96, 165, 250, 0.3)',
-                    borderRadius: '20px',
-                    padding: '1.75rem',
-                    boxShadow: '0 15px 40px rgba(0, 0, 0, 0.5)',
-                  }}
-                >
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-                    <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.15)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#60a5fa' }}>ABERTAS</span>
-                      <p style={{ fontSize: '0.8125rem', color: '#ffffff', margin: '0.35rem 0 0 0', fontWeight: 700 }}>Triagem Inicial</p>
-                    </div>
-                    <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#fbbf24' }}>EM ANDAMENTO</span>
-                      <p style={{ fontSize: '0.8125rem', color: '#ffffff', margin: '0.35rem 0 0 0', fontWeight: 700 }}>Ação Kaizen</p>
-                    </div>
-                    <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399' }}>CONCLUÍDAS</span>
-                      <p style={{ fontSize: '0.8125rem', color: '#ffffff', margin: '0.35rem 0 0 0', fontWeight: 700 }}>ROI Validado</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeFeatureTab === 'hub' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <Target size={24} color="#38bdf8" />
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>Matriz GUT</h4>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Priorização sistemática com Gravidade × Urgência × Tendência (1 a 125).</p>
-                </div>
-                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <BarChart3 size={24} color="#34d399" />
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>5 Porquês & Pareto 80/20</h4>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Investigação profunda de causa raiz e priorização das causas vitais pelo princípio 80/20.</p>
-                </div>
-                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <FileText size={24} color="#a855f7" />
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>Gerador de SOP / LPP</h4>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Criação de Procedimentos Operacionais Padrão com fotos e segurança.</p>
-                </div>
-                <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <Settings size={24} color="#fbbf24" />
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>TPM & Canal Kaizen</h4>
-                  <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Manutenção autônoma, controle OEE e mural de destaques da fábrica.</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ==================== CALL TO ACTION BANNER (LIQUID GLASS) ==================== */}
-        <section
-          style={{
-            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.35) 0%, rgba(6, 182, 212, 0.2) 50%, rgba(15, 23, 42, 0.85) 100%)',
-            backdropFilter: 'blur(30px)',
-            WebkitBackdropFilter: 'blur(30px)',
-            border: '1px solid rgba(56, 189, 248, 0.4)',
-            borderRadius: '32px',
-            padding: '4rem 2rem',
-            textAlign: 'center',
-            marginBottom: '6.5rem',
-            boxShadow: '0 30px 80px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.4)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: 'clamp(2rem, 4.2vw, 3rem)', fontWeight: 900, color: '#ffffff', marginBottom: '1.25rem', letterSpacing: '-0.025em' }}>
-              Experimente a Plataforma em Tempo Real
-            </h2>
-            <p style={{ fontSize: '1.1rem', color: '#e0f2fe', marginBottom: '2.5rem', lineHeight: 1.65 }}>
-              Acesse como Supervisor ou Agente Operacional e teste os cronômetros, os fluxos Kanban e a apuração de ROI.
-            </p>
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-                color: '#ffffff',
-                padding: '1.05rem 2.75rem',
-                borderRadius: '16px',
-                fontWeight: 900,
-                fontSize: '1.1rem',
-                textDecoration: 'none',
-                boxShadow: '0 12px 35px rgba(37, 99, 235, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.6)',
-                border: '1px solid rgba(255, 255, 255, 0.4)',
-              }}
-            >
-              <Lock size={19} />
-              <span>Acessar Portal de Login</span>
-            </Link>
-          </div>
-        </section>
-
-        {/* ==================== LEAD ARCHITECT & CREATOR SPOTLIGHT ==================== */}
-        <section
-          id="arquiteto"
-          style={{
-            backgroundColor: 'rgba(15, 23, 42, 0.5)',
-            backdropFilter: 'blur(25px)',
-            WebkitBackdropFilter: 'blur(25px)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '28px',
-            padding: '2.75rem 2rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '1.75rem',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            <div
-              style={{
-                width: '68px',
-                height: '68px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #2563eb 0%, #06b6d4 100%)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 900,
-                fontSize: '1.6rem',
-                boxShadow: '0 0 30px rgba(37, 99, 235, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                flexShrink: 0,
-              }}
-            >
-              MG
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Desenvolvedor & Arquiteto da Solução
-              </span>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', margin: '0.2rem 0' }}>
-                Mauricio Grigol
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: '#cbd5e1', margin: 0 }}>
-                Consultor Lean Manufacturing & Desenvolvedor Full Stack • Especialista em Indústria 4.0
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-            <Link
-              href="/login"
-              style={{
-                padding: '0.65rem 1.35rem',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                color: '#ffffff',
-                fontSize: '0.875rem',
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: '0 4px 15px rgba(37, 99, 235, 0.35)',
-              }}
-            >
-              Acessar Plataforma
-            </Link>
-          </div>
-        </section>
-      </main>
-
-      {/* ==================== FOOTER ==================== */}
-      <footer
-        style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          backgroundColor: 'rgba(2, 6, 23, 0.95)',
-          padding: '2.5rem 1.5rem',
-          textAlign: 'center',
-          color: '#94a3b8',
-          fontSize: '0.84375rem',
-        }}
-      >
-        <div style={{ maxWidth: '1360px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem' }}>
-          <div>
-            © {new Date().getFullYear()} <strong>FluxoLean System 4.0</strong> • Concebido e arquitetado por <strong>Mauricio Grigol</strong>.
-          </div>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <Link href="/login" style={{ color: '#cbd5e1', textDecoration: 'none', fontWeight: 600 }}>Login & Entidades</Link>
-          </div>
+            Desenvolvido por <strong style={{ color: '#ffffff', fontWeight: 700 }}>Mauricio Grigol</strong>
+          </span>
+          <span style={{ color: 'rgba(255, 255, 255, 0.25)' }}>•</span>
+          <span
+            style={{
+              fontSize: '0.8125rem',
+              color: '#94a3b8',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            Consultor Lean & Dev Full Stack
+          </span>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
