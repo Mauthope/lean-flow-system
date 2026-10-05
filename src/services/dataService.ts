@@ -677,8 +677,56 @@ export const dataService = {
   },
 
   // ================= LEAN ACTIONS / DEMANDS =================
+  getNextActionProtocol(tenantId?: string): string {
+    const year = new Date().getFullYear();
+    const actions = this.getActions(tenantId);
+    const prefix = `LEAN-${year}-`;
+    let maxSeq = 0;
+
+    actions.forEach((a) => {
+      if (a.protocol && a.protocol.toUpperCase().startsWith(prefix)) {
+        const numPart = a.protocol.toUpperCase().replace(prefix, '');
+        const parsed = parseInt(numPart, 10);
+        if (!isNaN(parsed) && parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      }
+    });
+
+    const nextSeq = maxSeq + 1;
+    return `LEAN-${year}-${String(nextSeq).padStart(4, '0')}`;
+  },
+
   getActions(tenantId?: string): LeanAction[] {
     const all = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
+    const year = new Date().getFullYear();
+    let hasChanges = false;
+
+    // Normalização sequencial de protocolos legados (ex: LEAN-2026-8820 gerado por Math.random)
+    // Se houver ações com números randômicos altos (> 1000), reordena e renumera sequencialmente a partir de 0001
+    const hasLegacyRandomProtocols = all.some((a) => {
+      if (!a.protocol) return true;
+      const match = a.protocol.match(/LEAN-\d{4}-(\d+)/i);
+      return match && parseInt(match[1], 10) >= 1000 && all.length < 500;
+    });
+
+    if (hasLegacyRandomProtocols && all.length > 0) {
+      const sorted = [...all].sort((a, b) => {
+        const tA = new Date(a.createdAt || 0).getTime();
+        const tB = new Date(b.createdAt || 0).getTime();
+        return tA - tB;
+      });
+
+      sorted.forEach((action, idx) => {
+        const seq = idx + 1;
+        const newProtocol = `LEAN-${year}-${String(seq).padStart(4, '0')}`;
+        if (action.protocol !== newProtocol) {
+          action.protocol = newProtocol;
+          hasChanges = true;
+        }
+      });
+    }
+
     all.forEach((action) => {
       if (!action.quarterlyFollowUp) {
         const initAction = INITIAL_ACTIONS.find((ia) => ia.id === action.id);
@@ -695,8 +743,14 @@ export const dataService = {
             isCompleted: false,
           };
         }
+        hasChanges = true;
       }
     });
+
+    if (hasChanges) {
+      setStoredData(STORAGE_KEYS.ACTIONS, all);
+    }
+
     if (!tenantId) return all;
     return all.filter((a) => a.tenantId === tenantId);
   },
@@ -1338,7 +1392,7 @@ export const dataService = {
 
     const newAction: LeanAction = {
       id: generateId('act'),
-      protocol: generateProtocol(),
+      protocol: this.getNextActionProtocol(demand.tenantId || currentTenant.id),
       tenantId: demand.tenantId || currentTenant.id,
       title: demand.title,
       description: demand.description,
@@ -1402,7 +1456,7 @@ export const dataService = {
     const newAction: LeanAction = {
       ...actionData,
       id: actionId,
-      protocol: generateProtocol(),
+      protocol: this.getNextActionProtocol(actionData.tenantId),
       originSectorName: originSector?.name || actionData.originSectorName,
       assignedAgentName: agent?.name || actionData.assignedAgentName,
       assignedAgentAvatar: agent?.avatarUrl || actionData.assignedAgentAvatar,
@@ -2390,8 +2444,59 @@ export const dataService = {
   },
 
   // ================= CANAL KAIZEN (BANCO DE IDEIAS) =================
+  getNextKaizenIdeaProtocol(tenantId?: string): string {
+    const year = new Date().getFullYear();
+    const ideas = this.getKaizenIdeas(tenantId);
+    const prefix = `KZN-${year}-`;
+    let maxSeq = 0;
+
+    ideas.forEach((k) => {
+      if (k.protocol && k.protocol.toUpperCase().startsWith(prefix)) {
+        const numPart = k.protocol.toUpperCase().replace(prefix, '');
+        const parsed = parseInt(numPart, 10);
+        if (!isNaN(parsed) && parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      }
+    });
+
+    const nextSeq = maxSeq + 1;
+    return `KZN-${year}-${String(nextSeq).padStart(4, '0')}`;
+  },
+
   getKaizenIdeas(tenantId?: string): KaizenIdea[] {
     const all = getStoredData<KaizenIdea[]>(STORAGE_KEYS.KAIZEN_IDEAS, INITIAL_KAIZEN_IDEAS);
+    const year = new Date().getFullYear();
+    let hasChanges = false;
+
+    // Normalização sequencial de protocolos legados (ex: KZN-2026-8820 gerado por Math.random)
+    const hasLegacyRandomProtocols = all.some((k) => {
+      if (!k.protocol) return true;
+      const match = k.protocol.match(/KZN-\d{4}-(\d+)/i);
+      return match && parseInt(match[1], 10) >= 1000 && all.length < 500;
+    });
+
+    if (hasLegacyRandomProtocols && all.length > 0) {
+      const sorted = [...all].sort((a, b) => {
+        const tA = new Date(a.createdAt || 0).getTime();
+        const tB = new Date(b.createdAt || 0).getTime();
+        return tA - tB;
+      });
+
+      sorted.forEach((idea, idx) => {
+        const seq = idx + 1;
+        const newProtocol = `KZN-${year}-${String(seq).padStart(4, '0')}`;
+        if (idea.protocol !== newProtocol) {
+          idea.protocol = newProtocol;
+          hasChanges = true;
+        }
+      });
+    }
+
+    if (hasChanges) {
+      setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, all);
+    }
+
     if (!tenantId) return all;
     return all.filter((k) => k.tenantId === tenantId);
   },
@@ -2412,11 +2517,10 @@ export const dataService = {
     const ideas = this.getKaizenIdeas();
     const sector = this.getSectorById(data.sectorId);
     const now = new Date().toISOString();
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
 
     const newIdea: KaizenIdea = {
       id: 'kzn_' + Date.now(),
-      protocol: `KZN-2026-${randomNum}`,
+      protocol: this.getNextKaizenIdeaProtocol(data.tenantId || this.getCurrentTenant().id),
       tenantId: data.tenantId || this.getCurrentTenant().id,
       authorName: data.authorName.trim(),
       sectorId: data.sectorId,

@@ -73,10 +73,9 @@ export function formatRelativeTime(dateString?: string): string {
   }
 }
 
-export function generateProtocol(): string {
+export function generateProtocol(sequence: number = 1): string {
   const year = new Date().getFullYear();
-  const randomPart = Math.floor(1000 + Math.random() * 9000);
-  return `LEAN-${year}-${randomPart}`;
+  return `LEAN-${year}-${String(sequence).padStart(4, '0')}`;
 }
 
 export function generateId(prefix: string = 'id'): string {
