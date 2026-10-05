@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
-import { User } from '@/lib/types';
+import { User, isMasterUser } from '@/lib/types';
 import { AgentModal } from '@/components/forms/AgentModal';
 import { formatCurrency } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -31,11 +31,13 @@ import {
   Eye,
   Briefcase,
   Shield,
+  Factory,
 } from 'lucide-react';
 
 export default function AdminAgentesPage() {
-  const { dataVersion, refreshData, currentUser } = useAuth();
+  const { dataVersion, refreshData, currentUser, currentTenant } = useAuth();
   const { isDark } = useTheme();
+  const isMaster = isMasterUser(currentUser);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<User | null>(null);
   const [initialModalRole, setInitialModalRole] = useState<'agent' | 'viewer'>('agent');
@@ -92,8 +94,10 @@ export default function AdminAgentesPage() {
   }
 
   const allMembers = useMemo(() => {
-    return dataService.getUsers().filter((u) => u.role === 'agent' || u.role === 'viewer');
-  }, [dataVersion]);
+    return dataService
+      .getUsers(currentTenant?.id)
+      .filter((u) => u.role === 'agent' || u.role === 'viewer');
+  }, [dataVersion, currentTenant?.id]);
 
   const activeMembers = useMemo(() => {
     return allMembers.filter((u) => u.active !== false);
@@ -196,11 +200,47 @@ export default function AdminAgentesPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
-            Gestão de Equipe & Acessos
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                padding: '0.2rem 0.55rem',
+                borderRadius: '6px',
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
+                color: isDark ? '#38bdf8' : '#0369a1',
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #bae6fd',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Grau 3 • Facilitadores e Equipe Lean
+            </span>
+            {currentTenant?.name && (
+              <span
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '6px',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                  color: isDark ? '#94a3b8' : '#64748b',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                }}
+              >
+                <Factory size={12} /> {currentTenant.name}
+              </span>
+            )}
+          </div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            {isMaster ? `Equipe & Agentes Lean • ${currentTenant?.name || 'Unidade'}` : 'Gestão de Agentes & Acessos da Unidade'}
           </h2>
-          <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#475569' }}>
-            Gerencie os facilitadores Lean de fábrica e cadastre acessos executivos para Diretoria e Gerência (somente leitura)
+          <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#475569', marginTop: '0.25rem', margin: 0 }}>
+            {isMaster
+              ? `Como Gestor Master, você está gerenciando a equipe de facilitadores vinculada à unidade ${currentTenant?.name || 'selecionada'}.`
+              : `Gerencie os facilitadores Lean de fábrica da sua unidade e cadastre acessos de consulta executiva para Diretoria.`}
           </p>
         </div>
 

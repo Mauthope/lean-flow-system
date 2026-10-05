@@ -33,7 +33,7 @@ export const STORAGE_KEYS = {
   STRATEGIC_OBJECTIVES: 'lean_flow_strategic_objectives',
 };
 
-export const CURRENT_DATA_VERSION = 'v2.1_clean_slate';
+export const CURRENT_DATA_VERSION = 'v2.2_three_degrees';
 
 export const INITIAL_TENANTS: Tenant[] = [
   {
@@ -56,7 +56,7 @@ export const INITIAL_TENANT: Tenant = INITIAL_TENANTS[0];
 export const INITIAL_SECTORS: Sector[] = [];
 
 export const INITIAL_USERS: User[] = [
-  // Conta Master / Desenvolvedor (Gestão de Entidades)
+  // Grau 1: Gestor Master de Entidades (Governança Global de Entidades)
   {
     id: 'usr_rafitec_master',
     tenantId: 'tenant_rafitec_01',
@@ -68,6 +68,46 @@ export const INITIAL_USERS: User[] = [
     active: true,
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     createdAt: '2026-01-10T08:00:00.000Z',
+  },
+  // Grau 2: Gestor da Unidade Fabril (Supervisor/Gerente Local da Planta)
+  {
+    id: 'usr_gestor_planta_01',
+    tenantId: 'tenant_rafitec_01',
+    name: 'Carlos Silveira',
+    email: 'carlos.silveira@rafitec.com.br',
+    role: 'admin',
+    isMaster: false,
+    jobTitle: 'Gerente Industrial da Planta',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-15T08:00:00.000Z',
+  },
+  // Grau 3: Facilitador / Agente Lean de Fábrica
+  {
+    id: 'usr_agente_lean_01',
+    tenantId: 'tenant_rafitec_01',
+    name: 'Ana Paula Mendes',
+    email: 'ana.mendes@rafitec.com.br',
+    role: 'agent',
+    isMaster: false,
+    jobTitle: 'Facilitadora Kaizen & Especialista Lean',
+    sectorName: 'Engenharia de Processos',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-20T08:00:00.000Z',
+  },
+  // Diretoria Executiva (Consulta • Somente Leitura)
+  {
+    id: 'usr_diretoria_01',
+    tenantId: 'tenant_rafitec_01',
+    name: 'Roberto Vaccaro',
+    email: 'roberto.vaccaro@rafitec.com.br',
+    role: 'viewer',
+    isMaster: false,
+    jobTitle: 'Diretor de Operações Industriais',
+    active: true,
+    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    createdAt: '2026-01-25T08:00:00.000Z',
   },
 ];
 

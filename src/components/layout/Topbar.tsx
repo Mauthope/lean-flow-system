@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
+import { getUserHierarchyInfo, isMasterUser, isEntityManager } from '@/lib/types';
 
 export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?: () => void }> = ({
   title,
@@ -26,12 +27,11 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
 
+  const isMaster = isMasterUser(currentUser);
+  const isEntityMgr = isEntityManager(currentUser);
   const isAdmin = currentUser?.role === 'admin';
   const isViewer = currentUser?.role === 'viewer';
-  const isMaster =
-    currentUser?.isMaster === true ||
-    currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
-    currentUser?.email?.toLowerCase() === 'master@rafitec.com.br';
+  const hierarchyInfo = getUserHierarchyInfo(currentUser, currentTenant?.name);
 
   const handleLogout = () => {
     logout();
@@ -79,7 +79,15 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
         <div>
           <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-            {title || (isMaster ? 'Painel de Gestão Master' : isViewer ? 'Painel Executivo • Consulta Diretoria' : isAdmin ? 'Painel de Gestão Lean' : 'Meu Fluxo de Trabalho Lean')}
+            {title || (
+              isMaster
+                ? 'Painel Master de Governança Fabril'
+                : isEntityMgr
+                ? `Painel de Gestão Lean • ${currentTenant?.name || 'Unidade'}`
+                : isViewer
+                ? 'Painel Executivo • Consulta Diretoria'
+                : 'Meu Fluxo de Trabalho Lean'
+            )}
           </h1>
           {subtitle && <p style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>{subtitle}</p>}
         </div>
@@ -226,20 +234,24 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
               height: '32px',
               borderRadius: '50%',
               objectFit: 'cover',
-              border: `2px solid ${isViewer ? '#a855f7' : isAdmin ? '#06b6d4' : '#10b981'}`,
-              boxShadow: `0 0 10px ${isViewer ? 'rgba(168, 85, 247, 0.4)' : isAdmin ? 'rgba(6, 182, 212, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+              border: `2px solid ${isMaster ? '#06b6d4' : isEntityMgr ? '#38bdf8' : isViewer ? '#a855f7' : '#10b981'}`,
+              boxShadow: `0 0 10px ${isMaster ? 'rgba(6, 182, 212, 0.35)' : isEntityMgr ? 'rgba(56, 189, 248, 0.35)' : isViewer ? 'rgba(168, 85, 247, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
             }}
           />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: isDark ? '#f8fafc' : '#0f172a', lineHeight: 1.2 }}>
               {currentUser?.name || 'Usuário'}
             </span>
-            <span style={{ fontSize: '0.675rem', color: isDark ? (isViewer ? '#c084fc' : '#94a3b8') : (isViewer ? '#7e22ce' : '#64748b'), fontWeight: 600 }}>
-              {isViewer
-                ? currentUser?.jobTitle || 'Diretoria / Consulta'
-                : isAdmin
-                ? 'Entidade Master'
-                : currentUser?.sectorName || 'Agente Operacional'}
+            <span
+              style={{
+                fontSize: '0.675rem',
+                color: isDark
+                  ? (isMaster ? '#22d3ee' : isEntityMgr ? '#38bdf8' : isViewer ? '#c084fc' : '#34d399')
+                  : (isMaster ? '#0891b2' : isEntityMgr ? '#0284c7' : isViewer ? '#7e22ce' : '#059669'),
+                fontWeight: 700,
+              }}
+            >
+              {hierarchyInfo.roleName}
             </span>
           </div>
 

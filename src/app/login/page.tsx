@@ -19,15 +19,17 @@ import {
   Loader2,
   Sparkles,
   ExternalLink,
+  Building2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { isMasterUser, isEntityManager, isAgentUser, isViewerUser } from '@/lib/types';
 
 export default function LoginPage() {
   const router = useRouter();
   const { loginAs } = useAuth();
 
   const [loginMode, setLoginMode] = useState<'corporate' | 'simulation'>('corporate');
-  const [activeSimTab, setActiveSimTab] = useState<'master' | 'agents' | 'viewers'>('master');
+  const [activeSimTab, setActiveSimTab] = useState<'master' | 'managers' | 'agents' | 'viewers'>('master');
 
   // Formulário Corporativo
   const [email, setEmail] = useState('mauricio.grigol@rafitec.com.br');
@@ -37,10 +39,11 @@ export default function LoginPage() {
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
   const tenant = dataService.getCurrentTenant();
-  const tenantUsers = dataService.getUsers(tenant.id);
-  const masterUser = tenantUsers.find((u) => u.role === 'admin') || tenantUsers[0];
-  const agentUsers = tenantUsers.filter((u) => u.role === 'agent');
-  const viewerUsers = tenantUsers.filter((u) => u.role === 'viewer');
+  const allUsers = dataService.getUsers();
+  const masterUser = dataService.getMasterUser() || allUsers.find(isMasterUser) || allUsers[0];
+  const entityManagers = allUsers.filter(isEntityManager);
+  const agentUsers = allUsers.filter((u) => isAgentUser(u) && u.tenantId === tenant.id);
+  const viewerUsers = allUsers.filter(isViewerUser);
 
   // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
   useEffect(() => {
@@ -301,6 +304,18 @@ export default function LoginPage() {
     if (masterUser) {
       loginAs(masterUser.id);
     }
+    router.push('/admin/dashboard');
+  };
+
+  const handleLoginManager = (userId: string) => {
+    const user = dataService.getUserById(userId);
+    if (user && user.tenantId) {
+      const targetTenant = dataService.getTenantById(user.tenantId);
+      if (targetTenant) {
+        dataService.setCurrentTenant(targetTenant);
+      }
+    }
+    loginAs(userId);
     router.push('/admin/dashboard');
   };
 
@@ -857,8 +872,8 @@ export default function LoginPage() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: '0.35rem',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '0.3rem',
                 backgroundColor: 'var(--bg-input, #0d1527)',
                 padding: '0.3rem',
                 borderRadius: '10px',
@@ -873,8 +888,8 @@ export default function LoginPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.35rem',
-                  padding: '0.55rem 0.35rem',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
                   borderRadius: '8px',
                   border:
                     activeSimTab === 'master'
@@ -885,13 +900,43 @@ export default function LoginPage() {
                   color: activeSimTab === 'master' ? '#22d3ee' : 'var(--text-muted, #94a3b8)',
                   fontWeight: 600,
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.71875rem',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Shield size={13} />
+                <Shield size={12} />
                 <span>Master</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSimTab('managers')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
+                  borderRadius: '8px',
+                  border:
+                    activeSimTab === 'managers'
+                      ? '1px solid rgba(56, 189, 248, 0.4)'
+                      : '1px solid transparent',
+                  backgroundColor:
+                    activeSimTab === 'managers' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  color: activeSimTab === 'managers' ? '#38bdf8' : 'var(--text-muted, #94a3b8)',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.71875rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Building2 size={12} />
+                <span>Gestores ({entityManagers.length})</span>
               </button>
 
               <button
@@ -901,8 +946,8 @@ export default function LoginPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.35rem',
-                  padding: '0.55rem 0.35rem',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
                   borderRadius: '8px',
                   border:
                     activeSimTab === 'agents'
@@ -913,12 +958,13 @@ export default function LoginPage() {
                   color: activeSimTab === 'agents' ? '#34d399' : 'var(--text-muted, #94a3b8)',
                   fontWeight: 600,
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.71875rem',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Users size={13} />
+                <Users size={12} />
                 <span>Agentes ({agentUsers.length})</span>
               </button>
 
@@ -929,8 +975,8 @@ export default function LoginPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.35rem',
-                  padding: '0.55rem 0.35rem',
+                  gap: '0.3rem',
+                  padding: '0.55rem 0.2rem',
                   borderRadius: '8px',
                   border:
                     activeSimTab === 'viewers'
@@ -941,17 +987,18 @@ export default function LoginPage() {
                   color: activeSimTab === 'viewers' ? '#c084fc' : 'var(--text-muted, #94a3b8)',
                   fontWeight: 600,
                   fontFamily: 'var(--font-heading)',
-                  fontSize: '0.75rem',
+                  fontSize: '0.71875rem',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Eye size={13} />
+                <Eye size={12} />
                 <span>Diretoria ({viewerUsers.length})</span>
               </button>
             </div>
 
-            {/* TAB 1: MASTER */}
+            {/* TAB 1: MASTER (GRAU 1) */}
             {activeSimTab === 'master' && (
               <div
                 onClick={handleLoginMaster}
@@ -997,14 +1044,14 @@ export default function LoginPage() {
                         fontFamily: 'var(--font-heading)',
                       }}
                     >
-                      RF
+                      MG
                     </div>
                     <div>
                       <strong style={{ fontSize: '0.96875rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
-                        {tenant.name}
+                        {masterUser?.name || 'Mauricio Grigol'}
                       </strong>
-                      <span style={{ fontSize: '0.75rem', color: '#22d3ee' }}>
-                        Entidade Master • Gestão Industrial & ROI
+                      <span style={{ fontSize: '0.75rem', color: '#22d3ee', fontWeight: 600 }}>
+                        Grau 1 • Gestor Master de Entidades
                       </span>
                     </div>
                   </div>
@@ -1027,148 +1074,281 @@ export default function LoginPage() {
                     lineHeight: 1.4,
                   }}
                 >
-                  Acesso com privilégios de Administrador Geral da planta: Dashboard executivo, triagem de sugestões Kaizen, auditorias e TPM.
+                  Acesso com governança de entidades: cadastra plantas fabris e os Gestores de cada Unidade (Grau 2). Possui visão unificada de todas as plantas industriais.
                 </p>
               </div>
             )}
 
-            {/* TAB 2: AGENTES */}
-            {activeSimTab === 'agents' && (
+            {/* TAB 2: GESTORES DA PLANTA (GRAU 2) */}
+            {activeSimTab === 'managers' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
-                {agentUsers.map((user) => (
+                {entityManagers.length === 0 ? (
                   <div
-                    key={user.id}
-                    onClick={() => handleLoginAgent(user.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.65rem 0.85rem',
+                      padding: '1.5rem',
+                      textAlign: 'center',
                       borderRadius: '10px',
-                      border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
                       backgroundColor: 'var(--bg-input, #0d1527)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
-                      e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
-                      e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <img
-                        src={
-                          user.avatarUrl ||
-                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                        }
-                        alt={user.name}
+                    <Building2 size={24} color="#38bdf8" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Gestor de Planta Cadastrado
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      Acesse como Gestor Master (Grau 1) e utilize o menu &ldquo;Gestão de Entidades&rdquo; para cadastrar gestores locais.
+                    </p>
+                  </div>
+                ) : (
+                  entityManagers.map((user) => {
+                    const userTenant = dataService.getTenantById(user.tenantId);
+                    return (
+                      <div
+                        key={user.id}
+                        onClick={() => handleLoginManager(user.id)}
                         style={{
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '2px solid #10b981',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(56, 189, 248, 0.25)',
+                          backgroundColor: 'var(--bg-input, #0d1527)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
                         }}
-                      />
-                      <div>
-                        <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
-                          {user.name}
-                        </strong>
-                        <span style={{ fontSize: '0.71875rem', color: 'var(--text-muted, #94a3b8)' }}>
-                          {user.sectorName || 'Agente'} • Operação Kaizen
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.12)';
+                          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                          e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.25)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                          <img
+                            src={
+                              user.avatarUrl ||
+                              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                            }
+                            alt={user.name}
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '2px solid #38bdf8',
+                            }}
+                          />
+                          <div>
+                            <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                              {user.name}
+                            </strong>
+                            <span style={{ fontSize: '0.71875rem', color: '#38bdf8' }}>
+                              {userTenant ? userTenant.name : 'Planta Fabril'} • {user.jobTitle || 'Gestor da Entidade'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          style={{
+                            fontSize: '0.71875rem',
+                            fontWeight: 700,
+                            backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                            color: '#38bdf8',
+                            padding: '0.2rem 0.55rem',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(56, 189, 248, 0.35)',
+                          }}
+                        >
+                          Acessar Planta
                         </span>
                       </div>
-                    </div>
-
-                    <span
-                      style={{
-                        fontSize: '0.71875rem',
-                        fontWeight: 700,
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        color: '#34d399',
-                        padding: '0.2rem 0.55rem',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(16, 185, 129, 0.35)',
-                      }}
-                    >
-                      Acessar
-                    </span>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             )}
 
-            {/* TAB 3: DIRETORIA */}
-            {activeSimTab === 'viewers' && (
+            {/* TAB 3: AGENTES (GRAU 3) */}
+            {activeSimTab === 'agents' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
-                {viewerUsers.map((user) => (
+                {agentUsers.length === 0 ? (
                   <div
-                    key={user.id}
-                    onClick={() => handleLoginViewer(user.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.65rem 0.85rem',
+                      padding: '1.5rem',
+                      textAlign: 'center',
                       borderRadius: '10px',
-                      border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
                       backgroundColor: 'var(--bg-input, #0d1527)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
-                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
-                      e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <img
-                        src={
-                          user.avatarUrl ||
-                          'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
-                        }
-                        alt={user.name}
-                        style={{
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          border: '2px solid #a855f7',
-                        }}
-                      />
-                      <div>
-                        <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
-                          {user.name}
-                        </strong>
-                        <span style={{ fontSize: '0.71875rem', color: '#c084fc' }}>
-                          {user.jobTitle || 'Diretoria'} • Consulta Executiva
-                        </span>
-                      </div>
-                    </div>
-
-                    <span
+                    <Users size={24} color="#34d399" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Agente Lean Cadastrado Nesta Unidade
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      O Gestor da Unidade (Grau 2) cadastra e gerencia a equipe de facilitadores no painel &ldquo;Equipe & Agentes&rdquo;.
+                    </p>
+                  </div>
+                ) : (
+                  agentUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleLoginAgent(user.id)}
                       style={{
-                        fontSize: '0.71875rem',
-                        fontWeight: 700,
-                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
-                        color: '#c084fc',
-                        padding: '0.2rem 0.55rem',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(168, 85, 247, 0.35)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                        backgroundColor: 'var(--bg-input, #0d1527)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
                       }}
                     >
-                      Acessar
-                    </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={user.name}
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #10b981',
+                          }}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                            {user.name}
+                          </strong>
+                          <span style={{ fontSize: '0.71875rem', color: 'var(--text-muted, #94a3b8)' }}>
+                            {user.sectorName || 'Fábrica'} • {user.jobTitle || 'Agente Lean'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.71875rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                          color: '#34d399',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                        }}
+                      >
+                        Acessar
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* TAB 4: DIRETORIA (CONSULTA) */}
+            {activeSimTab === 'viewers' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '260px', overflowY: 'auto', paddingRight: '0.25rem', marginBottom: '1rem' }}>
+                {viewerUsers.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '1.5rem',
+                      textAlign: 'center',
+                      borderRadius: '10px',
+                      border: '1px dashed var(--border-subtle, rgba(255, 255, 255, 0.1))',
+                      backgroundColor: 'var(--bg-input, #0d1527)',
+                    }}
+                  >
+                    <Eye size={24} color="#c084fc" style={{ margin: '0 auto 0.5rem' }} />
+                    <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', fontWeight: 600, margin: 0 }}>
+                      Nenhum Perfil de Consulta Cadastrado
+                    </p>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: '0.25rem 0 0' }}>
+                      Cadastre perfis executivos de visualização somente leitura para Diretoria e Conselho no painel de equipe.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  viewerUsers.map((user) => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleLoginViewer(user.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '10px',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+                        backgroundColor: 'var(--bg-input, #0d1527)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.4)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--bg-input, #0d1527)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={
+                            user.avatarUrl ||
+                            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={user.name}
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '2px solid #a855f7',
+                          }}
+                        />
+                        <div>
+                          <strong style={{ fontSize: '0.84375rem', color: '#ffffff', display: 'block', fontFamily: 'var(--font-heading)' }}>
+                            {user.name}
+                          </strong>
+                          <span style={{ fontSize: '0.71875rem', color: '#c084fc' }}>
+                            {user.jobTitle || 'Diretoria'} • Consulta Executiva
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.71875rem',
+                          fontWeight: 700,
+                          backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                          color: '#c084fc',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(168, 85, 247, 0.35)',
+                        }}
+                      >
+                        Acessar
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ import { TenantModal } from '@/components/forms/TenantModal';
 import { MasterTransferModal } from '@/components/forms/MasterTransferModal';
 import { TenantPurgeModal } from '@/components/forms/TenantPurgeModal';
 import { ManagerTransitionModal } from '@/components/forms/ManagerTransitionModal';
+import { TenantManagersModal } from '@/components/forms/TenantManagersModal';
 import { formatCurrency } from '@/lib/utils';
 import {
   Factory,
@@ -33,6 +34,7 @@ import {
   Lock,
   Crown,
   Download,
+  UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,6 +45,8 @@ export default function AdminEntidadesPage() {
   const isDark = theme === 'dark';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [isManagersModalOpen, setIsManagersModalOpen] = useState(false);
+  const [managersTenant, setManagersTenant] = useState<Tenant | null>(null);
   const [isTransitionModalOpen, setIsTransitionModalOpen] = useState(false);
   const [transitionTenant, setTransitionTenant] = useState<Tenant | null>(null);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
@@ -61,6 +65,11 @@ export default function AdminEntidadesPage() {
       router.replace('/admin/dashboard');
     }
   }, [currentUser, isMaster, router]);
+
+  const handleOpenManagers = (tenant: Tenant) => {
+    setManagersTenant(tenant);
+    setIsManagersModalOpen(true);
+  };
 
   const handleOpenTransition = (tenant: Tenant) => {
     setTransitionTenant(tenant);
@@ -107,6 +116,7 @@ export default function AdminEntidadesPage() {
   // Panorama geral consolidado de todas as entidades
   const panoramaMetrics = useMemo(() => {
     let totalSectors = 0;
+    let totalManagers = 0;
     let totalAgents = 0;
     let totalActions = 0;
     let totalCostAvoided = 0;
@@ -114,6 +124,7 @@ export default function AdminEntidadesPage() {
     allTenants.forEach((t) => {
       const stats = dataService.getTenantStats(t.id);
       totalSectors += stats.sectorsCount;
+      totalManagers += stats.managersCount || 0;
       totalAgents += stats.agentsCount;
       totalActions += stats.actionsCount;
       totalCostAvoided += stats.totalCostAvoided;
@@ -122,6 +133,7 @@ export default function AdminEntidadesPage() {
     return {
       totalTenants: allTenants.length,
       totalSectors,
+      totalManagers,
       totalAgents,
       totalActions,
       totalCostAvoided,
@@ -349,8 +361,8 @@ export default function AdminEntidadesPage() {
         </button>
       </div>
 
-      {/* Panorama Geral - 4 KPI Cards Consolidando Todo o Ecossistema */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+      {/* Panorama Geral - 5 KPI Cards Consolidando Todo o Ecossistema */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
         <div
           className="card"
           style={{
@@ -363,14 +375,36 @@ export default function AdminEntidadesPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-              Plantas / Entidades
+              Plantas / Unidades
             </span>
             <Factory size={18} color="#0891b2" />
           </div>
           <p style={{ fontSize: '1.65rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {panoramaMetrics.totalTenants}
           </p>
-          <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 600 }}>Unidades industriais ativas</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 600 }}>Grau 1 • Unidades industriais</span>
+        </div>
+
+        <div
+          className="card"
+          style={{
+            padding: '1.25rem',
+            backgroundColor: isDark ? '#090e1a' : '#ffffff',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+            borderRadius: '12px',
+            boxShadow: isDark ? undefined : '0 2px 8px rgba(0, 0, 0, 0.04)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
+              Gestores da Planta
+            </span>
+            <ShieldCheck size={18} color="#38bdf8" />
+          </div>
+          <p style={{ fontSize: '1.65rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
+            {panoramaMetrics.totalManagers}
+          </p>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 600 }}>Grau 2 • Liderança das fábricas</span>
         </div>
 
         <div
@@ -392,7 +426,7 @@ export default function AdminEntidadesPage() {
           <p style={{ fontSize: '1.65rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {panoramaMetrics.totalSectors}
           </p>
-          <span style={{ fontSize: '0.7rem', color: isDark ? '#c084fc' : '#7c3aed', fontWeight: 600 }}>Áreas e postos de trabalho mapeados</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#c084fc' : '#7c3aed', fontWeight: 600 }}>Áreas e postos mapeados</span>
         </div>
 
         <div
@@ -407,14 +441,14 @@ export default function AdminEntidadesPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-              Facilitadores Lean
+              Agentes Lean
             </span>
             <Users size={18} color="#10b981" />
           </div>
           <p style={{ fontSize: '1.65rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {panoramaMetrics.totalAgents}
           </p>
-          <span style={{ fontSize: '0.7rem', color: isDark ? '#34d399' : '#059669', fontWeight: 600 }}>Agentes atuando no chão de fábrica</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#34d399' : '#059669', fontWeight: 600 }}>Grau 3 • Facilitadores no Gemba</span>
         </div>
 
         <div
@@ -436,7 +470,7 @@ export default function AdminEntidadesPage() {
           <p style={{ fontSize: '1.65rem', fontWeight: 900, color: isDark ? '#34d399' : '#059669', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {formatCurrency(panoramaMetrics.totalCostAvoided)}
           </p>
-          <span style={{ fontSize: '0.7rem', color: isDark ? '#fbbf24' : '#d97706', fontWeight: 600 }}>Soma de ROI em todas as unidades</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#fbbf24' : '#d97706', fontWeight: 600 }}>Soma de ROI das unidades</span>
         </div>
       </div>
 
@@ -626,65 +660,111 @@ export default function AdminEntidadesPage() {
                   </div>
                 </div>
 
-                {/* Gestor Responsável da Unidade & Ação de Transição */}
-                <div
-                  style={{
-                    backgroundColor: isDark ? '#090e1a' : '#f8fafc',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    padding: '0.65rem 0.85rem',
-                    marginBottom: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '0.6rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                    <img
-                      src={
-                        manager?.avatarUrl ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-                      }
-                      alt={manager?.name || 'Gestor'}
-                      style={{
-                        width: '34px',
-                        height: '34px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                        border: isDark ? '1.5px solid rgba(255, 255, 255, 0.15)' : '1.5px solid #cbd5e1',
-                      }}
-                    />
-                    <div>
-                      <span style={{ fontSize: '0.65rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>
-                        Gestor da Planta
-                      </span>
-                      <strong style={{ fontSize: '0.8125rem', color: isDark ? '#ffffff' : '#0f172a' }}>
-                        {manager?.name || 'Nenhum gestor ativo'}
-                      </strong>
-                    </div>
-                  </div>
+                {/* Gestores da Unidade (Grau 2) & Ações de Governança */}
+                {(() => {
+                  const unitManagers = dataService.getTenantManagers(tenant.id);
+                  const titularManager = unitManagers.find((m) => m.active !== false) || unitManagers[0] || manager;
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenTransition(tenant)}
-                    className="btn btn-secondary btn-sm"
-                    style={{
-                      fontSize: '0.725rem',
-                      padding: '0.3rem 0.65rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      color: isDark ? '#22d3ee' : '#0284c7',
-                      borderColor: isDark ? 'rgba(6, 182, 212, 0.35)' : '#bae6fd',
-                    }}
-                    title="Substituir ou transicionar gestor da planta com zero interrupção de serviços"
-                  >
-                    <ArrowRightLeft size={12} />
-                    <span>Trocar Gestor</span>
-                  </button>
-                </div>
+                  return (
+                    <div
+                      style={{
+                        backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '0.75rem 0.95rem',
+                        marginBottom: '1rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.65rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span
+                            style={{
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe',
+                              color: isDark ? '#22d3ee' : '#0284c7',
+                              border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
+                              padding: '0.12rem 0.5rem',
+                              borderRadius: '6px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            Grau 2 • Gestores da Unidade ({unitManagers.length})
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenManagers(tenant)}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.725rem',
+                              padding: '0.28rem 0.65rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              color: isDark ? '#38bdf8' : '#0284c7',
+                              borderColor: isDark ? 'rgba(56, 189, 248, 0.35)' : '#bae6fd',
+                              fontWeight: 700,
+                            }}
+                            title="Visualizar, cadastrar e gerenciar gestores desta planta"
+                          >
+                            <Users size={12} />
+                            <span>Gerenciar Gestores</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTransition(tenant)}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              fontSize: '0.725rem',
+                              padding: '0.28rem 0.55rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              color: isDark ? '#94a3b8' : '#64748b',
+                            }}
+                            title="Substituir ou transicionar titular com handover"
+                          >
+                            <ArrowRightLeft size={11} />
+                            <span>Trocar</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <img
+                          src={
+                            titularManager?.avatarUrl ||
+                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
+                          }
+                          alt={titularManager?.name || 'Gestor'}
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: isDark ? '1.5px solid rgba(255, 255, 255, 0.15)' : '1.5px solid #cbd5e1',
+                          }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong style={{ fontSize: '0.8125rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {titularManager?.name || 'Nenhum gestor ativo'}
+                          </strong>
+                          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                            {titularManager?.jobTitle || 'Supervisor Lean'} • {titularManager?.email || 'Sem e-mail'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Link Público de Coleta da Fábrica */}
                 <div
@@ -898,6 +978,19 @@ export default function AdminEntidadesPage() {
           tenant={selectedTenant}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          onSuccess={refreshData}
+        />
+      )}
+
+      {/* Tenant Managers Modal (Grau 2) */}
+      {isManagersModalOpen && (
+        <TenantManagersModal
+          tenant={managersTenant}
+          isOpen={isManagersModalOpen}
+          onClose={() => {
+            setIsManagersModalOpen(false);
+            setManagersTenant(null);
+          }}
           onSuccess={refreshData}
         />
       )}

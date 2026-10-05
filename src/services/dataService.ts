@@ -201,7 +201,9 @@ export const dataService = {
   getTenantStats(tenantId: string) {
     const sectors = this.getSectors(tenantId);
     const users = this.getUsers(tenantId);
+    const managers = users.filter((u) => u.role === 'admin' && !u.isMaster && u.active !== false);
     const agents = users.filter((u) => u.role === 'agent' && u.active !== false);
+    const viewers = users.filter((u) => u.role === 'viewer' && u.active !== false);
     const actions = this.getActions(tenantId);
     const activeActions = actions.filter((a) => a.status !== 'concluida' && a.status !== 'nao_aprovada');
     const completedActions = actions.filter((a) => a.status === 'concluida');
@@ -210,7 +212,9 @@ export const dataService = {
     return {
       sectorsCount: sectors.length,
       usersCount: users.length,
+      managersCount: managers.length,
       agentsCount: agents.length,
+      viewersCount: viewers.length,
       actionsCount: actions.length,
       activeActionsCount: activeActions.length,
       completedActionsCount: completedActions.length,
@@ -218,12 +222,41 @@ export const dataService = {
     };
   },
 
-  getTenantManager(tenantId: string): User | undefined {
+  getTenantManagers(tenantId: string): User[] {
     const users = this.getUsers(tenantId);
-    return (
-      users.find((u) => u.role === 'admin' && u.active !== false) ||
-      users.find((u) => u.role === 'admin')
-    );
+    return users.filter((u) => u.role === 'admin' && !u.isMaster);
+  },
+
+  getTenantManager(tenantId: string): User | undefined {
+    const managers = this.getTenantManagers(tenantId);
+    if (managers.length > 0) {
+      return managers.find((m) => m.active !== false) || managers[0];
+    }
+    const allAdmins = this.getUsers(tenantId).filter((u) => u.role === 'admin');
+    return allAdmins.find((u) => u.active !== false) || allAdmins[0];
+  },
+
+  createTenantManager(params: {
+    tenantId: string;
+    name: string;
+    email: string;
+    jobTitle?: string;
+    phone?: string;
+    avatarUrl?: string;
+  }): User {
+    return this.createUser({
+      tenantId: params.tenantId,
+      name: params.name.trim(),
+      email: params.email.trim().toLowerCase(),
+      role: 'admin',
+      isMaster: false,
+      jobTitle: params.jobTitle?.trim() || 'Gestor & Supervisor Lean da Unidade',
+      phone: params.phone?.trim() || '',
+      avatarUrl:
+        params.avatarUrl ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      active: true,
+    });
   },
 
   replaceTenantManager(params: {

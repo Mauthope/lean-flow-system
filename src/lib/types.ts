@@ -67,6 +67,68 @@ export interface User {
   createdAt: string;
 }
 
+export function isMasterUser(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return (
+    user.isMaster === true ||
+    user.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
+    user.email?.toLowerCase() === 'master@rafitec.com.br'
+  );
+}
+
+export function isEntityManager(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === 'admin' && !isMasterUser(user);
+}
+
+export function isAgentUser(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === 'agent';
+}
+
+export function isViewerUser(user: User | null | undefined): boolean {
+  if (!user) return false;
+  return user.role === 'viewer';
+}
+
+export function getUserHierarchyInfo(user: User | null | undefined, tenantName?: string): {
+  roleName: string;
+  badgeLabel: string;
+  level: 1 | 2 | 3 | 4;
+  description: string;
+} {
+  if (isMasterUser(user)) {
+    return {
+      roleName: 'Gestor Master de Entidades',
+      badgeLabel: 'Grau 1 • Master Global',
+      level: 1,
+      description: 'Governança Corporativa e Gestão de Entidades/Plantas Fabris',
+    };
+  }
+  if (isEntityManager(user)) {
+    return {
+      roleName: tenantName ? `Gestor da Unidade (${tenantName})` : 'Gestor da Entidade',
+      badgeLabel: 'Grau 2 • Gestor da Entidade',
+      level: 2,
+      description: 'Liderança e Gestão da Fábrica e de seus Agentes Lean',
+    };
+  }
+  if (isViewerUser(user)) {
+    return {
+      roleName: 'Diretoria Executiva (Consulta)',
+      badgeLabel: 'Consulta • Somente Leitura',
+      level: 4,
+      description: 'Acompanhamento Executivo de Indicadores e Custo Evitado',
+    };
+  }
+  return {
+    roleName: user?.jobTitle || (user?.sectorName ? `Agente Lean • ${user.sectorName}` : 'Agente Lean'),
+    badgeLabel: 'Grau 3 • Agente Lean',
+    level: 3,
+    description: 'Execução e Facilitação de Projetos de Melhoria Contínua',
+  };
+}
+
 export interface ActionNote {
   id: string;
   authorId: string;

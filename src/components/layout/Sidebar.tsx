@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Modal } from '@/components/ui/Modal';
+import { isMasterUser, isEntityManager } from '@/lib/types';
 import {
   LayoutDashboard,
   Kanban,
@@ -62,12 +63,10 @@ export const Sidebar: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
   const [showAuthorModal, setShowAuthorModal] = useState(false);
 
+  const isMaster = isMasterUser(currentUser);
+  const isEntityMgr = isEntityManager(currentUser);
   const isAdmin = currentUser?.role === 'admin';
   const isViewer = currentUser?.role === 'viewer';
-  const isMaster =
-    currentUser?.isMaster === true ||
-    currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br' ||
-    currentUser?.email?.toLowerCase() === 'master@rafitec.com.br';
 
   const adminNav: NavSection[] = [
     {
@@ -81,12 +80,17 @@ export const Sidebar: React.FC = () => {
       ],
     },
     {
-      label: 'Cadastros & Equipe',
+      label: isMaster ? 'Governança & Equipe' : 'Fábrica & Equipe',
       items: [
         ...(isMaster
-          ? [{ href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas' }]
+          ? [{ href: '/admin/entidades', label: 'Gestão de Entidades', icon: Factory, badge: 'Plantas & Gestores' }]
           : []),
-        { href: '/admin/agentes', label: 'Equipe & Acessos', icon: Users },
+        {
+          href: '/admin/agentes',
+          label: isMaster ? 'Equipe & Agentes' : 'Agentes da Unidade',
+          icon: Users,
+          badge: isMaster ? 'Grau 3' : 'Fábrica',
+        },
         { href: '/admin/setores', label: 'Setores & Assessment', icon: Building2, badge: 'Radar' },
       ],
     },
@@ -417,30 +421,101 @@ export const Sidebar: React.FC = () => {
             )
           )}
 
-          {/* Viewer Executive Pill */}
-          {!isSidebarCollapsed && isViewer && (
-            <div
-              style={{
-                marginTop: '0.45rem',
-                backgroundColor: 'rgba(168, 85, 247, 0.12)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                borderRadius: '8px',
-                padding: '0.35rem 0.6rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-              }}
-            >
-              <Eye size={13} color="#c084fc" />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#d8b4fe', lineHeight: 1.2 }}>
-                  Consulta Executiva
-                </span>
-                <span style={{ fontSize: '0.6rem', color: '#a855f7' }}>
-                  Modo Somente Leitura
-                </span>
+          {/* Hierarchy Role Badge Pill */}
+          {!isSidebarCollapsed && (
+            isMaster ? (
+              <div
+                style={{
+                  marginTop: '0.45rem',
+                  backgroundColor: isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe',
+                  border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  padding: '0.35rem 0.6rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <Shield size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#67e8f9' : '#0369a1', lineHeight: 1.2 }}>
+                    Grau 1 • Gestor Master
+                  </span>
+                  <span style={{ fontSize: '0.6rem', color: isDark ? '#22d3ee' : '#0284c7' }}>
+                    Governança Global de Entidades
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : isEntityMgr ? (
+              <div
+                style={{
+                  marginTop: '0.45rem',
+                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
+                  border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
+                  borderRadius: '8px',
+                  padding: '0.35rem 0.6rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <Building2 size={13} color={isDark ? '#38bdf8' : '#0284c7'} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#7dd3fc' : '#0369a1', lineHeight: 1.2 }}>
+                    Grau 2 • Gestor da Unidade
+                  </span>
+                  <span style={{ fontSize: '0.6rem', color: isDark ? '#38bdf8' : '#0284c7' }}>
+                    Liderança de Agentes da Fábrica
+                  </span>
+                </div>
+              </div>
+            ) : isViewer ? (
+              <div
+                style={{
+                  marginTop: '0.45rem',
+                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
+                  border: isDark ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid #d8b4fe',
+                  borderRadius: '8px',
+                  padding: '0.35rem 0.6rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <Eye size={13} color={isDark ? '#c084fc' : '#7e22ce'} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#d8b4fe' : '#7e22ce', lineHeight: 1.2 }}>
+                    Consulta Executiva
+                  </span>
+                  <span style={{ fontSize: '0.6rem', color: isDark ? '#a855f7' : '#9333ea' }}>
+                    Modo Somente Leitura
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  marginTop: '0.45rem',
+                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7',
+                  border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
+                  borderRadius: '8px',
+                  padding: '0.35rem 0.6rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                }}
+              >
+                <UserCheck size={13} color={isDark ? '#34d399' : '#15803d'} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#6ee7b7' : '#15803d', lineHeight: 1.2 }}>
+                    Grau 3 • Agente Lean
+                  </span>
+                  <span style={{ fontSize: '0.6rem', color: isDark ? '#34d399' : '#16a34a' }}>
+                    Facilitador de Melhoria Contínua
+                  </span>
+                </div>
+              </div>
+            )
           )}
         </div>
 
