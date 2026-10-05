@@ -154,17 +154,21 @@ export default function AdminDashboardPage() {
       {/* ================= TOP HERO BANNER (SOFISTICAÇÃO EXECUTIVA) ================= */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #091326 0%, #0c1c38 45%, #070e1d 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.3)',
+          background: isDark
+            ? 'linear-gradient(135deg, #091326 0%, #0c1c38 45%, #070e1d 100%)'
+            : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #f1f5f9 100%)',
+          border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(6, 182, 212, 0.35)',
           borderRadius: '20px',
           padding: '1.85rem 2.25rem',
-          color: '#ffffff',
+          color: isDark ? '#ffffff' : '#0f172a',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1.5rem',
-          boxShadow: '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.08)',
+          boxShadow: isDark
+            ? '0 12px 35px -5px rgba(0, 0, 0, 0.6), 0 0 25px rgba(6, 182, 212, 0.08)'
+            : '0 10px 30px -5px rgba(0, 0, 0, 0.06), 0 0 20px rgba(6, 182, 212, 0.1)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -178,7 +182,9 @@ export default function AdminDashboardPage() {
             width: '200px',
             height: '200px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%)',
+            background: isDark
+              ? 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%)',
             pointerEvents: 'none',
           }}
         />
@@ -190,9 +196,9 @@ export default function AdminDashboardPage() {
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(6, 182, 212, 0.15)',
-                color: '#22d3ee',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
+                backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : 'rgba(6, 182, 212, 0.12)',
+                color: isDark ? '#22d3ee' : '#0891b2',
+                border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(6, 182, 212, 0.3)',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 letterSpacing: '0.05em',
@@ -201,7 +207,7 @@ export default function AdminDashboardPage() {
                 gap: '0.35rem',
               }}
             >
-              <ShieldCheck size={12} color="#22d3ee" /> VISÃO EXECUTIVA MASTER
+              <ShieldCheck size={12} color={isDark ? '#22d3ee' : '#0891b2'} /> VISÃO EXECUTIVA MASTER
             </span>
 
             {/* Overdue / Near-due Badge in Hero */}
@@ -210,45 +216,45 @@ export default function AdminDashboardPage() {
                 style={{
                   fontSize: '0.7rem',
                   fontWeight: 900,
-                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                  color: '#f87171',
-                  border: '1px solid rgba(239, 68, 68, 0.45)',
+                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.12)',
+                  color: isDark ? '#f87171' : '#dc2626',
+                  border: isDark ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(239, 68, 68, 0.35)',
                   padding: '0.2rem 0.65rem',
                   borderRadius: '9999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.35rem',
-                  boxShadow: '0 0 10px rgba(239, 68, 68, 0.25)',
+                  boxShadow: isDark ? '0 0 10px rgba(239, 68, 68, 0.25)' : '0 2px 6px rgba(239, 68, 68, 0.15)',
                 }}
               >
-                <AlertTriangle size={12} color="#f87171" /> {overdueCount} EM ATRASO {nearDueCount > 0 ? `• ${nearDueCount} QUASE ATRASADOS` : ''}
+                <AlertTriangle size={12} color={isDark ? '#f87171' : '#dc2626'} /> {overdueCount} EM ATRASO {nearDueCount > 0 ? `• ${nearDueCount} QUASE ATRASADOS` : ''}
               </span>
             ) : nearDueCount > 0 ? (
               <span
                 style={{
                   fontSize: '0.7rem',
                   fontWeight: 900,
-                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                  color: '#fbbf24',
-                  border: '1px solid rgba(245, 158, 11, 0.45)',
+                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.12)',
+                  color: isDark ? '#fbbf24' : '#d97706',
+                  border: isDark ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(245, 158, 11, 0.35)',
                   padding: '0.2rem 0.65rem',
                   borderRadius: '9999px',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.35rem',
-                  boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)',
+                  boxShadow: isDark ? '0 0 10px rgba(245, 158, 11, 0.2)' : '0 2px 6px rgba(245, 158, 11, 0.15)',
                 }}
               >
-                <Clock size={12} color="#fbbf24" /> {nearDueCount} VENCENDO EM BREVE
+                <Clock size={12} color={isDark ? '#fbbf24' : '#d97706'} /> {nearDueCount} VENCENDO EM BREVE
               </span>
             ) : (
               <span
                 style={{
                   fontSize: '0.7rem',
                   fontWeight: 800,
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  color: '#34d399',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                  color: isDark ? '#34d399' : '#059669',
+                  border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(16, 185, 129, 0.3)',
                   padding: '0.2rem 0.65rem',
                   borderRadius: '9999px',
                   display: 'inline-flex',
@@ -256,7 +262,7 @@ export default function AdminDashboardPage() {
                   gap: '0.35rem',
                 }}
               >
-                <CheckCircle2 size={12} color="#34d399" /> 0 ATRASOS • 100% NO PRAZO
+                <CheckCircle2 size={12} color={isDark ? '#34d399' : '#059669'} /> 0 ATRASOS • 100% NO PRAZO
               </span>
             )}
 
@@ -264,9 +270,9 @@ export default function AdminDashboardPage() {
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                color: '#34d399',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
+                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                color: isDark ? '#34d399' : '#059669',
+                border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(16, 185, 129, 0.3)',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 fontFamily: 'var(--font-mono)',
@@ -279,9 +285,9 @@ export default function AdminDashboardPage() {
               style={{
                 fontSize: '0.7rem',
                 fontWeight: 800,
-                backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                color: '#c084fc',
-                border: '1px solid rgba(139, 92, 246, 0.35)',
+                backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.12)',
+                color: isDark ? '#c084fc' : '#7c3aed',
+                border: isDark ? '1px solid rgba(139, 92, 246, 0.35)' : '1px solid rgba(139, 92, 246, 0.3)',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 fontFamily: 'var(--font-mono)',
@@ -294,10 +300,10 @@ export default function AdminDashboardPage() {
             </span>
           </div>
 
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)', margin: 0 }}>
             Painel de Inteligência Operacional Lean
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#94a3b8', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '0.875rem', color: isDark ? '#94a3b8' : '#475569', maxWidth: '620px', marginTop: '0.35rem', lineHeight: 1.5 }}>
             Controle integrado de iniciativas de melhoria contínua, custo evitado homologado por operador, monitoramento de prazos e auditoria trimestral.
           </p>
         </div>
@@ -311,15 +317,15 @@ export default function AdminDashboardPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                border: '1px solid rgba(245, 158, 11, 0.5)',
-                color: '#fbbf24',
+                backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.12)',
+                border: isDark ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(245, 158, 11, 0.35)',
+                color: isDark ? '#fbbf24' : '#b45309',
                 fontWeight: 800,
                 fontSize: '0.84375rem',
                 padding: '0.65rem 1.15rem',
                 borderRadius: '12px',
                 textDecoration: 'none',
-                boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)',
+                boxShadow: isDark ? '0 0 20px rgba(245, 158, 11, 0.2)' : '0 2px 8px rgba(245, 158, 11, 0.12)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -334,19 +340,19 @@ export default function AdminDashboardPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: 'rgba(6, 182, 212, 0.15)',
-              border: '1px solid rgba(6, 182, 212, 0.4)',
-              color: '#22d3ee',
+              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : 'rgba(6, 182, 212, 0.12)',
+              border: isDark ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(6, 182, 212, 0.35)',
+              color: isDark ? '#22d3ee' : '#0891b2',
               fontWeight: 800,
               fontSize: '0.84375rem',
               padding: '0.65rem 1.15rem',
               borderRadius: '12px',
               textDecoration: 'none',
-              boxShadow: '0 0 20px rgba(6, 182, 212, 0.15)',
+              boxShadow: isDark ? '0 0 20px rgba(6, 182, 212, 0.15)' : '0 2px 8px rgba(6, 182, 212, 0.12)',
               transition: 'all 0.15s ease',
             }}
           >
-            <Kanban size={16} color="#22d3ee" />
+            <Kanban size={16} color={isDark ? '#22d3ee' : '#0891b2'} />
             <span>Kanban Geral</span>
           </Link>
         </div>
@@ -1036,25 +1042,26 @@ export default function AdminDashboardPage() {
         <div
           className="card"
           style={{
-            backgroundColor: '#0f172a',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: isDark ? '#0f172a' : '#ffffff',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
             borderRadius: '16px',
             padding: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '1.25rem',
+            boxShadow: isDark ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.04)',
           }}
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Activity size={18} color="#22d3ee" />
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)', margin: 0 }}>
                   Pipeline Operacional de Projetos
                 </h3>
               </div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'var(--font-mono)' }}>
                 {metrics.totalActions} ações cadastradas
               </span>
             </div>
@@ -1070,8 +1077,8 @@ export default function AdminDashboardPage() {
                 width: '100%',
                 height: '12px',
                 borderRadius: '9999px',
-                backgroundColor: '#090e1a',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                backgroundColor: isDark ? '#090e1a' : '#e2e8f0',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
                 display: 'flex',
                 overflow: 'hidden',
                 marginBottom: '1rem',
@@ -1135,53 +1142,53 @@ export default function AdminDashboardPage() {
 
             {/* Micro-Badges Indicators (Todos os 5 Status do Pipeline) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(16, 185, 129, 0.35)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 6px #10b981' }} />
                   Concluídas
                 </span>
-                <strong style={{ fontSize: '0.825rem', color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.completedActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctCompleted}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: isDark ? '#34d399' : '#059669', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.completedActions} <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>({pctCompleted}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
-                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(251, 191, 36, 0.25)' : '1px solid rgba(245, 158, 11, 0.35)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#fbbf24', boxShadow: '0 0 6px #fbbf24' }} />
                   Homologação
                 </span>
-                <strong style={{ fontSize: '0.825rem', color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.waitingApprovalActions || 0} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctWaitingApproval}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: isDark ? '#fbbf24' : '#d97706', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.waitingApprovalActions || 0} <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>({pctWaitingApproval}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(139, 92, 246, 0.25)' : '1px solid rgba(139, 92, 246, 0.35)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#8b5cf6', boxShadow: '0 0 6px #8b5cf6' }} />
                   Execução
                 </span>
-                <strong style={{ fontSize: '0.825rem', color: '#c084fc', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.inProgressActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctInProgress}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: isDark ? '#c084fc' : '#7c3aed', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.inProgressActions} <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>({pctInProgress}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
-                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(6, 182, 212, 0.25)' : '1px solid rgba(6, 182, 212, 0.35)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#06b6d4', boxShadow: '0 0 6px #06b6d4' }} />
                   Abertas
                 </span>
-                <strong style={{ fontSize: '0.825rem', color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.openActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctOpen}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: isDark ? '#22d3ee' : '#0891b2', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.openActions} <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>({pctOpen}%)</span>
                 </strong>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
-                <span style={{ fontSize: '0.725rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(239, 68, 68, 0.35)' }}>
+                <span style={{ fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
                   Recusadas
                 </span>
-                <strong style={{ fontSize: '0.825rem', color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                  {metrics.rejectedActions} <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>({pctRejected}%)</span>
+                <strong style={{ fontSize: '0.825rem', color: isDark ? '#f87171' : '#dc2626', fontFamily: 'var(--font-mono)' }}>
+                  {metrics.rejectedActions} <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b' }}>({pctRejected}%)</span>
                 </strong>
               </div>
             </div>
@@ -1209,15 +1216,15 @@ export default function AdminDashboardPage() {
         <div
           className="card"
           style={{
-            backgroundColor: '#0f172a',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
+            backgroundColor: isDark ? '#0f172a' : '#ffffff',
+            border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid rgba(56, 189, 248, 0.25)',
             borderRadius: '16px',
             padding: '1.5rem',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             gap: '1.15rem',
-            boxShadow: '0 8px 30px -10px rgba(56, 189, 248, 0.12)',
+            boxShadow: isDark ? '0 8px 30px -10px rgba(56, 189, 248, 0.12)' : '0 4px 20px rgba(0, 0, 0, 0.04)',
           }}
         >
           {/* Header */}
@@ -1225,7 +1232,7 @@ export default function AdminDashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Clock size={18} color="#38bdf8" />
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)', margin: 0 }}>
                   Lead Time dos Projetos Lean
                 </h3>
               </div>
@@ -1243,39 +1250,39 @@ export default function AdminDashboardPage() {
                 Ciclo até Controladoria
               </span>
             </div>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: 0 }}>
+            <p style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
               Média temporal por etapa do PDCA e auditoria de dependências externas (sem os 3 meses de acompanhamento).
             </p>
           </div>
 
           {/* KPI Totalizadores Rápidos (Média Geral da Fábrica vs Tempo Próprio vs Espera Externa) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-              <div style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Média Geral</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.6rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid rgba(56, 189, 248, 0.35)' }}>
+              <div style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>Média Geral</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#38bdf8' : '#0284c7', fontFamily: 'var(--font-mono)' }}>
                 {leadTimeMetrics.overallAvgDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-              <div style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Tempo Agente</div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.6rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(16, 185, 129, 0.35)' }}>
+              <div style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>Tempo Agente</div>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#34d399' : '#059669', fontFamily: 'var(--font-mono)' }}>
                 {leadTimeMetrics.overallDirectDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
               </div>
             </div>
 
-            <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-              <div style={{ fontSize: '0.675rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.6rem 0.75rem', borderRadius: '10px', border: isDark ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(245, 158, 11, 0.35)' }}>
+              <div style={{ fontSize: '0.675rem', color: isDark ? '#fbbf24' : '#d97706', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 <ShieldAlert size={12} /> Espera Ext.
               </div>
-              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#fbbf24' : '#d97706', fontFamily: 'var(--font-mono)' }}>
                 {leadTimeMetrics.overallExternalWaitDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
               </div>
             </div>
           </div>
 
           {/* Abas de Navegação */}
-          <div style={{ display: 'flex', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div style={{ display: 'flex', backgroundColor: isDark ? '#090e1a' : '#f1f5f9', padding: '0.25rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)' }}>
             <button
               type="button"
               onClick={() => setLeadTimeTab('pdca')}
@@ -1284,11 +1291,12 @@ export default function AdminDashboardPage() {
                 padding: '0.4rem 0.5rem',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: leadTimeTab === 'pdca' ? '#1e293b' : 'transparent',
-                color: leadTimeTab === 'pdca' ? '#ffffff' : '#94a3b8',
+                backgroundColor: leadTimeTab === 'pdca' ? (isDark ? '#1e293b' : '#ffffff') : 'transparent',
+                color: leadTimeTab === 'pdca' ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#94a3b8' : '#64748b'),
                 fontSize: '0.75rem',
                 fontWeight: leadTimeTab === 'pdca' ? 700 : 500,
                 cursor: 'pointer',
+                boxShadow: leadTimeTab === 'pdca' && !isDark ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -1302,11 +1310,12 @@ export default function AdminDashboardPage() {
                 padding: '0.4rem 0.5rem',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: leadTimeTab === 'agentes' ? '#1e293b' : 'transparent',
-                color: leadTimeTab === 'agentes' ? '#ffffff' : '#94a3b8',
+                backgroundColor: leadTimeTab === 'agentes' ? (isDark ? '#1e293b' : '#ffffff') : 'transparent',
+                color: leadTimeTab === 'agentes' ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#94a3b8' : '#64748b'),
                 fontSize: '0.75rem',
                 fontWeight: leadTimeTab === 'agentes' ? 700 : 500,
                 cursor: 'pointer',
+                boxShadow: leadTimeTab === 'agentes' && !isDark ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -1320,11 +1329,12 @@ export default function AdminDashboardPage() {
                 padding: '0.4rem 0.5rem',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: leadTimeTab === 'gargalos' ? '#1e293b' : 'transparent',
-                color: leadTimeTab === 'gargalos' ? '#fbbf24' : '#94a3b8',
+                backgroundColor: leadTimeTab === 'gargalos' ? (isDark ? '#1e293b' : '#ffffff') : 'transparent',
+                color: leadTimeTab === 'gargalos' ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#94a3b8' : '#64748b'),
                 fontSize: '0.75rem',
                 fontWeight: leadTimeTab === 'gargalos' ? 700 : 500,
                 cursor: 'pointer',
+                boxShadow: leadTimeTab === 'gargalos' && !isDark ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.2s',
               }}
             >
@@ -1341,8 +1351,8 @@ export default function AdminDashboardPage() {
                   width: '100%',
                   height: '10px',
                   borderRadius: '9999px',
-                  backgroundColor: '#090e1a',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backgroundColor: isDark ? '#090e1a' : '#e2e8f0',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)',
                   display: 'flex',
                   overflow: 'hidden',
                 }}
@@ -1364,21 +1374,21 @@ export default function AdminDashboardPage() {
               {/* Lista dos Estágios */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 {leadTimeMetrics.pdcaStages.map((stg) => (
-                  <div key={stg.stage} style={{ backgroundColor: '#090e1a', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <div key={stg.stage} style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.06)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {stg.stage === 'plan' ? <Target size={14} color={stg.color} /> : stg.stage === 'do' ? <Zap size={14} color={stg.color} /> : <Building2 size={14} color={stg.color} />} {stg.label}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <strong style={{ fontSize: '0.85rem', color: stg.color, fontFamily: 'var(--font-mono)' }}>
                           {stg.avgDays} d
                         </strong>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                           ({stg.pctOfTotal}%)
                         </span>
                       </div>
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                       {stg.description}
                     </div>
                   </div>
@@ -1391,12 +1401,12 @@ export default function AdminDashboardPage() {
           {leadTimeTab === 'agentes' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '250px', overflowY: 'auto', paddingRight: '0.2rem' }}>
               {leadTimeMetrics.agentSummaries.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1.5rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                <div style={{ textAlign: 'center', padding: '1.5rem', color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.8rem' }}>
                   Nenhum especialista com projetos calculados.
                 </div>
               ) : (
                 leadTimeMetrics.agentSummaries.map((ag) => (
-                  <div key={ag.agentId} style={{ backgroundColor: '#090e1a', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <div key={ag.agentId} style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.06)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {ag.avatarUrl ? (
@@ -1406,32 +1416,32 @@ export default function AdminDashboardPage() {
                             {ag.agentName.charAt(0)}
                           </span>
                         )}
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>
+                        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a' }}>
                           {ag.agentName}
                         </span>
                       </div>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.1rem 0.45rem', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)', padding: '0.1rem 0.45rem', borderRadius: '6px' }}>
                         {ag.totalProjects} {ag.totalProjects === 1 ? 'proj.' : 'proj.'}
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      <span style={{ color: '#94a3b8' }}>Lead Time Médio:</span>
-                      <strong style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{ag.avgTotalDays} dias</strong>
+                      <span style={{ color: isDark ? '#94a3b8' : '#64748b' }}>Lead Time Médio:</span>
+                      <strong style={{ color: isDark ? '#38bdf8' : '#0284c7', fontFamily: 'var(--font-mono)' }}>{ag.avgTotalDays} dias</strong>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.725rem', color: '#cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.725rem', color: isDark ? '#cbd5e1' : '#475569' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <span style={{ color: '#34d399' }}>● Tempo Próprio: {ag.agentDirectDays}d</span>
+                        <span style={{ color: isDark ? '#34d399' : '#059669' }}>● Tempo Próprio: {ag.agentDirectDays}d</span>
                       </span>
-                      <span style={{ color: '#fbbf24' }}>
+                      <span style={{ color: isDark ? '#fbbf24' : '#d97706' }}>
                         ● Espera Externa: {ag.avgExternalWaitDays}d
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.7rem' }}>
-                      <span style={{ color: '#94a3b8' }}>Eficiência de Fluxo Direto:</span>
-                      <span style={{ fontWeight: 800, color: ag.efficiencyPercentage >= 70 ? '#34d399' : '#fbbf24' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem', paddingTop: '0.35rem', borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.06)', fontSize: '0.7rem' }}>
+                      <span style={{ color: isDark ? '#94a3b8' : '#64748b' }}>Eficiência de Fluxo Direto:</span>
+                      <span style={{ fontWeight: 800, color: ag.efficiencyPercentage >= 70 ? (isDark ? '#34d399' : '#059669') : (isDark ? '#fbbf24' : '#d97706') }}>
                         {ag.efficiencyPercentage}%
                       </span>
                     </div>
@@ -1444,8 +1454,8 @@ export default function AdminDashboardPage() {
           {/* Conteúdo Aba 3: Gargalos Setoriais (Defesa do Agente) */}
           {leadTimeTab === 'gargalos' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              <div style={{ fontSize: '0.725rem', color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ShieldCheck size={16} color="#fbbf24" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: '0.725rem', color: isDark ? '#fbbf24' : '#b45309', backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.12)', border: isDark ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid rgba(245, 158, 11, 0.35)', padding: '0.5rem 0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <ShieldCheck size={16} color={isDark ? '#fbbf24' : '#b45309'} style={{ flexShrink: 0 }} />
                 <span>
                   <strong>Defesa do Agente:</strong> Audita o impacto de setores terceiros no cronograma, demonstrando atrasos alheios ao Especialista Lean.
                 </span>
@@ -1453,21 +1463,21 @@ export default function AdminDashboardPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.2rem' }}>
                 {leadTimeMetrics.sectorBottlenecks.map((sec, idx) => (
-                  <div key={idx} style={{ backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                  <div key={idx} style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', padding: '0.55rem 0.75rem', borderRadius: '8px', border: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.06)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Building2 size={13} color="#22d3ee" /> {sec.sectorName}
+                      <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: isDark ? '#ffffff' : '#0f172a', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Building2 size={13} color={isDark ? '#22d3ee' : '#0891b2'} /> {sec.sectorName}
                       </span>
                       <strong style={{ fontSize: '0.8rem', color: sec.color, fontFamily: 'var(--font-mono)' }}>
                         +{sec.avgWaitDays} dias / tarefa
                       </strong>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: '#94a3b8' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
                       <span>Demandas terceiras: {sec.totalTasks}</span>
-                      <span>Total de retenção: <strong style={{ color: '#ffffff' }}>{sec.totalWaitDays} dias</strong></span>
+                      <span>Total de retenção: <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{sec.totalWaitDays} dias</strong></span>
                       {sec.pendingTasks > 0 && (
-                        <span style={{ color: '#f87171', fontWeight: 700 }}>{sec.pendingTasks} em fila</span>
+                        <span style={{ color: isDark ? '#f87171' : '#dc2626', fontWeight: 700 }}>{sec.pendingTasks} em fila</span>
                       )}
                     </div>
                   </div>
@@ -1489,16 +1499,16 @@ export default function AdminDashboardPage() {
 
 
       {/* ================= VISÃO GERAL DE DESEMPENHO POR AGENTE ================= */}
-      <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', overflow: 'hidden' }}>
-        <div className="card-header" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <div className="card" style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)', borderRadius: '16px', overflow: 'hidden', boxShadow: isDark ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.04)' }}>
+        <div className="card-header" style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Users size={18} color="#a78bfa" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 Workstation de Operadores & Especialistas Lean
               </h3>
             </div>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+            <p style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.15rem 0 0' }}>
               Acompanhamento individual de ações atribuídas, entregas concluídas e custo evitado gerado
             </p>
           </div>
@@ -1510,7 +1520,7 @@ export default function AdminDashboardPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <tr style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)', color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <th style={{ padding: '0.875rem 1.25rem' }}>Agente</th>
                 <th style={{ padding: '0.875rem 1rem' }}>Setor</th>
                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>Atribuídas</th>
@@ -1524,8 +1534,8 @@ export default function AdminDashboardPage() {
               {metrics.byAgent.map((agent) => (
                 <tr
                   key={agent.agentId}
-                  style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', transition: 'background-color 0.15s ease' }}
-                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)')}
+                  style={{ borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)', transition: 'background-color 0.15s ease' }}
+                  onMouseOver={(e) => (e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)')}
                   onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <td style={{ padding: '0.875rem 1.25rem' }}>
@@ -1548,13 +1558,13 @@ export default function AdminDashboardPage() {
                             height: '9px',
                             borderRadius: '50%',
                             backgroundColor: '#10b981',
-                            border: '1.5px solid #0f172a',
+                            border: isDark ? '1.5px solid #0f172a' : '1.5px solid #ffffff',
                           }}
                         />
                       </div>
                       <div>
-                        <p style={{ fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>{agent.agentName}</p>
-                        <p style={{ fontSize: '0.7rem', color: '#94a3b8', margin: 0 }}>Especialista Lean</p>
+                        <p style={{ fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>{agent.agentName}</p>
+                        <p style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>Especialista Lean</p>
                       </div>
                     </div>
                   </td>
@@ -1563,9 +1573,9 @@ export default function AdminDashboardPage() {
                       style={{
                         fontSize: '0.75rem',
                         fontWeight: 700,
-                        backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        color: '#cbd5e1',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                        border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.08)',
+                        color: isDark ? '#cbd5e1' : '#475569',
                         padding: '0.2rem 0.55rem',
                         borderRadius: '6px',
                       }}
@@ -1573,7 +1583,7 @@ export default function AdminDashboardPage() {
                       {agent.sectorName || 'Geral'}
                     </span>
                   </td>
-                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-mono)' }}>
+                  <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-mono)' }}>
                     {agent.assignedCount}
                   </td>
                   <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
@@ -1625,7 +1635,7 @@ export default function AdminDashboardPage() {
                   </td>
                   <td style={{ padding: '0.875rem 1.25rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
-                      <div style={{ width: '70px', height: '7px', backgroundColor: '#090e1a', borderRadius: '999px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ width: '70px', height: '7px', backgroundColor: isDark ? '#090e1a' : '#e2e8f0', borderRadius: '999px', overflow: 'hidden', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)' }}>
                         <div
                           style={{
                             width: `${agent.efficiencyRate}%`,
@@ -1649,16 +1659,16 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ================= IMPACTO & CUSTO EVITADO POR SETOR ================= */}
-      <div className="card" style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.5rem' }}>
+      <div className="card" style={{ backgroundColor: isDark ? '#0f172a' : '#ffffff', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)', borderRadius: '16px', padding: '1.5rem', boxShadow: isDark ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.04)' }}>
         <div className="card-header" style={{ padding: 0, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Building2 size={18} color="#22d3ee" />
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 Impacto & Custo Evitado por Setor
               </h3>
             </div>
-            <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
+            <p style={{ fontSize: '0.78125rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.15rem 0 0' }}>
               Volume de projetos executados e retorno financeiro comprovado por área fabril
             </p>
           </div>
@@ -1672,16 +1682,16 @@ export default function AdminDashboardPage() {
             style={{
               padding: '2.5rem 1.5rem',
               textAlign: 'center',
-              backgroundColor: '#090e1a',
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
               borderRadius: '12px',
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
+              border: isDark ? '1px dashed rgba(255, 255, 255, 0.1)' : '1px dashed rgba(0, 0, 0, 0.15)',
             }}
           >
             <Building2 size={32} color="#06b6d4" style={{ margin: '0 auto 0.5rem' }} />
-            <p style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
               Nenhum setor cadastrado ainda
             </p>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.25rem 0 0.85rem' }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.25rem 0 0.85rem' }}>
               Cadastre os setores industriais para mapear as economias e projetos por departamento.
             </p>
             <Link href="/admin/setores" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -1704,10 +1714,10 @@ export default function AdminDashboardPage() {
                   justifyContent: 'space-between',
                   gap: '0.75rem',
                   padding: '1rem 1.15rem',
-                  backgroundColor: '#090e1a',
+                  backgroundColor: isDark ? '#090e1a' : '#f8fafc',
                   borderRadius: '12px',
                   border: `1px solid ${accent.border}`,
-                  boxShadow: `0 4px 15px rgba(0, 0, 0, 0.3), 0 0 15px ${accent.color}0a`,
+                  boxShadow: isDark ? `0 4px 15px rgba(0, 0, 0, 0.3), 0 0 15px ${accent.color}0a` : '0 2px 10px rgba(0, 0, 0, 0.04)',
                   transition: 'all 0.15s ease',
                 }}
               >
@@ -1729,17 +1739,17 @@ export default function AdminDashboardPage() {
                       <Building2 size={18} color={accent.color} />
                     </div>
                     <div>
-                      <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                      <p style={{ fontSize: '0.9rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                         {sec.sectorName}
                       </p>
-                      <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0 }}>
+                      <p style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
                         {sec.count} {sec.count === 1 ? 'ação registrada' : 'ações registradas'}
                       </p>
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700 }}>
                       Custo Evitado
                     </span>
                     <p style={{ fontSize: '1rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
@@ -1750,7 +1760,7 @@ export default function AdminDashboardPage() {
 
                 {/* Contribution visual bar */}
                 <div>
-                  <div style={{ width: '100%', height: '5px', backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '5px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)', borderRadius: '999px', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${Math.max(5, sectorPct)}%`,

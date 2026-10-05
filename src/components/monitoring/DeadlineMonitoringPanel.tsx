@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import { formatDate } from '@/lib/utils';
 import { LeanAction, ActionChecklistItem } from '@/lib/types';
@@ -44,6 +45,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
   warningDaysThreshold = 3,
 }) => {
   const { dataVersion } = useAuth();
+  const { isDark } = useTheme();
   const [filterTab, setFilterTab] = useState<'all' | 'atrasado' | 'quase_atrasado' | 'projetos' | 'atividades'>('all');
 
   const { items, overdueCount, nearDueCount } = useMemo(() => {
@@ -199,8 +201,8 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
     return (
       <div
         style={{
-          backgroundColor: '#090e1a',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
+          backgroundColor: isDark ? '#090e1a' : '#ffffff',
+          border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(16, 185, 129, 0.35)',
           borderRadius: '14px',
           padding: '1rem 1.4rem',
           display: 'flex',
@@ -208,6 +210,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '0.75rem',
+          boxShadow: isDark ? 'none' : '0 2px 10px rgba(0, 0, 0, 0.04)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -216,19 +219,19 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
               width: '32px',
               height: '32px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <CheckCircle2 size={18} color="#34d399" />
+            <CheckCircle2 size={18} color="#10b981" />
           </div>
           <div>
-            <strong style={{ fontSize: '0.875rem', color: '#ffffff', display: 'block' }}>
+            <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block' }}>
               Prazos 100% em Dia
             </strong>
-            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>
+            <p style={{ fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
               {agentId
                 ? 'Nenhum projeto ou atividade 5W2H atribuída a você está em atraso ou com prazo crítico.'
                 : 'Todas as iniciativas e planos de ação Lean da fábrica estão dentro do cronograma.'}
@@ -239,9 +242,9 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
           style={{
             fontSize: '0.7rem',
             fontWeight: 800,
-            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-            color: '#34d399',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
+            backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+            color: isDark ? '#34d399' : '#059669',
+            border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(16, 185, 129, 0.3)',
             padding: '0.2rem 0.6rem',
             borderRadius: '9999px',
           }}
@@ -264,21 +267,28 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
     <div
       className="card"
       style={{
-        backgroundColor: '#0f172a',
-        border: overdueCount > 0 ? '1.5px solid rgba(239, 68, 68, 0.45)' : '1.5px solid rgba(245, 158, 11, 0.45)',
+        backgroundColor: isDark ? '#0f172a' : '#ffffff',
+        border:
+          overdueCount > 0
+            ? (isDark ? '1.5px solid rgba(239, 68, 68, 0.45)' : '1.5px solid rgba(239, 68, 68, 0.35)')
+            : (isDark ? '1.5px solid rgba(245, 158, 11, 0.45)' : '1.5px solid rgba(245, 158, 11, 0.35)'),
         borderRadius: '18px',
         overflow: 'hidden',
         boxShadow:
           overdueCount > 0
-            ? '0 10px 30px -5px rgba(239, 68, 68, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4)'
-            : '0 10px 30px -5px rgba(245, 158, 11, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4)',
+            ? (isDark
+                ? '0 10px 30px -5px rgba(239, 68, 68, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4)'
+                : '0 10px 25px -5px rgba(239, 68, 68, 0.1), 0 4px 15px rgba(0, 0, 0, 0.05)')
+            : (isDark
+                ? '0 10px 30px -5px rgba(245, 158, 11, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4)'
+                : '0 10px 25px -5px rgba(245, 158, 11, 0.1), 0 4px 15px rgba(0, 0, 0, 0.05)'),
       }}
     >
       {/* Header */}
       <div
         style={{
           padding: '1.25rem 1.65rem',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -297,7 +307,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                 width: '34px',
                 height: '34px',
                 borderRadius: '8px',
-                backgroundColor: overdueCount > 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                backgroundColor: overdueCount > 0 ? (isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.12)') : (isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.12)'),
                 border: overdueCount > 0 ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(245, 158, 11, 0.45)',
                 display: 'flex',
                 alignItems: 'center',
@@ -308,18 +318,18 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
               {overdueCount > 0 ? <AlertTriangle size={18} color="#f87171" /> : <Clock size={18} color="#fbbf24" />}
             </div>
             <div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: 0, fontFamily: 'var(--font-heading)' }}>
                 {title || defaultTitle}
               </h3>
             </div>
           </div>
-          <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: '0.35rem 0 0' }}>
+          <p style={{ fontSize: '0.8125rem', color: isDark ? '#cbd5e1' : '#64748b', margin: '0.35rem 0 0' }}>
             {subtitle || defaultSubtitle}
           </p>
         </div>
 
         {/* Filter Tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: '#090e1a', padding: '0.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', backgroundColor: isDark ? '#090e1a' : '#f1f5f9', padding: '0.25rem', borderRadius: '10px', border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.08)', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => setFilterTab('all')}
@@ -330,8 +340,9 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
               fontSize: '0.75rem',
               fontWeight: 800,
               cursor: 'pointer',
-              backgroundColor: filterTab === 'all' ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
-              color: filterTab === 'all' ? '#ffffff' : '#94a3b8',
+              backgroundColor: filterTab === 'all' ? (isDark ? 'rgba(255, 255, 255, 0.15)' : '#ffffff') : 'transparent',
+              color: filterTab === 'all' ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#94a3b8' : '#64748b'),
+              boxShadow: filterTab === 'all' && !isDark ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
               transition: 'all 0.15s ease',
             }}
           >
@@ -349,15 +360,15 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                 fontSize: '0.75rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                backgroundColor: filterTab === 'atrasado' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
-                color: filterTab === 'atrasado' ? '#f87171' : '#94a3b8',
+                backgroundColor: filterTab === 'atrasado' ? (isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.12)') : 'transparent',
+                color: filterTab === 'atrasado' ? (isDark ? '#f87171' : '#dc2626') : (isDark ? '#94a3b8' : '#64748b'),
                 transition: 'all 0.15s ease',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
               }}
             >
-              <AlertTriangle size={13} color="#f87171" />
+              <AlertTriangle size={13} color={isDark ? '#f87171' : '#dc2626'} />
               <span>Atrasados ({overdueCount})</span>
             </button>
           )}
@@ -373,15 +384,15 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                 fontSize: '0.75rem',
                 fontWeight: 800,
                 cursor: 'pointer',
-                backgroundColor: filterTab === 'quase_atrasado' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
-                color: filterTab === 'quase_atrasado' ? '#fbbf24' : '#94a3b8',
+                backgroundColor: filterTab === 'quase_atrasado' ? (isDark ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.12)') : 'transparent',
+                color: filterTab === 'quase_atrasado' ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#94a3b8' : '#64748b'),
                 transition: 'all 0.15s ease',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
               }}
             >
-              <Clock size={13} color="#fbbf24" />
+              <Clock size={13} color={isDark ? '#fbbf24' : '#d97706'} />
               <span>Quase Atrasados ({nearDueCount})</span>
             </button>
           )}
@@ -396,8 +407,8 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
               fontSize: '0.75rem',
               fontWeight: 800,
               cursor: 'pointer',
-              backgroundColor: filterTab === 'projetos' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-              color: filterTab === 'projetos' ? '#22d3ee' : '#94a3b8',
+              backgroundColor: filterTab === 'projetos' ? (isDark ? 'rgba(6, 182, 212, 0.2)' : 'rgba(6, 182, 212, 0.12)') : 'transparent',
+              color: filterTab === 'projetos' ? (isDark ? '#22d3ee' : '#0891b2') : (isDark ? '#94a3b8' : '#64748b'),
               transition: 'all 0.15s ease',
             }}
           >
@@ -414,8 +425,8 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
               fontSize: '0.75rem',
               fontWeight: 800,
               cursor: 'pointer',
-              backgroundColor: filterTab === 'atividades' ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-              color: filterTab === 'atividades' ? '#c084fc' : '#94a3b8',
+              backgroundColor: filterTab === 'atividades' ? (isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.12)') : 'transparent',
+              color: filterTab === 'atividades' ? (isDark ? '#c084fc' : '#7c3aed') : (isDark ? '#94a3b8' : '#64748b'),
               transition: 'all 0.15s ease',
             }}
           >
@@ -428,7 +439,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', minWidth: '880px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
           <thead>
-            <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', color: '#94a3b8', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <tr style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)', color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.725rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               <th style={{ padding: '0.875rem 1.25rem' }}>Tipo</th>
               <th style={{ padding: '0.875rem 1rem' }}>Título & Escopo</th>
               <th style={{ padding: '0.875rem 1rem' }}>Responsável</th>
@@ -440,14 +451,18 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
           <tbody>
             {filteredItems.map((item) => {
               const isOverdue = item.urgency === 'atrasado';
-              const rowBg = isOverdue ? 'rgba(239, 68, 68, 0.03)' : 'rgba(245, 158, 11, 0.03)';
-              const rowHoverBg = isOverdue ? 'rgba(239, 68, 68, 0.08)' : 'rgba(245, 158, 11, 0.08)';
+              const rowBg = isOverdue
+                ? (isDark ? 'rgba(239, 68, 68, 0.03)' : 'rgba(239, 68, 68, 0.02)')
+                : (isDark ? 'rgba(245, 158, 11, 0.03)' : 'rgba(245, 158, 11, 0.02)');
+              const rowHoverBg = isOverdue
+                ? (isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.06)')
+                : (isDark ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.06)');
 
               return (
                 <tr
                   key={item.id}
                   style={{
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)',
                     backgroundColor: rowBg,
                     transition: 'background-color 0.15s ease',
                   }}
@@ -460,9 +475,15 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                       style={{
                         fontSize: '0.675rem',
                         fontWeight: 900,
-                        backgroundColor: item.type === 'projeto' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                        color: item.type === 'projeto' ? '#22d3ee' : '#c084fc',
-                        border: item.type === 'projeto' ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid rgba(139, 92, 246, 0.4)',
+                        backgroundColor: item.type === 'projeto'
+                          ? (isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe')
+                          : (isDark ? 'rgba(139, 92, 246, 0.15)' : '#f3e8ff'),
+                        color: item.type === 'projeto'
+                          ? (isDark ? '#22d3ee' : '#0284c7')
+                          : (isDark ? '#c084fc' : '#7c3aed'),
+                        border: item.type === 'projeto'
+                          ? (isDark ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid #bae6fd')
+                          : (isDark ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid #e9d5ff'),
                         padding: '0.2rem 0.55rem',
                         borderRadius: '6px',
                         textTransform: 'uppercase',
@@ -480,7 +501,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                       href={`${projectBaseUrl}/${item.projectId}`}
                       style={{
                         fontWeight: 800,
-                        color: '#ffffff',
+                        color: isDark ? '#ffffff' : '#0f172a',
                         textDecoration: 'none',
                         fontSize: '0.875rem',
                         fontFamily: 'var(--font-heading)',
@@ -491,21 +512,21 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                     </Link>
                     {item.parentProjectTitle ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Projeto:</span>
+                        <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Projeto:</span>
                         <Link
                           href={`${projectBaseUrl}/${item.projectId}`}
-                          style={{ fontSize: '0.725rem', color: '#22d3ee', textDecoration: 'none', fontWeight: 700 }}
+                          style={{ fontSize: '0.725rem', color: isDark ? '#22d3ee' : '#0891b2', textDecoration: 'none', fontWeight: 700 }}
                         >
                           {item.parentProjectTitle}
                         </Link>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                        <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                        <span style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0891b2', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                           {item.protocol}
                         </span>
-                        <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>•</span>
-                        <span style={{ fontSize: '0.7rem', color: '#cbd5e1' }}>
+                        <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#cbd5e1' }}>•</span>
+                        <span style={{ fontSize: '0.7rem', color: isDark ? '#cbd5e1' : '#64748b' }}>
                           {item.sectorName}
                         </span>
                       </div>
@@ -522,11 +543,11 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                           style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: isOverdue ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1.5px solid rgba(245, 158, 11, 0.4)' }}
                         />
                       ) : (
-                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#ffffff', fontWeight: 800 }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: isDark ? '#1e293b' : '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: isDark ? '#ffffff' : '#0f172a', fontWeight: 800 }}>
                           {(item.responsibleName || 'A')[0]}
                         </div>
                       )}
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
+                      <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
                         {item.responsibleName}
                       </span>
                     </div>
@@ -534,7 +555,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
 
                   {/* Prazo Estipulado */}
                   <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: '#cbd5e1', fontWeight: 700 }}>
+                    <span style={{ fontSize: '0.8125rem', fontFamily: 'var(--font-mono)', color: isDark ? '#cbd5e1' : '#334155', fontWeight: 700 }}>
                       {formatDate(item.dueDateStr)}
                     </span>
                   </td>
@@ -544,9 +565,9 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                     {isOverdue ? (
                       <span
                         style={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.22)',
-                          color: '#f87171',
-                          border: '1px solid rgba(239, 68, 68, 0.5)',
+                          backgroundColor: isDark ? 'rgba(239, 68, 68, 0.22)' : '#fee2e2',
+                          color: isDark ? '#f87171' : '#b91c1c',
+                          border: isDark ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid #fecaca',
                           padding: '0.25rem 0.65rem',
                           borderRadius: '8px',
                           fontWeight: 900,
@@ -555,18 +576,18 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '0.35rem',
-                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.2)',
+                          boxShadow: isDark ? '0 0 10px rgba(239, 68, 68, 0.2)' : 'none',
                         }}
                       >
-                        <AlertTriangle size={12} color="#f87171" />
+                        <AlertTriangle size={12} color={isDark ? '#f87171' : '#b91c1c'} />
                         {item.urgencyLabel}
                       </span>
                     ) : (
                       <span
                         style={{
-                          backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                          color: '#fbbf24',
-                          border: '1px solid rgba(245, 158, 11, 0.5)',
+                          backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7',
+                          color: isDark ? '#fbbf24' : '#b45309',
+                          border: isDark ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid #fde68a',
                           padding: '0.25rem 0.65rem',
                           borderRadius: '8px',
                           fontWeight: 900,
@@ -575,10 +596,10 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '0.35rem',
-                          boxShadow: '0 0 10px rgba(245, 158, 11, 0.15)',
+                          boxShadow: isDark ? '0 0 10px rgba(245, 158, 11, 0.15)' : 'none',
                         }}
                       >
-                        <Clock size={12} color="#fbbf24" />
+                        <Clock size={12} color={isDark ? '#fbbf24' : '#b45309'} />
                         {item.urgencyLabel}
                       </span>
                     )}
@@ -590,9 +611,15 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                       href={`${projectBaseUrl}/${item.projectId}`}
                       className="btn btn-sm"
                       style={{
-                        backgroundColor: isOverdue ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.15)',
-                        color: isOverdue ? '#f87171' : '#fbbf24',
-                        border: isOverdue ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(245, 158, 11, 0.35)',
+                        backgroundColor: isOverdue
+                          ? (isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)')
+                          : (isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)'),
+                        color: isOverdue
+                          ? (isDark ? '#f87171' : '#b91c1c')
+                          : (isDark ? '#fbbf24' : '#b45309'),
+                        border: isOverdue
+                          ? (isDark ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(239, 68, 68, 0.35)')
+                          : (isDark ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(245, 158, 11, 0.35)'),
                         fontSize: '0.75rem',
                         fontWeight: 800,
                         display: 'inline-flex',
