@@ -1437,6 +1437,11 @@ export const dataService = {
       rejectionReason?: string;
       adminName: string;
       dueDate?: string;
+      strategicObjectiveId?: string;
+      strategicObjectiveName?: string;
+      assessmentDimensionId?: LeanAssessmentDimensionId;
+      refinedTitle?: string;
+      refinedDescription?: string;
     }
   ): LeanAction {
     const actions = this.getActions();
@@ -1454,12 +1459,20 @@ export const dataService = {
 
       actions[index] = {
         ...item,
+        title: decision.refinedTitle?.trim() || item.title,
+        description: decision.refinedDescription?.trim() || item.description,
         status: 'aberta', // or remains aberta but assigned
         assignedAgentId: decision.assignedAgentId || item.assignedAgentId,
         assignedAgentName: agent?.name || item.assignedAgentName,
         assignedAgentAvatar: agent?.avatarUrl || item.assignedAgentAvatar,
+        strategicObjectiveId: decision.strategicObjectiveId || item.strategicObjectiveId,
+        strategicObjectiveName: decision.strategicObjectiveName || item.strategicObjectiveName,
+        assessmentDimensionId:
+          decision.assessmentDimensionId ||
+          item.assessmentDimensionId ||
+          this.getDefaultAssessmentDimensionForWaste(decision.wasteCategory || item.wasteCategory),
         priority: decision.priority || item.priority,
-        estimatedCostAvoided: decision.estimatedCostAvoided ?? item.estimatedCostAvoided,
+        estimatedCostAvoided: decision.estimatedCostAvoided ?? item.estimatedCostAvoided ?? 0,
         wasteCategory: decision.wasteCategory || item.wasteCategory,
         dueDate: decision.dueDate || item.dueDate,
         triagedAt: now,
