@@ -70,48 +70,44 @@ export default function LoginPage() {
         const effectiveEmail = (profile?.email || userEmail || '').trim().toLowerCase();
         if (!effectiveEmail) return;
 
-        // 1. Busca se o agente já foi pré-cadastrado no sistema pelo Master (por e-mail corporativo ou ID)
-        let matchedUser =
+        // 1. Busca se o colaborador foi previamente cadastrado pelo Administrador na plataforma
+        const matchedUser =
           dataService.getUserByIdOrEmail(effectiveEmail) ||
           dataService.getUserByIdOrEmail(userId);
 
-        // 2. Se o agente já existe (ex: criado no painel de agentes com seus setores e cargos definidos),
-        // o sistema reconhece ele instantaneamente e preserva todas as suas atribuições
-        if (matchedUser) {
-          loginAs(matchedUser.id);
-          if (
-            matchedUser.role === 'admin' ||
-            matchedUser.isMaster ||
-            profile?.role === 'admin' ||
-            profile?.is_master ||
-            effectiveEmail === 'mauricio.grigol@rafitec.com.br'
-          ) {
-            router.push('/admin/dashboard');
-          } else {
-            router.push('/agente/kanban');
-          }
+        // 2. Se o colaborador NÃO possui cadastro prévio: BLOQUEIO TOTAL (Zero Trust / Whitelist Estrita)
+        if (!matchedUser) {
+          await supabase.auth.signOut();
+          setAuthError(
+            `Acesso não autorizado (Política de Acesso Lean): O e-mail corporativo "${effectiveEmail}" foi autenticado pela Microsoft, porém não possui cadastro prévio nesta plataforma. Solicite a liberação de acesso ao Administrador do Sistema.`
+          );
+          setIsLoading(false);
           return;
         }
 
-        // 3. Se for um colaborador da Rafitec que fez o primeiro login via Microsoft e ainda não havia sido pré-cadastrado,
-        // o sistema provisiona ele automaticamente como Agente Lean vinculado à fábrica
-        const currentTenant = dataService.getCurrentTenant();
-        const isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
-        const role = profile?.role === 'admin' || isMaster ? 'admin' : 'agent';
-        const newUser = dataService.createUser({
-          tenantId: currentTenant.id,
-          name:
-            profile?.name ||
-            (effectiveEmail ? effectiveEmail.split('@')[0].replace('.', ' ') : 'Colaborador Rafitec'),
-          email: effectiveEmail,
-          role: role,
-          isMaster: isMaster,
-          jobTitle: role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
-          active: true,
-        });
+        // 3. Se o usuário estiver inativo ou bloqueado pelo Administrador
+        if (!matchedUser.active) {
+          await supabase.auth.signOut();
+          setAuthError(
+            `Acesso bloqueado: O usuário vinculado a "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
+          );
+          setIsLoading(false);
+          return;
+        }
 
-        loginAs(newUser.id);
-        router.push(newUser.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
+        // 4. Se o cadastro existe e está ativo, efetiva a sessão e redireciona conforme o perfil
+        loginAs(matchedUser.id);
+        if (
+          matchedUser.role === 'admin' ||
+          matchedUser.isMaster ||
+          profile?.role === 'admin' ||
+          profile?.is_master ||
+          effectiveEmail === 'mauricio.grigol@rafitec.com.br'
+        ) {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/agente/kanban');
+        }
       } catch (err) {
         console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
       }
@@ -183,33 +179,39 @@ export default function LoginPage() {
             .eq('id', data.user.id)
             .single();
 
-          if (profile) {
-            const effectiveEmail = (profile.email || data.user.email || cleanEmail).trim().toLowerCase();
-            let matchedUser =
-              dataService.getUserByIdOrEmail(effectiveEmail) ||
-              dataService.getUserByIdOrEmail(profile.id);
+          const effectiveEmail = (profile?.email || data.user.email || cleanEmail).trim().toLowerCase();
+          const matchedUser =
+            dataService.getUserByIdOrEmail(effectiveEmail) ||
+            dataService.getUserByIdOrEmail(data.user.id) ||
+            (profile ? dataService.getUserByIdOrEmail(profile.id) : undefined);
 
-            if (!matchedUser) {
-              const currentTenant = dataService.getCurrentTenant();
-              matchedUser = dataService.createUser({
-                tenantId: currentTenant.id,
-                name: profile.name || cleanEmail.split('@')[0],
-                email: effectiveEmail,
-                role: profile.role === 'admin' || profile.is_master ? 'admin' : 'agent',
-                isMaster: profile.is_master || false,
-                jobTitle: profile.role === 'admin' ? 'Gestor Master da Planta' : 'Agente Lean',
-                active: true,
-              });
-            }
-
-            loginAs(matchedUser.id);
-            if (matchedUser.role === 'admin' || matchedUser.isMaster) {
-              router.push('/admin/dashboard');
-            } else {
-              router.push('/agente/kanban');
-            }
+          // Se não houver cadastro prévio pelo Administrador
+          if (!matchedUser) {
+            await supabase.auth.signOut();
+            setAuthError(
+              `Acesso não autorizado: O usuário "${effectiveEmail}" não possui cadastro nesta plataforma Lean. Solicite a liberação de acesso ao Administrador.`
+            );
+            setIsLoading(false);
             return;
           }
+
+          // Se o usuário estiver inativo
+          if (!matchedUser.active) {
+            await supabase.auth.signOut();
+            setAuthError(
+              `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
+            );
+            setIsLoading(false);
+            return;
+          }
+
+          loginAs(matchedUser.id);
+          if (matchedUser.role === 'admin' || matchedUser.isMaster) {
+            router.push('/admin/dashboard');
+          } else {
+            router.push('/agente/kanban');
+          }
+          return;
         }
       }
 
@@ -217,11 +219,15 @@ export default function LoginPage() {
       const users = dataService.getUsers();
       const matched = users.find((u) => u.email.toLowerCase() === cleanEmail);
       if (matched) {
+        if (!matched.active) {
+          setAuthError('Acesso bloqueado: Este usuário está inativo no sistema.');
+          return;
+        }
         loginAs(matched.id);
         router.push(matched.role === 'admin' ? '/admin/dashboard' : '/agente/kanban');
       } else {
         setAuthError(
-          'Usuário não encontrado na base. Se for seu primeiro acesso, clique em "Definir / Redefinir Senha".'
+          'Usuário não encontrado na base. Solicite seu cadastramento prévio ao Administrador da Planta.'
         );
       }
     } catch (err: any) {
