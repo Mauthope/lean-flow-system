@@ -502,7 +502,8 @@ export default function SenseiVoiceAssistant({
             }}
             title={`Ouvindo: "${liveTranscript}"`}
           >
-            🎙️ &quot;{liveTranscript}&quot;
+            <Mic size={11} color="#34d399" style={{ display: 'inline', marginRight: '4px' }} />
+            <span>&quot;{liveTranscript}&quot;</span>
           </div>
         )}
       </div>

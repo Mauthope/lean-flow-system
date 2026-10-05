@@ -7,7 +7,7 @@ import { dataService } from '@/services/dataService';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { formatCurrency, getProjectMonthLabel } from '@/lib/utils';
-import { CheckCircle2, Clock, DollarSign, Kanban, UserCheck, AlertTriangle, Calendar, ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
+import { CheckCircle2, Clock, DollarSign, Kanban, UserCheck, AlertTriangle, Calendar, ArrowRight, ExternalLink, Sparkles, GraduationCap, Award } from 'lucide-react';
 
 import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitoringPanel';
 
@@ -324,10 +324,9 @@ export default function AgenteKanbanPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.5rem',
             }}
           >
-            🎓
+            <GraduationCap size={24} color="#c084fc" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.15rem' }}>
@@ -343,7 +342,7 @@ export default function AgenteKanbanPage() {
             </h3>
             <p style={{ fontSize: '0.78125rem', color: '#cbd5e1', margin: '0.2rem 0 0' }}>
               {academyProgress.latestExam?.passed
-                ? '🏆 Parabéns! Você conquistou o Selo Especialista Lean e está apto a receber sua recompensa.'
+                ? 'Parabéns! Você conquistou o Selo Especialista Lean e está apto a receber sua recompensa.'
                 : `Você leu ${academyProgress.readCount} de ${academyProgress.total} artigos (${academyProgress.readPercent}%). Complete os estudos e faça a prova para garantir sua recompensa!`}
             </p>
           </div>

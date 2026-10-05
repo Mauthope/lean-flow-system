@@ -32,6 +32,8 @@ import {
   Trash2,
   Eye,
   AlertTriangle,
+  Lock,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -382,7 +384,7 @@ export default function KaizenPDCAExecutionPage() {
     const uncompleted = checklist.filter((item) => !item.completed);
     if (uncompleted.length > 0) {
       alert(
-        `⚠️ HOMOLOGAÇÃO BLOQUEADA!\n\nExistem ${uncompleted.length} ação(ões) do plano 5W2H pendentes de conclusão:\n${uncompleted
+        `HOMOLOGAÇÃO BLOQUEADA!\n\nExistem ${uncompleted.length} ação(ões) do plano 5W2H pendentes de conclusão:\n${uncompleted
           .map((u) => `• ${u.label || (u as any).text} (${u.responsibleName || 'Equipe'})`)
           .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de homologar a ideia Kaizen.`
       );
@@ -540,7 +542,7 @@ export default function KaizenPDCAExecutionPage() {
               ) : (
                 <>
                   <CheckCircle2 size={13} color="#34d399" />
-                  <span>Salvo automaticamente ✓</span>
+                  <span>Salvo automaticamente</span>
                 </>
               )}
             </div>
@@ -764,9 +766,9 @@ export default function KaizenPDCAExecutionPage() {
                   <button
                     type="button"
                     onClick={() => setFiveWhys(fiveWhys.filter((_, i) => i !== idx))}
-                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '0.875rem' }}
+                    style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </div>
               ))}
@@ -877,8 +879,8 @@ export default function KaizenPDCAExecutionPage() {
                         </span>
                       )}
                       {item.completed && (item.conclusionDate || item.completedAt) && (
-                        <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700 }}>
-                          ✅ Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
+                        <span style={{ fontSize: '0.725rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <CheckCircle2 size={12} /> Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
                         </span>
                       )}
                       <button
@@ -965,8 +967,8 @@ export default function KaizenPDCAExecutionPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
               {/* Antes */}
               <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.5rem' }}>
-                  📸 Antes (Foto Original do Colaborador)
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                  <Camera size={13} /> Antes (Foto Original do Colaborador)
                 </span>
                 {evidenceBeforeUrl ? (
                   <img
@@ -983,8 +985,8 @@ export default function KaizenPDCAExecutionPage() {
 
               {/* Depois */}
               <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.5rem' }}>
-                  📸 Depois (Melhoria Implantada)
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
+                  <Camera size={13} /> Depois (Melhoria Implantada)
                 </span>
                 {evidenceAfterUrl ? (
                   <img
@@ -1330,7 +1332,7 @@ export default function KaizenPDCAExecutionPage() {
                     gap: '0.4rem',
                   }}
                 >
-                  <CheckCircle2 size={18} /> KAIZEN HOMOLOGADO COM SUCESSO ✓
+                  <CheckCircle2 size={18} /> KAIZEN HOMOLOGADO COM SUCESSO
                 </span>
               ) : isViewer ? (
                 <span
@@ -1423,8 +1425,9 @@ export default function KaizenPDCAExecutionPage() {
             </div>
 
             {!idea.masterApproved ? (
-              <div style={{ padding: '1.25rem', textAlign: 'center', backgroundColor: '#090e1a', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.1)', color: '#94a3b8', fontSize: '0.84375rem' }}>
-                🔒 Esta auditoria de 3 meses é liberada automaticamente assim que a ideia for homologada no passo 4.2 acima.
+              <div style={{ padding: '1.25rem', textAlign: 'center', backgroundColor: '#090e1a', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.1)', color: '#94a3b8', fontSize: '0.84375rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}>
+                <Lock size={15} color="#94a3b8" />
+                <span>Esta auditoria de 3 meses é liberada automaticamente assim que a ideia for homologada no passo 4.2 acima.</span>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1453,12 +1456,12 @@ export default function KaizenPDCAExecutionPage() {
                             {mNum}º Mês de Operação
                           </span>
                           {isFilled ? (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '999px' }}>
-                              ✓ Aferido
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <CheckCircle2 size={10} /> Aferido
                             </span>
                           ) : (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '999px' }}>
-                              ⏳ Pendente
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                              <Clock size={10} /> Pendente
                             </span>
                           )}
                         </div>
@@ -1474,8 +1477,8 @@ export default function KaizenPDCAExecutionPage() {
 
                         {isFilled ? (
                           <div style={{ fontSize: '0.725rem', color: '#94a3b8', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            {entry.hoursSaved !== undefined && <span>⏱️ {entry.hoursSaved}h salvas</span>}
-                            {entry.measuredAt && <span>📅 Medido em: {formatDate(entry.measuredAt)}</span>}
+                            {entry.hoursSaved !== undefined && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={11} /> {entry.hoursSaved}h salvas</span>}
+                            {entry.measuredAt && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={11} /> Medido em: {formatDate(entry.measuredAt)}</span>}
                             {!isViewer && (
                               <button
                                 type="button"
@@ -1591,9 +1594,9 @@ export default function KaizenPDCAExecutionPage() {
               <button
                 type="button"
                 onClick={() => setFollowUpModalMonth(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

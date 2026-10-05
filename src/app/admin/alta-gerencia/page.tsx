@@ -825,7 +825,7 @@ export default function AltaGerenciaPage() {
                           }`,
                         }}
                       >
-                        {fulfillmentPercent >= 100 ? '✓ Meta Atingida' : `${fulfillmentPercent}% Atendido`}
+                        {fulfillmentPercent >= 100 ? 'Meta Atingida' : `${fulfillmentPercent}% Atendido`}
                       </span>
                     </div>
                   </div>
@@ -879,11 +879,11 @@ export default function AltaGerenciaPage() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.725rem' }}>
-                        <span style={{ color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>
-                          ✓ {completedProjectsCount} concluído(s)
+                        <span style={{ color: isDark ? '#34d399' : '#15803d', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <CheckCircle2 size={12} /> {completedProjectsCount} concluído(s)
                         </span>
-                        <span style={{ color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
-                          ⏳ {inProgressProjectsCount} em andamento
+                        <span style={{ color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <Clock size={12} /> {inProgressProjectsCount} em andamento
                         </span>
                       </div>
                     </div>
@@ -1043,7 +1043,7 @@ export default function AltaGerenciaPage() {
                                         : (isDark ? '#38bdf8' : '#0284c7'),
                                     }}
                                   >
-                                    {proj.status === 'concluida' ? '✓ Concluído' : proj.status}
+                                    {proj.status === 'concluida' ? 'Concluído' : proj.status}
                                   </span>
 
                                   {proj.senseiStrategicAudit?.alignmentScore && (
@@ -1107,12 +1107,12 @@ export default function AltaGerenciaPage() {
                                 </p>
 
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
-                                  <span style={{ fontSize: '0.725rem', color: isDark ? '#34d399' : '#15803d', fontWeight: 700 }}>
-                                    💰 Custo Evitado: {formatCurrency(savings)}/ano
+                                  <span style={{ fontSize: '0.725rem', color: isDark ? '#34d399' : '#15803d', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <DollarSign size={12} /> Custo Evitado: {formatCurrency(savings)}/ano
                                   </span>
                                   {proj.hoursSaved > 0 && (
-                                    <span style={{ fontSize: '0.725rem', color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700 }}>
-                                      ⏱️ Horas Salvas: {proj.hoursSaved}h
+                                    <span style={{ fontSize: '0.725rem', color: isDark ? '#38bdf8' : '#0284c7', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                      <Clock size={12} /> Horas Salvas: {proj.hoursSaved}h
                                     </span>
                                   )}
                                   <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>

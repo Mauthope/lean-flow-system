@@ -23,6 +23,15 @@ import {
   DollarSign,
   Shield,
   Percent,
+  MapPin,
+  Target,
+  TrendingDown,
+  Search,
+  Paperclip,
+  FileText,
+  RefreshCw,
+  Lightbulb,
+  Check,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -182,7 +191,15 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                   borderRadius: '4px',
                 }}
               >
-                {action.masterApproved ? '✓ HOMOLOGADO MASTER' : '🟡 AGUARDANDO HOMOLOGAÇÃO'}
+                {action.masterApproved ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <CheckCircle2 size={11} /> Homologado Master
+                  </span>
+                ) : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={11} /> Aguardando Homologação
+                  </span>
+                )}
               </span>
             </div>
 
@@ -208,11 +225,21 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                 color: '#475569',
               }}
             >
-              <span>🏢 Entidade: <strong>Rafitec</strong></span>
-              <span>📍 Setor: <strong>{action.originSectorName || 'Fábrica'}</strong></span>
-              <span>👤 Responsável: <strong>{action.assignedAgentName || 'Agente Lean'}</strong></span>
-              <span>📅 Data: <strong>{formatDate(action.createdAt)}</strong></span>
-              <span>⏱️ Prazo: <strong>{formatDate(action.dueDate)}</strong></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Building2 size={13} color="#475569" /> Entidade: <strong>Rafitec</strong>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <MapPin size={13} color="#475569" /> Setor: <strong>{action.originSectorName || 'Fábrica'}</strong>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <User size={13} color="#475569" /> Responsável: <strong>{action.assignedAgentName || 'Agente Lean'}</strong>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Calendar size={13} color="#475569" /> Data: <strong>{formatDate(action.createdAt)}</strong>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Clock size={13} color="#475569" /> Prazo: <strong>{formatDate(action.dueDate)}</strong>
+              </span>
             </div>
           </div>
 
@@ -319,19 +346,25 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
               {/* Indicadores Baseline vs Meta vs Realizado */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.4rem', backgroundColor: '#f1f5f9', padding: '0.35rem 0.5rem', borderRadius: '6px' }}>
                 <div>
-                  <span style={{ fontSize: '0.625rem', color: '#dc2626', fontWeight: 700, display: 'block' }}>🔴 Baseline (Antes):</span>
+                  <span style={{ fontSize: '0.625rem', color: '#dc2626', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <TrendingDown size={11} color="#dc2626" /> Baseline (Antes):
+                  </span>
                   <strong style={{ fontSize: '0.85rem', color: '#dc2626' }}>
                     {action.baselineValue !== undefined ? `${action.baselineValue} ${action.targetMetricUnit || ''}` : '—'}
                   </strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.625rem', color: '#2563eb', fontWeight: 700, display: 'block' }}>🎯 Meta Alvo:</span>
+                  <span style={{ fontSize: '0.625rem', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Target size={11} color="#2563eb" /> Meta Alvo:
+                  </span>
                   <strong style={{ fontSize: '0.85rem', color: '#2563eb' }}>
                     {action.targetGoalValue !== undefined ? `${action.targetGoalValue} ${action.targetMetricUnit || ''}` : '—'}
                   </strong>
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.625rem', color: '#059669', fontWeight: 700, display: 'block' }}>🟢 Atingido (Depois):</span>
+                  <span style={{ fontSize: '0.625rem', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <CheckCircle2 size={11} color="#059669" /> Atingido (Depois):
+                  </span>
                   <strong style={{ fontSize: '0.85rem', color: '#059669' }}>
                     {action.achievedValue !== undefined ? `${action.achievedValue} ${action.targetMetricUnit || ''}` : '—'}
                   </strong>
@@ -342,8 +375,8 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
             {/* Pareto 80/20 Analysis */}
             <div style={{ backgroundColor: '#ffffff', padding: '0.5rem 0.65rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-                  📊 Comprovação por Gráfico de Pareto (Regra 80/20):
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <BarChart3 size={13} color="#1e40af" /> Comprovação por Gráfico de Pareto (Regra 80/20):
                 </span>
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#2563eb', backgroundColor: '#eff6ff', padding: '0.05rem 0.35rem', borderRadius: '4px' }}>
                   {action.pareto?.cumulativeImpactPercentage || 80}% do impacto
@@ -360,7 +393,9 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.25rem 0.5rem', backgroundColor: '#eff6ff', borderRadius: '4px', marginBottom: '0.3rem', fontSize: '0.675rem' }}>
-                  <span>⚡ Causas Vitais prioritárias identificadas no Pareto</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Target size={12} color="#1d4ed8" /> Causas Vitais prioritárias identificadas no Pareto
+                  </span>
                   <span style={{ fontWeight: 800, color: '#1d4ed8' }}>{action.pareto?.cumulativeImpactPercentage || 80}% das Perdas</span>
                 </div>
               )}
@@ -373,8 +408,8 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
             {/* 5 Porquês */}
             {action.fiveWhys && action.fiveWhys.some((w) => w.trim()) && (
               <div style={{ backgroundColor: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'block', textTransform: 'uppercase', marginBottom: '0.15rem' }}>
-                  🔍 5 Porquês (Causa Raiz Definitiva):
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.35rem', textTransform: 'uppercase', marginBottom: '0.15rem' }}>
+                  <Search size={12} color="#475569" /> 5 Porquês (Causa Raiz Definitiva):
                 </span>
                 <p style={{ fontSize: '0.7rem', color: '#0f172a', margin: 0, lineHeight: 1.2 }}>
                   {action.fiveWhys[4] || action.fiveWhys[action.fiveWhys.length - 1]}
@@ -467,7 +502,13 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                               color: item.completed ? '#15803d' : '#b45309',
                             }}
                           >
-                            {item.completed ? '✓ Feito' : 'Em andamento'}
+                            {item.completed ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <Check size={10} /> Feito
+                              </span>
+                            ) : (
+                              'Em andamento'
+                            )}
                           </span>
                         </td>
                       </tr>
@@ -479,8 +520,12 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
 
             {/* Execution summary */}
             <div style={{ backgroundColor: '#ffffff', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.675rem' }}>
-              <span>⏱️ Horas de Engenharia / Fábrica: <strong>{action.projectCosts?.internalLaborHours || 0}h</strong></span>
-              <span style={{ color: '#059669', fontWeight: 700 }}>✓ Execução 100% no padrão Lean</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Clock size={12} color="#475569" /> Horas de Engenharia / Fábrica: <strong>{action.projectCosts?.internalLaborHours || 0}h</strong>
+              </span>
+              <span style={{ color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={12} /> Execução 100% no padrão Lean
+              </span>
             </div>
           </div>
 
@@ -606,8 +651,9 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
             </div>
 
             {/* Attachments Note */}
-            <div style={{ backgroundColor: '#ffffff', padding: '0.35rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.65rem', color: '#64748b' }}>
-              📎 Memoriais Anexados: <strong>{action.attachments?.length || 0} documentos técnicos</strong> ({action.attachments?.map((a) => a.name).join(', ') || 'Memorial em anexo'})
+            <div style={{ backgroundColor: '#ffffff', padding: '0.35rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.65rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Paperclip size={12} color="#64748b" />
+              <span>Memoriais Anexados: <strong>{action.attachments?.length || 0} documentos técnicos</strong> ({action.attachments?.map((a) => a.name).join(', ') || 'Memorial em anexo'})</span>
             </div>
           </div>
 
@@ -652,21 +698,21 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
               {/* Padronização POP */}
               <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'block', textTransform: 'uppercase' }}>
-                  📄 Padronização POP / SOP:
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'uppercase' }}>
+                  <FileText size={12} color="#475569" /> Padronização POP / SOP:
                 </span>
                 <p style={{ fontSize: '0.725rem', color: '#0f172a', fontWeight: 700, margin: '0.2rem 0 0.1rem' }}>
                   {action.standardWorkDocRef || 'POP Atualizado'}
                 </p>
-                <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: 700 }}>
-                  ✓ {action.standardWorkUpdated ? 'Treinamento concluído com a equipe' : 'Padrão implementado'}
+                <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                  <Check size={11} /> {action.standardWorkUpdated ? 'Treinamento concluído com a equipe' : 'Padrão implementado'}
                 </span>
               </div>
 
               {/* Yokoten */}
               <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'block', textTransform: 'uppercase' }}>
-                  🔄 Yokoten (Replicação):
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'uppercase' }}>
+                  <RefreshCw size={12} color="#475569" /> Yokoten (Replicação):
                 </span>
                 <p style={{ fontSize: '0.7rem', color: '#0f172a', margin: '0.2rem 0 0', lineHeight: 1.25 }}>
                   {action.yokotenReplication || 'Replicar melhoria nas demais linhas do setor.'}
@@ -676,8 +722,8 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
 
             {/* Lições Aprendidas */}
             <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'block', textTransform: 'uppercase' }}>
-                💡 Lições Aprendidas no Projeto:
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'uppercase' }}>
+                <Lightbulb size={12} color="#475569" /> Lições Aprendidas no Projeto:
               </span>
               <p style={{ fontSize: '0.725rem', color: '#334155', margin: '0.15rem 0 0', lineHeight: 1.3 }}>
                 {action.lessonsLearned || 'Ações de baixo custo com foco nas causas vitais trouxeram os maiores ganhos em OEE.'}
@@ -687,11 +733,17 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
             {/* COMPROVAÇÃO DE SUSTENTAÇÃO EM 3 MESES PELO AGENTE */}
             <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
-                  📅 Acompanhamento de 3 Meses pelo Agente:
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'uppercase' }}>
+                  <Calendar size={12} color="#475569" /> Acompanhamento de 3 Meses pelo Agente:
                 </span>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isThreeMonthsFollowUpCompleted(action) ? '#059669' : '#d97706' }}>
-                  {isThreeMonthsFollowUpCompleted(action) ? '✓ 3/3 Meses Consolidados' : `${getFollowUpMonthsFilledCount(action)}/3 Meses`}
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isThreeMonthsFollowUpCompleted(action) ? '#059669' : '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                  {isThreeMonthsFollowUpCompleted(action) ? (
+                    <>
+                      <Check size={11} /> 3/3 Meses Consolidados
+                    </>
+                  ) : (
+                    `${getFollowUpMonthsFilledCount(action)}/3 Meses`
+                  )}
                 </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem', textAlign: 'center' }}>
@@ -737,7 +789,7 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                     fontSize: '1rem',
                   }}
                 >
-                  {action.masterApproved ? '✓' : '🏢'}
+                  {action.masterApproved ? <Check size={20} color="#ffffff" /> : <Building2 size={20} color="#ffffff" />}
                 </div>
                 <div>
                   <strong style={{ fontSize: '0.8125rem', color: action.masterApproved ? '#065f46' : '#6b21a8', display: 'block' }}>
@@ -765,7 +817,7 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                     backgroundColor: '#ffffff',
                   }}
                 >
-                  {action.masterApproved ? 'DRE APROVADA ✓' : 'EM ANÁLISE'}
+                  {action.masterApproved ? 'DRE APROVADA' : 'EM ANÁLISE'}
                 </span>
               </div>
             </div>

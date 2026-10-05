@@ -243,8 +243,8 @@ export default function IntegracoesIaPage() {
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1.5rem' }}>
       {/* Header */}
       <div style={{ marginBottom: '1.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-          <span style={{ fontSize: '1.5rem' }}>🥋</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
+          <Cpu size={26} color="#22d3ee" />
           <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ffffff', fontFamily: 'var(--font-heading)', margin: 0 }}>
             Integrações de Inteligência Artificial
           </h1>

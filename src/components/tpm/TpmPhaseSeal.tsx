@@ -235,11 +235,12 @@ export function TpmPhaseSeal({
               y="55"
               textAnchor="middle"
               fill="#fbbf24"
-              fontSize="20"
+              fontSize="16"
               fontWeight="900"
+              fontFamily="var(--font-mono), monospace"
               style={{ userSelect: 'none' }}
             >
-              ★
+              F4
             </text>
           ) : (
             <text
@@ -297,7 +298,14 @@ export function TpmPhaseSeal({
               borderRadius: '9999px',
             }}
           >
-            {isMasterPhase ? '🏆 Selo Ouro TPM' : `Fase ${currentPhase} / 4`}
+            {isMasterPhase ? (
+              <>
+                <Award size={12} color="#fbbf24" />
+                <span>Selo Ouro TPM</span>
+              </>
+            ) : (
+              `Fase ${currentPhase} / 4`
+            )}
           </div>
         </div>
       )}

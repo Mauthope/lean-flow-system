@@ -20,6 +20,9 @@ import {
   AlertCircle,
   Sparkles,
   Eye,
+  User,
+  Calendar,
+  Target,
 } from 'lucide-react';
 import {
   TpmMachine,
@@ -457,8 +460,20 @@ export default function AdminTPMPage() {
             <div style={{ fontSize: '1.75rem', fontWeight: 900, color: metrics.averageAuditScore >= 85 ? (isDark ? '#34d399' : '#15803d') : metrics.averageAuditScore >= 70 ? (isDark ? '#fbbf24' : '#d97706') : (isDark ? '#f87171' : '#dc2626'), fontFamily: 'var(--font-mono)', marginTop: '0.3rem' }}>
               {metrics.averageAuditScore > 0 ? `${metrics.averageAuditScore}%` : '--'}
             </div>
-            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-              {metrics.averageAuditScore >= 85 ? '✅ Nível Classe Mundial' : metrics.averageAuditScore >= 70 ? '⚠️ Sob Observação' : '🚨 Nível Crítico'}
+            <span style={{ fontSize: '0.725rem', color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              {metrics.averageAuditScore >= 85 ? (
+                <>
+                  <CheckCircle2 size={12} color="#10b981" /> Nível Classe Mundial
+                </>
+              ) : metrics.averageAuditScore >= 70 ? (
+                <>
+                  <AlertTriangle size={12} color="#f59e0b" /> Sob Observação
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={12} color="#ef4444" /> Nível Crítico
+                </>
+              )}
             </span>
           </div>
 
@@ -661,7 +676,7 @@ export default function AdminTPMPage() {
                             }`,
                           }}
                         >
-                          {m.status === 'operacional' ? '● Operando' : m.status === 'em_manutencao' ? '⚙️ Em Manutenção' : '⏹️ Parada'}
+                          {m.status === 'operacional' ? '● Operando' : m.status === 'em_manutencao' ? 'Em Manutenção' : 'Parada'}
                         </span>
                       </div>
 
@@ -695,7 +710,7 @@ export default function AdminTPMPage() {
                             </span>
                           </div>
                           <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.15rem' }}>
-                            {(m.tpmPhase || 1) >= 4 ? '🏆 Selo Ouro (4/4)' : `Fase ${m.tpmPhase || 1} de 4`}
+                            {(m.tpmPhase || 1) >= 4 ? 'Selo Ouro (4/4)' : `Fase ${m.tpmPhase || 1} de 4`}
                           </h4>
                           <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', lineHeight: 1.3 }}>
                             {(m.tpmPhase || 1) >= 4
@@ -831,9 +846,9 @@ export default function AdminTPMPage() {
                         )}
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-                          <span>👤 Auditor: <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{adt.auditorName}</strong></span>
-                          <span>📅 Data: {formatDate(adt.auditDate)}</span>
-                          <span>✅ {adt.items.filter((i) => i.status === 'conforme').length} de {adt.items.length} itens conformes</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><User size={13} /> Auditor: <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{adt.auditorName}</strong></span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={13} /> Data: {formatDate(adt.auditDate)}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><CheckCircle2 size={13} color="#10b981" /> {adt.items.filter((i) => i.status === 'conforme').length} de {adt.items.length} itens conformes</span>
                         </div>
                       </div>
 
@@ -903,7 +918,7 @@ export default function AdminTPMPage() {
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 800 }}>🏆 Fase 4: Selo Ouro (Excelência Plena)</span>
+                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Award size={13} /> Fase 4: Selo Ouro (Excelência Plena)</span>
                     <strong style={{ color: isDark ? '#fbbf24' : '#d97706' }}>{metrics.phase4Count} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.phase4Count / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
@@ -938,7 +953,7 @@ export default function AdminTPMPage() {
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 700 }}>⚙️ Em Manutenção Preventiva/Corretiva</span>
+                    <span style={{ color: isDark ? '#fbbf24' : '#d97706', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Wrench size={13} /> Em Manutenção Preventiva/Corretiva</span>
                     <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.inMaintenanceMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.inMaintenanceMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
@@ -948,7 +963,7 @@ export default function AdminTPMPage() {
 
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <span style={{ color: isDark ? '#f87171' : '#dc2626', fontWeight: 700 }}>⏹️ Paradas / Em Espera</span>
+                    <span style={{ color: isDark ? '#f87171' : '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Clock size={13} /> Paradas / Em Espera</span>
                     <strong style={{ color: isDark ? '#ffffff' : '#0f172a' }}>{metrics.stoppedMachines} máquinas ({metrics.totalMachines > 0 ? Math.round((metrics.stoppedMachines / metrics.totalMachines) * 100) : 0}%)</strong>
                   </div>
                   <div style={{ width: '100%', height: '8px', backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
@@ -968,7 +983,7 @@ export default function AdminTPMPage() {
           {/* Ranking de Máquinas: Menor Nota de Auditoria para Foco Kaizen */}
           <div className="card" style={{ padding: '1.5rem' }}>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0 0 0.85rem' }}>
-              🎯 Máquinas com Menor Nota de Auditoria (Prioridade para Ação Kaizen)
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Target size={16} color="#ef4444" /> Máquinas com Menor Nota de Auditoria (Prioridade para Ação Kaizen)</span>
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
               {[...machines]
@@ -1186,7 +1201,7 @@ export default function AdminTPMPage() {
                 Nota da Máquina Calculada:
               </span>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', margin: '0.1rem 0 0' }}>
-                {currentAuditScore >= 85 ? '✅ Padrão Conforme (Classe Mundial)' : currentAuditScore >= 70 ? '⚠️ Alerta de Atenção (Anomalias Menores)' : '🚨 Crítico (Ações Imediatas)'}
+                {currentAuditScore >= 85 ? 'Padrão Conforme (Classe Mundial)' : currentAuditScore >= 70 ? 'Alerta de Atenção (Anomalias Menores)' : 'Crítico (Ações Imediatas)'}
               </h3>
             </div>
 
@@ -1401,7 +1416,7 @@ export default function AdminTPMPage() {
       <Modal
         isOpen={!!celebrationModal}
         onClose={() => setCelebrationModal(null)}
-        title="🎉 EVOLUÇÃO DE FASE DO SELO TPM!"
+        title="EVOLUÇÃO DE FASE DO SELO TPM"
         subtitle={`Auditoria 100% Conforme para ${celebrationModal?.machineCode} - ${celebrationModal?.machineName}`}
       >
         <div style={{ textAlign: 'center', padding: '1rem 0.5rem' }}>
@@ -1410,7 +1425,7 @@ export default function AdminTPMPage() {
           </div>
 
           <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
-            {celebrationModal?.newPhase === 4 ? '🏆 SELO OURO TPM CONQUISTADO!' : `A Máquina Avançou para a Fase ${celebrationModal?.newPhase}!`}
+            {celebrationModal?.newPhase === 4 ? 'SELO OURO TPM CONQUISTADO!' : `A Máquina Avançou para a Fase ${celebrationModal?.newPhase}!`}
           </h3>
 
           <p style={{ fontSize: '0.875rem', color: isDark ? '#cbd5e1' : '#334155', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>

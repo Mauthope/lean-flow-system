@@ -43,6 +43,7 @@ import {
   Compass,
   X,
   Send,
+  Target,
 } from 'lucide-react';
 
 interface UnifiedKaizen {
@@ -133,7 +134,7 @@ export default function HistoricoKaizenPage() {
     {
       id: 'msg_welcome',
       sender: 'ai',
-      text: 'Olá! Sou o Assistente de Inteligência Artificial Kaizen da fábrica. 🤖\n\nPosso vasculhar todo o histórico de Projetos Lean (PDCA), causas raízes (Ishikawa 6M / 5 Porquês), Pareto e lições aprendidas (Yokoten) para responder suas dúvidas técnicas ou buscar precedentes de soluções.\n\nO que você gostaria de pesquisar hoje?',
+      text: 'Olá! Sou o Assistente de Inteligência Artificial Kaizen da fábrica.\n\nPosso vasculhar todo o histórico de Projetos Lean (PDCA), causas raízes (Ishikawa 6M / 5 Porquês), Pareto e lições aprendidas (Yokoten) para responder suas dúvidas técnicas ou buscar precedentes de soluções.\n\nO que você gostaria de pesquisar hoje?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -428,13 +429,13 @@ export default function HistoricoKaizenPage() {
 
       let answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" no histórico da fábrica.`;
       if (totalSavingsFound > 0) {
-        answer += `\n\n💰 **Impacto Financeiro Acumulado**: ${formatCurrency(totalSavingsFound)}/ano economizados.`;
+        answer += `\n\n**Impacto Financeiro Acumulado**: ${formatCurrency(totalSavingsFound)}/ano economizados.`;
       }
       if (items[0]?.problemStatement) {
-        answer += `\n\n🎯 **Causa Raiz Comprovada**: ${items[0].problemStatement}`;
+        answer += `\n\n**Causa Raiz Comprovada**: ${items[0].problemStatement}`;
       }
       if (items[0]?.lessonsLearned || items[0]?.yokotenReplication) {
-        answer += `\n\n📚 **Padrão / Lição Yokoten**: ${items[0].lessonsLearned || items[0].yokotenReplication}`;
+        answer += `\n\n**Padrão / Lição Yokoten**: ${items[0].lessonsLearned || items[0].yokotenReplication}`;
       }
 
       const aiMsg: ChatMessage = {
@@ -571,7 +572,7 @@ export default function HistoricoKaizenPage() {
             {metrics.totalCount}
           </h2>
           <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
-            ✓ 100% Homologados na Entidade
+            100% Homologados na Entidade
           </span>
         </div>
 
@@ -607,7 +608,7 @@ export default function HistoricoKaizenPage() {
             {metrics.totalHours} <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>h/ano</span>
           </h2>
           <span style={{ fontSize: '0.7rem', color: '#0891b2', fontWeight: 700, display: 'block', marginTop: '0.25rem' }}>
-            ⚡ Produtividade de chão de fábrica
+            Produtividade de chão de fábrica
           </span>
         </div>
 
@@ -878,7 +879,7 @@ export default function HistoricoKaizenPage() {
                 cursor: 'pointer',
               }}
             >
-              🌟 Todos os Kaizens ({unifiedKaizens.length})
+              Todos os Kaizens ({unifiedKaizens.length})
             </button>
             <button
               type="button"
@@ -897,7 +898,7 @@ export default function HistoricoKaizenPage() {
                 gap: '0.35rem',
               }}
             >
-              💎 Projetos Lean PDCA ({actions.filter((a) => a.status === 'concluida' || a.pdcaStage === 'act').length})
+              <Layers size={13} /> Projetos Lean PDCA ({actions.filter((a) => a.status === 'concluida' || a.pdcaStage === 'act').length})
             </button>
             <button
               type="button"
@@ -916,7 +917,7 @@ export default function HistoricoKaizenPage() {
                 gap: '0.35rem',
               }}
             >
-              💡 Canal Kaizen ({ideas.filter((i) => i.executionStatus === 'implantada_sucesso' || i.masterApproved).length})
+              <Lightbulb size={13} /> Canal Kaizen ({ideas.filter((i) => i.executionStatus === 'implantada_sucesso' || i.masterApproved).length})
             </button>
           </div>
 
@@ -1098,7 +1099,7 @@ export default function HistoricoKaizenPage() {
                         fontFamily: 'var(--font-mono)',
                       }}
                     >
-                      {isProject ? '💎 PROJETO PDCA' : '💡 CANAL KAIZEN'} • {k.protocol}
+                      {isProject ? 'PROJETO PDCA' : 'CANAL KAIZEN'} • {k.protocol}
                     </span>
 
                     <span style={{ fontSize: '0.7rem', color: isDark ? 'var(--text-muted)' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -1164,14 +1165,18 @@ export default function HistoricoKaizenPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', borderTop: isDark ? '1px solid var(--border-subtle)' : '1px solid #e2e8f0', paddingTop: '0.75rem', marginBottom: '0.5rem' }}>
                       {k.problemStatement && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          <strong style={{ color: '#0891b2' }}>🎯 Diagnóstico do Problema:</strong>
+                          <strong style={{ color: '#0891b2', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Target size={12} /> Diagnóstico do Problema:
+                          </strong>
                           <p style={{ margin: '0.15rem 0 0', lineHeight: 1.35 }}>{k.problemStatement}</p>
                         </div>
                       )}
 
                       {k.fiveWhys && k.fiveWhys.filter(Boolean).length > 0 && (
                         <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', backgroundColor: isDark ? 'var(--bg-muted)' : '#f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
-                          <strong style={{ color: '#d97706' }}>🔍 5 Porquês (Causa Raiz):</strong>
+                          <strong style={{ color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Search size={12} /> 5 Porquês (Causa Raiz):
+                          </strong>
                           <p style={{ margin: '0.15rem 0 0', fontStyle: 'italic', color: isDark ? 'var(--text-muted)' : '#64748b' }}>
                             {k.fiveWhys[k.fiveWhys.length - 1] || k.fiveWhys[0]}
                           </p>
@@ -1180,7 +1185,9 @@ export default function HistoricoKaizenPage() {
 
                       {(k.lessonsLearned || k.yokotenReplication) && (
                         <div style={{ fontSize: '0.725rem', color: 'var(--text-secondary)', backgroundColor: isDark ? 'var(--bg-muted)' : '#f1f5f9', padding: '0.5rem', borderRadius: '6px' }}>
-                          <strong style={{ color: '#10b981' }}>📚 Lição Aprendida / Yokoten:</strong>
+                          <strong style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <BookOpen size={12} /> Lição Aprendida / Yokoten:
+                          </strong>
                           <p style={{ margin: '0.15rem 0 0', lineHeight: 1.35 }}>
                             {k.lessonsLearned || k.yokotenReplication}
                           </p>
@@ -1261,7 +1268,7 @@ export default function HistoricoKaizenPage() {
                         {k.protocol}
                       </span>
                       <span style={{ fontSize: '0.65rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-                        {k.origin === 'projeto' ? '💎 Projeto PDCA' : '💡 Canal Kaizen'}
+                        {k.origin === 'projeto' ? 'Projeto PDCA' : 'Canal Kaizen'}
                       </span>
                     </td>
 
@@ -1367,7 +1374,7 @@ export default function HistoricoKaizenPage() {
               letterSpacing: '0.04em',
             }}
           >
-            IA ATIVA ✨
+            IA ATIVA
           </span>
         </button>
       )}
@@ -1578,7 +1585,8 @@ export default function HistoricoKaizenPage() {
                   flexShrink: 0,
                 }}
               >
-                💡 {prompt}
+                <Lightbulb size={11} style={{ display: 'inline', marginRight: '4px', verticalAlign: '-1px' }} />
+                {prompt}
               </button>
             ))}
           </div>

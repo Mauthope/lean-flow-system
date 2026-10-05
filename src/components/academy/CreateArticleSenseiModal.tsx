@@ -20,6 +20,9 @@ import {
   Eye,
   Trash2,
   Check,
+  Factory,
+  Target,
+  Zap,
 } from 'lucide-react';
 import { LeanArticleItem } from '@/lib/types';
 import { dataService } from '@/services/dataService';
@@ -175,7 +178,7 @@ export default function CreateArticleSenseiModal({
       category: draftArticle.category,
       readTimeMinutes: draftArticle.readTimeMinutes,
       minReadTimeSeconds: draftArticle.minReadTimeSeconds,
-      icon: draftArticle.icon || '⚡',
+      icon: draftArticle.icon || 'Zap',
       summary: draftArticle.summary,
       badge: 'Sensei IA',
       isNew: true,
@@ -516,8 +519,8 @@ export default function CreateArticleSenseiModal({
 
                     {/* Conceitos Chave */}
                     <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee' }}>
-                        📖 Conceitos-Chave Estruturados ({draftArticle.content.keyConcepts.length})
+                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <BookOpen size={16} /> Conceitos-Chave Estruturados ({draftArticle.content.keyConcepts.length})
                       </h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                         {draftArticle.content.keyConcepts.map((kc, idx) => (
@@ -530,8 +533,8 @@ export default function CreateArticleSenseiModal({
 
                     {/* Passo a Passo no Gemba */}
                     <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#34d399' }}>
-                        🛠️ Como Aplicar no Gemba (Passo a Passo)
+                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Wrench size={16} /> Como Aplicar no Gemba (Passo a Passo)
                       </h4>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.5 }}>
                         {draftArticle.content.howToApply.map((step, idx) => (
@@ -542,8 +545,8 @@ export default function CreateArticleSenseiModal({
 
                     {/* Exemplo de Fábrica com Custo Evitado */}
                     <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <h4 style={{ margin: '0 0 0.35rem', fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24' }}>
-                        🏭 Exemplo Real com Custo Evitado (ROI)
+                      <h4 style={{ margin: '0 0 0.35rem', fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Factory size={16} /> Exemplo Real com Custo Evitado (ROI)
                       </h4>
                       <p style={{ margin: 0, fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.45 }}>
                         {draftArticle.content.factoryExample}
@@ -552,8 +555,8 @@ export default function CreateArticleSenseiModal({
 
                     {/* Boas Práticas */}
                     <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <h4 style={{ margin: '0 0 0.35rem', fontSize: '0.85rem', fontWeight: 800, color: '#c084fc' }}>
-                        ✨ Boas Práticas Operacionais
+                      <h4 style={{ margin: '0 0 0.35rem', fontSize: '0.85rem', fontWeight: 800, color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <CheckCircle2 size={16} /> Boas Práticas Operacionais
                       </h4>
                       <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.775rem', color: '#cbd5e1', lineHeight: 1.45 }}>
                         {draftArticle.content.bestPractices.map((bp, idx) => (
@@ -564,8 +567,8 @@ export default function CreateArticleSenseiModal({
 
                     {/* Dica para Prova */}
                     <div style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)', borderRadius: '12px', padding: '0.85rem', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
-                      <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24' }}>
-                        🎯 Dica do Sensei para Prova de Certificação
+                      <h4 style={{ margin: '0 0 0.25rem', fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Target size={16} /> Dica do Sensei para Prova de Certificação
                       </h4>
                       <p style={{ margin: 0, fontSize: '0.75rem', color: '#fef08a', lineHeight: 1.4 }}>
                         {draftArticle.content.quizHint}

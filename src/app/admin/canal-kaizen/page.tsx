@@ -35,6 +35,7 @@ import {
   Plus,
   Play,
   RotateCcw,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -765,7 +766,7 @@ export default function AdminCanalKaizenPage() {
                                   gap: '0.3rem',
                                 }}
                               >
-                                <CheckCircle2 size={12} /> Aprovada ✓
+                                <CheckCircle2 size={12} /> Aprovada
                               </span>
                             )}
                             {idea.status === 'rejeitada' && (
@@ -1050,8 +1051,8 @@ export default function AdminCanalKaizenPage() {
 
                               {/* Execution Status */}
                               {idea.executionStatus === 'implantada_sucesso' ? (
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d' }}>
-                                  ✓ Concluída
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <CheckCircle2 size={11} /> Concluída
                                 </span>
                               ) : idea.executionStatus === 'em_implantacao' ? (
                                 <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDark ? '#c084fc' : '#7e22ce' }}>
@@ -1167,9 +1168,9 @@ export default function AdminCanalKaizenPage() {
               <button
                 type="button"
                 onClick={() => setApproveIdeaModal(null)}
-                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -1304,9 +1305,9 @@ export default function AdminCanalKaizenPage() {
               <button
                 type="button"
                 onClick={() => setRejectIdeaModal(null)}
-                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -1399,9 +1400,9 @@ export default function AdminCanalKaizenPage() {
               <button
                 type="button"
                 onClick={() => setViewPhotoIdea(null)}
-                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -1463,9 +1464,9 @@ export default function AdminCanalKaizenPage() {
               <button
                 type="button"
                 onClick={() => setManageGainsModal(null)}
-                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 

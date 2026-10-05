@@ -79,13 +79,13 @@ export const MasterTransferModal: React.FC<MasterTransferModalProps> = ({
       });
 
       let summary = `TRANSFERÊNCIA DE TITULARIDADE CONCLUÍDA COM SUCESSO!\n\n` +
-        `👑 Novo Titular Master: ${newMaster.name} (${newMaster.email})\n` +
+        `• Novo Titular Master: ${newMaster.name} (${newMaster.email})\n` +
         `• Cargo: ${newMaster.jobTitle}\n\n`;
 
       if (keepCurrentMasterAsAdmin) {
-        summary += `✓ Titular Anterior (${previousMaster.name}): Mantido como Administrador Técnico / Consultor (sem poderes de Master de entidades).\n`;
+        summary += `• Titular Anterior (${previousMaster.name}): Mantido como Administrador Técnico / Consultor (sem poderes de Master de entidades).\n`;
       } else {
-        summary += `✓ Titular Anterior (${previousMaster.name}): Acesso suspenso / revogado com segurança.\n`;
+        summary += `• Titular Anterior (${previousMaster.name}): Acesso suspenso / revogado com segurança.\n`;
       }
 
       summary += `\nNo Supabase Auth, o novo titular será ativado via invite oficial por e-mail para definir sua senha de acesso.`;

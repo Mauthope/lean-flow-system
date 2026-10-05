@@ -137,7 +137,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
             <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', textTransform: 'uppercase' }}>
-              ✓ Realizado em Caixa
+              Realizado em Caixa
             </span>
             <CheckCircle2 size={16} color={isDark ? '#34d399' : '#15803d'} />
           </div>
@@ -160,7 +160,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
             <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#facc15' : '#a16207', textTransform: 'uppercase' }}>
-              ⏳ Projeção a Entrar
+              Projeção a Entrar
             </span>
             <Hourglass size={16} color={isDark ? '#facc15' : '#a16207'} />
           </div>
@@ -183,7 +183,7 @@ export const MonthlyFollowUpRadarWidget: React.FC<MonthlyFollowUpRadarWidgetProp
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
             <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0e7490', textTransform: 'uppercase' }}>
-              📈 Potencial Total
+              Potencial Total
             </span>
             <TrendingUp size={16} color={isDark ? '#22d3ee' : '#0e7490'} />
           </div>

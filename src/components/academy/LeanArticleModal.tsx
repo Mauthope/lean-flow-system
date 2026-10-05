@@ -21,6 +21,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { LeanArticle } from '@/data/leanArticlesData';
+import { ArticleIcon } from './ArticleIcon';
 import {
   chatWithSenseiAboutArticle,
   synthesizeSpeechGoogleCloud,
@@ -300,7 +301,7 @@ export default function LeanArticleModal({
                 fontSize: '1.5rem',
               }}
             >
-              {article.icon}
+              <ArticleIcon name={article.icon} size={22} color="#22d3ee" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -330,9 +331,12 @@ export default function LeanArticleModal({
                       color: '#34d399',
                       padding: '0.1rem 0.45rem',
                       borderRadius: '999px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
                     }}
                   >
-                    Lido ✓
+                    <CheckCircle2 size={11} /> Lido
                   </span>
                 )}
               </div>
@@ -450,8 +454,8 @@ export default function LeanArticleModal({
                 border: '1px solid rgba(255, 255, 255, 0.08)',
               }}
             >
-              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee', margin: '0 0 0.4rem', textTransform: 'uppercase' }}>
-                📖 Visão Geral & Contexto
+              <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee', margin: '0 0 0.4rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <BookOpen size={16} /> Visão Geral & Contexto
               </h4>
               <p style={{ margin: 0, fontSize: '0.875rem', color: '#e2e8f0', lineHeight: 1.6 }}>
                 {article.content.introduction}
@@ -517,7 +521,7 @@ export default function LeanArticleModal({
               }}
             >
               <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#34d399', margin: '0 0 0.35rem', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                💡 Caso Prático Real
+                <Lightbulb size={16} /> Caso Prático Real
               </h4>
               <p style={{ margin: 0, fontSize: '0.8125rem', color: '#e2e8f0', lineHeight: 1.5 }}>
                 {article.content.factoryExample}
@@ -721,7 +725,7 @@ export default function LeanArticleModal({
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      💡 {chip}
+                      {chip}
                     </button>
                   ))}
                 </div>
@@ -784,7 +788,7 @@ export default function LeanArticleModal({
                             }}
                           >
                             {playingAudioId === msg.id ? <VolumeX size={11} color="#f87171" /> : <Volume2 size={11} />}
-                            <span>{playingAudioId === msg.id ? 'Parar Áudio' : '🔊 Ouvir Voz'}</span>
+                            <span>{playingAudioId === msg.id ? 'Parar Áudio' : 'Ouvir Voz'}</span>
                           </button>
                         </div>
                       )}
@@ -888,7 +892,7 @@ export default function LeanArticleModal({
               }}
             >
               <CheckCircle2 size={16} />
-              {isRead ? 'Artigo Concluído ✓' : 'Concluir Leitura (+10 XP)'}
+              {isRead ? 'Artigo Concluído' : 'Concluir Leitura (+10 XP)'}
             </button>
           </div>
         </div>

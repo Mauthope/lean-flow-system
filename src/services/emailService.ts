@@ -122,7 +122,7 @@ export function generateAuditEmailHtml(params: ControladoriaInviteParams): strin
 
       <div class="btn-container">
         <a href="${auditUrl}" target="_blank" class="btn">
-          Auditar & Homologar Ganhos Financeiros ➔
+          Auditar & Homologar Ganhos Financeiros →
         </a>
       </div>
 
@@ -221,12 +221,12 @@ export async function sendControladoriaAuditInvite(
   }
 
   // 3. Fallback / Modo Local Simulado (Ideal para Testes sem Dependências)
-  console.group('📧 [LEAN FLOW - SIMULAÇÃO DE E-MAIL PARA CONTROLADORIA]');
+  console.group('[LEAN FLOW - SIMULAÇÃO DE E-MAIL PARA CONTROLADORIA]');
   console.log(`Para: ${params.recipientEmail} (${params.recipientName || 'Responsável'})`);
   console.log(`Assunto: ${subject}`);
   console.log(`Projeto: ${params.protocol} - ${params.projectTitle}`);
   console.log(`Ganhos Estimados: ${formatCurrencyBRL(params.estimatedSavings)}/ano`);
-  console.log(`🔗 Link de Auditoria Gerado: ${params.auditUrl}`);
+  console.log(`Link de Auditoria Gerado: ${params.auditUrl}`);
   console.groupEnd();
 
   return {

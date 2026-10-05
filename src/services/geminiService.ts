@@ -10,11 +10,11 @@ export const SENSEI_PROFILE = {
   title: 'Mestre e Co-Apresentador Lean Manufacturing',
   defaultVoice: 'pt-BR-Neural2-B',
   voices: [
-    { id: 'pt-BR-Neural2-B', label: '🎙️ pt-BR-Neural2-B (Masculina Executiva — DeepMind Neural2)' },
-    { id: 'pt-BR-Neural2-A', label: '🎙️ pt-BR-Neural2-A (Feminina Executiva Suave — DeepMind Neural2)' },
-    { id: 'pt-BR-Neural2-C', label: '🎙️ pt-BR-Neural2-C (Feminina Expressiva — DeepMind Neural2)' },
-    { id: 'pt-BR-Wavenet-B', label: '🎙️ pt-BR-Wavenet-B (Masculina WaveNet Clássica)' },
-    { id: 'pt-BR-Wavenet-A', label: '🎙️ pt-BR-Wavenet-A (Feminina WaveNet Clássica)' },
+    { id: 'pt-BR-Neural2-B', label: 'pt-BR-Neural2-B (Masculina Executiva — DeepMind Neural2)' },
+    { id: 'pt-BR-Neural2-A', label: 'pt-BR-Neural2-A (Feminina Executiva Suave — DeepMind Neural2)' },
+    { id: 'pt-BR-Neural2-C', label: 'pt-BR-Neural2-C (Feminina Expressiva — DeepMind Neural2)' },
+    { id: 'pt-BR-Wavenet-B', label: 'pt-BR-Wavenet-B (Masculina WaveNet Clássica)' },
+    { id: 'pt-BR-Wavenet-A', label: 'pt-BR-Wavenet-A (Feminina WaveNet Clássica)' },
   ],
 } as const;
 
@@ -991,7 +991,7 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
   "category": "${category}",
   "readTimeMinutes": ${targetTime},
   "minReadTimeSeconds": ${minSeconds},
-  "icon": "⚡",
+  "icon": "Zap",
   "summary": "Resumo executivo de 2 frases...",
   "content": {
     "introduction": "Texto completo da introdução...",
@@ -1033,7 +1033,7 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
           category: parsed.category || category,
           readTimeMinutes: Number(parsed.readTimeMinutes) || targetTime,
           minReadTimeSeconds: Number(parsed.minReadTimeSeconds) || minSeconds,
-          icon: parsed.icon || (category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚'),
+          icon: parsed.icon || (category === 'Qualidade' ? 'Sparkles' : category === 'Produtividade' ? 'Zap' : category === 'Manutenção' ? 'Wrench' : category === 'Métodos' ? 'RefreshCw' : 'BookOpen'),
           summary: parsed.summary || `Guia completo sobre ${topic}, desenvolvido pelo Sensei IA.`,
           content: {
             introduction: parsed.content.introduction,
@@ -1212,7 +1212,7 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato (sem blocos de
     category,
     readTimeMinutes: targetTime,
     minReadTimeSeconds: minSeconds,
-    icon: category === 'Qualidade' ? '✨' : category === 'Produtividade' ? '⚡' : category === 'Manutenção' ? '🛠️' : category === 'Métodos' ? '🔄' : '📚',
+    icon: category === 'Qualidade' ? 'Sparkles' : category === 'Produtividade' ? 'Zap' : category === 'Manutenção' ? 'Wrench' : category === 'Métodos' ? 'RefreshCw' : 'BookOpen',
     summary: `Guia prático e estruturado sobre ${formattedTitle}, desenvolvido com o Sensei IA.`,
     content: {
       introduction: intro,
@@ -1268,7 +1268,7 @@ RETORNE EXCLUSIVAMENTE UM OBJETO JSON VÁLIDO no seguinte formato:
     "category": "...",
     "readTimeMinutes": 5,
     "minReadTimeSeconds": 125,
-    "icon": "⚡",
+    "icon": "Zap",
     "summary": "...",
     "content": {
       "introduction": "...",

@@ -18,6 +18,7 @@ import {
   BookOpen,
   Printer,
   Scale,
+  GraduationCap,
 } from 'lucide-react';
 import { dataService } from '@/services/dataService';
 import { AgentExamResult, ExamQuestionSnapshot } from '@/lib/types';
@@ -277,8 +278,8 @@ export default function LeanExamModal({
             <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px', overflow: 'hidden' }}>
               <div style={{ width: `${eligibility.validatedPercent}%`, height: '100%', backgroundColor: '#ef4444' }} />
             </div>
-            <span style={{ fontSize: '0.7rem', color: '#f87171', display: 'block', marginTop: '0.45rem' }}>
-              ⚠️ Faltam {eligibility.missingCount} artigo(s) com leitura ativa validada.
+            <span style={{ fontSize: '0.7rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.45rem' }}>
+              <AlertTriangle size={12} /> Faltam {eligibility.missingCount} artigo(s) com leitura ativa validada.
             </span>
           </div>
 
@@ -386,10 +387,9 @@ export default function LeanExamModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.4rem',
               }}
             >
-              🎓
+              <GraduationCap size={24} color="#fbbf24" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
@@ -522,10 +522,9 @@ export default function LeanExamModal({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '2.5rem',
               }}
             >
-              {examResult.passed ? '🏆' : '⚠️'}
+              {examResult.passed ? <Award size={36} color="#10b981" /> : <AlertTriangle size={36} color="#ef4444" />}
             </div>
 
             <div style={{ maxWidth: '640px' }}>
@@ -1036,7 +1035,7 @@ export default function LeanExamModal({
                   <p style={{ margin: '0 0 4px' }}>
                     <strong>Resposta do Aluno:</strong>{' '}
                     {isBlank ? 'Deixada em Branco' : `${String.fromCharCode(65 + selectedOpt)}) ${q.options[selectedOpt]}`}{' '}
-                    {isCorrect ? '✅ (Correto)' : isBlank ? '⚪ (Neutro)' : '❌ (Incorreto)'}
+                    {isCorrect ? '[Correto]' : isBlank ? '[Neutro]' : '[Incorreto]'}
                   </p>
                   <p style={{ margin: '0 0 4px', color: '#059669', fontWeight: 'bold' }}>
                     <strong>Gabarito Oficial:</strong> {String.fromCharCode(65 + q.correctOptionIndex)}) {q.options[q.correctOptionIndex]}

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { Calendar, AlertCircle, Clock, ShieldCheck, Check } from 'lucide-react';
+import { Calendar, AlertCircle, Clock, ShieldCheck, Check, FileText } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 
 interface PostponeDeadlineModalProps {
@@ -94,8 +94,9 @@ export const PostponeDeadlineModal: React.FC<PostponeDeadlineModalProps> = ({
 
         {/* Campo Nova Data */}
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 700 }}>
-            📅 Nova Data Final (Reprogramada): *
+          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Calendar size={14} color="#06b6d4" />
+            <span>Nova Data Final (Reprogramada): *</span>
           </label>
           <input
             type="date"
@@ -115,8 +116,9 @@ export const PostponeDeadlineModal: React.FC<PostponeDeadlineModalProps> = ({
 
         {/* Motivo da Prorrogação */}
         <div className="form-group" style={{ margin: 0 }}>
-          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 700 }}>
-            📋 Justificativa Formal da Prorrogação (Obrigatório para Auditoria): *
+          <label className="form-label" style={{ color: '#cbd5e1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <FileText size={14} color="#a78bfa" />
+            <span>Justificativa Formal da Prorrogação (Obrigatório para Auditoria): *</span>
           </label>
           <select
             className="form-control"

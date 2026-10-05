@@ -17,6 +17,8 @@ import {
   Briefcase,
   Image as ImageIcon,
   Check,
+  Calendar,
+  X,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -365,9 +367,12 @@ export default function NovaIdeiaKaizenPage() {
                           fontSize: '0.75rem',
                           fontWeight: 700,
                           cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
                         }}
                       >
-                        Remover Foto ✕
+                        <X size={12} /> Remover Foto
                       </button>
                     </div>
                   </div>
@@ -419,7 +424,7 @@ export default function NovaIdeiaKaizenPage() {
                   justifyContent: 'space-between',
                 }}
               >
-                <span>📅 Data do cadastro: <strong>gravada automaticamente</strong> no envio.</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={13} /> Data do cadastro: <strong>gravada automaticamente</strong> no envio.</span>
                 <span style={{ color: '#34d399', fontWeight: 700 }}>● Sistema Online</span>
               </div>
 

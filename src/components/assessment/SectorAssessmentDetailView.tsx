@@ -32,37 +32,47 @@ import {
   FileText,
   FolderKanban,
   CheckCircle,
+  BarChart3,
+  Activity,
+  Bot,
+  DollarSign,
+  Rocket,
+  Search,
+  Layers,
+  Scale,
+  Check,
+  Zap,
 } from 'lucide-react';
 import { formatDate, formatCurrency } from '@/lib/utils';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   concluida: {
-    label: '🟢 Concluído & Homologado',
+    label: 'Concluído & Homologado',
     bg: 'rgba(16, 185, 129, 0.15)',
     text: '#34d399',
     border: 'rgba(16, 185, 129, 0.35)',
   },
   em_andamento: {
-    label: '🟡 Em Andamento',
+    label: 'Em Andamento',
     bg: 'rgba(245, 158, 11, 0.15)',
     text: '#fbbf24',
     border: 'rgba(245, 158, 11, 0.35)',
   },
   aguardando_aprovacao: {
-    label: '🟣 Aguardando Homologação',
+    label: 'Aguardando Homologação',
     bg: 'rgba(168, 85, 247, 0.15)',
     text: '#c084fc',
     border: 'rgba(168, 85, 247, 0.35)',
   },
   aberta: {
-    label: '🔵 Demanda Aberta',
+    label: 'Demanda Aberta',
     bg: 'rgba(56, 189, 248, 0.15)',
     text: '#38bdf8',
     border: 'rgba(56, 189, 248, 0.35)',
   },
   nao_aprovada: {
-    label: '🔴 Cancelada / Não Aprovada',
+    label: 'Cancelada / Não Aprovada',
     bg: 'rgba(239, 68, 68, 0.15)',
     text: '#f87171',
     border: 'rgba(239, 68, 68, 0.35)',
@@ -233,10 +243,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.75rem',
           }}
         >
-          📊
+          <BarChart3 size={28} color="#22d3ee" />
         </div>
         <div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
@@ -437,11 +446,10 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.6rem',
               boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)',
             }}
           >
-            🏆
+            <Award size={28} color="#10b981" />
           </div>
           <div>
             <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -515,7 +523,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   {overallDelta > 0 ? `+${overallDelta}%` : `${overallDelta}%`}
                 </strong>
                 <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
-                  de avanço ({comparisonData.previousAssessment.overallScore}% ➔ {currentAssessment.overallScore}%)
+                  de avanço ({comparisonData.previousAssessment.overallScore}% → {currentAssessment.overallScore}%)
                 </span>
               </div>
             </div>
@@ -558,7 +566,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.2rem' }}>🕸️</span>
+                <Activity size={20} color="#22d3ee" />
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                   Polígono de Maturidade Lean
                 </h3>
@@ -672,10 +680,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.2rem',
                   }}
                 >
-                  🥋
+                  <Bot size={20} color="#fbbf24" />
                 </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
@@ -763,8 +770,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
-                ⚠️ Gargalo Crítico
+              <span style={{ fontSize: '0.65rem', color: '#f87171', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <AlertTriangle size={11} /> Gargalo Crítico
               </span>
               <div
                 style={{
@@ -796,8 +803,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
-                🎯 Foco de Ataque
+              <span style={{ fontSize: '0.65rem', color: '#22d3ee', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Target size={11} /> Foco de Ataque
               </span>
               <div
                 style={{
@@ -829,8 +836,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 padding: '0.55rem 0.75rem',
               }}
             >
-              <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
-                💰 Custo Evitado
+              <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <DollarSign size={11} /> Custo Evitado
               </span>
               <div
                 style={{
@@ -871,14 +878,14 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '1rem' }}>💡</span>
+                  <Lightbulb size={16} color="#fbbf24" />
                   <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                     Ação Recomendada para Alavancar o Setor:
                   </span>
                 </div>
                 {senseiActionDetails.estimatedMaturityJump && (
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-                    🚀 {senseiActionDetails.estimatedMaturityJump}
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Rocket size={11} /> {senseiActionDetails.estimatedMaturityJump}
                   </span>
                 )}
               </div>
@@ -940,10 +947,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.25rem',
                 }}
               >
-                🥋
+                <Bot size={22} color="#fbbf24" />
               </div>
               <div>
                 <span style={{ fontSize: '0.7rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -965,9 +971,12 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   border: '1px solid rgba(34, 211, 238, 0.3)',
                   padding: '0.25rem 0.65rem',
                   borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
                 }}
               >
-                🎯 Eixo Alvo: {senseiActionDetails.targetDimension}
+                <Target size={12} /> Eixo Alvo: {senseiActionDetails.targetDimension}
               </span>
               {senseiActionDetails.estimatedMaturityJump && (
                 <span
@@ -979,9 +988,12 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     border: '1px solid rgba(16, 185, 129, 0.3)',
                     padding: '0.25rem 0.65rem',
                     borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
                   }}
                 >
-                  🚀 {senseiActionDetails.estimatedMaturityJump}
+                  <Rocket size={12} /> {senseiActionDetails.estimatedMaturityJump}
                 </span>
               )}
               {senseiActionDetails.projectedCostAvoidedMonthly ? (
@@ -995,9 +1007,12 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     padding: '0.25rem 0.65rem',
                     borderRadius: '8px',
                     fontFamily: 'var(--font-mono)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
                   }}
                 >
-                  💰 Custo Evitado: {formatCurrency(senseiActionDetails.projectedCostAvoidedMonthly)}/mês
+                  <DollarSign size={12} /> Custo Evitado: {formatCurrency(senseiActionDetails.projectedCostAvoidedMonthly)}/mês
                 </span>
               ) : null}
             </div>
@@ -1015,8 +1030,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                   borderRadius: '0 8px 8px 0',
                 }}
               >
-                <div style={{ fontSize: '0.675rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                  📋 Resumo Executivo do Desafio:
+                <div style={{ fontSize: '0.675rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <FileText size={12} /> Resumo Executivo do Desafio:
                 </div>
                 <p style={{ margin: 0, fontSize: '0.785rem', color: '#cbd5e1', lineHeight: 1.55 }}>
                   {senseiActionDetails.executiveSummary || senseiActionDetails.description}
@@ -1025,8 +1040,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
 
               {senseiActionDetails.rootCauses && senseiActionDetails.rootCauses.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                    🔍 Principais Causas Raízes Mapeadas (TPS):
+                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Search size={12} /> Principais Causas Raízes Mapeadas (TPS):
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                     {senseiActionDetails.rootCauses.map((cause, idx) => (
@@ -1261,7 +1276,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                     >
                       <td style={{ padding: '0.85rem 0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon || '📌'}</span>
+                          <Layers size={16} color="#22d3ee" />
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                               <span style={{ fontWeight: 800, color: '#ffffff' }}>{item.dimensionName}</span>
@@ -1296,7 +1311,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                                   }}
                                   title={`${totalProjects} Projeto(s) Kaizen vinculado(s)`}
                                 >
-                                  🎯 {totalProjects} Kaizen{totalProjects > 1 ? 's' : ''}
+                                  <Target size={11} /> {totalProjects} Kaizen{totalProjects > 1 ? 's' : ''}
                                 </span>
                               )}
                             </div>
@@ -1435,7 +1450,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                                   }}
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                                    <span style={{ fontSize: '1.25rem' }}>🎯</span>
+                                    <Target size={18} color="#22d3ee" />
                                     <div>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>
@@ -1795,7 +1810,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                                  <span style={{ fontSize: '1.35rem' }}>🎯</span>
+                                  <Target size={20} color="#22d3ee" />
                                   <div>
                                     <div style={{ fontWeight: 800, color: '#ffffff', fontSize: '0.85rem' }}>
                                       Nenhum Projeto Kaizen vinculado diretamente a este eixo no momento
@@ -1854,13 +1869,13 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                                  <span style={{ fontSize: '1.1rem' }}>{dimData?.config.icon}</span>
+                                  <Layers size={16} color="#22d3ee" />
                                   <strong style={{ color: '#ffffff', fontSize: '0.875rem' }}>
                                     Critérios Mestres & Checkpoints Auditados — {item.dimensionName}
                                   </strong>
                                 </div>
-                                <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700 }}>
-                                  ⚖️ {criteria.length} Critérios Mestres de Alta Relevância (Princípio de Pareto TPS)
+                                <span style={{ fontSize: '0.7rem', color: '#22d3ee', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <Scale size={11} /> {criteria.length} Critérios Mestres de Alta Relevância (Princípio de Pareto TPS)
                                 </span>
                               </div>
 
@@ -1900,7 +1915,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
                                         {crit.checkpoints.map((chk, chkI) => (
                                           <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
-                                            <span style={{ color: '#22d3ee' }}>✓</span>
+                                            <Check size={11} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
                                             <span>{chk}</span>
                                           </div>
                                         ))}
@@ -1947,10 +1962,9 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.1rem',
               }}
             >
-              💰
+              <DollarSign size={20} color="#10b981" />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
@@ -1986,8 +2000,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
               Decomposição do Custo Evitado pelos 6 Eixos do Lean Assessment:
             </span>
-            <span style={{ fontSize: '0.7rem', color: '#22d3ee' }}>
-              🎯 Cada real retido é vinculado ao seu respectivo eixo de maturidade
+            <span style={{ fontSize: '0.7rem', color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Target size={11} /> Cada real retido é vinculado ao seu respectivo eixo de maturidade
             </span>
           </div>
 
@@ -2007,7 +2021,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '1.1rem' }}>{dimData.config.icon}</span>
+                    <Layers size={14} color="#22d3ee" />
                     <strong style={{ fontSize: '0.775rem', color: '#ffffff' }}>
                       {dimData.config.shortName}
                     </strong>
@@ -2038,8 +2052,8 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
             gap: '0.65rem',
           }}
         >
-          <div style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
-            ⚡ Expressão Aritmética de Formação do Custo Evitado (Chão de Fábrica):
+          <div style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Zap size={14} /> Expressão Aritmética de Formação do Custo Evitado (Chão de Fábrica):
           </div>
 
           <div

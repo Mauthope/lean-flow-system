@@ -37,6 +37,10 @@ import {
   Target,
   Eye,
   Paperclip,
+  Building2,
+  Zap,
+  TrendingUp,
+  BarChart3,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -221,7 +225,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
       const hasGain = dataService.hasMonetaryGain(action);
       if (hasGain && !dataService.isControllershipApproved(action)) {
         alert(
-          '⚠️ CONCLUSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados. Pela governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e homologados pelo auditor contábil antes da conclusão final.\n\nPor favor, abra a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
+          'CONCLUSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados. Pela governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e homologados pelo auditor contábil antes da conclusão final.\n\nPor favor, abra a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
         );
         return;
       }
@@ -286,7 +290,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
     const willHaveGain = cost > 0 || dataService.hasMonetaryGain(action);
     if (willHaveGain && !dataService.isControllershipApproved(action)) {
       alert(
-        '⚠️ HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nFoi identificado um ganho financeiro declarado. Conforme a regra de governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e certificados pelo auditor contábil antes de concluir.\n\nPor favor, acesse a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
+        'HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nFoi identificado um ganho financeiro declarado. Conforme a regra de governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e certificados pelo auditor contábil antes de concluir.\n\nPor favor, acesse a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
       );
       return;
     }
@@ -646,9 +650,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 >
                   <option value="aberta">Aberta</option>
                   <option value="em_andamento">Em Andamento</option>
-                  <option value="aguardando_aprovacao">🟣 Aguardando Homologação</option>
-                  <option value="concluida">🟢 Concluída & Homologada</option>
-                  {isAdmin && <option value="nao_aprovada">🔴 Não Aprovada</option>}
+                  <option value="aguardando_aprovacao">Aguardando Homologação</option>
+                  <option value="concluida">Concluída & Homologada</option>
+                  {isAdmin && <option value="nao_aprovada">Não Aprovada</option>}
                 </select>
               </div>
             )}
@@ -669,7 +673,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 }}
                 title="Data oficial de conclusão da ação"
               >
-                ✅ Concluído em: {formatDate(action.conclusionDate || action.completedAt?.split('T')[0] || '')}
+                <CheckCircle2 size={12} color="#15803d" />
+                <span>Concluído em: {formatDate(action.conclusionDate || action.completedAt?.split('T')[0] || '')}</span>
               </span>
             )}
 
@@ -693,7 +698,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                     }}
                     title="Existem atividades 5W2H pendentes de conclusão"
                   >
-                    ⚠️ {uncompleted.length} 5W2H pendente(s)
+                    <AlertTriangle size={12} color="#b91c1c" />
+                    <span>{uncompleted.length} 5W2H pendente(s)</span>
                   </span>
                 );
               }
@@ -719,7 +725,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                   }}
                   title="Acompanhamento obrigatório de 3 meses pelo agente para homologação"
                 >
-                  📅 {monthsFilled}/3 meses {monthsFilled === 3 ? '✓ (Pronto)' : '(Aferição)'}
+                  <Calendar size={12} color={monthsFilled === 3 ? '#15803d' : '#b45309'} />
+                  <span>{monthsFilled}/3 meses {monthsFilled === 3 ? '(Pronto)' : '(Aferição)'}</span>
                 </span>
               );
             })()}
@@ -747,7 +754,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                       }}
                       title="Ganhos financeiros homologados pela Controladoria"
                     >
-                      🏛️ Controladoria: Homologada ✓
+                      <Building2 size={12} color="#15803d" />
+                      <span>Controladoria: Homologada</span>
                     </span>
                   );
                 }
@@ -768,7 +776,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                       }}
                       title="Aguardando parecer do auditor contábil"
                     >
-                      🏛️ Controladoria: Em Análise ⏳
+                      <Building2 size={12} color="#b45309" />
+                      <span>Controladoria: Em Análise</span>
                     </span>
                   );
                 }
@@ -789,7 +798,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                       }}
                       title="Controladoria solicitou ajustes de premissas"
                     >
-                      🏛️ Controladoria: Ajustes ❌
+                      <Building2 size={12} color="#b91c1c" />
+                      <span>Controladoria: Ajustes</span>
                     </span>
                   );
                 }
@@ -809,7 +819,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                     }}
                     title="Projeto com retorno financeiro: envio à Controladoria é obrigatório"
                   >
-                    🏛️ Controladoria: Obrigatória ⚠️
+                    <Building2 size={12} color="#b45309" />
+                    <span>Controladoria: Obrigatória</span>
                   </span>
                 );
               }
@@ -830,7 +841,8 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                   }}
                   title="Projeto sem retorno monetário direto: envio à Controladoria dispensado"
                 >
-                  🏛️ Controladoria: Dispensada
+                  <Building2 size={12} color="#64748b" />
+                  <span>Controladoria: Dispensada</span>
                 </span>
               );
             })()}
@@ -911,8 +923,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 )}
                 {action.senseiStrategicAudit.improvementSuggestions && action.senseiStrategicAudit.improvementSuggestions.length > 0 && (
                   <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b45309' }}>
-                      💡 Sugestões do Sensei para subir a aderência à diretoria:
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Sparkles size={12} color="#b45309" />
+                      <span>Sugestões do Sensei para subir a aderência à diretoria:</span>
                     </span>
                     {action.senseiStrategicAudit.improvementSuggestions.map((sug, sIdx) => (
                       <div key={sIdx} style={{ fontSize: '0.725rem', color: '#475569', display: 'flex', alignItems: 'flex-start', gap: '0.35rem' }}>
@@ -1040,43 +1053,44 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
               padding: '0.875rem 1.125rem',
             }}
           >
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
-              📊 Composição das Fontes de Economia & Custo Evitado:
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.5rem' }}>
+              <BarChart3 size={13} color="#34d399" />
+              <span>Composição das Fontes de Economia & Custo Evitado:</span>
             </span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {(action.costBreakdown.productionIncrease || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  🚀 Aumento de Produção: {formatCurrency(action.costBreakdown.productionIncrease!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <TrendingUp size={12} /> Aumento de Produção: {formatCurrency(action.costBreakdown.productionIncrease!)}
                 </span>
               )}
               {(action.costBreakdown.scrapReduction || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  ♻️ Redução de Refugo/Matéria: {formatCurrency(action.costBreakdown.scrapReduction!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Layers size={12} /> Redução de Refugo/Matéria: {formatCurrency(action.costBreakdown.scrapReduction!)}
                 </span>
               )}
               {(action.costBreakdown.laborSavings || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  👷‍♂️ Mão de Obra / Horas: {formatCurrency(action.costBreakdown.laborSavings!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Clock size={12} /> Mão de Obra / Horas: {formatCurrency(action.costBreakdown.laborSavings!)}
                 </span>
               )}
               {(action.costBreakdown.machineDowntime || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  ⚙️ Paradas de Máquina Evitadas: {formatCurrency(action.costBreakdown.machineDowntime!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Target size={12} /> Paradas de Máquina Evitadas: {formatCurrency(action.costBreakdown.machineDowntime!)}
                 </span>
               )}
               {(action.costBreakdown.toolingAndEnergy || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  ⚡ Energia & Ferramental: {formatCurrency(action.costBreakdown.toolingAndEnergy!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Zap size={12} /> Energia & Ferramental: {formatCurrency(action.costBreakdown.toolingAndEnergy!)}
                 </span>
               )}
               {(action.costBreakdown.logisticsAndFreight || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  📦 Fretes & Logística: {formatCurrency(action.costBreakdown.logisticsAndFreight!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <FileText size={12} /> Fretes & Logística: {formatCurrency(action.costBreakdown.logisticsAndFreight!)}
                 </span>
               )}
               {(action.costBreakdown.otherSavings || 0) > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                  ➕ {action.costBreakdown.otherSavingsDescription || 'Outros Custos'}: {formatCurrency(action.costBreakdown.otherSavings!)}
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, backgroundColor: '#090e1a', color: '#34d399', padding: '0.25rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Plus size={12} /> {action.costBreakdown.otherSavingsDescription || 'Outros Custos'}: {formatCurrency(action.costBreakdown.otherSavings!)}
                 </span>
               )}
             </div>
@@ -1136,7 +1150,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 className="btn btn-secondary btn-sm"
                 style={{ fontSize: '0.75rem', color: '#047857', border: '1px solid #10b981' }}
               >
-                {showDetailedBreakdown ? '➖ Ocultar Detalhamento de Fontes' : '➕ Detalhar Fontes de Custo (Produção, Sucata, etc.)'}
+                {showDetailedBreakdown ? 'Ocultar Detalhamento de Fontes' : 'Detalhar Fontes de Custo (Produção, Sucata, etc.)'}
               </button>
             </div>
 
@@ -1209,14 +1223,15 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                   gap: '0.875rem',
                 }}
               >
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#065f46', textTransform: 'uppercase' }}>
-                  🎯 Detalhamento por Fontes de Custo Evitado (Preenchimento Opcional/Guiado):
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#065f46', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Target size={12} color="#065f46" />
+                  <span>Detalhamento por Fontes de Custo Evitado (Preenchimento Opcional/Guiado):</span>
                 </span>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.875rem' }}>
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      🚀 Aumento de Produção / Capacidade (R$):
+                      Aumento de Produção / Capacidade (R$):
                     </label>
                     <input
                       type="number"
@@ -1233,7 +1248,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      ♻️ Redução de Refugo / Matéria-Prima (R$):
+                      Redução de Refugo / Matéria-Prima (R$):
                     </label>
                     <input
                       type="number"
@@ -1250,7 +1265,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      👷‍♂️ Mão de Obra / Horas Poupadas (R$):
+                      Mão de Obra / Horas Poupadas (R$):
                     </label>
                     <input
                       type="number"
@@ -1267,7 +1282,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      ⚙️ Paradas de Máquina Evitadas (R$):
+                      Paradas de Máquina Evitadas (R$):
                     </label>
                     <input
                       type="number"
@@ -1284,7 +1299,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      ⚡ Energia, Ferramental & Insumos (R$):
+                      Energia, Ferramental & Insumos (R$):
                     </label>
                     <input
                       type="number"
@@ -1301,7 +1316,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
 
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      📦 Fretes Especiais & Logística (R$):
+                      Fretes Especiais & Logística (R$):
                     </label>
                     <input
                       type="number"
@@ -1321,7 +1336,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
                   <div>
                     <label className="form-label" style={{ fontSize: '0.75rem' }}>
-                      ➕ Descrição de Outros Custos Evitados:
+                      Descrição de Outros Custos Evitados:
                     </label>
                     <input
                       type="text"
@@ -1412,8 +1427,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
           {action.dueDate && (
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.725rem', color: '#94a3b8' }}>Prazo Estimado:</p>
-              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
-                📅 {action.dueDate}
+              <p style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem' }}>
+                <Calendar size={13} color="#22d3ee" />
+                <span>{action.dueDate}</span>
               </p>
             </div>
           )}
@@ -1703,8 +1719,9 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                           </span>
 
                           {act.responsibleName && (
-                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
-                              👤 {act.responsibleName}
+                            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <UserIcon size={12} color="#64748b" />
+                              <span>{act.responsibleName}</span>
                             </span>
                           )}
                         </div>
@@ -1767,9 +1784,13 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                                 padding: '0.12rem 0.5rem',
                                 borderRadius: '4px',
                                 border: '1px solid rgba(59, 130, 246, 0.25)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                               }}
                             >
-                              🏢 {act.responsibleSectorName}
+                              <Building2 size={11} />
+                              <span>{act.responsibleSectorName}</span>
                             </span>
                           )}
 
@@ -1783,9 +1804,13 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                                 padding: '0.12rem 0.5rem',
                                 borderRadius: '4px',
                                 border: '1px solid rgba(16, 185, 129, 0.25)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                               }}
                             >
-                              📋 Doc: {act.trackingDocNumber}
+                              <FileText size={11} />
+                              <span>Doc: {act.trackingDocNumber}</span>
                             </span>
                           )}
 
@@ -1799,10 +1824,14 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                                 padding: '0.12rem 0.5rem',
                                 borderRadius: '4px',
                                 border: '1px solid rgba(245, 158, 11, 0.3)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                               }}
                               title={`Reprogramada ${act.postponedCount}x para auditoria interna. Motivo: ${act.postponementReason || 'Não informado'}`}
                             >
-                              ⚠️ Reprogramada ({act.postponedCount}x) {act.originalEndDate ? `[Original: ${formatDate(act.originalEndDate)}]` : ''}
+                              <AlertTriangle size={11} />
+                              <span>Reprogramada ({act.postponedCount}x) {act.originalEndDate ? `[Original: ${formatDate(act.originalEndDate)}]` : ''}</span>
                             </span>
                           ) : null}
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Zap } from 'lucide-react';
 import { ActionStatus, ActionPriority, LeanWasteCategory } from '@/lib/types';
 import { STATUS_CONFIG, PRIORITY_CONFIG, WASTE_CATEGORIES } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -109,7 +110,7 @@ export function WasteCategoryBadge({ category }: { category: LeanWasteCategory }
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '0.3rem',
+        gap: '0.35rem',
         padding: '0.15rem 0.5rem',
         borderRadius: '6px',
         fontSize: '0.725rem',
@@ -120,7 +121,8 @@ export function WasteCategoryBadge({ category }: { category: LeanWasteCategory }
         whiteSpace: 'nowrap',
       }}
     >
-      ⚡ {cat.label}
+      <Zap size={11} color="#f59e0b" />
+      <span>{cat.label}</span>
     </span>
   );
 }

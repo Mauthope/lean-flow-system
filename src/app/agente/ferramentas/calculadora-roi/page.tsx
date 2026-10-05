@@ -18,6 +18,10 @@ import {
   Zap,
   PackageCheck,
   AlertOctagon,
+  Trash2,
+  Users,
+  Cpu,
+  Box,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -70,17 +74,17 @@ export default function CalculadoraRoiPage() {
   const totalHoursSavedAnnual = totalHoursSavedMonthly * 12;
 
   const handleCopyValues = () => {
-    const text = `📊 COMPOSIÇÃO DE CUSTO EVITADO & ROI LEAN:
+    const text = `COMPOSIÇÃO DE CUSTO EVITADO & ROI LEAN:
 • Custo Evitado Real (Total Mensal): ${formatCurrency(totalCostAvoidedMonthly)} (Anual: ${formatCurrency(totalCostAvoidedAnnual)})
 • Horas Economizadas: ${totalHoursSavedMonthly.toFixed(1)}h/mês (${totalHoursSavedAnnual.toFixed(0)}h/ano)
 
 FONTES DE ECONOMIA:
-  🚀 Aumento de Produção: ${formatCurrency(productionIncreaseMonthly)} (${extraUnitsPerMonth} peças extras × ${formatCurrency(unitMargin)})
-  ♻️ Redução de Refugo: ${formatCurrency(scrapSavingsMonthly)} (${scrapUnitsAvoided} peças salvas × ${formatCurrency(unitMaterialCost)})
-  👷‍♂️ Mão de Obra / Ciclo: ${formatCurrency(laborSavingsMonthly)} (${laborHoursSavedPerMonth.toFixed(1)}h economizadas)
-  ⚙️ Paradas de Máquina Evitadas: ${formatCurrency(machineDowntimeMonthly)} (${downtimeHoursAvoided}h de máquina)
-  ⚡ Ferramental & Energia: ${formatCurrency(toolingSavings)}
-  📦 Fretes & Logística: ${formatCurrency(freightSavings)}`;
+  • Aumento de Produção: ${formatCurrency(productionIncreaseMonthly)} (${extraUnitsPerMonth} peças extras × ${formatCurrency(unitMargin)})
+  • Redução de Refugo: ${formatCurrency(scrapSavingsMonthly)} (${scrapUnitsAvoided} peças salvas × ${formatCurrency(unitMaterialCost)})
+  • Mão de Obra / Ciclo: ${formatCurrency(laborSavingsMonthly)} (${laborHoursSavedPerMonth.toFixed(1)}h economizadas)
+  • Paradas de Máquina Evitadas: ${formatCurrency(machineDowntimeMonthly)} (${downtimeHoursAvoided}h de máquina)
+  • Ferramental & Energia: ${formatCurrency(toolingSavings)}
+  • Fretes & Logística: ${formatCurrency(freightSavings)}`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -185,8 +189,8 @@ FONTES DE ECONOMIA:
           {/* Driver 1: Production Increase */}
           <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-heading)' }}>
-                🚀 1. Aumento de Produção & Capacidade Extra
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <TrendingUp size={15} /> 1. Aumento de Produção & Capacidade Extra
               </span>
               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(productionIncreaseMonthly)}/mês
@@ -217,8 +221,8 @@ FONTES DE ECONOMIA:
           {/* Driver 2: Scrap & Material */}
           <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #06b6d4', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-heading)' }}>
-                ♻️ 2. Redução de Sucata & Refugo de Matéria-Prima
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Trash2 size={15} /> 2. Redução de Sucata & Refugo de Matéria-Prima
               </span>
               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(scrapSavingsMonthly)}/mês
@@ -249,8 +253,8 @@ FONTES DE ECONOMIA:
           {/* Driver 3: Labor & Cycle Time */}
           <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #38bdf8', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-heading)' }}>
-                👷‍♂️ 3. Mão de Obra & Tempo de Ciclo
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Users size={15} /> 3. Mão de Obra & Tempo de Ciclo
               </span>
               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(laborSavingsMonthly)}/mês
@@ -301,8 +305,8 @@ FONTES DE ECONOMIA:
           {/* Driver 4: Machine Downtime & Tooling */}
           <div className="card" style={{ padding: '1.25rem', borderLeft: '5px solid #fbbf24', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-heading)' }}>
-                ⚙️ 4. Paradas de Máquina, Insumos & Fretes
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Cpu size={15} /> 4. Paradas de Máquina, Insumos & Fretes
               </span>
               <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
                 +{formatCurrency(machineDowntimeMonthly + toolingSavings + freightSavings)}/mês
@@ -388,8 +392,8 @@ FONTES DE ECONOMIA:
             {/* Big Numbers */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
               <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
-                  💰 Custo Evitado Real Total (Mensal)
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <DollarSign size={13} /> Custo Evitado Real Total (Mensal)
                 </span>
                 <p style={{ fontSize: '2.1rem', fontWeight: 900, color: '#34d399', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
                   {formatCurrency(totalCostAvoidedMonthly)}
@@ -400,8 +404,8 @@ FONTES DE ECONOMIA:
               </div>
 
               <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.12)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
-                  ⏱️ Capacidade Liberada (Horas Salvas)
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Clock size={13} /> Capacidade Liberada (Horas Salvas)
                 </span>
                 <p style={{ fontSize: '1.75rem', fontWeight: 900, color: '#22d3ee', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>
                   {totalHoursSavedMonthly.toFixed(1)} h / mês
@@ -419,27 +423,27 @@ FONTES DE ECONOMIA:
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.8125rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>🚀 Aumento de Produção:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><TrendingUp size={13} color="#34d399" /> Aumento de Produção:</span>
                   <strong style={{ color: '#34d399', fontFamily: 'var(--font-mono)' }}>{formatCurrency(productionIncreaseMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>♻️ Redução de Refugo:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Trash2 size={13} color="#22d3ee" /> Redução de Refugo:</span>
                   <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)' }}>{formatCurrency(scrapSavingsMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>👷‍♂️ Mão de Obra / Ciclo:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Users size={13} color="#38bdf8" /> Mão de Obra / Ciclo:</span>
                   <strong style={{ color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>{formatCurrency(laborSavingsMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>⚙️ Paradas de Máquina:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Cpu size={13} color="#fbbf24" /> Paradas de Máquina:</span>
                   <strong style={{ color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>{formatCurrency(machineDowntimeMonthly)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>⚡ Ferramental & Energia:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Zap size={13} color="#c084fc" /> Ferramental & Energia:</span>
                   <strong style={{ color: '#c084fc', fontFamily: 'var(--font-mono)' }}>{formatCurrency(toolingSavings)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#cbd5e1' }}>📦 Fretes & Logística:</span>
+                  <span style={{ color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Box size={13} color="#cbd5e1" /> Fretes & Logística:</span>
                   <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>{formatCurrency(freightSavings)}</strong>
                 </div>
               </div>

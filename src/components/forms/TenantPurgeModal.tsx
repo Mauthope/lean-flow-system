@@ -115,9 +115,9 @@ export const TenantPurgeModal: React.FC<TenantPurgeModalProps> = ({
       if (mode === 'full_reset') {
         summary += `• Agentes de teste removidos: ${result.deletedAgents}\n` +
           `• Setores de teste removidos: ${result.deletedSectors}\n` +
-          `✓ Perfil do Gestor da Unidade mantido ativo para entrada em produção.\n`;
+          `• Perfil do Gestor da Unidade mantido ativo para entrada em produção.\n`;
       } else {
-        summary += `✓ Estrutura de Setores (${stats?.sectorsCount || 0}) e Agentes (${stats?.agentsCount || 0}) preservados integralmente.\n`;
+        summary += `• Estrutura de Setores (${stats?.sectorsCount || 0}) e Agentes (${stats?.agentsCount || 0}) preservados integralmente.\n`;
       }
 
       summary += `\nA planta fabril está agora com o banco de dados limpo e pronta para operação real em produção!`;

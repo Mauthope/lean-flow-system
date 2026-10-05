@@ -4,7 +4,7 @@ import React from 'react';
 import { LeanAction } from '@/lib/types';
 import { formatDate, formatCurrency, getFollowUpMonthsFilledCount } from '@/lib/utils';
 import { PriorityBadge } from '@/components/ui/Badge';
-import { Calendar } from 'lucide-react';
+import { Calendar, DollarSign, Clock, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface KanbanCardProps {
@@ -271,7 +271,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 gap: '0.25rem',
               }}
             >
-              💰 {isCompleted ? 'Ganho:' : 'Est:'} {formatCurrency(formattedSavings)}
+              <DollarSign size={10} />
+              <span>{isCompleted ? 'Ganho:' : 'Est:'} {formatCurrency(formattedSavings)}</span>
             </span>
           )}
 
@@ -285,9 +286,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                 border: isDark ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid #d8b4fe',
                 padding: '0.1rem 0.4rem',
                 borderRadius: '5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
               }}
             >
-              ⏳ Validação Master
+              <Clock size={10} />
+              <span>Validação Master</span>
             </span>
           )}
 
@@ -315,11 +320,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
                   borderRadius: '5px',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.2rem',
+                  gap: '0.25rem',
                 }}
                 title={monthsFilled === 3 ? '3 meses preenchidos: Pronto para homologação master' : `${monthsFilled}/3 meses de acompanhamento preenchidos`}
               >
-                📅 {monthsFilled}/3m {monthsFilled === 3 ? '✓' : ''}
+                <Calendar size={10} />
+                <span>{monthsFilled}/3m</span>
+                {monthsFilled === 3 && <Check size={9} />}
               </span>
             );
           })()}

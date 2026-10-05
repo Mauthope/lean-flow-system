@@ -33,6 +33,10 @@ import {
   Play,
   Flame,
   Clock,
+  DollarSign,
+  Kanban,
+  Trash2,
+  FileText,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -509,9 +513,9 @@ export default function LandingPage() {
                   <div style={{ width: '9.5%', backgroundColor: '#ef4444' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.4rem' }}>
-                  <span style={{ color: '#34d399' }}>🟢 VA: 78.4%</span>
-                  <span style={{ color: '#fbbf24' }}>🟡 NNVA: 12.1%</span>
-                  <span style={{ color: '#f87171' }}>🔴 NVA: 9.5%</span>
+                  <span style={{ color: '#34d399', fontWeight: 700 }}>VA: 78.4%</span>
+                  <span style={{ color: '#fbbf24', fontWeight: 700 }}>NNVA: 12.1%</span>
+                  <span style={{ color: '#f87171', fontWeight: 700 }}>NVA: 9.5%</span>
                 </div>
               </div>
 
@@ -526,8 +530,8 @@ export default function LandingPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
-                    💰 Custo Evitado Homologado
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <DollarSign size={13} /> Custo Evitado Homologado
                   </span>
                   <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 800 }}>+24% vs Meta</span>
                 </div>
@@ -550,8 +554,8 @@ export default function LandingPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase' }}>
-                    📊 Fluxo de Demandas Kaizen
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#c084fc', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Kanban size={13} /> Fluxo de Demandas Kaizen
                   </span>
                   <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>100% Digital</span>
                 </div>
@@ -662,10 +666,10 @@ export default function LandingPage() {
             }}
           >
             {[
-              { key: 'crono', label: '⏱️ Cronoanálise Yamazumi' },
-              { key: 'roi', label: '💰 Motor de Custo Evitado' },
-              { key: 'kanban', label: '📊 Kanban & Triagem' },
-              { key: 'hub', label: '🛠️ Hub de Ferramentas Lean' },
+              { key: 'crono', label: 'Cronoanálise Yamazumi' },
+              { key: 'roi', label: 'Motor de Custo Evitado' },
+              { key: 'kanban', label: 'Kanban & Triagem' },
+              { key: 'hub', label: 'Hub de Ferramentas Lean' },
             ].map((tab) => {
               const isSelected = activeFeatureTab === tab.key;
               return (
@@ -758,7 +762,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div style={{ backgroundColor: 'rgba(37, 99, 235, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '12px', padding: '1rem', fontSize: '0.8125rem', color: '#e0f2fe' }}>
-                    💡 <strong>Memória de Cálculo:</strong> N&apos; = [(1,960 × 3,42) / (0,05 × 42,8)]² = 9,81 → 10 tomadas necessárias.
+                    <strong>Memória de Cálculo:</strong> N&apos; = [(1,960 × 3,42) / (0,05 × 42,8)]² = 9,81 → 10 tomadas necessárias.
                   </div>
                 </div>
               </div>
@@ -777,17 +781,17 @@ export default function LandingPage() {
                     O sistema converte horas poupadas e perdas eliminadas em Reais (R$), permitindo emitir relatórios executivos formatados em A3 / PDF para diretoria.
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem' }}>
-                      📈 Aumento de Produção
+                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <TrendingUp size={14} color="#34d399" /> Aumento de Produção
                     </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem' }}>
-                      ♻️ Redução de Refugo
+                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Trash2 size={14} color="#22d3ee" /> Redução de Refugo
                     </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem' }}>
-                      ⏱️ Horas & Mão de Obra
+                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Clock size={14} color="#38bdf8" /> Horas & Mão de Obra
                     </div>
-                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem' }}>
-                      ⚙️ Paradas de Máquina (OEE)
+                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Cpu size={14} color="#fbbf24" /> Paradas de Máquina (OEE)
                     </div>
                   </div>
                 </div>
@@ -875,22 +879,22 @@ export default function LandingPage() {
             {activeFeatureTab === 'hub' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <span style={{ fontSize: '1.5rem' }}>🎯</span>
+                  <Target size={24} color="#38bdf8" />
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>Matriz GUT</h4>
                   <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Priorização sistemática com Gravidade × Urgência × Tendência (1 a 125).</p>
                 </div>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <span style={{ fontSize: '1.5rem' }}>📊</span>
+                  <BarChart3 size={24} color="#34d399" />
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>5 Porquês & Pareto 80/20</h4>
                   <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Investigação profunda de causa raiz e priorização das causas vitais pelo princípio 80/20.</p>
                 </div>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <span style={{ fontSize: '1.5rem' }}>📄</span>
+                  <FileText size={24} color="#a855f7" />
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>Gerador de SOP / LPP</h4>
                   <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Criação de Procedimentos Operacionais Padrão com fotos e segurança.</p>
                 </div>
                 <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '1.5rem', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <span style={{ fontSize: '1.5rem' }}>⚙️</span>
+                  <Settings size={24} color="#fbbf24" />
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: '0.5rem 0 0.25rem' }}>TPM & Canal Kaizen</h4>
                   <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', margin: 0 }}>Manutenção autônoma, controle OEE e mural de destaques da fábrica.</p>
                 </div>

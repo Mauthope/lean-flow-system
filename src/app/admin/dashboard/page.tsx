@@ -25,6 +25,7 @@ import {
   Layers,
   ArrowRight,
   ShieldCheck,
+  ShieldAlert,
   Calendar,
   Sigma,
   ExternalLink,
@@ -220,7 +221,7 @@ export default function AdminDashboardPage() {
                   boxShadow: '0 0 10px rgba(239, 68, 68, 0.25)',
                 }}
               >
-                <AlertTriangle size={12} color="#f87171" /> 🚨 {overdueCount} EM ATRASO {nearDueCount > 0 ? `• 🟡 ${nearDueCount} QUASE ATRASADOS` : ''}
+                <AlertTriangle size={12} color="#f87171" /> {overdueCount} EM ATRASO {nearDueCount > 0 ? `• ${nearDueCount} QUASE ATRASADOS` : ''}
               </span>
             ) : nearDueCount > 0 ? (
               <span
@@ -238,7 +239,7 @@ export default function AdminDashboardPage() {
                   boxShadow: '0 0 10px rgba(245, 158, 11, 0.2)',
                 }}
               >
-                <Clock size={12} color="#fbbf24" /> 🟡 {nearDueCount} VENCENDO EM BREVE
+                <Clock size={12} color="#fbbf24" /> {nearDueCount} VENCENDO EM BREVE
               </span>
             ) : (
               <span
@@ -488,7 +489,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.15s ease',
               }}
             >
-              🟢 Vigentes no Ano ({boardFinancials.activeProjectsCount})
+              Vigentes no Ano ({boardFinancials.activeProjectsCount})
             </button>
             <button
               onClick={() => setBoardFilter('expirados')}
@@ -510,7 +511,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.15s ease',
               }}
             >
-              ⏰ Ciclo Encerrado (&gt; 12m) ({boardFinancials.expiredProjectsCount})
+              Ciclo Encerrado (&gt; 12m) ({boardFinancials.expiredProjectsCount})
             </button>
             <button
               onClick={() => setBoardFilter('todos')}
@@ -532,7 +533,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.15s ease',
               }}
             >
-              📋 Todos ({boardFinancials.projects.length})
+              Todos ({boardFinancials.projects.length})
             </button>
           </div>
         </div>
@@ -638,7 +639,7 @@ export default function AdminDashboardPage() {
                   <span>{boardFinancials.averagePaybackMonths} <span style={{ fontSize: '0.8rem', color: isDark ? '#fbbf24' : '#b45309' }}>meses</span></span>
                 )
               ) : (
-                <span style={{ color: isDark ? '#34d399' : '#15803d' }}>⚡ Imediato</span>
+                <span style={{ color: isDark ? '#34d399' : '#15803d' }}>Imediato</span>
               )}
             </strong>
             <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', marginTop: '0.15rem' }}>
@@ -886,7 +887,7 @@ export default function AdminDashboardPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', whiteSpace: 'nowrap' }}>
                           {p.totalInvestmentCost === 0 ? (
                             <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                              ⚡ Imediato (0m)
+                              Imediato (0m)
                             </span>
                           ) : p.paybackMonths >= 12 ? (
                             <span
@@ -902,7 +903,7 @@ export default function AdminDashboardPage() {
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              ⏱️ {(p.paybackMonths / 12).toFixed(1)} anos ({p.paybackMonths}m)
+                              {(p.paybackMonths / 12).toFixed(1)} anos ({p.paybackMonths}m)
                             </span>
                           ) : (
                             <span
@@ -918,7 +919,7 @@ export default function AdminDashboardPage() {
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              ⚡ {p.paybackMonths} meses
+                              {p.paybackMonths} meses
                             </span>
                           )}
                           <span style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.15rem', whiteSpace: 'nowrap' }}>
@@ -943,7 +944,7 @@ export default function AdminDashboardPage() {
                               display: 'inline-block',
                             }}
                           >
-                            ⚪ Encerrado (Rotina)
+                            Encerrado (Rotina)
                           </span>
                         ) : (
                           <span
@@ -959,7 +960,7 @@ export default function AdminDashboardPage() {
                               display: 'inline-block',
                             }}
                           >
-                            🟢 Computado no Total
+                            Computado no Total
                           </span>
                         )}
                       </td>
@@ -1262,7 +1263,7 @@ export default function AdminDashboardPage() {
 
             <div style={{ backgroundColor: '#090e1a', padding: '0.6rem 0.75rem', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
               <div style={{ fontSize: '0.675rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <span>🛡️</span> Espera Ext.
+                <ShieldAlert size={12} /> Espera Ext.
               </div>
               <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#fbbf24', fontFamily: 'var(--font-mono)' }}>
                 {leadTimeMetrics.overallExternalWaitDays} <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>dias</span>
@@ -1288,7 +1289,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.2s',
               }}
             >
-              📊 Fases PDCA
+              Fases PDCA
             </button>
             <button
               type="button"
@@ -1306,7 +1307,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.2s',
               }}
             >
-              👤 Especialistas
+              Especialistas
             </button>
             <button
               type="button"
@@ -1324,7 +1325,7 @@ export default function AdminDashboardPage() {
                 transition: 'all 0.2s',
               }}
             >
-              🛡️ Gargalos Ext.
+              Gargalos Ext.
             </button>
           </div>
 
@@ -1363,7 +1364,7 @@ export default function AdminDashboardPage() {
                   <div key={stg.stage} style={{ backgroundColor: '#090e1a', padding: '0.65rem 0.85rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
                       <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span>{stg.icon}</span> {stg.label}
+                        {stg.stage === 'plan' ? <Target size={14} color={stg.color} /> : stg.stage === 'do' ? <Zap size={14} color={stg.color} /> : <Building2 size={14} color={stg.color} />} {stg.label}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <strong style={{ fontSize: '0.85rem', color: stg.color, fontFamily: 'var(--font-mono)' }}>
@@ -1451,8 +1452,8 @@ export default function AdminDashboardPage() {
                 {leadTimeMetrics.sectorBottlenecks.map((sec, idx) => (
                   <div key={idx} style={{ backgroundColor: '#090e1a', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#ffffff' }}>
-                        🏢 {sec.sectorName}
+                      <span style={{ fontSize: '0.78125rem', fontWeight: 700, color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Building2 size={13} color="#22d3ee" /> {sec.sectorName}
                       </span>
                       <strong style={{ fontSize: '0.8rem', color: sec.color, fontFamily: 'var(--font-mono)' }}>
                         +{sec.avgWaitDays} dias / tarefa

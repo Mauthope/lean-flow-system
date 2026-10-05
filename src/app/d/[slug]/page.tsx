@@ -311,7 +311,7 @@ export default function TenantPublicDemandPage() {
                 >
                   {sectors.map((sec) => (
                     <option key={sec.id} value={sec.id}>
-                      🏢 {sec.name} ({sec.code})
+                      {sec.name} ({sec.code})
                     </option>
                   ))}
                 </select>
@@ -344,7 +344,7 @@ export default function TenantPublicDemandPage() {
                 >
                   {Object.entries(WASTE_CATEGORIES).map(([key, cat]) => (
                     <option key={key} value={key}>
-                      ⚡ {cat.label} — {cat.description}
+                      {cat.label} — {cat.description}
                     </option>
                   ))}
                 </select>

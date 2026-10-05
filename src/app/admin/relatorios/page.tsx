@@ -16,6 +16,11 @@ import {
   Layers,
   ArrowRight,
   ExternalLink,
+  Users,
+  Cpu,
+  Zap,
+  Box,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -125,8 +130,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', textTransform: 'uppercase' }}>
-              🚀 Aumento de Produção
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <TrendingUp size={13} /> Aumento de Produção
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.productionIncrease || 0)}
@@ -140,8 +145,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0369a1', textTransform: 'uppercase' }}>
-              ♻️ Redução de Refugo/Sucata
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#22d3ee' : '#0369a1', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Trash2 size={13} /> Redução de Refugo/Sucata
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.scrapReduction || 0)}
@@ -155,8 +160,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#60a5fa' : '#1d4ed8', textTransform: 'uppercase' }}>
-              👷‍♂️ Mão de Obra & Ciclo
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#60a5fa' : '#1d4ed8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Users size={13} /> Mão de Obra & Ciclo
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.laborSavings || 0)}
@@ -170,8 +175,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#fbbf24' : '#b45309', textTransform: 'uppercase' }}>
-              ⚙️ Paradas de Máquina (OEE)
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#fbbf24' : '#b45309', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Cpu size={13} /> Paradas de Máquina (OEE)
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.machineDowntime || 0)}
@@ -185,8 +190,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#c084fc' : '#7e22ce', textTransform: 'uppercase' }}>
-              ⚡ Energia & Ferramental
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#c084fc' : '#7e22ce', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Zap size={13} /> Energia & Ferramental
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency(metrics.costBreakdownTotals?.toolingAndEnergy || 0)}
@@ -200,8 +205,8 @@ export default function AdminRelatoriosPage() {
             borderRadius: '12px',
             padding: '1.125rem'
           }}>
-            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#cbd5e1' : '#475569', textTransform: 'uppercase' }}>
-              📦 Fretes & Outros
+            <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDark ? '#cbd5e1' : '#475569', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Box size={13} /> Fretes & Outros
             </span>
             <p style={{ fontSize: '1.5rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
               {formatCurrency((metrics.costBreakdownTotals?.logisticsAndFreight || 0) + (metrics.costBreakdownTotals?.otherSavings || 0))}
@@ -297,7 +302,10 @@ export default function AdminRelatoriosPage() {
                       <p style={{ fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a', margin: '0.15rem 0 0', fontFamily: 'var(--font-heading)' }}>{action.title}</p>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', color: isDark ? '#cbd5e1' : '#334155' }}>
-                      ⚡ {waste?.label || action.wasteCategory}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Zap size={13} style={{ color: isDark ? '#38bdf8' : '#0284c7' }} />
+                        {waste?.label || action.wasteCategory}
+                      </span>
                     </td>
                     <td style={{ padding: '0.875rem 1rem', color: isDark ? '#cbd5e1' : '#334155', fontWeight: 600 }}>
                       {action.originSectorName}
@@ -329,9 +337,12 @@ export default function AdminRelatoriosPage() {
                             padding: '0.2rem 0.5rem',
                             borderRadius: '9999px',
                             whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
                           }}
                         >
-                          ⚪ Ciclo Concluído (Rotina)
+                          <Clock size={11} /> Ciclo Concluído (Rotina)
                         </span>
                       ) : (
                         <span
@@ -344,9 +355,12 @@ export default function AdminRelatoriosPage() {
                             padding: '0.2rem 0.5rem',
                             borderRadius: '9999px',
                             whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
                           }}
                         >
-                          🟢 Vigente no Ano
+                          <CheckCircle2 size={11} /> Vigente no Ano
                         </span>
                       )}
                     </td>

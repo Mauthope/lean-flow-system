@@ -7,7 +7,7 @@ import { Sector } from '@/lib/types';
 import { SectorCardPolygon } from '@/components/charts/SectorCardPolygon';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
 import { SectorAssessmentDetailView } from '@/components/assessment/SectorAssessmentDetailView';
-import { Building2, Award, TrendingUp, Sparkles, X, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Building2, Award, TrendingUp, Sparkles, X, ChevronRight, CheckCircle2, AlertTriangle, BarChart3 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 export default function AgentSetoresPage() {
@@ -43,10 +43,9 @@ export default function AgentSetoresPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.25rem',
               }}
             >
-              📊
+              <BarChart3 size={20} color="#22d3ee" />
             </div>
             <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)', margin: 0 }}>
               Polígonos de Maturidade Lean por Setor
@@ -221,13 +220,13 @@ export default function AgentSetoresPage() {
               {latestAssessment?.senseiDiagnosis && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.725rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#34d399' }}>
-                    <span style={{ fontWeight: 800 }}>★ Forte:</span>
+                    <span style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><CheckCircle2 size={11} color="#34d399" /> Forte:</span>
                     <span style={{ color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {latestAssessment.senseiDiagnosis.strongestDimension} ({latestAssessment.senseiDiagnosis.strongestScore}%)
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#fbbf24' }}>
-                    <span style={{ fontWeight: 800 }}>▲ Gargalo:</span>
+                    <span style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><AlertTriangle size={11} color="#fbbf24" /> Gargalo:</span>
                     <span style={{ color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {latestAssessment.senseiDiagnosis.criticalBottleneck} ({latestAssessment.senseiDiagnosis.bottleneckScore}%)
                     </span>

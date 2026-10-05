@@ -30,9 +30,11 @@ import {
   ShieldCheck,
   Bot,
   Plus,
+  GraduationCap,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ArticleReadingTelemetry } from '@/components/academy/LeanArticleModal';
+import { ArticleIcon } from '@/components/academy/ArticleIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { AgentExamResult, AgentLearningRanking, LeanArticleItem } from '@/lib/types';
@@ -357,7 +359,7 @@ export default function LeanToolsIndexPage() {
             >
               {canTakeExam ? <Unlock size={15} color="#fbbf24" /> : <Lock size={15} color="#94a3b8" />}
               {latestExam?.passed
-                ? 'Agente Qualificado 🏆'
+                ? 'Agente Qualificado'
                 : canTakeExam
                 ? 'Iniciar Prova (50 Questões • 50 min)'
                 : 'Prova Bloqueada (Requer 95% lidos)'}
@@ -495,7 +497,7 @@ export default function LeanToolsIndexPage() {
                       flexShrink: 0,
                     }}
                   >
-                    🏆
+                    <Award size={36} color="#fbbf24" />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
@@ -514,7 +516,7 @@ export default function LeanToolsIndexPage() {
                           gap: '0.3rem',
                         }}
                       >
-                        🏆 AGENTE QUALIFICADO EM LEAN MANUFACTURING
+                        <Award size={14} color="#000000" /> AGENTE QUALIFICADO EM LEAN MANUFACTURING
                       </span>
                       <span
                         style={{
@@ -540,14 +542,14 @@ export default function LeanToolsIndexPage() {
                     </p>
 
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#a7f3d0' }}>
-                        📚 {validatedCount}/{totalArticles} Artigos Validados (100%)
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#a7f3d0', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <BookOpen size={13} /> {validatedCount}/{totalArticles} Artigos Validados (100%)
                       </span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#fde68a' }}>
-                        🎯 {latestExam.correctCount} Acertos • {latestExam.wrongCount} Erros • {latestExam.blankCount} Em Branco
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#fde68a', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Target size={13} /> {latestExam.correctCount} Acertos • {latestExam.wrongCount} Erros • {latestExam.blankCount} Em Branco
                       </span>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#6ee7b7' }}>
-                        🛡️ Pontos Líquidos: {latestExam.netScore} pts (Anti-Chute)
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, backgroundColor: 'rgba(255, 255, 255, 0.08)', padding: '0.25rem 0.65rem', borderRadius: '8px', color: '#6ee7b7', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <ShieldCheck size={13} /> Pontos Líquidos: {latestExam.netScore} pts (Anti-Chute)
                       </span>
                     </div>
                   </div>
@@ -610,10 +612,9 @@ export default function LeanToolsIndexPage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '1.6rem',
                     }}
                   >
-                    🎓
+                    <GraduationCap size={24} color="#c084fc" />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -626,8 +627,8 @@ export default function LeanToolsIndexPage() {
                     </h3>
                     <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                       {canTakeExam
-                        ? '🔓 Requisito atingido (≥95%)! Prova de 50 questões dinâmicas liberada com regra anti-chute.'
-                        : `🔒 Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
+                        ? 'Requisito atingido (≥95%)! Prova de 50 questões dinâmicas liberada com regra anti-chute.'
+                        : `Conclua mais ${Math.max(0, Math.ceil(totalArticles * 0.95) - validatedCount)} artigo(s) com leitura ativa para liberar a prova.`}
                     </span>
                   </div>
                 </div>
@@ -735,12 +736,12 @@ export default function LeanToolsIndexPage() {
 
                         <td style={{ padding: '0.75rem' }}>
                           {rank.canTakeExam ? (
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid #10b981' }}>
-                              🔓 Liberado
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid #10b981', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Unlock size={11} /> Liberado
                             </span>
                           ) : (
-                            <span style={{ fontSize: '0.675rem', color: '#94a3b8' }}>
-                              🔒 Bloqueado ({rank.validatedArticlesReadPercent}%)
+                            <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Lock size={11} /> Bloqueado ({rank.validatedArticlesReadPercent}%)
                             </span>
                           )}
                         </td>
@@ -782,7 +783,7 @@ export default function LeanToolsIndexPage() {
                         <td style={{ padding: '0.75rem' }}>
                           {rank.isQualified || rank.passedExam ? (
                             <span style={{ fontSize: '0.675rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1.5px solid #10b981', color: '#34d399', padding: '0.2rem 0.6rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                              🏆 Agente Qualificado
+                              <Award size={12} /> Agente Qualificado
                             </span>
                           ) : rank.latestExam ? (
                             <span style={{ fontSize: '0.675rem', color: '#f87171', fontWeight: 700 }}>
@@ -810,7 +811,7 @@ export default function LeanToolsIndexPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              {rank.rewardClaimed ? '✓ Recompensa Entregue' : 'Marcar como Entregue'}
+                              {rank.rewardClaimed ? 'Recompensa Entregue' : 'Marcar como Entregue'}
                             </button>
                           ) : (
                             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>--</span>
@@ -918,7 +919,20 @@ export default function LeanToolsIndexPage() {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                      <span style={{ fontSize: '1.75rem' }}>{article.icon}</span>
+                      <div
+                        style={{
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '10px',
+                          backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                          border: '1px solid rgba(6, 182, 212, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <ArticleIcon name={article.icon} size={20} color="#22d3ee" />
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         {article.badge && (
                           <span
@@ -950,7 +964,7 @@ export default function LeanToolsIndexPage() {
                               gap: '0.25rem',
                             }}
                           >
-                            ✓ Validado
+                            <CheckCircle2 size={11} /> Validado
                           </span>
                         ) : isRead ? (
                           <span
@@ -967,7 +981,7 @@ export default function LeanToolsIndexPage() {
                               gap: '0.25rem',
                             }}
                           >
-                            ✓ Lido
+                            <Check size={11} /> Lido
                           </span>
                         ) : null}
                       </div>
@@ -1097,7 +1111,7 @@ export default function LeanToolsIndexPage() {
                           border: '1px solid rgba(255, 255, 255, 0.06)',
                         }}
                       >
-                        ✓ {h}
+                        • {h}
                       </span>
                     ))}
                   </div>

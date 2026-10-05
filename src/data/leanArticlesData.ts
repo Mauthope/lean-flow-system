@@ -25,7 +25,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Fundamentos',
     readTimeMinutes: 6,
     minReadTimeSeconds: 150, // 2 min e 30s mínimo
-    icon: '🗑️',
+    icon: 'Trash2',
     badge: 'Essencial',
     isNew: true,
     summary: 'Aprenda a identificar e eliminar os 8 males que drenam tempo, dinheiro e capacidade no chão de fábrica.',
@@ -97,7 +97,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Qualidade',
     readTimeMinutes: 5,
     minReadTimeSeconds: 120, // 2 min mínimo
-    icon: '✨',
+    icon: 'Sparkles',
     badge: 'Fundamento',
     isNew: false,
     summary: 'Como implantar os 5 Sensos (Seiri, Seiton, Seiso, Seiketsu, Shitsuke) para criar um ambiente seguro, ágil e visual.',
@@ -153,7 +153,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Qualidade',
     readTimeMinutes: 5,
     minReadTimeSeconds: 120, // 2 min mínimo
-    icon: '🛡️',
+    icon: 'ShieldCheck',
     badge: 'Zero Defeitos',
     isNew: true,
     summary: 'Dispositivos à prova de erros mecânicos e elétricos que tornam fisicamente impossível cometer falhas operacionais.',
@@ -204,7 +204,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Produtividade',
     readTimeMinutes: 7,
     minReadTimeSeconds: 180, // 3 min mínimo
-    icon: '⚡',
+    icon: 'Zap',
     badge: 'Alta Performance',
     isNew: false,
     summary: 'Metodologia de Shigeo Shingo para reduzir tempos de preparação de máquina, permitindo lotes pequenos e flexibilidade.',
@@ -256,7 +256,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Métodos',
     readTimeMinutes: 6,
     minReadTimeSeconds: 150, // 2 min e 30s mínimo
-    icon: '🗺️',
+    icon: 'Map',
     badge: 'Estratégico',
     isNew: false,
     summary: 'Como mapear materiais e informações para identificar gargalos, estoques ocultos e reduzir o Lead Time fabril.',
@@ -307,7 +307,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Manutenção',
     readTimeMinutes: 7,
     minReadTimeSeconds: 180, // 3 min mínimo
-    icon: '⚙️',
+    icon: 'Cog',
     badge: 'Disponibilidade',
     isNew: false,
     summary: 'Como engajar operadores na manutenção autônoma e dominar o cálculo da Eficiência Global dos Equipamentos (OEE).',
@@ -362,7 +362,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Fundamentos',
     readTimeMinutes: 5,
     minReadTimeSeconds: 120, // 2 min mínimo
-    icon: '📋',
+    icon: 'FileText',
     badge: 'Essencial',
     isNew: false,
     summary: 'Como redigir e manter Procedimentos Operacionais Padrão que garantam segurança, ergonomia e tempo de ciclo estável.',
@@ -413,7 +413,7 @@ export const LEAN_ARTICLES: LeanArticle[] = [
     category: 'Métodos',
     readTimeMinutes: 6,
     minReadTimeSeconds: 150, // 2 min e 30s mínimo
-    icon: '🔄',
+    icon: 'RefreshCw',
     badge: 'Metodologia',
     isNew: false,
     summary: 'Como diagnosticar problemas na raiz com fatos, dados e rigor científico, evitando retrabalho e soluções superficiais.',

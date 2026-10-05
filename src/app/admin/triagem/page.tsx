@@ -20,6 +20,8 @@ import {
   Building,
   CheckSquare,
   ShieldAlert,
+  Mail,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -312,12 +314,16 @@ export default function AdminTriagemPage() {
                     )}
 
                     {/* Solicitante info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-                      <span>
-                        👤 Solicitante: <strong style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{demand.requesterName}</strong> {demand.requesterDepartment ? `(${demand.requesterDepartment})` : ''}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', fontSize: '0.75rem', color: isDark ? '#94a3b8' : '#64748b', flexWrap: 'wrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <User size={13} /> Solicitante: <strong style={{ color: isDark ? '#f8fafc' : '#0f172a' }}>{demand.requesterName}</strong> {demand.requesterDepartment ? `(${demand.requesterDepartment})` : ''}
                       </span>
-                      <span>📧 {demand.requesterEmail}</span>
-                      <span>📅 Recebido em {formatDateTime(demand.createdAt)}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Mail size={13} /> {demand.requesterEmail}
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Calendar size={13} /> Recebido em {formatDateTime(demand.createdAt)}
+                      </span>
                     </div>
                   </div>
 
@@ -326,8 +332,8 @@ export default function AdminTriagemPage() {
                     {isAssigned && (
                       <div style={{ textAlign: 'right', marginBottom: '0.25rem' }}>
                         <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Agente Responsável</span>
-                        <p style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d' }}>
-                          ✓ {demand.assignedAgentName}
+                        <p style={{ fontSize: '0.8125rem', fontWeight: 800, color: isDark ? '#34d399' : '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.25rem', margin: 0 }}>
+                          <CheckCircle2 size={13} /> {demand.assignedAgentName}
                         </p>
                       </div>
                     )}

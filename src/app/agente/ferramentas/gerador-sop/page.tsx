@@ -13,6 +13,8 @@ import {
   AlertOctagon,
   Sparkles,
   Layers,
+  Lightbulb,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface SopStep {
@@ -79,7 +81,7 @@ export default function GeradorSopPage() {
   };
 
   const handleCopySop = () => {
-    const text = `📋 PROCEDIMENTO OPERACIONAL PADRÃO (SOP):
+    const text = `PROCEDIMENTO OPERACIONAL PADRÃO (SOP):
 Código: ${sopCode} • Revisão: ${revision}
 Título: ${sopTitle}
 Responsável: ${authorName}
@@ -283,8 +285,8 @@ ${steps
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#38bdf8' }}>
-                      💡 2. Ponto Chave (Como fazer com excelência):
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Lightbulb size={12} /> 2. Ponto Chave (Como fazer com excelência):
                     </label>
                     <input
                       type="text"
@@ -296,8 +298,8 @@ ${steps
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#f87171' }}>
-                      ⚠️ 3. Motivo & Segurança (Por que fazer assim):
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <AlertTriangle size={12} /> 3. Motivo & Segurança (Por que fazer assim):
                     </label>
                     <input
                       type="text"

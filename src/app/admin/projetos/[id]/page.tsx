@@ -68,6 +68,25 @@ import {
   Users,
   Bot,
   Target,
+  Wrench,
+  Settings,
+  Box,
+  HardHat,
+  Ruler,
+  Thermometer,
+  Camera,
+  Truck,
+  Lightbulb,
+  Building2,
+  Landmark,
+  Lock,
+  Hourglass,
+  Rocket,
+  Search,
+  Workflow,
+  RefreshCw,
+  Monitor,
+  Mic,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import SenseiVoiceAssistant from '@/components/presentation/SenseiVoiceAssistant';
@@ -920,7 +939,7 @@ export default function AdminProjectDetailPage() {
     // Bloqueio Poka-Yoke 1: Atividades 5W2H pendentes
     if (uncompletedActivities.length > 0) {
       alert(
-        `⚠️ SUBMISSÃO BLOQUEADA!\n\nExistem ${uncompletedActivities.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompletedActivities
+        `SUBMISSÃO BLOQUEADA!\n\nExistem ${uncompletedActivities.length} atividade(s) do Plano de Ação 5W2H pendentes de conclusão:\n${uncompletedActivities
           .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
           .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de submeter o projeto para homologação master.`
       );
@@ -931,15 +950,15 @@ export default function AdminProjectDetailPage() {
     if (hasMonetaryGain && !isControllershipApproved) {
       if (!action.controllershipAudit) {
         alert(
-          `⚠️ SUBMISSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados no valor de ${formatCurrency(identifiedGainValue)}.\n\nRegra Obrigatória: Projetos com retorno financeiro devem ser submetidos à Controladoria e homologados pelo auditor contábil no Passo 4.2b antes do envio para Homologação Master.`
+          `SUBMISSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados no valor de ${formatCurrency(identifiedGainValue)}.\n\nRegra Obrigatória: Projetos com retorno financeiro devem ser submetidos à Controladoria e homologados pelo auditor contábil no Passo 4.2b antes do envio para Homologação Master.`
         );
       } else if (action.controllershipAudit.status === 'pendente') {
         alert(
-          `⏳ AGUARDANDO PARECER DA CONTROLADORIA!\n\nO projeto foi enviado para a Controladoria e está sob análise do auditor contábil.\n\nAssim que os ganhos forem homologados no portal, a submissão para Homologação Master será liberada.`
+          `AGUARDANDO PARECER DA CONTROLADORIA!\n\nO projeto foi enviado para a Controladoria e está sob análise do auditor contábil.\n\nAssim que os ganhos forem homologados no portal, a submissão para Homologação Master será liberada.`
         );
       } else if (action.controllershipAudit.status === 'rejeitado') {
         alert(
-          `❌ PARECER DA CONTROLADORIA PENDENTE DE AJUSTES!\n\nA Controladoria solicitou revisão das premissas financeiras:\n"${action.controllershipAudit.rejectionReason || 'Revisão necessária'}".\n\nPor favor, revise os cálculos no Passo 4.2b e ressubmeta à Controladoria.`
+          `PARECER DA CONTROLADORIA PENDENTE DE AJUSTES!\n\nA Controladoria solicitou revisão das premissas financeiras:\n"${action.controllershipAudit.rejectionReason || 'Revisão necessária'}".\n\nPor favor, revise os cálculos no Passo 4.2b e ressubmeta à Controladoria.`
         );
       }
       return;
@@ -987,7 +1006,7 @@ export default function AdminProjectDetailPage() {
     // Bloqueio Poka-Yoke 1: Atividades 5W2H pendentes
     if (uncompletedActivities.length > 0) {
       alert(
-        `⚠️ HOMOLOGAÇÃO BLOQUEADA!\n\nNão é possível homologar o projeto pois existem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão:\n${uncompletedActivities
+        `HOMOLOGAÇÃO BLOQUEADA!\n\nNão é possível homologar o projeto pois existem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão:\n${uncompletedActivities
           .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
           .join('\n')}\n\nTodas as ações 5W2H devem estar finalizadas para a homologação técnica e auditoria.`
       );
@@ -998,15 +1017,15 @@ export default function AdminProjectDetailPage() {
     if (hasMonetaryGain && !isControllershipApproved) {
       if (!action.controllershipAudit) {
         alert(
-          `⚠️ HOMOLOGAÇÃO MASTER BLOQUEADA!\n\nEste projeto possui ganhos monetários identificados (${formatCurrency(identifiedGainValue)}). Pela política corporativa, é OBRIGATÓRIO submeter à Controladoria e obter a certificação contábil no Passo 4.2b antes da validação final do Gestor Master.`
+          `HOMOLOGAÇÃO MASTER BLOQUEADA!\n\nEste projeto possui ganhos monetários identificados (${formatCurrency(identifiedGainValue)}). Pela política corporativa, é OBRIGATÓRIO submeter à Controladoria e obter a certificação contábil no Passo 4.2b antes da validação final do Gestor Master.`
         );
       } else if (action.controllershipAudit.status === 'pendente') {
         alert(
-          `⏳ AGUARDANDO PARECER DA CONTROLADORIA!\n\nA homologação master não pode ser realizada enquanto a Controladoria não emitir o parecer de certificação dos ganhos financeiros.\n\nNotificação enviada para: ${action.controllershipAudit.emailSentTo || 'auditor'}.`
+          `AGUARDANDO PARECER DA CONTROLADORIA!\n\nA homologação master não pode ser realizada enquanto a Controladoria não emitir o parecer de certificação dos ganhos financeiros.\n\nNotificação enviada para: ${action.controllershipAudit.emailSentTo || 'auditor'}.`
         );
       } else if (action.controllershipAudit.status === 'rejeitado') {
         alert(
-          `❌ HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nMotivo da recusa contábil: "${action.controllershipAudit.rejectionReason}".\n\nO projeto precisa ter suas premissas ajustadas no Passo 4.2b antes da validação final.`
+          `HOMOLOGAÇÃO BLOQUEADA PELA CONTROLADORIA!\n\nMotivo da recusa contábil: "${action.controllershipAudit.rejectionReason}".\n\nO projeto precisa ter suas premissas ajustadas no Passo 4.2b antes da validação final.`
         );
       }
       return;
@@ -1171,7 +1190,7 @@ export default function AdminProjectDetailPage() {
     // Bloqueio Poka-Yoke: Atividades 5W2H pendentes
     if (uncompletedActivities.length > 0) {
       alert(
-        `⚠️ SUBMISSÃO BLOQUEADA!\n\nNão é permitido enviar ganhos para a Controladoria enquanto houver atividades do Plano de Ação 5W2H pendentes de conclusão.\n\nAtividades pendentes (${uncompletedActivities.length}):\n${uncompletedActivities
+        `SUBMISSÃO BLOQUEADA!\n\nNão é permitido enviar ganhos para a Controladoria enquanto houver atividades do Plano de Ação 5W2H pendentes de conclusão.\n\nAtividades pendentes (${uncompletedActivities.length}):\n${uncompletedActivities
           .map((u) => `• ${u.label} (${u.responsibleName || 'Sem responsável'})`)
           .join('\n')}\n\nConclua todas as etapas 5W2H no Passo 2 antes de submeter os ganhos para auditoria contábil.`
       );
@@ -1199,7 +1218,7 @@ export default function AdminProjectDetailPage() {
 
     if (missingAttachments.length > 0) {
       alert(
-        `⚠️ ANEXO OBRIGATÓRIO PARA ENVIO À CONTROLADORIA!\n\nPara garantir a transparência e auditoria contábil, é OBRIGATÓRIO anexar o arquivo com a memória de cálculo (planilha Excel ou PDF) para cada ganho declarado.\n\nGanhos pendentes de anexo:\n${missingAttachments
+        `ANEXO OBRIGATÓRIO PARA ENVIO À CONTROLADORIA!\n\nPara garantir a transparência e auditoria contábil, é OBRIGATÓRIO anexar o arquivo com a memória de cálculo (planilha Excel ou PDF) para cada ganho declarado.\n\nGanhos pendentes de anexo:\n${missingAttachments
           .map((m) => `• ${m.label} (R$ ${m.val.toLocaleString('pt-BR')})`)
           .join('\n')}\n\nPor favor, anexe a memória de cálculo nos campos correspondentes abaixo antes de submeter.`
       );
@@ -1735,14 +1754,14 @@ export default function AdminProjectDetailPage() {
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginTop: '0.35rem', flexWrap: 'wrap', fontSize: '0.78125rem' }}>
               <span style={{ color: isDark ? '#fbbf24' : '#b45309', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
-                👑 Líder: <span style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 600 }}>{leaderName || action.leaderName || action.assignedAgentName}</span>
+                <Award size={13} /> Líder: <span style={{ color: isDark ? '#ffffff' : '#0f172a', fontWeight: 600 }}>{leaderName || action.leaderName || action.assignedAgentName}</span>
               </span>
               <span style={{ color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                👤 Agente: <span style={{ color: isDark ? '#cbd5e1' : '#334155' }}>{action.assignedAgentName}</span>
+                <User size={13} /> Agente: <span style={{ color: isDark ? '#cbd5e1' : '#334155' }}>{action.assignedAgentName}</span>
               </span>
               {(teamMembersInput || (action.teamMembers && action.teamMembers.length > 0)) && (
                 <span style={{ color: isDark ? '#22d3ee' : '#0284c7', display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700 }}>
-                  👥 Equipe: <span style={{ color: isDark ? '#cbd5e1' : '#334155', fontWeight: 400 }}>{teamMembersInput || action.teamMembers?.join(', ')}</span>
+                  <Users size={13} /> Equipe: <span style={{ color: isDark ? '#cbd5e1' : '#334155', fontWeight: 400 }}>{teamMembersInput || action.teamMembers?.join(', ')}</span>
                 </span>
               )}
             </div>
@@ -1826,7 +1845,7 @@ export default function AdminProjectDetailPage() {
               ) : (
                 <>
                   <CheckCircle2 size={13} color={isDark ? '#34d399' : '#15803d'} />
-                  <span>Salvo automaticamente ✓</span>
+                  <span>Salvo automaticamente</span>
                 </>
               )}
             </div>
@@ -1958,7 +1977,7 @@ export default function AdminProjectDetailPage() {
             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'plan' ? (isDark ? '#22d3ee' : '#0369a1') : (isDark ? '#94a3b8' : '#64748b') }}>
               1. PLAN (Planejar)
             </span>
-            <span style={{ fontSize: '1rem' }}>🔵</span>
+            <Target size={16} color={activeTab === 'plan' ? '#06b6d4' : (isDark ? '#64748b' : '#94a3b8')} />
           </div>
           <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Diagnóstico & Causas
@@ -1989,7 +2008,7 @@ export default function AdminProjectDetailPage() {
             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'do' ? (isDark ? '#fbbf24' : '#b45309') : (isDark ? '#94a3b8' : '#64748b') }}>
               2. DO (Executar)
             </span>
-            <span style={{ fontSize: '1rem' }}>🟡</span>
+            <Zap size={16} color={activeTab === 'do' ? '#f59e0b' : (isDark ? '#64748b' : '#94a3b8')} />
           </div>
           <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Plano de Ação 5W2H
@@ -2020,7 +2039,7 @@ export default function AdminProjectDetailPage() {
             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'check' ? (isDark ? '#c084fc' : '#7e22ce') : (isDark ? '#94a3b8' : '#64748b') }}>
               3. CHECK (Verificar & ROI)
             </span>
-            <span style={{ fontSize: '1rem' }}>🟣</span>
+            <BarChart3 size={16} color={activeTab === 'check' ? '#a855f7' : (isDark ? '#64748b' : '#94a3b8')} />
           </div>
           <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Custos vs. Ganhos
@@ -2051,7 +2070,7 @@ export default function AdminProjectDetailPage() {
             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: activeTab === 'act' ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#94a3b8' : '#64748b') }}>
               4. ACT (Padronizar)
             </span>
-            <span style={{ fontSize: '1rem' }}>🟢</span>
+            <CheckCircle2 size={16} color={activeTab === 'act' ? '#10b981' : (isDark ? '#64748b' : '#94a3b8')} />
           </div>
           <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             POP, Yokoten & Master
@@ -2082,7 +2101,7 @@ export default function AdminProjectDetailPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  👑 Líder do Kaizen / Projeto:
+                  <Award size={13} /> Líder do Kaizen / Projeto:
                 </label>
                 <input
                   type="text"
@@ -2096,7 +2115,7 @@ export default function AdminProjectDetailPage() {
 
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  👥 Pessoas Envolvidas / Equipe Kaizen (separar por vírgula):
+                  <Users size={13} /> Pessoas Envolvidas / Equipe Kaizen (separar por vírgula):
                 </label>
                 <input
                   type="text"
@@ -2161,8 +2180,8 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f87171' }}>
-                    🔴 Baseline Inicial (Antes):
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <TrendingDown size={13} /> Baseline Inicial (Antes):
                   </label>
                   <input
                     type="number"
@@ -2175,8 +2194,8 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#34d399' }}>
-                    🟢 Meta Alvo (Planejado):
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Target size={13} /> Meta Alvo (Planejado):
                   </label>
                   <input
                     type="number"
@@ -2189,8 +2208,8 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbbf24' }}>
-                    ⚠️ Custo do Problema (R$/mês):
+                  <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <AlertTriangle size={13} /> Custo do Problema (R$/mês):
                   </label>
                   <input
                     type="number"
@@ -2272,7 +2291,7 @@ export default function AdminProjectDetailPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>🔍</span>
+                  <Search size={22} color="#06b6d4" />
                   <span
                     style={{
                       fontSize: '0.675rem',
@@ -2296,8 +2315,8 @@ export default function AdminProjectDetailPage() {
                   Investigação causal sequencial em 5 níveis até a causa raiz definitiva.
                 </span>
                 {fiveWhysFilledCount > 0 && (
-                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
-                    ✓ {fiveWhysFilledCount}/5 etapas preenchidas
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.4rem' }}>
+                    <CheckCircle2 size={11} /> {fiveWhysFilledCount}/5 etapas preenchidas
                   </span>
                 )}
               </button>
@@ -2318,7 +2337,7 @@ export default function AdminProjectDetailPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>📊</span>
+                  <BarChart3 size={22} color="#8b5cf6" />
                   <span
                     style={{
                       fontSize: '0.675rem',
@@ -2342,8 +2361,8 @@ export default function AdminProjectDetailPage() {
                   Priorização estatística dos 20% de causas vitais que causam 80% das perdas.
                 </span>
                 {(paretoImageUrl || paretoVitalCauses) && (
-                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
-                    ✓ Pareto registrado
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.4rem' }}>
+                    <CheckCircle2 size={11} /> Pareto registrado
                   </span>
                 )}
               </button>
@@ -2364,7 +2383,7 @@ export default function AdminProjectDetailPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>🐟</span>
+                  <Workflow size={22} color="#10b981" />
                   <span
                     style={{
                       fontSize: '0.675rem',
@@ -2388,8 +2407,8 @@ export default function AdminProjectDetailPage() {
                   Espinha de peixe estruturada nos 6M: Método, Máquina, Material, etc.
                 </span>
                 {ishikawaFilledCount > 0 && (
-                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-block', marginTop: '0.4rem' }}>
-                    ✓ {ishikawaFilledCount}/6 M&apos;s preenchidos
+                  <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.4rem' }}>
+                    <CheckCircle2 size={11} /> {ishikawaFilledCount}/6 M&apos;s preenchidos
                   </span>
                 )}
               </button>
@@ -2406,7 +2425,7 @@ export default function AdminProjectDetailPage() {
                   <HelpCircle size={20} color="#22d3ee" />
                   <div>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      🔍 Análise dos 5 Porquês (Causa Raiz)
+                      Análise dos 5 Porquês (Causa Raiz)
                     </h3>
                     <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
                       Questione sucessivamente o motivo da falha até chegar na causa que elimina a reincidência.
@@ -2494,7 +2513,7 @@ export default function AdminProjectDetailPage() {
                   <BarChart3 size={20} color="#c084fc" />
                   <div>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      📊 Comprovação por Gráfico de Pareto (Regra 80/20)
+                      Comprovação por Gráfico de Pareto (Regra 80/20)
                     </h3>
                     <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.15rem 0 0' }}>
                       Identifique e comprove visualmente os 20% das causas vitais que geram 80% das perdas fabris.
@@ -2512,9 +2531,12 @@ export default function AdminProjectDetailPage() {
                       padding: '0.25rem 0.65rem',
                       borderRadius: '8px',
                       border: '1px solid rgba(139, 92, 246, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
                     }}
                   >
-                    ⚡ REGRA 80/20
+                    <Zap size={12} /> REGRA 80/20
                   </span>
                   <button
                     type="button"
@@ -2532,8 +2554,8 @@ export default function AdminProjectDetailPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1.5rem' }}>
                 {/* Left Column: Pareto Chart Image / Visualizer */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#cbd5e1' }}>
-                    📊 Imagem do Gráfico de Pareto Gerado:
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <BarChart3 size={14} /> Imagem do Gráfico de Pareto Gerado:
                   </span>
 
                   {paretoImageUrl ? (
@@ -2624,8 +2646,8 @@ export default function AdminProjectDetailPage() {
                 {/* Right Column: Vital Causes Formulation */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#cbd5e1' }}>
-                      🎯 Causas Vitais Identificadas (os 20% priorizados no Pareto):
+                    <label className="form-label" style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Target size={14} /> Causas Vitais Identificadas (os 20% priorizados no Pareto):
                     </label>
                     <textarea
                       className="form-control"
@@ -2659,8 +2681,8 @@ export default function AdminProjectDetailPage() {
                       <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', display: 'block' }}>
                         Foco de Ataque Lean:
                       </span>
-                      <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'block', marginTop: '0.35rem' }}>
-                        ✓ Alta Prioridade no Plano 5W2H
+                      <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.35rem' }}>
+                        <CheckCircle2 size={11} /> Alta Prioridade no Plano 5W2H
                       </span>
                     </div>
                   </div>
@@ -2701,7 +2723,7 @@ export default function AdminProjectDetailPage() {
                       justifyContent: 'center',
                     }}
                   >
-                    <span style={{ fontSize: '1.2rem' }}>🐟</span>
+                    <Workflow size={20} color="#10b981" />
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
@@ -2782,7 +2804,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>📐</span>
+                      <Ruler size={16} color="#22d3ee" />
                       <strong style={{ fontSize: '0.85rem', color: '#22d3ee', fontFamily: 'var(--font-heading)' }}>
                         1. Método (Procedimentos & Padrões)
                       </strong>
@@ -2813,7 +2835,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>⚙️</span>
+                      <Settings size={16} color="#fbbf24" />
                       <strong style={{ fontSize: '0.85rem', color: '#fbbf24', fontFamily: 'var(--font-heading)' }}>
                         2. Máquina (Equipamentos & Ferramentas)
                       </strong>
@@ -2844,7 +2866,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>📦</span>
+                      <Box size={16} color="#f472b6" />
                       <strong style={{ fontSize: '0.85rem', color: '#f472b6', fontFamily: 'var(--font-heading)' }}>
                         3. Material (Matéria-Prima & Insumos)
                       </strong>
@@ -2875,7 +2897,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>👷‍♂️</span>
+                      <HardHat size={16} color="#34d399" />
                       <strong style={{ fontSize: '0.85rem', color: '#34d399', fontFamily: 'var(--font-heading)' }}>
                         4. Mão de Obra (Habilidade & Treinamento)
                       </strong>
@@ -2906,7 +2928,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>📏</span>
+                      <Ruler size={16} color="#c084fc" />
                       <strong style={{ fontSize: '0.85rem', color: '#c084fc', fontFamily: 'var(--font-heading)' }}>
                         5. Medição (Instrumentos & Critérios)
                       </strong>
@@ -2937,7 +2959,7 @@ export default function AdminProjectDetailPage() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{ fontSize: '1rem' }}>🌡️</span>
+                      <Thermometer size={16} color="#38bdf8" />
                       <strong style={{ fontSize: '0.85rem', color: '#38bdf8', fontFamily: 'var(--font-heading)' }}>
                         6. Meio Ambiente (Layout & Condições)
                       </strong>
@@ -2968,7 +2990,7 @@ export default function AdminProjectDetailPage() {
                 }}
               >
                 <label className="form-label" style={{ fontWeight: 800, fontSize: '0.85rem', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  🎯 Causa Raiz Principal Priorizada no Ishikawa (Conclusão 6M):
+                  <Target size={14} color="#34d399" /> Causa Raiz Principal Priorizada no Ishikawa (Conclusão 6M):
                 </label>
                 <input
                   type="text"
@@ -3065,7 +3087,7 @@ export default function AdminProjectDetailPage() {
                                 }}
                                 title={isExternal ? 'Dependência externa fora do setor do projeto (Impacta Lead Time do Agente)' : 'Setor de Origem do Projeto'}
                               >
-                                🏢 {item.responsibleSectorName}
+                                <Building2 size={12} /> {item.responsibleSectorName}
                                 {isExternal && (
                                   <span style={{ fontSize: '0.65rem', color: '#f59e0b', fontWeight: 900 }}>
                                     [Dependência Externa]
@@ -3089,16 +3111,16 @@ export default function AdminProjectDetailPage() {
                                 }}
                                 title="Número de documento de controle (Auditoria ERP)"
                               >
-                                📄 {item.trackingDocNumber}
+                                <FileText size={12} /> {item.trackingDocNumber}
                               </span>
                             )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', fontSize: '0.75rem', color: '#94a3b8', flexWrap: 'wrap' }}>
-                            <span>👤 {item.responsibleName || 'Agente'}</span>
-                            {item.startDate && <span>📅 Início: {formatDate(item.startDate)}</span>}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><User size={12} /> {item.responsibleName || 'Agente'}</span>
+                            {item.startDate && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Calendar size={12} /> Início: {formatDate(item.startDate)}</span>}
                             {item.endDate && (
-                              <span>
-                                🏁 Fim: <strong style={{ color: '#ffffff' }}>{formatDate(item.endDate)}</strong>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                Prazo: <strong style={{ color: '#ffffff' }}>{formatDate(item.endDate)}</strong>
                               </span>
                             )}
                             {item.completed && (item.conclusionDate || item.completedAt) && (
@@ -3116,7 +3138,7 @@ export default function AdminProjectDetailPage() {
                                   border: '1px solid rgba(16, 185, 129, 0.35)',
                                 }}
                               >
-                                ✅ Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
+                                <CheckCircle2 size={12} /> Concluída em: {formatDate(item.conclusionDate || item.completedAt?.split('T')[0] || '')}
                               </span>
                             )}
                             {(item.postponedCount || 0) > 0 && (
@@ -3135,11 +3157,11 @@ export default function AdminProjectDetailPage() {
                                 }}
                                 title={`Reprogramada ${item.postponedCount}x para auditoria interna. Motivo: ${item.postponementReason || 'Não informado'}`}
                               >
-                                ⚠️ Reprogramada ({item.postponedCount}x • Orig: {item.originalEndDate ? formatDate(item.originalEndDate) : '—'})
+                                <AlertTriangle size={12} /> Reprogramada ({item.postponedCount}x • Orig: {item.originalEndDate ? formatDate(item.originalEndDate) : '—'})
                               </span>
                             )}
                             {item.durationDays && item.durationDays > 0 && (
-                              <span style={{ color: '#38bdf8', fontWeight: 600 }}>⏱️ {item.durationDays} dias</span>
+                              <span style={{ color: '#38bdf8', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={12} /> {item.durationDays} dias</span>
                             )}
                             {item.attachment && (
                               <div
@@ -3204,7 +3226,7 @@ export default function AdminProjectDetailPage() {
                           }}
                           title={item.attachment ? 'Ver / alterar anexo ou cronoanálise' : 'Anexar cronoanálise ou laudo técnico'}
                         >
-                          <Paperclip size={12} /> {item.attachment ? 'Anexo ✓' : 'Anexar'}
+                          <Paperclip size={12} /> {item.attachment ? 'Anexado' : 'Anexar'}
                         </button>
 
                         <span
@@ -3218,7 +3240,7 @@ export default function AdminProjectDetailPage() {
                             border: `1px solid ${item.completed ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
                           }}
                         >
-                          {item.completed ? 'Concluída ✓' : 'Pendente'}
+                          {item.completed ? 'Concluída' : 'Pendente'}
                         </span>
                       </div>
                     </div>
@@ -3232,7 +3254,7 @@ export default function AdminProjectDetailPage() {
               <form onSubmit={handleAddChecklistItem} style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '12px', border: '1px dashed rgba(255, 255, 255, 0.15)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    ➕ Adicionar Nova Atividade 5W2H (Com Setor Responsável & Mapeamento de Dependências):
+                    <Plus size={14} /> Adicionar Nova Atividade 5W2H (Com Setor Responsável & Mapeamento de Dependências):
                   </span>
                   <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
                     Setores terceiros alimentam o indicador de Gargalos Externos para defesa do agente
@@ -3354,8 +3376,8 @@ export default function AdminProjectDetailPage() {
               {/* Foto Antes */}
               <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>
-                    📸 Foto do Antes (Estado Inicial)
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Camera size={13} /> Foto do Antes (Estado Inicial)
                   </span>
                   {!isViewer && photoBeforeUrl && (
                     <button
@@ -3419,8 +3441,8 @@ export default function AdminProjectDetailPage() {
               {/* Foto Depois */}
               <div style={{ backgroundColor: '#090e1a', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>
-                    📸 Foto do Depois (Melhoria Implantada)
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Camera size={13} /> Foto do Depois (Melhoria Implantada)
                   </span>
                   {!isViewer && photoAfterUrl && (
                     <button
@@ -3501,21 +3523,27 @@ export default function AdminProjectDetailPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               <div style={{ padding: '1rem', backgroundColor: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>🔴 Baseline Inicial (Antes):</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <TrendingDown size={13} /> Baseline Inicial (Antes):
+                </span>
                 <strong style={{ fontSize: '1.4rem', color: '#f87171', display: 'block', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
                   {baselineValue || '—'} {targetMetricUnit}
                 </strong>
               </div>
 
               <div style={{ padding: '1rem', backgroundColor: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.35)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>🎯 Meta Planejada:</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Target size={13} /> Meta Planejada:
+                </span>
                 <strong style={{ fontSize: '1.4rem', color: '#22d3ee', display: 'block', marginTop: '0.25rem', fontFamily: 'var(--font-heading)' }}>
                   {targetGoalValue || '—'} {targetMetricUnit}
                 </strong>
               </div>
 
               <div style={{ padding: '1rem', backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1.5px solid rgba(16, 185, 129, 0.4)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase' }}>🟢 Resultado Real Atingido (Depois):</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <CheckCircle2 size={13} /> Resultado Real Atingido (Depois):
+                </span>
                 <input
                   type="number"
                   className="form-control"
@@ -3530,7 +3558,7 @@ export default function AdminProjectDetailPage() {
 
           {/* DRE Financeira do Projeto: CUSTOS vs GANHOS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
-            {/* 🔴 COLUNA 1: CUSTOS / INVESTIMENTO DO PROJETO (Capex + Opex) */}
+            {/* COLUNA 1: CUSTOS / INVESTIMENTO DO PROJETO (Capex + Opex) */}
             <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #ef4444', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -3546,7 +3574,9 @@ export default function AdminProjectDetailPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>🔧 Peças, Dispositivos & Sensores (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Wrench size={12} /> Peças, Dispositivos & Sensores (R$):
+                  </label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
@@ -3558,7 +3588,9 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⚙️ Serviços de Terceiros / Usinagem (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Settings size={12} /> Serviços de Terceiros / Usinagem (R$):
+                  </label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
@@ -3571,7 +3603,9 @@ export default function AdminProjectDetailPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>⏱️ Horas Equipe (h):</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Clock size={12} /> Horas Equipe (h):
+                    </label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
@@ -3583,7 +3617,9 @@ export default function AdminProjectDetailPage() {
                   </div>
 
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>💰 Custo/Hora (R$/h):</label>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <DollarSign size={12} /> Custo/Hora (R$/h):
+                    </label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
@@ -3596,7 +3632,9 @@ export default function AdminProjectDetailPage() {
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>💡 Outras Despesas Operacionais (R$):</label>
+                  <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Lightbulb size={12} /> Outras Despesas Operacionais (R$):
+                  </label>
                   <input
                     type="number"
                     className="form-control form-control-sm"
@@ -3609,7 +3647,7 @@ export default function AdminProjectDetailPage() {
               </div>
             </div>
 
-            {/* 🟢 COLUNA 2: GANHOS BRUTOS / CUSTO EVITADO (7 Fontes) COM MEMÓRIA DE CÁLCULO & ANEXOS */}
+            {/* COLUNA 2: GANHOS BRUTOS / CUSTO EVITADO (7 Fontes) COM MEMÓRIA DE CÁLCULO & ANEXOS */}
             <div className="card" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '4px solid #10b981', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -3628,14 +3666,14 @@ export default function AdminProjectDetailPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {[
-                  { key: 'machineDowntime', label: 'Redução de Paradas de Máquina / OEE', val: machineDowntime, setVal: setMachineDowntime, icon: '⚙️' },
-                  { key: 'laborSavings', label: 'Mão de Obra / Horas Economizadas', val: laborSavings, setVal: setLaborSavings, icon: '⏱️' },
-                  { key: 'scrapReduction', label: 'Redução de Refugo / Matéria-Prima', val: scrapReduction, setVal: setScrapReduction, icon: '♻️' },
-                  { key: 'toolingAndEnergy', label: 'Ferramental, Energia & Insumos', val: toolingAndEnergy, setVal: setToolingAndEnergy, icon: '⚡' },
-                  { key: 'productionIncrease', label: 'Aumento de Produção / Capacidade Extra', val: productionIncrease, setVal: setProductionIncrease, icon: '📈' },
-                  { key: 'logisticsAndFreight', label: 'Fretes Especiais e Estoque', val: logisticsAndFreight, setVal: setLogisticsAndFreight, icon: '📦' },
-                  { key: 'otherSavings', label: 'Outros Custos Evitados', val: otherSavings, setVal: setOtherSavings, icon: '💡' },
-                ].map(({ key, label, val, setVal, icon }) => {
+                  { key: 'machineDowntime', label: 'Redução de Paradas de Máquina / OEE', val: machineDowntime, setVal: setMachineDowntime, Icon: Settings },
+                  { key: 'laborSavings', label: 'Mão de Obra / Horas Economizadas', val: laborSavings, setVal: setLaborSavings, Icon: Users },
+                  { key: 'scrapReduction', label: 'Redução de Refugo / Matéria-Prima', val: scrapReduction, setVal: setScrapReduction, Icon: Trash2 },
+                  { key: 'toolingAndEnergy', label: 'Ferramental, Energia & Insumos', val: toolingAndEnergy, setVal: setToolingAndEnergy, Icon: Zap },
+                  { key: 'productionIncrease', label: 'Aumento de Produção / Capacidade Extra', val: productionIncrease, setVal: setProductionIncrease, Icon: TrendingUp },
+                  { key: 'logisticsAndFreight', label: 'Fretes Especiais e Estoque', val: logisticsAndFreight, setVal: setLogisticsAndFreight, Icon: Box },
+                  { key: 'otherSavings', label: 'Outros Custos Evitados', val: otherSavings, setVal: setOtherSavings, Icon: Lightbulb },
+                ].map(({ key, label, val, setVal, Icon }) => {
                   const numVal = Number(val) || 0;
                   const proof = gainDetails[key];
                   const auditProof = action?.controllershipAudit?.gainDetails?.[key];
@@ -3660,8 +3698,8 @@ export default function AdminProjectDetailPage() {
                     >
                       {/* Linha do Input Principal */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-                        <label className="form-label" style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: 0, fontWeight: 700, flex: 1, minWidth: '180px' }}>
-                          {icon} {label} (R$):
+                        <label className="form-label" style={{ fontSize: '0.78rem', color: '#cbd5e1', margin: 0, fontWeight: 700, flex: 1, minWidth: '180px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <Icon size={14} color="#34d399" /> {label} (R$):
                         </label>
                         <div style={{ width: '150px' }}>
                           <input
@@ -3695,16 +3733,16 @@ export default function AdminProjectDetailPage() {
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.35rem' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                              📐 Memória de Cálculo & Premissas:
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Ruler size={12} /> Memória de Cálculo & Premissas:
                             </span>
                             {hasFile ? (
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                                ✓ Planilha Anexada
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <CheckCircle2 size={11} /> Planilha Anexada
                               </span>
                             ) : (
-                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                                ⚠️ Anexo Obrigatório para Controladoria
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <AlertTriangle size={11} /> Anexo Obrigatório para Controladoria
                               </span>
                             )}
                           </div>
@@ -3823,8 +3861,8 @@ export default function AdminProjectDetailPage() {
                               }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#60a5fa' }}>
-                                  🏛️ Parecer da Controladoria:
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  <Building2 size={12} /> Parecer da Controladoria:
                                 </span>
                                 {auditProof.auditorValue !== undefined && (
                                   <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34d399' }}>
@@ -3887,7 +3925,7 @@ export default function AdminProjectDetailPage() {
             {/* 1. Retorno Mensal (Média 3M) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                📅 RETORNO MENSAL (3M)
+                <Calendar size={13} /> RETORNO MENSAL (3M)
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrency(provenMonthlySavings)}
@@ -3901,7 +3939,7 @@ export default function AdminProjectDetailPage() {
             {/* 2. Resultado do Ano (12 Meses) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                🚀 RESULTADO DO ANO (12M)
+                <TrendingUp size={13} /> RESULTADO DO ANO (12M)
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {formatCurrency(provenAnnualSavings)}
@@ -3915,7 +3953,7 @@ export default function AdminProjectDetailPage() {
             {/* 3. Investimento Total (Capex) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                💵 INVESTIMENTO (CAPEX)
+                <DollarSign size={13} /> INVESTIMENTO (CAPEX)
               </span>
               <strong style={{ fontSize: '1.65rem', color: totalInvestmentCost > 0 ? '#f87171' : '#64748b', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {totalInvestmentCost > 0 ? formatCurrency(totalInvestmentCost) : 'R$ 0,00'}
@@ -3928,7 +3966,7 @@ export default function AdminProjectDetailPage() {
             {/* 4. Tempo de Payback */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                ⏱️ TEMPO DE PAYBACK
+                <Clock size={13} /> TEMPO DE PAYBACK
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
                 {totalInvestmentCost === 0 ? (
@@ -3947,7 +3985,7 @@ export default function AdminProjectDetailPage() {
             {/* 5. Vigência do Ciclo de 1 Ano (365 Dias) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                📆 VIGÊNCIA (1 ANO)
+                <Calendar size={13} /> VIGÊNCIA (1 ANO)
               </span>
               {action.masterApproved ? (
                 isCycleExpired ? (
@@ -4099,8 +4137,12 @@ export default function AdminProjectDetailPage() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.2rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-                            <span>👤 Enviado por: <strong style={{ color: '#f8fafc' }}>{att.uploadedBy || 'Agente'}</strong></span>
-                            <span>📅 {formatDateTime(att.uploadedAt)}</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <User size={12} /> Enviado por: <strong style={{ color: '#f8fafc' }}>{att.uploadedBy || 'Agente'}</strong>
+                            </span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Calendar size={12} /> {formatDateTime(att.uploadedAt)}
+                            </span>
                           </div>
 
                           {att.description && (
@@ -4173,13 +4215,17 @@ export default function AdminProjectDetailPage() {
                     <select
                       className="form-control form-control-sm"
                       value={newAttachmentCategory}
-                      onChange={(e: any) => setNewAttachmentCategory(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setNewAttachmentCategory(
+                          e.target.value as 'memorial_calculo' | 'evidencia_foto' | 'relatorio_tecnico' | 'outro'
+                        )
+                      }
                       style={{ backgroundColor: '#060a13', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                     >
-                      <option value="memorial_calculo">📑 Memorial de Cálculo Financeiro</option>
-                      <option value="relatorio_tecnico">📊 Relatório Técnico / Cronoanálise</option>
-                      <option value="evidencia_foto">📸 Fotos / Evidências do Posto</option>
-                      <option value="outro">📄 Outro Documento Comprobatório</option>
+                      <option value="memorial_calculo">Memorial de Cálculo Financeiro</option>
+                      <option value="relatorio_tecnico">Relatório Técnico / Cronoanálise</option>
+                      <option value="evidencia_foto">Fotos / Evidências do Posto</option>
+                      <option value="outro">Outro Documento Comprobatório</option>
                     </select>
                   </div>
 
@@ -4354,28 +4400,28 @@ export default function AdminProjectDetailPage() {
                       4.2b Governança Financeira & Auditoria da Controladoria
                     </h3>
                     {!hasMonetaryGain ? (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ✓ DISPENSADO (PROJETO SEM GANHO MONETÁRIO)
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={11} /> DISPENSADO (PROJETO SEM GANHO MONETÁRIO)
                       </span>
                     ) : action.controllershipAudit?.status === 'aprovado' ? (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ✓ GANHOS HOMOLOGADOS PELA CONTROLADORIA
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={11} /> GANHOS HOMOLOGADOS PELA CONTROLADORIA
                       </span>
                     ) : action.controllershipAudit?.status === 'ajustado_e_aprovado' ? (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ✓ HOMOLOGADO COM AJUSTES DA CONTROLADORIA
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <CheckCircle2 size={11} /> HOMOLOGADO COM AJUSTES DA CONTROLADORIA
                       </span>
                     ) : action.controllershipAudit?.status === 'pendente' ? (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ⏳ AGUARDANDO PARECER DA CONTROLADORIA
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <Hourglass size={11} /> AGUARDANDO PARECER DA CONTROLADORIA
                       </span>
                     ) : action.controllershipAudit?.status === 'rejeitado' ? (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ✕ NECESSITA REVISÃO DE PREMISSAS
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <X size={11} /> NECESSITA REVISÃO DE PREMISSAS
                       </span>
                     ) : (
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px' }}>
-                        ⚠️ ENVIO OBRIGATÓRIO ({formatCurrency(identifiedGainValue)})
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '0.15rem 0.55rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <AlertTriangle size={11} /> ENVIO OBRIGATÓRIO ({formatCurrency(identifiedGainValue)})
                       </span>
                     )}
                   </div>
@@ -4464,7 +4510,7 @@ export default function AdminProjectDetailPage() {
                       ? 'Enviando Notificação...'
                       : uncompletedActivities.length > 0
                       ? `Submissão Bloqueada (${uncompletedActivities.length} pendências 5W2H)`
-                      : 'Submeter à Controladoria ➔'}
+                      : 'Submeter à Controladoria'}
                   </button>
                 ) : action.controllershipAudit.status === 'pendente' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -4481,9 +4527,15 @@ export default function AdminProjectDetailPage() {
                       type="button"
                       onClick={handleCopyAuditLink}
                       className="btn btn-secondary"
-                      style={{ padding: '0.6rem 1rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700 }}
+                      style={{ padding: '0.6rem 1rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                     >
-                      {copiedAuditLink ? '✓ Link Copiado!' : 'Copiar Link'}
+                      {copiedAuditLink ? (
+                        <>
+                          <CheckCircle2 size={13} color="#34d399" /> Link Copiado!
+                        </>
+                      ) : (
+                        'Copiar Link'
+                      )}
                     </button>
 
                     {/* Atalho de Testes para o Usuário */}
@@ -4492,9 +4544,9 @@ export default function AdminProjectDetailPage() {
                       onClick={handleQuickApproveControladoriaTest}
                       className="btn btn-secondary"
                       title="Atalho para testes locais sem precisar abrir o link externo"
-                      style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.78rem', color: '#34d399', border: '1px dashed rgba(52, 211, 153, 0.4)' }}
+                      style={{ padding: '0.6rem 0.85rem', borderRadius: '8px', fontSize: '0.78rem', color: '#34d399', border: '1px dashed rgba(52, 211, 153, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                     >
-                      ⚡ Aprovar (Modo Teste)
+                      <Zap size={13} /> Aprovar (Modo Teste)
                     </button>
                   </div>
                 ) : (
@@ -4581,7 +4633,7 @@ export default function AdminProjectDetailPage() {
                           gap: '0.25rem',
                         }}
                       >
-                        <CheckCircle2 size={12} /> SUSTENTAÇÃO CONSOLIDADA (3/3 MESES) ✓
+                        <CheckCircle2 size={12} /> SUSTENTAÇÃO CONSOLIDADA (3/3 MESES)
                       </span>
                     ) : (
                       <span
@@ -4598,7 +4650,7 @@ export default function AdminProjectDetailPage() {
                           gap: '0.25rem',
                         }}
                       >
-                        ⏳ HOMOLOGAÇÃO EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES OBRIGATÓRIOS)
+                        <Hourglass size={11} /> HOMOLOGAÇÃO EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES OBRIGATÓRIOS)
                       </span>
                     )}
 
@@ -4652,7 +4704,7 @@ export default function AdminProjectDetailPage() {
                   </span>
                 </div>
                 <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                  {isThreeMonthsFollowUpCompleted(action) ? '✓ Pronto para homologação' : `${3 - getFollowUpMonthsFilledCount(action)} mês(es) para homologar`}
+                  {isThreeMonthsFollowUpCompleted(action) ? 'Pronto para homologação' : `${3 - getFollowUpMonthsFilledCount(action)} mês(es) para homologar`}
                 </span>
               </div>
 
@@ -4704,12 +4756,12 @@ export default function AdminProjectDetailPage() {
                           </span>
                         </div>
                         {isFilled ? (
-                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                            ✓ Aferido
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <CheckCircle2 size={10} /> Aferido
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                            ⏳ Pendente
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Hourglass size={10} /> Pendente
                           </span>
                         )}
                       </div>
@@ -4817,8 +4869,8 @@ export default function AdminProjectDetailPage() {
                         Média Trimestral de Sustentação
                       </h4>
                       {isThreeMonthsFollowUpCompleted(action) ? (
-                        <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                          PRONTO PARA HOMOLOGAÇÃO ✓
+                        <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                          <CheckCircle2 size={11} /> PRONTO PARA HOMOLOGAÇÃO
                         </span>
                       ) : (
                         <span style={{ fontSize: '0.675rem', fontWeight: 700, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
@@ -4924,12 +4976,12 @@ export default function AdminProjectDetailPage() {
                           </span>
                         </div>
                         {isFilled ? (
-                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.08rem 0.4rem', borderRadius: '9999px' }}>
-                            ✓ Aferido
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.08rem 0.4rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <CheckCircle2 size={9} /> Aferido
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#cbd5e1', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)', padding: '0.08rem 0.4rem', borderRadius: '9999px' }}>
-                            ⏳ Pendente
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#cbd5e1', backgroundColor: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.12)', padding: '0.08rem 0.4rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Hourglass size={9} /> Pendente
                           </span>
                         )}
                       </div>
@@ -5410,7 +5462,19 @@ export default function AdminProjectDetailPage() {
                       boxShadow: action.masterApproved ? '0 0 15px rgba(16, 185, 129, 0.4)' : isFullyReady ? '0 0 15px rgba(16, 185, 129, 0.3)' : 'none',
                     }}
                   >
-                    {action.masterApproved ? '✓' : isAwaitingApproval ? '⏳' : hasUncompleted ? '⚠️' : isBlockedByControladoria ? '🏛️' : isBlockedByFollowUp ? '🔒' : '🚀'}
+                    {action.masterApproved ? (
+                      <CheckCircle2 size={24} color="#ffffff" />
+                    ) : isAwaitingApproval ? (
+                      <Hourglass size={24} color="#ffffff" />
+                    ) : hasUncompleted ? (
+                      <AlertTriangle size={24} color="#ffffff" />
+                    ) : isBlockedByControladoria ? (
+                      <Landmark size={24} color="#ffffff" />
+                    ) : isBlockedByFollowUp ? (
+                      <Lock size={24} color="#ffffff" />
+                    ) : (
+                      <Rocket size={24} color="#ffffff" />
+                    )}
                   </div>
 
                   <div>
@@ -5482,7 +5546,7 @@ export default function AdminProjectDetailPage() {
                           fontSize: '0.8125rem',
                         }}
                       >
-                        <CheckCircle2 size={16} /> Homologado ✓
+                        <CheckCircle2 size={16} /> Homologado
                       </span>
 
                       {/* Status de Vigência no Ano (365 Dias) */}
@@ -5518,7 +5582,7 @@ export default function AdminProjectDetailPage() {
                             gap: '0.35rem',
                           }}
                         >
-                          🟢 Mês {currentCycleMonth} de 12 • Faltam {remainingCycleMonths} meses de vigência
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22d3ee', display: 'inline-block' }} /> Mês {currentCycleMonth} de 12 • Faltam {remainingCycleMonths} meses de vigência
                         </span>
                       )}
                     </div>
@@ -5657,9 +5721,10 @@ export default function AdminProjectDetailPage() {
               <button
                 type="button"
                 onClick={() => setFollowUpModalMonth(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Fechar"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -5847,7 +5912,7 @@ export default function AdminProjectDetailPage() {
                   { num: 2 as const, label: 'D • DO', color: '#c084fc' },
                   { num: 3 as const, label: 'C • CHECK', color: '#fbbf24' },
                   { num: 4 as const, label: 'A • ACT', color: '#34d399' },
-                  { num: 5 as const, label: '📸 ANTES & DEPOIS', color: '#38bdf8' },
+                  { num: 5 as const, label: '5 • ANTES & DEPOIS', color: '#38bdf8' },
                 ].map((s) => (
                   <button
                     key={s.num}
@@ -5948,12 +6013,12 @@ export default function AdminProjectDetailPage() {
                 const hasPareto = Boolean(paretoImg || isParetoFilled(paretoVitalCauses));
 
                 const ishikawaItems = [
-                  { label: 'Método', val: ishikawaMethod || action.ishikawa?.method, icon: '📐' },
-                  { label: 'Máquina', val: ishikawaMachine || action.ishikawa?.machine, icon: '⚙️' },
-                  { label: 'Material', val: ishikawaMaterial || action.ishikawa?.material, icon: '📦' },
-                  { label: 'Mão de Obra', val: ishikawaManpower || action.ishikawa?.manpower, icon: '👷‍♂️' },
-                  { label: 'Medição', val: ishikawaMeasurement || action.ishikawa?.measurement, icon: '📏' },
-                  { label: 'Meio Ambiente', val: ishikawaEnvironment || action.ishikawa?.environment, icon: '🌡️' },
+                  { label: 'Método', val: ishikawaMethod || action.ishikawa?.method, icon: Ruler },
+                  { label: 'Máquina', val: ishikawaMachine || action.ishikawa?.machine, icon: Settings },
+                  { label: 'Material', val: ishikawaMaterial || action.ishikawa?.material, icon: Box },
+                  { label: 'Mão de Obra', val: ishikawaManpower || action.ishikawa?.manpower, icon: HardHat },
+                  { label: 'Medição', val: ishikawaMeasurement || action.ishikawa?.measurement, icon: Ruler },
+                  { label: 'Meio Ambiente', val: ishikawaEnvironment || action.ishikawa?.environment, icon: Thermometer },
                 ].filter((item) => Boolean(item.val && item.val.trim()));
                 const hasIshikawa = ishikawaItems.length > 0;
 
@@ -5985,8 +6050,8 @@ export default function AdminProjectDetailPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                         {/* Declaração da Causa Raiz & Problema */}
                         <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                          <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.3rem' }}>
-                            🎯 Declaração da Causa Raiz & Problema
+                          <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: '0 0 0.3rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <Target size={13} /> Declaração da Causa Raiz & Problema
                           </h4>
                           <p style={{ margin: 0, fontSize: '0.8125rem', color: '#ffffff', lineHeight: 1.4 }}>
                             {problemStatement || action.description || 'Causa raiz diagnosticada no posto de trabalho.'}
@@ -5996,8 +6061,8 @@ export default function AdminProjectDetailPage() {
                         {/* Ferramentas Lean Aplicadas no Diagnóstico (Citação Sintética) */}
                         <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: 0 }}>
-                              🛠️ Ferramentas Lean Utilizadas no Diagnóstico
+                            <h4 style={{ fontSize: '0.725rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Wrench size={13} /> Ferramentas Lean Utilizadas no Diagnóstico
                             </h4>
                             <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
                               Fase Plan
@@ -6009,11 +6074,11 @@ export default function AdminProjectDetailPage() {
                             {hasFiveWhys && (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  <span style={{ fontSize: '0.8rem' }}>🔍</span>
+                                  <Search size={14} color="#fbbf24" />
                                   <strong style={{ fontSize: '0.75rem', color: '#fbbf24' }}>5 Porquês</strong>
                                 </div>
                                 <span style={{ fontSize: '0.675rem', color: '#cbd5e1', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  ✓ {activeFiveWhys.length} níveis • Raiz: {activeFiveWhys[activeFiveWhys.length - 1]?.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
+                                  {activeFiveWhys.length} níveis • Raiz: {activeFiveWhys[activeFiveWhys.length - 1]?.replace(/^[0-9]+[\.\)\-]?\s*/, '')}
                                 </span>
                               </div>
                             )}
@@ -6022,11 +6087,11 @@ export default function AdminProjectDetailPage() {
                             {hasIshikawa && (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  <span style={{ fontSize: '0.8rem' }}>🐟</span>
+                                  <Workflow size={14} color="#34d399" />
                                   <strong style={{ fontSize: '0.75rem', color: '#34d399' }}>Ishikawa 6M</strong>
                                 </div>
                                 <span style={{ fontSize: '0.675rem', color: '#cbd5e1' }}>
-                                  ✓ {ishikawaItems.map((m) => m.label).join(', ')}
+                                  {ishikawaItems.map((m) => m.label).join(', ')}
                                 </span>
                               </div>
                             )}
@@ -6035,11 +6100,11 @@ export default function AdminProjectDetailPage() {
                             {hasPareto && (
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                  <span style={{ fontSize: '0.8rem' }}>📊</span>
+                                  <BarChart3 size={14} color="#38bdf8" />
                                   <strong style={{ fontSize: '0.75rem', color: '#38bdf8' }}>Pareto 80/20</strong>
                                 </div>
                                 <span style={{ fontSize: '0.675rem', color: '#cbd5e1', maxWidth: '240px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {action.pareto?.cumulativeImpactPercentage ? `✓ ${action.pareto.cumulativeImpactPercentage}% vital` : '✓ Causas vitais'}
+                                  {action.pareto?.cumulativeImpactPercentage ? `${action.pareto.cumulativeImpactPercentage}% vital` : 'Causas vitais'}
                                 </span>
                               </div>
                             )}
@@ -6048,7 +6113,7 @@ export default function AdminProjectDetailPage() {
                             {!hasFiveWhys && !hasIshikawa && !hasPareto && (
                               <div style={{ backgroundColor: '#090e1a', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                                 <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                                  ✓ Diagnóstico de posto, observação em Gemba e estratificação do problema.
+                                  Diagnóstico de posto, observação em Gemba e estratificação do problema.
                                 </span>
                               </div>
                             )}
@@ -6100,17 +6165,21 @@ export default function AdminProjectDetailPage() {
                         {/* Ficha da Equipe & Liderança */}
                         <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                            <span style={{ color: '#fbbf24', fontWeight: 700 }}>👑 Líder do Kaizen:</span>
+                            <span style={{ color: '#fbbf24', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Award size={13} /> Líder do Kaizen:
+                            </span>
                             <strong style={{ color: '#ffffff' }}>{effectiveLeader}</strong>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem' }}>
-                            <span style={{ color: '#94a3b8' }}>👤 Agente Lean:</span>
+                            <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <User size={13} /> Agente Lean:
+                            </span>
                             <strong style={{ color: '#cbd5e1' }}>{action.assignedAgentName}</strong>
                           </div>
                           {effectiveTeam.length > 0 && (
                             <div style={{ fontSize: '0.75rem', marginTop: '0.15rem', paddingTop: '0.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'block', marginBottom: '0.15rem' }}>
-                                👥 Pessoas Envolvidas:
+                              <span style={{ color: '#22d3ee', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.15rem' }}>
+                                <Users size={13} /> Pessoas Envolvidas:
                               </span>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
                                 {effectiveTeam.map((member, mIdx) => (
@@ -6207,8 +6276,8 @@ export default function AdminProjectDetailPage() {
 
                       {/* Right: Top 5W2H Actions */}
                       <div style={{ backgroundColor: '#0f172a', padding: '1.25rem', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', margin: 0 }}>
-                          📋 Ações Executadas no Chão de Fábrica
+                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ffffff', textTransform: 'uppercase', margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <CheckSquare size={14} /> Ações Executadas no Chão de Fábrica
                         </h4>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
@@ -6231,8 +6300,8 @@ export default function AdminProjectDetailPage() {
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span style={{ color: item.completed ? '#34d399' : '#fbbf24', fontSize: '0.875rem' }}>
-                                    {item.completed ? '✓' : '⏳'}
+                                  <span style={{ color: item.completed ? '#34d399' : '#fbbf24', display: 'flex', alignItems: 'center' }}>
+                                    {item.completed ? <CheckCircle2 size={13} /> : <Clock size={13} />}
                                   </span>
                                   <span style={{ fontSize: '0.78125rem', color: item.completed ? '#cbd5e1' : '#ffffff', fontWeight: 600 }}>
                                     {item.label}
@@ -6259,13 +6328,13 @@ export default function AdminProjectDetailPage() {
               {presentationSlide === 3 && (() => {
                 // Fontes ativas de ganhos (> 0)
                 const activeSources = [
-                  { label: 'Paradas de Máquina / OEE', icon: '⚙️', val: Number(machineDowntime) || 0 },
-                  { label: 'Mão de Obra / Setup Otimizado', icon: '⏱️', val: Number(laborSavings) || 0 },
-                  { label: 'Redução de Refugo / Sucata', icon: '♻️', val: Number(scrapReduction) || 0 },
-                  { label: 'Aumento de Produção / Capacidade', icon: '📈', val: Number(productionIncrease) || 0 },
-                  { label: 'Energia, Ferramental & Insumos', icon: '⚡', val: Number(toolingAndEnergy) || 0 },
-                  { label: 'Logística, Frete & Movimentação', icon: '🚚', val: Number(logisticsAndFreight) || 0 },
-                  { label: 'Outras Economias Operacionais', icon: '💡', val: Number(otherSavings) || 0 },
+                  { label: 'Paradas de Máquina / OEE', icon: Settings, val: Number(machineDowntime) || 0 },
+                  { label: 'Mão de Obra / Setup Otimizado', icon: Clock, val: Number(laborSavings) || 0 },
+                  { label: 'Redução de Refugo / Sucata', icon: Trash2, val: Number(scrapReduction) || 0 },
+                  { label: 'Aumento de Produção / Capacidade', icon: TrendingUp, val: Number(productionIncrease) || 0 },
+                  { label: 'Energia, Ferramental & Insumos', icon: Zap, val: Number(toolingAndEnergy) || 0 },
+                  { label: 'Logística, Frete & Movimentação', icon: Truck, val: Number(logisticsAndFreight) || 0 },
+                  { label: 'Outras Economias Operacionais', icon: Lightbulb, val: Number(otherSavings) || 0 },
                 ].filter((s) => s.val > 0);
 
                 // Composição dos custos / investimento (> 0)
@@ -6317,8 +6386,8 @@ export default function AdminProjectDetailPage() {
                       {/* Pillar 1: Eficácia Técnica (Antes -> Meta -> Depois) */}
                       <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(6, 182, 212, 0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
                         <div>
-                          <span style={{ fontSize: '0.65rem', color: '#22d3ee', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block' }}>
-                            🎯 1. Eficácia Técnica no Posto
+                          <span style={{ fontSize: '0.65rem', color: '#22d3ee', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <Target size={13} /> 1. Eficácia Técnica no Posto
                           </span>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.1fr', gap: '0.35rem', marginTop: '0.4rem', textAlign: 'center' }}>
                             <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.35rem 0.25rem', borderRadius: '6px' }}>
@@ -6334,7 +6403,7 @@ export default function AdminProjectDetailPage() {
                               </strong>
                             </div>
                             <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.35rem 0.25rem', borderRadius: '6px' }}>
-                              <span style={{ fontSize: '0.575rem', color: '#34d399', fontWeight: 800, display: 'block', textTransform: 'uppercase' }}>Atingido ✓</span>
+                              <span style={{ fontSize: '0.575rem', color: '#34d399', fontWeight: 800, display: 'block', textTransform: 'uppercase' }}>Atingido</span>
                               <strong style={{ fontSize: '1.05rem', color: '#34d399', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
                                 {achievedValue !== '' ? achievedValue : targetGoalValue} <span style={{ fontSize: '0.65rem' }}>{targetMetricUnit}</span>
                               </strong>
@@ -6343,7 +6412,7 @@ export default function AdminProjectDetailPage() {
                         </div>
                         <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '0.3rem 0.5rem', borderRadius: '6px', textAlign: 'center' }}>
                           <span style={{ fontSize: '0.675rem', color: '#34d399', fontWeight: 800 }}>
-                            ✓ {technicalGainText}
+                            {technicalGainText}
                           </span>
                         </div>
                       </div>
@@ -6352,8 +6421,8 @@ export default function AdminProjectDetailPage() {
                       <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1.5px solid rgba(16, 185, 129, 0.4)', boxShadow: '0 0 16px rgba(16, 185, 129, 0.1)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-                              💰 2. Balanço Financeiro (DRE Anual)
+                            <span style={{ fontSize: '0.65rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <DollarSign size={13} /> 2. Balanço Financeiro (DRE Anual)
                             </span>
                             <span style={{ fontSize: '0.6rem', color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
                               Homologado
@@ -6384,8 +6453,8 @@ export default function AdminProjectDetailPage() {
                       {/* Pillar 3: Retorno do Capital & Eficiência */}
                       <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
                         <div>
-                          <span style={{ fontSize: '0.65rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block' }}>
-                            📈 3. Eficiência & Retorno
+                          <span style={{ fontSize: '0.65rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <TrendingUp size={13} /> 3. Eficiência & Retorno
                           </span>
 
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginTop: '0.35rem' }}>
@@ -6405,7 +6474,7 @@ export default function AdminProjectDetailPage() {
                         </div>
 
                         <div style={{ backgroundColor: '#090e1a', padding: '0.35rem 0.6rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem' }}>
-                          <span style={{ color: '#cbd5e1' }}>⏱️ Horas Salvas:</span>
+                          <span style={{ color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={12} /> Horas Salvas:</span>
                           <strong style={{ color: '#22d3ee', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
                             {action.hoursSaved || internalLaborHours || 0}h / ano
                           </strong>
@@ -6418,8 +6487,8 @@ export default function AdminProjectDetailPage() {
                       {/* Left: 7 Fontes de Ganhos Lean */}
                       <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                            🟢 Composição dos Ganhos Lean ({activeSources.length} fontes ativas)
+                          <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.03em', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#34d399', display: 'inline-block' }} /> Composição dos Ganhos Lean ({activeSources.length} fontes ativas)
                           </span>
                           <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                             Total: {formatCurrency(grossValue)}
@@ -6428,7 +6497,7 @@ export default function AdminProjectDetailPage() {
 
                         {activeSources.length === 0 ? (
                           <div style={{ padding: '0.75rem', backgroundColor: '#090e1a', borderRadius: '8px', textAlign: 'center', color: '#34d399', fontSize: '0.75rem', fontWeight: 700 }}>
-                            ✓ Custo evitado homologado de {formatCurrency(grossValue)}/ano no posto de trabalho.
+                            Custo evitado homologado de {formatCurrency(grossValue)}/ano no posto de trabalho.
                           </div>
                         ) : (
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.4rem', maxHeight: '115px', overflowY: 'auto' }}>
@@ -6449,7 +6518,7 @@ export default function AdminProjectDetailPage() {
                                   }}
                                 >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
-                                    <span style={{ fontSize: '0.75rem' }}>{src.icon}</span>
+                                    <src.icon size={13} color="#22d3ee" style={{ flexShrink: 0 }} />
                                     <span style={{ fontSize: '0.675rem', color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {src.label}
                                     </span>
@@ -6473,8 +6542,8 @@ export default function AdminProjectDetailPage() {
                       <div style={{ backgroundColor: '#0f172a', padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.45rem' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: totalInvestmentCost > 0 ? '#f87171' : '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                              🔧 Investimento & Recursos Aplicados
+                            <span style={{ fontSize: '0.675rem', fontWeight: 800, color: totalInvestmentCost > 0 ? '#f87171' : '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Wrench size={13} /> Investimento & Recursos Aplicados
                             </span>
                             <span style={{ fontSize: '0.65rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                               {totalInvestmentCost > 0 ? formatCurrency(totalInvestmentCost) : 'Custo Zero'}
@@ -6482,8 +6551,8 @@ export default function AdminProjectDetailPage() {
                           </div>
 
                           {activeCosts.length === 0 ? (
-                            <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', borderRadius: '6px', color: '#22d3ee', fontSize: '0.7rem', lineHeight: 1.35 }}>
-                              ⚡ <strong>Melhoria Kaizen de Baixo Custo:</strong> Executada 100% com recursos internos da equipe de manufatura.
+                            <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)', borderRadius: '6px', color: '#22d3ee', fontSize: '0.7rem', lineHeight: 1.35, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <Zap size={13} style={{ flexShrink: 0 }} /> <span><strong>Melhoria Kaizen de Baixo Custo:</strong> Executada 100% com recursos internos da equipe de manufatura.</span>
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '75px', overflowY: 'auto' }}>
@@ -6500,10 +6569,10 @@ export default function AdminProjectDetailPage() {
                         {/* Bottom Tag: Laudo / Memorial & Homologação */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.675rem' }}>
                           <span style={{ color: '#c084fc', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            📄 {attachments.length > 0 ? `${attachments.length} Memorial(is) PDF Anexado(s)` : 'Memorial Aferido no Posto'}
+                            <FileText size={12} /> {attachments.length > 0 ? `${attachments.length} Memorial(is) PDF Anexado(s)` : 'Memorial Aferido no Posto'}
                           </span>
-                          <span style={{ color: '#34d399', fontWeight: 800 }}>
-                            ✓ Aprovado & Homologado
+                          <span style={{ color: '#34d399', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <CheckCircle2 size={12} /> Aprovado & Homologado
                           </span>
                         </div>
                       </div>
@@ -6547,7 +6616,7 @@ export default function AdminProjectDetailPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                           <CheckCircle2 size={14} color={standardWorkUpdated ? '#34d399' : '#fbbf24'} />
                           <strong style={{ color: standardWorkUpdated ? '#34d399' : '#fbbf24', fontSize: '0.8125rem' }}>
-                            {standardWorkUpdated ? 'POP Atualizado ✓' : 'Em revisão operacional'}
+                            {standardWorkUpdated ? 'POP Atualizado' : 'Em revisão operacional'}
                           </strong>
                         </div>
                         {standardWorkDocRef && (
@@ -6589,7 +6658,7 @@ export default function AdminProjectDetailPage() {
 
                       <div style={{ backgroundColor: '#090e1a', padding: '0.65rem', borderRadius: '8px', border: action.masterApproved ? '1px solid rgba(16, 185, 129, 0.4)' : '1px dashed rgba(255, 255, 255, 0.1)' }}>
                         <strong style={{ fontSize: '0.78125rem', color: action.masterApproved ? '#34d399' : '#fbbf24', display: 'block' }}>
-                          {action.masterApproved ? '✓ HOMOLOGADO MASTER' : 'Em processo de homologação'}
+                          {action.masterApproved ? 'HOMOLOGADO MASTER' : 'Em processo de homologação'}
                         </strong>
                         {action.masterApprovedBy && (
                           <span style={{ fontSize: '0.675rem', color: '#94a3b8', display: 'block' }}>
@@ -6648,7 +6717,7 @@ export default function AdminProjectDetailPage() {
               )}
 
               {/* =================================================================== */}
-              {/* SLIDE 5: 📸 ANTES & DEPOIS (Apenas Foto Antes e Foto Depois)        */}
+              {/* SLIDE 5: ANTES & DEPOIS (Apenas Foto Antes e Foto Depois)           */}
               {/* =================================================================== */}
               {presentationSlide === 5 && (
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
@@ -6670,8 +6739,8 @@ export default function AdminProjectDetailPage() {
                     {/* Foto do Antes */}
                     <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '16px', border: '1.5px solid rgba(239, 68, 68, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          📸 ANTES DA MELHORIA
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Camera size={14} /> ANTES DA MELHORIA
                         </span>
                         {!isViewer && (
                           <label style={{ fontSize: '0.675rem', color: '#22d3ee', cursor: 'pointer', fontWeight: 700 }}>
@@ -6731,8 +6800,8 @@ export default function AdminProjectDetailPage() {
                     {/* Foto do Depois */}
                     <div style={{ backgroundColor: '#0f172a', padding: '0.85rem 1rem', borderRadius: '16px', border: '1.5px solid rgba(16, 185, 129, 0.45)', display: 'flex', flexDirection: 'column', gap: '0.4rem', boxShadow: '0 0 25px rgba(16, 185, 129, 0.08)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          📸 DEPOIS (POSTO PADRONIZADO)
+                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Camera size={14} /> DEPOIS (POSTO PADRONIZADO)
                         </span>
                         {!isViewer && (
                           <label style={{ fontSize: '0.675rem', color: '#34d399', cursor: 'pointer', fontWeight: 700 }}>
@@ -6859,8 +6928,8 @@ export default function AdminProjectDetailPage() {
               </button>
 
               {/* Dica de Passador de Slides / Teclado / Sensei */}
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                🎮 <strong>Passador / Teclado</strong> • 🥋 <strong>Voz:</strong> Diga <em>&ldquo;Sensei...&rdquo;</em> • <strong>ESC</strong> para sair
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Monitor size={13} /> <strong>Passador / Teclado</strong> • <Mic size={13} /> <strong>Voz:</strong> Diga <em>&ldquo;Sensei...&rdquo;</em> • <strong>ESC</strong> para sair
               </span>
 
               {/* Botão Próximo ou Concluir */}

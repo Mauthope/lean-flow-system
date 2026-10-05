@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Sector, SectorLeanAssessment, LeanAssessmentDimension, LeanAssessmentDimensionId } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck, ListFilter, Layers, Trophy } from 'lucide-react';
+import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck, ListFilter, Layers, Trophy, BarChart3, List, Scale, Check, Keyboard, Sliders } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 
@@ -284,7 +284,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
         >
           {/* Esquerda: Identificação do Setor & Score Geral */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>📊</span>
+            <BarChart3 size={20} color="#22d3ee" />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                 <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: '#ffffff' }}>
@@ -381,10 +381,13 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                   fontSize: '0.675rem',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
                 }}
                 title="Modo Slide Individual (Sem Rolagem)"
               >
-                🎮 Slides
+                <Sliders size={11} /> Slides
               </button>
               <button
                 type="button"
@@ -398,10 +401,13 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                   fontSize: '0.675rem',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
                 }}
                 title="Modo Lista Geral (38 Itens)"
               >
-                📋 Lista
+                <List size={11} /> Lista
               </button>
             </div>
 
@@ -534,7 +540,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                       padding: 0,
                       transition: 'all 0.15s ease',
                     }}
-                    title={`Item ${cIdx + 1}: ${crit.title} (${crit.score}★)`}
+                    title={`Item ${cIdx + 1}: ${crit.title} (Nível ${crit.score})`}
                   >
                     {cIdx + 1}
                   </button>
@@ -640,7 +646,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                                     cursor: 'pointer',
                                   }}
                                 >
-                                  {val}★
+                                  {val}
                                 </button>
                               );
                             })}
@@ -721,7 +727,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  <span style={{ fontSize: '2rem' }}>🏆</span>
+                  <Award size={32} color="#10b981" />
                   <div>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ffffff', fontWeight: 900 }}>
                       38 Critérios Mestres Avaliados com Sucesso
@@ -845,9 +851,12 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                         color: currentCriterion.weight === 3 ? '#f87171' : '#94a3b8',
                         padding: '0.1rem 0.4rem',
                         borderRadius: '4px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
                       }}
                     >
-                      ⚖️ Peso {currentCriterion.weight} ({currentCriterion.weight === 3 ? 'Vital' : 'Médio'})
+                      <Scale size={12} /> Peso {currentCriterion.weight} ({currentCriterion.weight === 3 ? 'Vital' : 'Médio'})
                     </span>
                   </div>
 
@@ -891,7 +900,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                           lineHeight: 1.3,
                         }}
                       >
-                        <span style={{ color: '#22d3ee', fontWeight: 900 }}>✓</span>
+                        <Check size={12} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
                         <span>{chk}</span>
                       </div>
                     ))}
@@ -936,7 +945,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                     Classificação no Posto:
                   </span>
                   <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                    Nota: <strong style={{ color: '#22d3ee' }}>{currentCriterion.score}★ de 5★</strong>
+                    Nota: <strong style={{ color: '#22d3ee' }}>Nível {currentCriterion.score} de 5</strong>
                   </span>
                 </div>
 
@@ -944,11 +953,11 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                   {[1, 2, 3, 4, 5].map((val) => {
                     const isSelected = currentCriterion.score === val;
                     const levelColors: Record<number, { title: string; subtitle: string; bg: string; border: string; text: string; glow: string }> = {
-                      1: { title: '1★ Reativo', subtitle: 'Gargalo visível / Sem padrão', bg: 'rgba(239, 68, 68, 0.2)', border: '#ef4444', text: '#f87171', glow: '0 0 10px rgba(239, 68, 68, 0.35)' },
-                      2: { title: '2★ Básico', subtitle: 'Início de rotina e controle', bg: 'rgba(249, 115, 22, 0.2)', border: '#f97316', text: '#fb923c', glow: '0 0 10px rgba(249, 115, 22, 0.35)' },
-                      3: { title: '3★ Padronizado', subtitle: 'POP cumprido no Gemba', bg: 'rgba(234, 179, 8, 0.2)', border: '#eab308', text: '#facc15', glow: '0 0 10px rgba(234, 179, 8, 0.35)' },
-                      4: { title: '4★ Avançado', subtitle: 'Melhoria contínua autônoma', bg: 'rgba(16, 185, 129, 0.2)', border: '#10b981', text: '#34d399', glow: '0 0 10px rgba(16, 185, 129, 0.35)' },
-                      5: { title: '5★ Classe Mundial', subtitle: 'Poka-Yoke total e sem perdas', bg: 'rgba(6, 182, 212, 0.2)', border: '#06b6d4', text: '#22d3ee', glow: '0 0 12px rgba(6, 182, 212, 0.45)' },
+                      1: { title: 'Nível 1 • Reativo', subtitle: 'Gargalo visível / Sem padrão', bg: 'rgba(239, 68, 68, 0.2)', border: '#ef4444', text: '#f87171', glow: '0 0 10px rgba(239, 68, 68, 0.35)' },
+                      2: { title: 'Nível 2 • Básico', subtitle: 'Início de rotina e controle', bg: 'rgba(249, 115, 22, 0.2)', border: '#f97316', text: '#fb923c', glow: '0 0 10px rgba(249, 115, 22, 0.35)' },
+                      3: { title: 'Nível 3 • Padronizado', subtitle: 'POP cumprido no Gemba', bg: 'rgba(234, 179, 8, 0.2)', border: '#eab308', text: '#facc15', glow: '0 0 10px rgba(234, 179, 8, 0.35)' },
+                      4: { title: 'Nível 4 • Avançado', subtitle: 'Melhoria contínua autônoma', bg: 'rgba(16, 185, 129, 0.2)', border: '#10b981', text: '#34d399', glow: '0 0 10px rgba(16, 185, 129, 0.35)' },
+                      5: { title: 'Nível 5 • Classe Mundial', subtitle: 'Poka-Yoke total e sem perdas', bg: 'rgba(6, 182, 212, 0.2)', border: '#06b6d4', text: '#22d3ee', glow: '0 0 12px rgba(6, 182, 212, 0.45)' },
                     };
                     const col = levelColors[val];
 
@@ -1041,7 +1050,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
               </button>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.7rem' }}>
-                <span>💡 [1-5] Pontuar • [Enter / Setas] Navegar</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Keyboard size={13} /> [1-5] Pontuar • [Enter / Setas] Navegar</span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

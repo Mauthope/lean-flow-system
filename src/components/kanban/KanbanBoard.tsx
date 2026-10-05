@@ -147,7 +147,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               fontWeight: 600,
             }}
           >
-            <option value="all">🏢 Todos os Setores</option>
+            <option value="all">Todos os Setores</option>
             {sectors.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -170,7 +170,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               fontWeight: 600,
             }}
           >
-            <option value="all">⚡ Todos os Desperdícios</option>
+            <option value="all">Todos os Desperdícios</option>
             {Object.entries(WASTE_CATEGORIES).map(([key, cat]) => (
               <option key={key} value={key}>
                 {cat.label}
@@ -193,7 +193,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               fontWeight: 600,
             }}
           >
-            <option value="all">🎯 Todas Prioridades</option>
+            <option value="all">Todas as Prioridades</option>
             <option value="critica">Crítica</option>
             <option value="alta">Alta</option>
             <option value="media">Média</option>
@@ -216,7 +216,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 fontWeight: 600,
               }}
             >
-              <option value="all">👤 Todos os Agentes</option>
+              <option value="all">Todos os Agentes</option>
               {allAgents.map((ag) => (
                 <option key={ag.id} value={ag.id}>
                   {ag.name}
@@ -285,17 +285,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             flexShrink: 0,
           }}
         >
-          📋 Todas ({filteredActions.length})
+          Todas ({filteredActions.length})
         </button>
 
         {columns.map((status) => {
           const count = filteredActions.filter((a) => a.status === status).length;
           const labelMap: Record<ActionStatus, string> = {
-            aberta: '🔵 Abertas',
-            em_andamento: '🟡 Em Andamento',
-            aguardando_aprovacao: '🟣 Aguardando Homologação',
-            concluida: '🟢 Concluídas',
-            nao_aprovada: '🔴 Recusadas',
+            aberta: 'Abertas',
+            em_andamento: 'Em Andamento',
+            aguardando_aprovacao: 'Aguardando Homologação',
+            concluida: 'Concluídas',
+            nao_aprovada: 'Recusadas',
           };
           const isSelected = mobileSelectedCol === status;
           return (

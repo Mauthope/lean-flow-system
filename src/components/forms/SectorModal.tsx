@@ -7,7 +7,7 @@ import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
-import { Building2, Trash2, Award, Sparkles, ChevronDown, ChevronUp, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Building2, Trash2, Award, Sparkles, ChevronDown, ChevronUp, ShieldCheck, CheckCircle2, ShoppingCart, Wrench } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface SectorModalProps {
@@ -267,7 +267,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                         : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1'),
                     }}
                   >
-                    🛒 Compras (Nº da OC)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <ShoppingCart size={13} /> Compras (Nº da OC)
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -287,7 +289,9 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                         : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1'),
                     }}
                   >
-                    🔧 Manutenção (Nº da OS)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Wrench size={13} /> Manutenção (Nº da OS)
+                    </span>
                   </button>
                 </div>
 
@@ -340,10 +344,10 @@ export const SectorModal: React.FC<SectorModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '1.35rem',
+                    color: '#10b981',
                   }}
                 >
-                  🏆
+                  <Award size={22} />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>

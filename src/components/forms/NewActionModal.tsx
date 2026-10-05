@@ -178,8 +178,9 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
               <Target size={15} style={{ color: '#3b82f6' }} />
               Convergência Estratégica (Hoshin Kanri)
             </label>
-            <span style={{ fontSize: '0.7rem', color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>
-              ✨ Sensei IA Avaliará Automaticamente
+            <span style={{ fontSize: '0.7rem', color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Sparkles size={11} color="#38bdf8" />
+              <span>Sensei IA Avaliará Automaticamente</span>
             </span>
           </div>
 
@@ -291,8 +292,9 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
         {/* Eixo Alvo do Lean Assessment */}
         <div style={{ backgroundColor: 'rgba(34, 211, 238, 0.05)', border: '1.5px solid rgba(34, 211, 238, 0.25)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-            <label className="form-label" style={{ color: '#22d3ee', margin: 0, fontWeight: 700, fontSize: '0.85rem' }}>
-              🎯 Eixo Alvo do Lean Assessment:
+            <label className="form-label" style={{ color: '#22d3ee', margin: 0, fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Target size={14} color="#22d3ee" />
+              <span>Eixo Alvo do Lean Assessment:</span>
             </label>
             <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
               Os ganhos deste Kaizen formarão o valor auditado deste eixo no setor

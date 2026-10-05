@@ -53,6 +53,10 @@ import {
   Glasses,
   FileCode,
   Check,
+  MapPin,
+  Trash2,
+  Wrench,
+  Box,
 } from 'lucide-react';
 
 export default function MemorialDescritivoPage() {
@@ -1179,8 +1183,8 @@ export default function MemorialDescritivoPage() {
 
                 <div className="cover-quadro1-grid">
                   <div className="cover-quadro1-item">
-                    <strong>
-                      ⚙️ Visão Geral & Gestão de Fluxo
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Settings size={14} color="#38bdf8" /> Visão Geral & Gestão de Fluxo
                     </strong>
                     <span>
                       Cockpit executivo com Lead Time segregado, Kanban puxado com limite de WIP e funil inteligente de Triagem GUT.
@@ -1188,8 +1192,8 @@ export default function MemorialDescritivoPage() {
                   </div>
 
                   <div className="cover-quadro1-item">
-                    <strong>
-                      👥 Pessoas, Belts & Setores
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Users size={14} color="#38bdf8" /> Pessoas, Belts & Setores
                     </strong>
                     <span>
                       Trilha de maturidade (White a Black Belt) e Assessment 360° em radar pentagonal por setor produtivo.
@@ -1197,8 +1201,8 @@ export default function MemorialDescritivoPage() {
                   </div>
 
                   <div className="cover-quadro1-item">
-                    <strong>
-                      🧠 Inteligência, IA & Academia
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Sparkles size={14} color="#38bdf8" /> Inteligência, IA & Academia
                     </strong>
                     <span>
                       Sensei IA para co-criação e refinamento de artigos, telemetria de leitura, 50 questões dinâmicas e cronoanálise de tempos.
@@ -1206,8 +1210,8 @@ export default function MemorialDescritivoPage() {
                   </div>
 
                   <div className="cover-quadro1-item">
-                    <strong>
-                      🏛️ Governança, A3 & Controladoria
+                    <strong style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Building2 size={14} color="#38bdf8" /> Governança, A3 & Controladoria
                     </strong>
                     <span>
                       PDCA de 4 portões com geração de Relatório A3 paisagem, 7 fontes de custo evitado e validação com Fé Pública Contábil.
@@ -1237,8 +1241,8 @@ export default function MemorialDescritivoPage() {
                   </div>
 
                   <div className="cover-author-city">
-                    <span>
-                      📍 Xaxim — Santa Catarina
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <MapPin size={12} color="#0284c7" /> Xaxim — Santa Catarina
                     </span>
                     <span>
                       Brasil
@@ -1247,17 +1251,17 @@ export default function MemorialDescritivoPage() {
                 </div>
 
                 <div className="cover-author-badges">
-                  <span>
-                    🎓 Bacharel em Engenharia Bioenergética
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <GraduationCap size={13} color="#0284c7" /> Bacharel em Engenharia Bioenergética
                   </span>
-                  <span>
-                    🦺 Especialização em Eng. de Segurança do Trabalho
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <HardHat size={13} color="#d97706" /> Especialização em Eng. de Segurança do Trabalho
                   </span>
-                  <span style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd', color: '#0369a1' }}>
-                    💻 Desenvolvedor Full-Stack Sênior & IA Aplicada
+                  <span style={{ backgroundColor: '#f0f9ff', borderColor: '#bae6fd', color: '#0369a1', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Code size={13} color="#0284c7" /> Desenvolvedor Full-Stack Sênior & IA Aplicada
                   </span>
-                  <span style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#15803d' }}>
-                    ⚙️ Especialista em Lean, VSM & Cronoanálise
+                  <span style={{ backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', color: '#15803d', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Settings size={13} color="#15803d" /> Especialista em Lean, VSM & Cronoanálise
                   </span>
                 </div>
 
@@ -1357,11 +1361,11 @@ export default function MemorialDescritivoPage() {
               </p>
 
               <div className="colored-card card-amber">
-                <strong style={{ color: '#92400e', fontSize: '0.95rem', display: 'block', marginBottom: '0.35rem' }}>
-                  ⚠️ O Círculo Vicioso da Desconexão Sistêmica:
+                <strong style={{ color: '#92400e', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                  <AlertTriangle size={15} color="#d97706" /> O Círculo Vicioso da Desconexão Sistêmica:
                 </strong>
                 <p style={{ margin: 0, fontSize: '0.875rem', color: '#78350f', lineHeight: 1.6 }}>
-                  Ganhos fictícios geram ceticismo contábil ➔ A Controladoria corta verbas de melhoria contínua ➔ Os agentes de melhoria se sentem desvalorizados ➔ As anomalias de chão de fábrica se acumulam, elevando o custo operacional real.
+                  Ganhos fictícios geram ceticismo contábil → A Controladoria corta verbas de melhoria contínua → Os agentes de melhoria se sentem desvalorizados → As anomalias de chão de fábrica se acumulam, elevando o custo operacional real.
                 </p>
               </div>
 
@@ -1678,9 +1682,9 @@ export default function MemorialDescritivoPage() {
 
                 <div className="formula-breakdown-box">
                   <strong>Regras de Decisão Algorítmica no FluxoLean:</strong><br />
-                  • <code>Score GUT ≥ 64</code>: <strong>Alta Prioridade</strong> ➔ Abertura mandatória de <em>Projeto PDCA Estruturado</em>.<br />
-                  • <code>27 ≤ Score GUT &lt; 64</code>: <strong>Média Prioridade</strong> ➔ Despacho como <em>Ação Rápida Kaizen de Setor</em>.<br />
-                  • <code>Score GUT &lt; 27</code>: <strong>Baixa Prioridade</strong> ➔ Arquivamento com justificativa enviada ao autor.
+                  • <code>Score GUT ≥ 64</code>: <strong>Alta Prioridade</strong> → Abertura mandatória de <em>Projeto PDCA Estruturado</em>.<br />
+                  • <code>27 ≤ Score GUT &lt; 64</code>: <strong>Média Prioridade</strong> → Despacho como <em>Ação Rápida Kaizen de Setor</em>.<br />
+                  • <code>Score GUT &lt; 27</code>: <strong>Baixa Prioridade</strong> → Arquivamento com justificativa enviada ao autor.
                 </div>
               </div>
             </section>
@@ -1928,8 +1932,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 1: MOD */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    👷‍♂️ 1. Mão de Obra Direta (MOD / Tempo de Ciclo)
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Users size={16} color="#0284c7" /> 1. Mão de Obra Direta (MOD / Tempo de Ciclo)
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Exige realocação comprovada ou corte de turno
@@ -1953,8 +1957,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 2: REFUGO */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    🗑️ 2. Perda de Material / Refugo Fabril
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Trash2 size={16} color="#0284c7" /> 2. Perda de Material / Refugo Fabril
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Valor líquido (preço MP virgem menos venda sucata)
@@ -1976,8 +1980,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 3: THROUGHPUT */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    📈 3. Capacidade Adicional no Gargalo (Throughput / TOC)
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <TrendingUp size={16} color="#0284c7" /> 3. Capacidade Adicional no Gargalo (Throughput / TOC)
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Aplicável exclusivamente na restrição do fluxo
@@ -1999,8 +2003,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 4: ENERGIA */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    ⚡ 4. Eficiência Energética & Utilidades
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Zap size={16} color="#0284c7" /> 4. Eficiência Energética & Utilidades
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Tarifa industrial com impostos e bandeiras
@@ -2024,8 +2028,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 5: CONSUMÍVEIS */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    📦 5. Consumíveis & Insumos Operacionais
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Box size={16} color="#0284c7" /> 5. Consumíveis & Insumos Operacionais
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Gramatura/consumo por peça multiplicada pela produção
@@ -2049,8 +2053,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 6: HORAS EXTRAS */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    ⏱️ 6. Horas Extras Fabris Eliminadas
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Clock size={16} color="#0284c7" /> 6. Horas Extras Fabris Eliminadas
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Salário com adicional 50% e encargos
@@ -2072,8 +2076,8 @@ export default function MemorialDescritivoPage() {
               {/* FONTE 7: RETRABALHO */}
               <div className="lean-formula-container">
                 <div className="formula-header">
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a' }}>
-                    🛠️ 7. Retrabalho Interno & Não-Conformidades
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Wrench size={16} color="#0284c7" /> 7. Retrabalho Interno & Não-Conformidades
                   </span>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0284c7', backgroundColor: '#e0f2fe', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
                     Regra: Horas de reoperação somadas a componentes perdidos
@@ -2095,8 +2099,8 @@ export default function MemorialDescritivoPage() {
               {/* CONSOLIDAÇÃO DE ROI */}
               <div className="lean-formula-container" style={{ borderColor: '#86efac', backgroundColor: '#f0fdf4' }}>
                 <div className="formula-header">
-                  <span style={{ fontWeight: 900, fontSize: '0.95rem', color: '#15803d' }}>
-                    💰 Consolidação: Economia Líquida, ROI Real e Payback Amortizado
+                  <span style={{ fontWeight: 900, fontSize: '0.95rem', color: '#15803d', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <DollarSign size={16} color="#15803d" /> Consolidação: Economia Líquida, ROI Real e Payback Amortizado
                   </span>
                 </div>
                 <div className="formula-pills-row">

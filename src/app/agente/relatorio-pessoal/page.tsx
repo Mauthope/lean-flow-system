@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
 import { formatCurrency, formatDateTime, WASTE_CATEGORIES } from '@/lib/utils';
-import { Award, CheckCircle2, Clock, DollarSign, TrendingUp, ChevronRight } from 'lucide-react';
+import { Award, CheckCircle2, Clock, DollarSign, TrendingUp, ChevronRight, HelpCircle, Zap } from 'lucide-react';
 
 export default function AgenteRelatorioPessoalPage() {
   const { currentUser, dataVersion } = useAuth();
@@ -87,7 +87,7 @@ export default function AgenteRelatorioPessoalPage() {
       >
         <div>
           <h3 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-heading)' }}>
-            💡 O que significam suas métricas de Horas & Custo Evitado?
+            <HelpCircle size={16} color="#38bdf8" /> O que significam suas métricas de Horas & Custo Evitado?
           </h3>
           <p style={{ fontSize: '0.8125rem', color: '#cbd5e1', marginTop: '0.35rem', lineHeight: 1.45, maxWidth: '750px' }}>
             As <strong style={{ color: '#ffffff' }}>Horas Economizadas ({myTotalHours}h)</strong> representam a capacidade produtiva e tempo de ciclo liberados
@@ -167,8 +167,8 @@ export default function AgenteRelatorioPessoalPage() {
                     <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
                       {action.title}
                     </h4>
-                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                      ⚡ Desperdício: {waste?.label || action.wasteCategory} • Setor: {action.originSectorName}
+                    <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Zap size={12} color="#38bdf8" /> Desperdício: {waste?.label || action.wasteCategory} • Setor: {action.originSectorName}
                     </p>
                   </div>
 

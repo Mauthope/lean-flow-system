@@ -771,7 +771,7 @@ export default function AdminAgentesPage() {
                             gap: '0.25rem',
                           }}
                         >
-                          🏆 Qualificado ({dataService.getAgentLatestExam(member.id)?.score.toFixed(1)})
+                          <Award size={11} color={isDark ? '#fbbf24' : '#b45309'} /> Qualificado ({dataService.getAgentLatestExam(member.id)?.score.toFixed(1)})
                         </span>
                       )}
                     </div>
@@ -794,7 +794,7 @@ export default function AdminAgentesPage() {
                         {isViewer ? 'Abrangência: ' : 'Setor: '}
                         {member.allSectors || member.sectorName === 'Todos os Setores (Geral)' ? (
                           <span style={{ color: isViewer ? (isDark ? '#d8b4fe' : '#7e22ce') : (isDark ? '#34d399' : '#15803d'), fontWeight: 800 }}>
-                            🌟 Todos os Setores (Geral Planta)
+                            Todos os Setores (Geral Planta)
                           </span>
                         ) : (
                           <strong style={{ color: isArchived ? (isDark ? '#cbd5e1' : '#64748b') : (isDark ? '#ffffff' : '#0f172a') }}>

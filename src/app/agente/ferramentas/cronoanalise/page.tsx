@@ -53,7 +53,7 @@ type StudyTab = 'cronometro' | 'analise' | 'estatistica' | 'historico';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const typeLabel = (t: LeanActivityType) =>
-  t === 'VA' ? '🟢 VA' : t === 'NNVA' ? '🟡 NNVA' : '🔴 NVA';
+  t === 'VA' ? 'VA' : t === 'NNVA' ? 'NNVA' : 'NVA';
 
 const typeColor = (t: LeanActivityType) =>
   t === 'VA' ? '#34d399' : t === 'NNVA' ? '#22d3ee' : '#f87171';
@@ -218,7 +218,7 @@ export default function EstudoDeTemposPage() {
   const handleCompleteCycle = () => {
     const nextNum = currentCycle + 1;
     updateCurrentCycle(nextNum);
-    alert(`🎉 Ciclo #${currentCycle} finalizado! Iniciando Ciclo #${nextNum}.`);
+    alert(`Ciclo #${currentCycle} finalizado! Iniciando Ciclo #${nextNum}.`);
   };
 
   const handleAddMotivo = (e: React.FormEvent) => {
@@ -610,7 +610,7 @@ export default function EstudoDeTemposPage() {
                   </>
                 ) : (
                   <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>
-                    Selecione uma atividade abaixo para cronometrar 👇
+                    Selecione uma atividade abaixo para cronometrar:
                   </span>
                 )}
               </div>
@@ -716,9 +716,9 @@ export default function EstudoDeTemposPage() {
                 style={{ flex: '1 1 140px', fontSize: '0.8125rem', minHeight: '38px' }}
               />
               <select value={newMotivoType} onChange={(e) => setNewMotivoType(e.target.value as LeanActivityType)} className="form-select" style={{ width: 'auto', fontSize: '0.8125rem', minHeight: '38px' }}>
-                <option value="NVA">🔴 NVA (Perda)</option>
-                <option value="VA">🟢 VA (Valor)</option>
-                <option value="NNVA">🟡 NNVA</option>
+                <option value="NVA">NVA (Perda)</option>
+                <option value="VA">VA (Valor Agregado)</option>
+                <option value="NNVA">NNVA (Necessário)</option>
               </select>
               <button type="submit" className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minHeight: '38px', fontWeight: 800 }}>
                 <Plus size={15} /> Add
@@ -1033,7 +1033,7 @@ export default function EstudoDeTemposPage() {
                   Mínimo (N&apos;)
                 </span>
                 <strong style={{ fontSize: '1.15rem', color: statsCalc.isReliable ? '#34d399' : '#fbbf24', fontFamily: 'var(--font-mono)' }}>
-                  {statsCalc.requiredN} {statsCalc.isReliable ? '✅' : `(−${statsCalc.pendingSamples})`}
+                  {statsCalc.requiredN} {statsCalc.isReliable ? '(OK)' : `(−${statsCalc.pendingSamples})`}
                 </strong>
               </div>
             </div>

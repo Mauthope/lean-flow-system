@@ -1638,7 +1638,7 @@ export const dataService = {
       authorId: 'sys_audit',
       authorName: authorName || 'Auditoria SGQ / Lean',
       authorRole: 'admin' as const,
-      text: `📅 Reprogramação de Prazo (Auditoria): A atividade "${item.label}" teve a data final prorrogada de ${prevEndDate ? new Date(prevEndDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Não informada'} para ${new Date(newEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}. Justificativa: "${reason.trim()}".`,
+      text: `Reprogramação de Prazo (Auditoria): A atividade "${item.label}" teve a data final prorrogada de ${prevEndDate ? new Date(prevEndDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Não informada'} para ${new Date(newEndDate + 'T12:00:00').toLocaleDateString('pt-BR')}. Justificativa: "${reason.trim()}".`,
       createdAt: new Date().toISOString(),
     };
     actions[index].notes = [...(actions[index].notes || []), auditNote];
@@ -2142,7 +2142,7 @@ export const dataService = {
         avgDays: overallAvgPlanDays,
         pctOfTotal: Math.round((overallAvgPlanDays / totalStageSum) * 100),
         color: '#38bdf8',
-        icon: '📐',
+        icon: 'Target',
         description: 'Pareto, 5 Porquês, Ishikawa e formulação de meta',
       },
       {
@@ -2151,7 +2151,7 @@ export const dataService = {
         avgDays: overallAvgDoDays,
         pctOfTotal: Math.round((overallAvgDoDays / totalStageSum) * 100),
         color: '#c084fc',
-        icon: '⚡',
+        icon: 'Zap',
         description: 'Testes práticos, fabricação de dispositivos e pilotos',
       },
       {
@@ -2160,7 +2160,7 @@ export const dataService = {
         avgDays: overallAvgCheckDays,
         pctOfTotal: Math.round((overallAvgCheckDays / totalStageSum) * 100),
         color: '#fbbf24',
-        icon: '🏢',
+        icon: 'Building2',
         description: 'Auditoria de custos evitados e emissão do parecer oficial',
       },
     ];
@@ -3307,8 +3307,8 @@ export const dataService = {
       answers: params.answers,
       questionsSnapshot: evaluatedQuestions,
       feedbackSummary: isPassed
-        ? `🏆 Parabéns! Você atingiu ${calculatedScore.toFixed(1)}/10.0 com ${correctCount} acerto(s), ${wrongCount} erro(s) e ${blankCount} em branco. Conquistou o Selo de Agente Qualificado!`
-        : `⚠️ Nota ${calculatedScore.toFixed(1)}/10.0 insuficiente para qualificação (mínimo 8.0). Devido à regra anti-chute (${wrongCount} erro(s) anularam ${wrongCount} acerto(s)), seu percentual de capacitação retrocedeu para 50%. Reestude os artigos até 95% para tentar novamente.`,
+        ? `Parabéns! Você atingiu ${calculatedScore.toFixed(1)}/10.0 com ${correctCount} acerto(s), ${wrongCount} erro(s) e ${blankCount} em branco. Conquistou o Selo de Agente Qualificado!`
+        : `Nota ${calculatedScore.toFixed(1)}/10.0 insuficiente para qualificação (mínimo 8.0). Devido à regra anti-chute (${wrongCount} erro(s) anularam ${wrongCount} acerto(s)), seu percentual de capacitação retrocedeu para 50%. Reestude os artigos até 95% para tentar novamente.`,
       rewardClaimed: false,
     };
 

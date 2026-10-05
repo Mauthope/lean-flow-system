@@ -17,6 +17,8 @@ import {
   HelpCircle,
   Play,
   FileCheck,
+  Target,
+  Bot,
 } from 'lucide-react';
 import { LeanAction } from '@/lib/types';
 import {
@@ -269,7 +271,7 @@ export default function SenseiCopilotModal({
                 fontSize: '1.4rem',
               }}
             >
-              🥋
+              <Bot size={22} color="#22d3ee" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -420,7 +422,7 @@ export default function SenseiCopilotModal({
                     fontSize: '2rem',
                   }}
                 >
-                  🥋
+                  <Bot size={36} color="#22d3ee" />
                 </div>
                 <div style={{ maxWidth: '550px' }}>
                   <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.4rem' }}>
@@ -570,8 +572,9 @@ export default function SenseiCopilotModal({
                   </div>
                   {refinement.refinedIshikawa.primaryRootCause && (
                     <div style={{ marginTop: '0.5rem', backgroundColor: 'rgba(52, 211, 153, 0.1)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid #34d399' }}>
-                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399' }}>
-                        🎯 Causa Raiz Prioritária: {refinement.refinedIshikawa.primaryRootCause}
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <Target size={13} color="#34d399" />
+                        <span>Causa Raiz Prioritária: {refinement.refinedIshikawa.primaryRootCause}</span>
                       </span>
                     </div>
                   )}
@@ -716,8 +719,9 @@ export default function SenseiCopilotModal({
                           paddingBottom: '0.25rem',
                         }}
                       >
-                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee' }}>
-                          🥋 Sensei (Mestre Lean)
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <Bot size={13} color="#22d3ee" />
+                          <span>Sensei (Mestre Lean)</span>
                         </span>
 
                         <button
@@ -797,7 +801,8 @@ export default function SenseiCopilotModal({
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#22d3ee')}
                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
                 >
-                  💡 {q}
+                  <Lightbulb size={12} color="#f59e0b" style={{ display: 'inline', marginRight: '4px' }} />
+                  <span>{q}</span>
                 </button>
               ))}
             </div>

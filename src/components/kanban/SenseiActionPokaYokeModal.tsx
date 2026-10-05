@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ActionQualityEvaluation } from '@/lib/types';
-import { Sparkles, AlertTriangle, Edit3, ShieldAlert, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Sparkles, AlertTriangle, Edit3, ShieldAlert, CheckCircle2, ArrowLeft, XCircle, Check, FileText } from 'lucide-react';
 import { evaluateActionQuality } from '@/services/geminiService';
 
 interface SenseiActionPokaYokeModalProps {
@@ -96,8 +96,9 @@ export const SenseiActionPokaYokeModal: React.FC<SenseiActionPokaYokeModalProps>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase' }}>
-                ⛔ Bloqueio de Qualidade: Ação Banal Reprovada
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <ShieldAlert size={14} color="#f87171" />
+                <span>Bloqueio de Qualidade: Ação Banal Reprovada</span>
               </span>
               <span
                 style={{
@@ -131,8 +132,9 @@ export const SenseiActionPokaYokeModal: React.FC<SenseiActionPokaYokeModalProps>
                 border: '1px solid rgba(239, 68, 68, 0.3)',
               }}
             >
-              <span style={{ fontSize: '0.7rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800 }}>
-                ❌ Sua redação original ({itemTypeLabel} - Reprovada):
+              <span style={{ fontSize: '0.7rem', color: '#f87171', textTransform: 'uppercase', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <XCircle size={13} color="#f87171" />
+                <span>Sua redação original ({itemTypeLabel} - Reprovada):</span>
               </span>
               <div style={{ fontSize: '0.9rem', color: '#fca5a5', fontWeight: 600, marginTop: '0.25rem', textDecoration: 'line-through' }}>
                 &quot;{originalText}&quot;
@@ -154,8 +156,9 @@ export const SenseiActionPokaYokeModal: React.FC<SenseiActionPokaYokeModalProps>
                   <Sparkles size={14} color="#22d3ee" />
                   <span>Sugestão Técnica Enriquecida pelo Sensei (Padrão 5W2H):</span>
                 </div>
-                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '6px' }}>
-                  ✓ 100% Auditável & Concreta
+                <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Check size={11} color="#34d399" />
+                  <span>100% Auditável & Concreta</span>
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.45 }}>
@@ -173,8 +176,9 @@ export const SenseiActionPokaYokeModal: React.FC<SenseiActionPokaYokeModalProps>
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                 }}
               >
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '0.4rem' }}>
-                  📋 Diretrizes de Conformidade para o Plano de Ação:
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
+                  <FileText size={13} color="#94a3b8" />
+                  <span>Diretrizes de Conformidade para o Plano de Ação:</span>
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                   {evaluation.tips.map((tip, idx) => (

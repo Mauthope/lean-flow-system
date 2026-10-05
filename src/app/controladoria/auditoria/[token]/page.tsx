@@ -484,8 +484,8 @@ export default function ControladoriaAuditoriaPage() {
                   </span>
                 </div>
               </div>
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(34, 197, 94, 0.2)', padding: '0.4rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-                ✓ {formatCurrency(action.controllershipAudit?.approvedEstimatedCostAvoided || auditedTotal)}/ano Homologado
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(34, 197, 94, 0.2)', padding: '0.4rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(34, 197, 94, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                <CheckCircle2 size={13} /> {formatCurrency(action.controllershipAudit?.approvedEstimatedCostAvoided || auditedTotal)}/ano Homologado
               </span>
             </div>
             {action.controllershipAudit?.auditNotes && (
@@ -542,7 +542,7 @@ export default function ControladoriaAuditoriaPage() {
                     Indicador Chave & Meta Atingida
                   </span>
                   <p style={{ fontSize: '0.8125rem', color: '#e2e8f0', margin: 0 }}>
-                    <strong>{action.targetMetricName}:</strong> Inicial de {action.baselineValue} {action.targetMetricUnit || ''} ➔ Meta de {action.targetGoalValue} ➔ <strong>Alcançado: {action.achievedValue || action.targetGoalValue} {action.targetMetricUnit || ''}</strong>
+                    <strong>{action.targetMetricName}:</strong> Inicial de {action.baselineValue} {action.targetMetricUnit || ''} → Meta de {action.targetGoalValue} → <strong>Alcançado: {action.achievedValue || action.targetGoalValue} {action.targetMetricUnit || ''}</strong>
                   </p>
                 </div>
               )}
@@ -662,8 +662,8 @@ export default function ControladoriaAuditoriaPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <strong style={{ color: '#ffffff' }}>{title}</strong>
                             {proof?.attachment && (
-                              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                                ✓ Planilha do Agente Anexada
+                              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <CheckCircle2 size={10} /> Planilha do Agente Anexada
                               </span>
                             )}
                           </div>
@@ -725,7 +725,7 @@ export default function ControladoriaAuditoriaPage() {
                               {/* 1. Comprovação do Agente Lean */}
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                                 <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                  👤 Memória de Cálculo do Agente Lean:
+                                  <User size={12} /> Memória de Cálculo do Agente Lean:
                                 </span>
                                 {proof?.explanation ? (
                                   <div style={{ backgroundColor: 'rgba(0,0,0,0.35)', padding: '0.5rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', color: '#e2e8f0', borderLeft: '3px solid #38bdf8' }}>
@@ -767,8 +767,8 @@ export default function ControladoriaAuditoriaPage() {
                                     </button>
                                   </div>
                                 ) : (
-                                  <span style={{ fontSize: '0.72rem', color: '#f87171' }}>
-                                    ⚠️ Nenhum arquivo de memória de cálculo anexado pelo Agente.
+                                  <span style={{ fontSize: '0.72rem', color: '#f87171', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <AlertTriangle size={12} /> Nenhum arquivo de memória de cálculo anexado pelo Agente.
                                   </span>
                                 )}
                               </div>
@@ -777,7 +777,7 @@ export default function ControladoriaAuditoriaPage() {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                   <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                    🏛️ Parecer & Contra-Memória da Controladoria:
+                                    <Building size={12} /> Parecer & Contra-Memória da Controladoria:
                                   </span>
                                   <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
                                     (Anexo Opcional)

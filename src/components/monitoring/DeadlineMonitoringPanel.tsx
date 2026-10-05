@@ -352,9 +352,13 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                 backgroundColor: filterTab === 'atrasado' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
                 color: filterTab === 'atrasado' ? '#f87171' : '#94a3b8',
                 transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
-              🔴 Atrasados ({overdueCount})
+              <AlertTriangle size={13} color="#f87171" />
+              <span>Atrasados ({overdueCount})</span>
             </button>
           )}
 
@@ -372,9 +376,13 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
                 backgroundColor: filterTab === 'quase_atrasado' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
                 color: filterTab === 'quase_atrasado' ? '#fbbf24' : '#94a3b8',
                 transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
               }}
             >
-              🟡 Quase Atrasados ({nearDueCount})
+              <Clock size={13} color="#fbbf24" />
+              <span>Quase Atrasados ({nearDueCount})</span>
             </button>
           )}
 

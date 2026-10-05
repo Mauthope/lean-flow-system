@@ -104,7 +104,7 @@ export default function OitoDesperdiciosPage() {
                 >
                   Desperdício #{key}
                 </span>
-                <span style={{ fontSize: '1.25rem' }}>⚡</span>
+                <Zap size={18} color={item.color || '#22d3ee'} />
               </div>
 
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.4rem', fontFamily: 'var(--font-heading)' }}>
@@ -125,7 +125,7 @@ export default function OitoDesperdiciosPage() {
                 color: '#94a3b8',
               }}
             >
-              <strong style={{ color: '#ffffff' }}>💡 Ação Típica:</strong> Redução de lote, 5S, balanceamento e padronização (SOP).
+              <strong style={{ color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Lightbulb size={13} color="#f59e0b" /> Ação Típica:</strong> Redução de lote, 5S, balanceamento e padronização (SOP).
             </div>
           </div>
         ))}

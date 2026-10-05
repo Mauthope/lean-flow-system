@@ -585,7 +585,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
                 border: `1px solid ${allSectors ? (isDark ? 'rgba(16, 185, 129, 0.3)' : '#86efac') : (isDark ? 'rgba(6, 182, 212, 0.3)' : '#7dd3fc')}`,
               }}
             >
-              {allSectors ? '🌟 Todos os Setores' : `${selectedSectorIds.length} selecionado(s)`}
+              {allSectors ? 'Todos os Setores' : `${selectedSectorIds.length} selecionado(s)`}
             </span>
           </div>
 
@@ -619,7 +619,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               />
               <div>
                 <strong style={{ fontSize: '0.8125rem', color: allSectors ? (isDark ? '#34d399' : '#15803d') : (isDark ? '#ffffff' : '#0f172a') }}>
-                  🌟 Todos os Setores (Atuação Geral em Toda a Planta)
+                  Todos os Setores (Atuação Geral em Toda a Planta)
                 </strong>
                 <p style={{ fontSize: '0.6875rem', color: isDark ? '#94a3b8' : '#64748b', margin: '0.1rem 0 0 0' }}>
                   Habilita o agente para atuar em qualquer departamento ou demanda da fábrica.
@@ -725,7 +725,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
               <span>
                 {active
                   ? `${role === 'viewer' ? 'Visualizador Ativo' : 'Agente Ativo na Planta'} (Acesso Liberado)`
-                  : '🔒 Acesso Bloqueado / Perfil Arquivado (Histórico Preservado)'}
+                  : 'Acesso Bloqueado / Perfil Arquivado (Histórico Preservado)'}
               </span>
             </label>
 

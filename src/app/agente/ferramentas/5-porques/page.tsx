@@ -26,7 +26,7 @@ export default function CincoPorquesPage() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyAnalysis = () => {
-    const text = `🔍 ANÁLISE DE CAUSA RAIZ (5 PORQUÊS):
+    const text = `ANÁLISE DE CAUSA RAIZ (5 PORQUÊS):
 • Problema: ${problemStatement}
 1º Por quê? ${why1}
 2º Por quê? ${why2}
@@ -34,7 +34,7 @@ export default function CincoPorquesPage() {
 4º Por quê? ${why4}
 5º Por quê? (Causa Raiz): ${why5}
 
-🛡️ CONTRAMEDIDA / PADRONIZAÇÃO:
+CONTRAMEDIDA / PADRONIZAÇÃO:
 ${countermeasure}`;
 
     navigator.clipboard.writeText(text);
@@ -190,8 +190,8 @@ ${countermeasure}`;
             padding: '1.25rem',
           }}
         >
-          <label className="form-label" style={{ color: '#22d3ee', fontWeight: 800, fontSize: '0.9375rem', fontFamily: 'var(--font-heading)' }}>
-            🛡️ Contramedida Definitiva & Padronização (SOP / LPP):
+          <label className="form-label" style={{ color: '#22d3ee', fontWeight: 800, fontSize: '0.9375rem', fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <ShieldCheck size={16} /> Contramedida Definitiva & Padronização (SOP / LPP):
           </label>
           <textarea
             className="form-textarea"

@@ -85,15 +85,15 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
     });
 
     let message = `Transição realizada com sucesso para a planta "${tenant.name}"!\n\n` +
-      `✓ Novo Gestor: ${newManager.name} (${newManager.email})\n`;
+      `• Novo Gestor: ${newManager.name} (${newManager.email})\n`;
 
     if (previousManager && suspendPrevious) {
-      message += `✓ Gestor Anterior (${previousManager.name}): Acesso revogado com sucesso. Histórico 100% preservado.\n`;
+      message += `• Gestor Anterior (${previousManager.name}): Acesso revogado com sucesso. Histórico 100% preservado.\n`;
     } else if (previousManager && !suspendPrevious) {
-      message += `✓ Gestor Anterior (${previousManager.name}): Mantido ativo temporariamente para período de handover.\n`;
+      message += `• Gestor Anterior (${previousManager.name}): Mantido ativo temporariamente para período de handover.\n`;
     }
 
-    message += `✓ Serviços da fábrica continuam operando normalmente sem nenhuma interrupção.`;
+    message += `• Serviços da fábrica continuam operando normalmente sem nenhuma interrupção.`;
 
     alert(message);
     onSuccess();

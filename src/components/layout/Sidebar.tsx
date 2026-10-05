@@ -41,6 +41,7 @@ import {
   Sun,
   Moon,
   Network,
+  Check,
 } from 'lucide-react';
 
 interface NavItem {
@@ -797,17 +798,17 @@ export const Sidebar: React.FC = () => {
               metodologia PDCA, triagem industrial de demandas e apuração automática de custos evitados e ROI.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.75rem' }}>
-              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#22d3ee' }}>
-                ✓ Next.js 14 App Router
+              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#22d3ee', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={11} /> Next.js 14 App Router
               </span>
-              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#34d399' }}>
-                ✓ Multi-tenant Architecture
+              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={11} /> Multi-tenant Architecture
               </span>
-              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#fbbf24' }}>
-                ✓ 7 Fontes de Custo Evitado
+              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#fbbf24', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={11} /> 7 Fontes de Custo Evitado
               </span>
-              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#c084fc' }}>
-                ✓ Relatório A3 Paisagem PDCA
+              <span style={{ fontSize: '0.7rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 600, color: '#c084fc', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Check size={11} /> Relatório A3 Paisagem PDCA
               </span>
             </div>
           </div>

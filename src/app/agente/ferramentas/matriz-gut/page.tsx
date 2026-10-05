@@ -10,6 +10,9 @@ import {
   Sparkles,
   CheckCircle2,
   HelpCircle,
+  Clock,
+  TrendingUp,
+  AlertOctagon,
 } from 'lucide-react';
 
 export default function MatrizGutPage() {
@@ -108,8 +111,8 @@ export default function MatrizGutPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
           {/* Gravidade */}
           <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <label className="form-label" style={{ color: '#f87171', fontWeight: 800 }}>
-              🔴 Gravidade (G): {gravidade}
+            <label className="form-label" style={{ color: '#f87171', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <AlertOctagon size={14} color="#f87171" /> Gravidade (G): {gravidade}
             </label>
             <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               Qual o impacto financeiro, de segurança ou qualidade se nada for feito?
@@ -129,8 +132,8 @@ export default function MatrizGutPage() {
 
           {/* Urgência */}
           <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <label className="form-label" style={{ color: '#fbbf24', fontWeight: 800 }}>
-              🟡 Urgência (U): {urgencia}
+            <label className="form-label" style={{ color: '#fbbf24', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Clock size={14} color="#fbbf24" /> Urgência (U): {urgencia}
             </label>
             <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               O tempo que temos para resolver antes que cause transtorno.
@@ -150,8 +153,8 @@ export default function MatrizGutPage() {
 
           {/* Tendência */}
           <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <label className="form-label" style={{ color: '#38bdf8', fontWeight: 800 }}>
-              🔵 Tendência (T): {tendencia}
+            <label className="form-label" style={{ color: '#38bdf8', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <TrendingUp size={14} color="#38bdf8" /> Tendência (T): {tendencia}
             </label>
             <p style={{ fontSize: '0.725rem', color: '#94a3b8', marginBottom: '0.5rem' }}>
               Se nada for feito, o problema vai crescer ou permanecer igual?
