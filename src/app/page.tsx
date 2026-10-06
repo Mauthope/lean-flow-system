@@ -49,6 +49,34 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
 
+    // 0. Captura erros retornados pelo provedor OAuth (ex: Microsoft Entra ID) via URL hash ou query string
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const search = window.location.search;
+      let errorDesc: string | null = null;
+
+      if (hash && hash.includes('error=')) {
+        const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+        errorDesc = hashParams.get('error_description') || hashParams.get('error');
+      } else if (search && search.includes('error=')) {
+        const searchParams = new URLSearchParams(search);
+        errorDesc = searchParams.get('error_description') || searchParams.get('error');
+      }
+
+      if (errorDesc) {
+        const cleanDesc = decodeURIComponent(errorDesc.replace(/\+/g, ' '));
+        if (cleanDesc.includes('Error getting user email from external provider')) {
+          setAuthError(
+            'Falha de autenticação Microsoft SSO: O provedor corporativo não retornou o atributo de e-mail do colaborador. Verifique se o atributo de e-mail ou UPN está preenchido no Microsoft Entra ID ou conceda consentimento de administrador para o escopo User.Read / email no Azure Portal.'
+          );
+        } else {
+          setAuthError(`Falha na autenticação corporativa Microsoft: ${cleanDesc}`);
+        }
+        setIsLoading(false);
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+
     let isMounted = true;
 
     const handleSessionUser = async (userId: string, userEmail?: string) => {
@@ -179,8 +207,10 @@ export default function LoginPage() {
         } else {
           router.push('/agente/kanban');
         }
-      } catch (err) {
-        console.warn('[SSO Callback] Perfil corporativo sincronizando:', err);
+      } catch (err: any) {
+        console.warn('[SSO Callback] Falha na sincronização corporativa:', err);
+        setAuthError(err?.message || 'Falha ao sincronizar perfil corporativo no acesso SSO.');
+        setIsLoading(false);
       }
     };
 
@@ -403,7 +433,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'azure',
           options: {
-            scopes: 'email profile offline_access',
+            scopes: 'openid email profile offline_access',
             redirectTo:
               typeof window !== 'undefined'
                 ? window.location.origin
