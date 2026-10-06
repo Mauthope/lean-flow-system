@@ -19,6 +19,26 @@ export async function POST(req: NextRequest) {
       voiceName,
     } = body;
 
+    // SecOps Pilar 6: Validação de Sessão Corporativa para consumo de recursos de IA
+    const authHeader = req.headers.get('authorization');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseAnonKey && authHeader) {
+      const token = authHeader.replace('Bearer ', '').trim();
+      if (token) {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabaseServer = createClient(supabaseUrl, supabaseAnonKey);
+        const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
+        if (authError || !user) {
+          return NextResponse.json(
+            { error: 'Acesso não autorizado: Sessão corporativa inválida ou expirada.' },
+            { status: 401 }
+          );
+        }
+      }
+    }
+
     // SecOps: A chave de API fica armazenada exclusivamente no ambiente seguro de servidor.
     // Suporte agnóstico a chaves de IA: AI_API_KEY prioritária, com compatibilidade para GEMINI_API_KEY.
     // Conforme PSI Grupo Vaccaro: proibição estrita de prefixo NEXT_PUBLIC_ para credenciais de IA.

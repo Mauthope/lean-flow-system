@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   UserPlus,
   UserCheck,
@@ -201,6 +202,43 @@ export const AgentModal: React.FC<AgentModalProps> = ({
       });
     }
 
+    // Sincroniza com a tabela de usuários autorizados no Supabase (governança corporativa de acesso)
+    if (isSupabaseConfigured()) {
+      const cleanEmail = email.trim().toLowerCase();
+      supabase
+        .from('authorized_users')
+        .upsert(
+          {
+            tenant_id: currentTenant.id,
+            email: cleanEmail,
+            name: name.trim(),
+            role,
+            job_title: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Agente de Melhoria Contínua'),
+            sector_name: allSectors ? 'Todos os Setores (Geral)' : undefined,
+            all_sectors: allSectors,
+            active,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        )
+        .then(({ error }) => {
+          if (error) console.warn('[Supabase Sync] Falha ao sincronizar authorized_users:', error);
+        });
+
+      // Atualiza também o status no perfil caso o usuário já tenha efetuado login no Supabase
+      supabase
+        .from('profiles')
+        .update({
+          role,
+          name: name.trim(),
+          job_title: jobTitle,
+          status: active ? 'ativo' : 'suspenso',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail)
+        .then(() => {});
+    }
+
     onSuccess();
     onClose();
   };
@@ -215,6 +253,19 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           `Deseja prosseguir com a exclusão irreversível?`
       )
     ) {
+      if (isSupabaseConfigured() && agent.email) {
+        const cleanEmail = agent.email.trim().toLowerCase();
+        supabase
+          .from('authorized_users')
+          .delete()
+          .eq('email', cleanEmail)
+          .then(() => {});
+        supabase
+          .from('profiles')
+          .update({ status: 'suspenso' })
+          .eq('email', cleanEmail)
+          .then(() => {});
+      }
       dataService.deleteUser(agent.id);
       onSuccess();
       onClose();

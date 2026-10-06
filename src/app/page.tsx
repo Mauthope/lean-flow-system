@@ -70,13 +70,81 @@ export default function LoginPage() {
         const effectiveEmail = (profile?.email || userEmail || '').trim().toLowerCase();
         if (!effectiveEmail) return;
 
-        // 1. Busca se o colaborador foi previamente cadastrado pelo Administrador na plataforma
-        const matchedUser =
+        // 1. Verifica autorização corporativa em 3 camadas de governança:
+        // A) Perfil cadastrado e ativo no Supabase (public.profiles)
+        // B) Lista de usuários pré-autorizados na empresa (public.authorized_users)
+        // C) Cadastro prévio na base local (dataService)
+        let isAuthorized = false;
+        let authRole: 'admin' | 'agent' | 'viewer' = 'agent';
+        let authName = profile?.name || userEmail?.split('@')[0] || 'Colaborador';
+        let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
+        let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
+
+        // Camada A: Perfil no banco Supabase
+        if (profile) {
+          if (profile.status === 'ativo' || isMaster) {
+            isAuthorized = true;
+            authRole = profile.role || (isMaster ? 'admin' : 'agent');
+            authName = profile.name || authName;
+            authJobTitle = profile.job_title || authJobTitle;
+          } else if (profile.status === 'suspenso') {
+            await supabase.auth.signOut();
+            setAuthError(
+              `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
+            );
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Camada B: Lista corporativa de pré-autorizados no Supabase (public.authorized_users)
+        if (!isAuthorized) {
+          try {
+            const { data: authRecord } = await supabase
+              .from('authorized_users')
+              .select('*')
+              .eq('email', effectiveEmail)
+              .single();
+
+            if (authRecord) {
+              if (authRecord.active) {
+                isAuthorized = true;
+                authRole = authRecord.role;
+                authName = authRecord.name;
+                authJobTitle = authRecord.job_title || authJobTitle;
+              } else {
+                await supabase.auth.signOut();
+                setAuthError(`Acesso bloqueado: O cadastro de "${effectiveEmail}" está desativado na plataforma.`);
+                setIsLoading(false);
+                return;
+              }
+            }
+          } catch {
+            // Continua para checagem na base local
+          }
+        }
+
+        // Camada C: Base de dados local (dataService)
+        let matchedUser =
           dataService.getUserByIdOrEmail(effectiveEmail) ||
           dataService.getUserByIdOrEmail(userId);
 
-        // 2. Se o colaborador NÃO possui cadastro prévio: BLOQUEIO TOTAL (Zero Trust / Whitelist Estrita)
-        if (!matchedUser) {
+        if (matchedUser) {
+          if (!matchedUser.active) {
+            await supabase.auth.signOut();
+            setAuthError(`Acesso bloqueado: O usuário vinculado a "${effectiveEmail}" está desativado nesta plataforma.`);
+            setIsLoading(false);
+            return;
+          }
+          isAuthorized = true;
+          authRole = matchedUser.role;
+          authName = matchedUser.name;
+          authJobTitle = matchedUser.jobTitle || authJobTitle;
+          isMaster = matchedUser.isMaster || isMaster;
+        }
+
+        // SE NÃO CONSTAR EM NENHUMA DAS BASES: BLOQUEIO TOTAL (Zero Trust)
+        if (!isAuthorized) {
           await supabase.auth.signOut();
           setAuthError(
             `Acesso não autorizado (Política de Acesso Lean): O e-mail corporativo "${effectiveEmail}" foi autenticado pela Microsoft, porém não possui cadastro prévio nesta plataforma. Solicite a liberação de acesso ao Administrador do Sistema.`
@@ -85,23 +153,26 @@ export default function LoginPage() {
           return;
         }
 
-        // 3. Se o usuário estiver inativo ou bloqueado pelo Administrador
-        if (!matchedUser.active) {
-          await supabase.auth.signOut();
-          setAuthError(
-            `Acesso bloqueado: O usuário vinculado a "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
-          );
-          setIsLoading(false);
-          return;
+        // Se o usuário foi validado pelo banco de dados Supabase mas ainda não existe no storage local deste navegador:
+        if (!matchedUser) {
+          const currentTenant = dataService.getCurrentTenant();
+          matchedUser = dataService.createUser({
+            tenantId: currentTenant.id,
+            name: authName,
+            email: effectiveEmail,
+            role: authRole,
+            isMaster: isMaster,
+            jobTitle: authJobTitle,
+            active: true,
+          });
         }
 
-        // 4. Se o cadastro existe e está ativo, efetiva a sessão e redireciona conforme o perfil
+        // Efetiva a sessão corporativa e redireciona
         loginAs(matchedUser.id);
         if (
           matchedUser.role === 'admin' ||
           matchedUser.isMaster ||
-          profile?.role === 'admin' ||
-          profile?.is_master ||
+          isMaster ||
           effectiveEmail === 'mauricio.grigol@rafitec.com.br'
         ) {
           router.push('/admin/dashboard');
@@ -180,13 +251,51 @@ export default function LoginPage() {
             .single();
 
           const effectiveEmail = (profile?.email || data.user.email || cleanEmail).trim().toLowerCase();
-          const matchedUser =
+          let matchedUser =
             dataService.getUserByIdOrEmail(effectiveEmail) ||
             dataService.getUserByIdOrEmail(data.user.id) ||
             (profile ? dataService.getUserByIdOrEmail(profile.id) : undefined);
 
+          let isAuthorized = false;
+          let authRole: 'admin' | 'agent' | 'viewer' = profile?.role || 'agent';
+          let authName = profile?.name || cleanEmail.split('@')[0];
+          let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
+          let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
+
+          if (profile && (profile.status === 'ativo' || isMaster)) {
+            isAuthorized = true;
+          } else {
+            try {
+              const { data: authRecord } = await supabase
+                .from('authorized_users')
+                .select('*')
+                .eq('email', effectiveEmail)
+                .single();
+              if (authRecord && authRecord.active) {
+                isAuthorized = true;
+                authRole = authRecord.role;
+                authName = authRecord.name;
+                authJobTitle = authRecord.job_title || authJobTitle;
+              }
+            } catch {
+              // continua
+            }
+          }
+
+          if (matchedUser) {
+            if (!matchedUser.active) {
+              await supabase.auth.signOut();
+              setAuthError(
+                `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
+              );
+              setIsLoading(false);
+              return;
+            }
+            isAuthorized = true;
+          }
+
           // Se não houver cadastro prévio pelo Administrador
-          if (!matchedUser) {
+          if (!isAuthorized) {
             await supabase.auth.signOut();
             setAuthError(
               `Acesso não autorizado: O usuário "${effectiveEmail}" não possui cadastro nesta plataforma Lean. Solicite a liberação de acesso ao Administrador.`
@@ -195,18 +304,21 @@ export default function LoginPage() {
             return;
           }
 
-          // Se o usuário estiver inativo
-          if (!matchedUser.active) {
-            await supabase.auth.signOut();
-            setAuthError(
-              `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
-            );
-            setIsLoading(false);
-            return;
+          if (!matchedUser) {
+            const currentTenant = dataService.getCurrentTenant();
+            matchedUser = dataService.createUser({
+              tenantId: currentTenant.id,
+              name: authName,
+              email: effectiveEmail,
+              role: authRole,
+              isMaster: isMaster,
+              jobTitle: authJobTitle,
+              active: true,
+            });
           }
 
           loginAs(matchedUser.id);
-          if (matchedUser.role === 'admin' || matchedUser.isMaster) {
+          if (matchedUser.role === 'admin' || matchedUser.isMaster || isMaster) {
             router.push('/admin/dashboard');
           } else {
             router.push('/agente/kanban');

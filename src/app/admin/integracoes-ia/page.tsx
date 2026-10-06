@@ -128,42 +128,36 @@ export default function IntegracoesIaPage() {
   }, [currentTenant]);
 
   // ===================================================================
-  // SALVAR CONFIGURAÇÃO GLOBAL NA ENTIDADE
+  // SALVAR CONFIGURAÇÃO GLOBAL NA ENTIDADE (SECOPS COMPLIANT)
   // ===================================================================
   const handleSave = async () => {
-    const cleanKey = apiKey.trim();
     setIsValidating(true);
     setValidationResult(null);
     setIsSaved(false);
 
-    const check = await validateGeminiApiKey(cleanKey);
+    const check = await validateGeminiApiKey();
     setIsValidating(false);
 
     if (check.valid && check.ttsEnabled) {
-      // Salva no banco de dados da Entidade
+      // Salva preferências de voz e modelo na entidade (sem gravar credenciais no browser)
       dataService.saveTenantAiSettings({
-        geminiApiKey: cleanKey,
         preferredVoice: selectedVoice,
         model: selectedModel,
       });
 
-      // Sincroniza localmente
-      saveGeminiApiKey(cleanKey);
       saveVoicePreference(selectedVoice);
 
       setIsSaved(true);
       setValidationResult({
         valid: true,
         ttsEnabled: true,
-        message: 'Configuração salva com sucesso! Todos os agentes da entidade já têm acesso ao Sensei.',
+        message: 'Conexão validada com sucesso! O Sensei IA e o Text-to-Speech estão operacionais e protegidos no servidor.',
       });
     } else if (check.valid && !check.ttsEnabled) {
       dataService.saveTenantAiSettings({
-        geminiApiKey: cleanKey,
         preferredVoice: selectedVoice,
         model: selectedModel,
       });
-      saveGeminiApiKey(cleanKey);
       saveVoicePreference(selectedVoice);
 
       setIsSaved(true);
@@ -173,12 +167,12 @@ export default function IntegracoesIaPage() {
         showCredentialsLink: true,
         message:
           check.ttsError ||
-          'Chave salva! Porém a API Text-to-Speech precisa ser autorizada nas credenciais do Google Cloud.',
+          'Sensei IA conectado! Porém a API Text-to-Speech precisa ser autorizada nas credenciais do Google Cloud.',
       });
     } else {
       setValidationResult({
         valid: false,
-        message: check.error || 'Chave de API inválida no Google Cloud.',
+        message: check.error || 'Falha na validação das credenciais de IA no servidor. Verifique as variáveis de ambiente AI_API_KEY ou GEMINI_API_KEY.',
       });
     }
   };

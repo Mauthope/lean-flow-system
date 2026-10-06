@@ -112,15 +112,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (typeof window !== 'undefined') {
-      // SecOps Item 8: Expurgar credenciais e dados locais para proteger terminais industriais compartilhados
-      const sensitiveKeys = [
-        'lean_flow_current_user',
-        'gemini_api_key',
-        'gemini_working_model',
-        'gemini_voice_pref',
-      ];
-      sensitiveKeys.forEach((k) => localStorage.removeItem(k));
-      sessionStorage.clear();
+      // SecOps Pilar 8: Expurgar todas as chaves do sistema para terminais compartilhados do chão de fábrica
+      try {
+        const keysToRemove = Object.keys(localStorage).filter(
+          (k) => k.startsWith('lean_flow_') || k.startsWith('sensei_') || k.startsWith('gemini_')
+        );
+        keysToRemove.forEach((k) => localStorage.removeItem(k));
+        sessionStorage.clear();
+      } catch {
+        // continua
+      }
       window.location.href = '/login';
     }
 

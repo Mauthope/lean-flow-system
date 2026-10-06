@@ -8,6 +8,7 @@ import { User, isMasterUser } from '@/lib/types';
 import { AgentModal } from '@/components/forms/AgentModal';
 import { formatCurrency } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   Users,
   UserPlus,
@@ -165,6 +166,11 @@ export default function AdminAgentesPage() {
       )
     ) {
       dataService.updateUser(member.id, { active: false });
+      if (isSupabaseConfigured() && member.email) {
+        const cleanEmail = member.email.trim().toLowerCase();
+        supabase.from('authorized_users').update({ active: false }).eq('email', cleanEmail).then(() => {});
+        supabase.from('profiles').update({ status: 'suspenso' }).eq('email', cleanEmail).then(() => {});
+      }
       refreshData();
     }
   };
@@ -178,6 +184,11 @@ export default function AdminAgentesPage() {
       )
     ) {
       dataService.updateUser(member.id, { active: true });
+      if (isSupabaseConfigured() && member.email) {
+        const cleanEmail = member.email.trim().toLowerCase();
+        supabase.from('authorized_users').update({ active: true }).eq('email', cleanEmail).then(() => {});
+        supabase.from('profiles').update({ status: 'ativo' }).eq('email', cleanEmail).then(() => {});
+      }
       refreshData();
     }
   };
@@ -191,6 +202,11 @@ export default function AdminAgentesPage() {
       )
     ) {
       dataService.deleteUser(member.id);
+      if (isSupabaseConfigured() && member.email) {
+        const cleanEmail = member.email.trim().toLowerCase();
+        supabase.from('authorized_users').delete().eq('email', cleanEmail).then(() => {});
+        supabase.from('profiles').update({ status: 'suspenso' }).eq('email', cleanEmail).then(() => {});
+      }
       refreshData();
     }
   };

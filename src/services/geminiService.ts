@@ -106,6 +106,24 @@ export function saveGeminiApiKey(key: string): void {
   }
 }
 
+async function getSenseiAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (typeof window !== 'undefined') {
+    try {
+      const { supabase, isSupabaseConfigured } = await import('@/lib/supabaseClient');
+      if (isSupabaseConfigured()) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+      }
+    } catch {
+      // continua com headers padrão
+    }
+  }
+  return headers;
+}
+
 export async function callSenseiBackend({
   prompt,
   contents,
@@ -124,9 +142,10 @@ export async function callSenseiBackend({
   responseMimeType?: string;
 }): Promise<string | null> {
   try {
+    const headers = await getSenseiAuthHeaders();
     const res = await fetch('/api/ai/sensei', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         action: 'generate',
         prompt,
@@ -305,9 +324,10 @@ export async function validateGeminiApiKey(
   isKeyRestricted?: boolean;
 }> {
   try {
+    const headers = await getSenseiAuthHeaders();
     const res = await fetch('/api/ai/sensei', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ action: 'validate' }),
     });
 
@@ -357,9 +377,10 @@ export async function synthesizeSpeechGoogleCloud({
 
     const speechOptimizedText = formatTextForHumanSpeech(text);
 
+    const headers = await getSenseiAuthHeaders();
     const res = await fetch('/api/ai/sensei', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         action: 'tts',
         text: speechOptimizedText,

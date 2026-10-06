@@ -53,6 +53,29 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_is_master ON public.profiles(is_master) WHERE is_master = true;
 
 -- =============================================================================
+-- 2.1 TABELA DE USUÁRIOS PRÉ-AUTORIZADOS / WHITELIST (public.authorized_users)
+-- Controla rigorosamente quem tem permissão prévia para acessar a plataforma via SSO
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.authorized_users (
+    id TEXT PRIMARY KEY DEFAULT ('auth_usr_' || replace(gen_random_uuid()::text, '-', '')),
+    tenant_id TEXT NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'agent' CHECK (role IN ('admin', 'agent', 'viewer')),
+    job_title TEXT DEFAULT 'Agente de Melhoria Contínua',
+    department TEXT DEFAULT 'Operações Industriais',
+    sector_name TEXT,
+    sector_ids JSONB DEFAULT '[]'::jsonb,
+    all_sectors BOOLEAN DEFAULT false,
+    active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_authorized_users_email ON public.authorized_users(email);
+CREATE INDEX IF NOT EXISTS idx_authorized_users_tenant_id ON public.authorized_users(tenant_id);
+
+-- =============================================================================
 -- 3. TABELA DE SETORES INDUSTRIAIS (public.sectors)
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.sectors (
