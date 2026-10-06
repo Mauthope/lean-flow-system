@@ -107,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   email: cleanDbEmail,
                   role: dbU.role || 'agent',
                   jobTitle: dbU.job_title || 'Agente de Melhoria Contínua',
+                  avatarUrl: dbU.avatar_url,
                   active: dbU.active !== false,
                   isMaster: dbU.role === 'admin' && cleanDbEmail === 'mauricio.grigol@rafitec.com.br',
                   createdAt: dbU.created_at || new Date().toISOString(),
@@ -118,7 +119,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   curr.active !== dbU.active ||
                   curr.role !== dbU.role ||
                   (dbU.name && curr.name !== dbU.name) ||
-                  (dbU.job_title && curr.jobTitle !== dbU.job_title)
+                  (dbU.job_title && curr.jobTitle !== dbU.job_title) ||
+                  (dbU.avatar_url && curr.avatarUrl !== dbU.avatar_url)
                 ) {
                   filteredUsers[existingIdx] = {
                     ...curr,
@@ -126,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     role: dbU.role,
                     name: dbU.name || curr.name,
                     jobTitle: dbU.job_title || curr.jobTitle,
+                    avatarUrl: dbU.avatar_url || curr.avatarUrl,
                   };
                   changed = true;
                 }
@@ -137,6 +140,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setAllUsers(filteredUsers);
               setAllAgents(dataService.getAgents());
               setAllViewers(dataService.getViewers());
+
+              const activeUsr = dataService.getCurrentUser();
+              if (activeUsr) {
+                const refreshed = filteredUsers.find((u) => u.email.toLowerCase() === activeUsr.email.toLowerCase());
+                if (refreshed && (refreshed.avatarUrl !== activeUsr.avatarUrl || refreshed.name !== activeUsr.name)) {
+                  dataService.setCurrentUser(refreshed);
+                  setCurrentUser(refreshed);
+                }
+              }
             }
           }
         } catch (err) {

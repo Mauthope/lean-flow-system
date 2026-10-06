@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { AvatarSelector } from '@/components/ui/AvatarSelector';
 import { getUserHierarchyInfo, isMasterUser } from '@/lib/types';
 import {
@@ -63,6 +64,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       phone: phone.trim(),
       avatarUrl: avatarUrl.trim(),
     });
+
+    // Sincroniza dados e avatar com o Supabase
+    if (isSupabaseConfigured() && currentUser.email) {
+      const cleanEmail = currentUser.email.trim().toLowerCase();
+      supabase
+        .from('profiles')
+        .update({
+          name: name.trim() || currentUser.name,
+          job_title: jobTitle.trim(),
+          avatar_url: avatarUrl.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail)
+        .then(() => {});
+
+      supabase
+        .from('authorized_users')
+        .update({
+          name: name.trim() || currentUser.name,
+          job_title: jobTitle.trim(),
+          avatar_url: avatarUrl.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail)
+        .then(() => {});
+    }
 
     // Atualiza usuario no localStorage
     const updated = dataService.getUserById(currentUser.id);

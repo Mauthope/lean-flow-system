@@ -105,6 +105,7 @@ export default function LoginPage() {
         let authRole: 'admin' | 'agent' | 'viewer' = 'agent';
         let authName = profile?.name || userEmail?.split('@')[0] || 'Colaborador';
         let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
+        let authAvatar = profile?.avatar_url;
         let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
 
         // Camada A: Perfil no banco Supabase
@@ -139,6 +140,9 @@ export default function LoginPage() {
                 authRole = authRecord.role;
                 authName = authRecord.name;
                 authJobTitle = authRecord.job_title || authJobTitle;
+                if (!authAvatar && authRecord.avatar_url) {
+                  authAvatar = authRecord.avatar_url;
+                }
               } else {
                 await supabase.auth.signOut();
                 setAuthError(`Acesso bloqueado: O cadastro de "${effectiveEmail}" está desativado na plataforma.`);
@@ -168,6 +172,9 @@ export default function LoginPage() {
           authName = matchedUser.name;
           authJobTitle = matchedUser.jobTitle || authJobTitle;
           isMaster = matchedUser.isMaster || isMaster;
+          if (!authAvatar && matchedUser.avatarUrl) {
+            authAvatar = matchedUser.avatarUrl;
+          }
         }
 
         // SE NÃO CONSTAR EM NENHUMA DAS BASES: BLOQUEIO TOTAL (Zero Trust)
@@ -190,15 +197,17 @@ export default function LoginPage() {
             role: authRole,
             isMaster: isMaster,
             jobTitle: authJobTitle,
+            avatarUrl: authAvatar,
             active: true,
           });
         } else {
-          // Atualiza dados locais para refletir status e cargo do banco Supabase
+          // Atualiza dados locais para refletir status, cargo e foto do banco Supabase
           matchedUser = dataService.updateUser(matchedUser.id, {
             name: authName,
             role: authRole,
             isMaster: isMaster,
             jobTitle: authJobTitle,
+            ...(authAvatar ? { avatarUrl: authAvatar } : {}),
             active: true,
           });
         }
@@ -314,6 +323,7 @@ export default function LoginPage() {
           let authRole: 'admin' | 'agent' | 'viewer' = profile?.role || 'agent';
           let authName = profile?.name || cleanEmail.split('@')[0];
           let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
+          let authAvatar = profile?.avatar_url;
           let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
 
           if (profile && (profile.status === 'ativo' || isMaster)) {
@@ -330,6 +340,9 @@ export default function LoginPage() {
                 authRole = authRecord.role;
                 authName = authRecord.name;
                 authJobTitle = authRecord.job_title || authJobTitle;
+                if (!authAvatar && authRecord.avatar_url) {
+                  authAvatar = authRecord.avatar_url;
+                }
               }
             } catch {
               // continua
@@ -346,6 +359,9 @@ export default function LoginPage() {
               return;
             }
             isAuthorized = true;
+            if (!authAvatar && matchedUser.avatarUrl) {
+              authAvatar = matchedUser.avatarUrl;
+            }
           }
 
           // Se não houver cadastro prévio pelo Administrador
@@ -367,6 +383,7 @@ export default function LoginPage() {
               role: authRole,
               isMaster: isMaster,
               jobTitle: authJobTitle,
+              avatarUrl: authAvatar,
               active: true,
             });
           } else {
@@ -375,6 +392,7 @@ export default function LoginPage() {
               role: authRole,
               isMaster: isMaster,
               jobTitle: authJobTitle,
+              ...(authAvatar ? { avatarUrl: authAvatar } : {}),
               active: true,
             });
           }

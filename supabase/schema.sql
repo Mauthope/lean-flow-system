@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.authorized_users (
     role TEXT NOT NULL DEFAULT 'agent' CHECK (role IN ('admin', 'agent', 'viewer')),
     job_title TEXT DEFAULT 'Agente de Melhoria Contínua',
     department TEXT DEFAULT 'Operações Industriais',
+    avatar_url TEXT,
     sector_name TEXT,
     sector_ids JSONB DEFAULT '[]'::jsonb,
     all_sectors BOOLEAN DEFAULT false,

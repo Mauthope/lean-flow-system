@@ -214,6 +214,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
             name: name.trim(),
             role,
             job_title: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Agente de Melhoria Contínua'),
+            avatar_url: avatarUrl,
             sector_name: allSectors ? 'Todos os Setores (Geral)' : undefined,
             all_sectors: allSectors,
             active,
@@ -225,13 +226,14 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           if (error) console.warn('[Supabase Sync] Falha ao sincronizar authorized_users:', error);
         });
 
-      // Atualiza também o status no perfil caso o usuário já tenha efetuado login no Supabase
+      // Atualiza também o status e a foto no perfil caso o usuário já tenha efetuado login no Supabase
       supabase
         .from('profiles')
         .update({
           role,
           name: name.trim(),
           job_title: jobTitle,
+          avatar_url: avatarUrl,
           status: active ? 'ativo' : 'suspenso',
           updated_at: new Date().toISOString(),
         })

@@ -133,6 +133,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
             name: name.trim(),
             role: 'admin',
             job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+            avatar_url: selectedAvatar,
             all_sectors: true,
             active: true,
             updated_at: new Date().toISOString(),
@@ -147,6 +148,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
           role: 'admin',
           name: name.trim(),
           job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+          avatar_url: selectedAvatar,
           status: 'ativo',
           updated_at: new Date().toISOString(),
         })
