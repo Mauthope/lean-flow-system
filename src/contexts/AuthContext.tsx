@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Tenant, UserRole } from '@/lib/types';
 import { dataService } from '@/services/dataService';
-import { initializeLocalStorage } from '@/lib/storage';
+import { initializeLocalStorage, STORAGE_KEYS, setStoredData } from '@/lib/storage';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 interface AuthContextType {
@@ -65,6 +65,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Sincronização em segundo plano com authorized_users do Supabase
+    if (isSupabaseConfigured()) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session?.user) return;
+        try {
+          const { data: dbUsers, error } = await supabase
+            .from('authorized_users')
+            .select('*');
+
+          if (!error && dbUsers && dbUsers.length > 0) {
+            const currentUsers = dataService.getUsers();
+            let changed = false;
+
+            dbUsers.forEach((dbU: any) => {
+              const cleanDbEmail = (dbU.email || '').trim().toLowerCase();
+              if (!cleanDbEmail) return;
+
+              const existingIdx = currentUsers.findIndex(
+                (u) => u.email.toLowerCase() === cleanDbEmail
+              );
+
+              if (existingIdx === -1) {
+                currentUsers.push({
+                  id: dbU.id || `usr_supa_${cleanDbEmail.replace(/[^a-z0-9]/g, '_')}`,
+                  tenantId: dbU.tenant_id || tenant.id,
+                  name: dbU.name || cleanDbEmail.split('@')[0],
+                  email: cleanDbEmail,
+                  role: dbU.role || 'agent',
+                  jobTitle: dbU.job_title || 'Agente de Melhoria Contínua',
+                  active: dbU.active !== false,
+                  isMaster: dbU.role === 'admin' && cleanDbEmail === 'mauricio.grigol@rafitec.com.br',
+                  createdAt: dbU.created_at || new Date().toISOString(),
+                });
+                changed = true;
+              } else {
+                const curr = currentUsers[existingIdx];
+                if (
+                  curr.active !== dbU.active ||
+                  curr.role !== dbU.role ||
+                  (dbU.name && curr.name !== dbU.name) ||
+                  (dbU.job_title && curr.jobTitle !== dbU.job_title)
+                ) {
+                  currentUsers[existingIdx] = {
+                    ...curr,
+                    active: dbU.active,
+                    role: dbU.role,
+                    name: dbU.name || curr.name,
+                    jobTitle: dbU.job_title || curr.jobTitle,
+                  };
+                  changed = true;
+                }
+              }
+            });
+
+            if (changed) {
+              setStoredData(STORAGE_KEYS.USERS, currentUsers);
+              setAllUsers(currentUsers);
+              setAllAgents(dataService.getAgents());
+              setAllViewers(dataService.getViewers());
+            }
+          }
+        } catch (err) {
+          console.warn('[AuthContext] Sincronização em segundo plano não pôde ser completada:', err);
+        }
+      });
+    }
+
     setIsLoading(false);
   }, []);
 
@@ -112,13 +179,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (typeof window !== 'undefined') {
-      // SecOps Pilar 8: Expurgar todas as chaves do sistema para terminais compartilhados do chão de fábrica
+      // SecOps: Expurgar credenciais e tokens da sessão ativa.
+      // Os dados operacionais da fábrica (ações, setores, usuários, TPM) permanecem preservados.
       try {
-        const keysToRemove = Object.keys(localStorage).filter(
-          (k) => k.startsWith('lean_flow_') || k.startsWith('sensei_') || k.startsWith('gemini_')
-        );
-        keysToRemove.forEach((k) => localStorage.removeItem(k));
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        localStorage.removeItem('lean_flow_auth_token');
         sessionStorage.clear();
+        // Remove apenas caches efêmeros de sessão de IA
+        const aiSessionKeys = Object.keys(localStorage).filter(
+          (k) => k.startsWith('sensei_session_') || k.startsWith('gemini_session_')
+        );
+        aiSessionKeys.forEach((k) => localStorage.removeItem(k));
       } catch {
         // continua
       }

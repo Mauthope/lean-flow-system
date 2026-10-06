@@ -72,16 +72,30 @@ export default function LoginPage() {
             .from('profiles')
             .select('*')
             .eq('id', userId)
-            .single();
-          profile = data;
+            .maybeSingle();
+          if (data) profile = data;
         } catch (profileErr) {
-          console.warn('[SSO Callback] Perfil ainda sincronizando no banco:', profileErr);
+          console.warn('[SSO Callback] Perfil ainda sincronizando no banco por id:', profileErr);
         }
 
         if (!isMounted) return;
 
         const effectiveEmail = (profile?.email || userEmail || '').trim().toLowerCase();
         if (!effectiveEmail) return;
+
+        // Fallback por e-mail na tabela profiles caso o id não coincida
+        if (!profile && effectiveEmail) {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', effectiveEmail)
+              .maybeSingle();
+            if (data) profile = data;
+          } catch (profileEmailErr) {
+            console.warn('[SSO Callback] Perfil fallback por email:', profileEmailErr);
+          }
+        }
 
         // 1. Verifica autorização corporativa em 3 camadas de governança:
         // A) Perfil cadastrado e ativo no Supabase (public.profiles)
@@ -117,7 +131,7 @@ export default function LoginPage() {
               .from('authorized_users')
               .select('*')
               .eq('email', effectiveEmail)
-              .single();
+              .maybeSingle();
 
             if (authRecord) {
               if (authRecord.active) {
@@ -173,6 +187,15 @@ export default function LoginPage() {
             tenantId: currentTenant.id,
             name: authName,
             email: effectiveEmail,
+            role: authRole,
+            isMaster: isMaster,
+            jobTitle: authJobTitle,
+            active: true,
+          });
+        } else {
+          // Atualiza dados locais para refletir status e cargo do banco Supabase
+          matchedUser = dataService.updateUser(matchedUser.id, {
+            name: authName,
             role: authRole,
             isMaster: isMaster,
             jobTitle: authJobTitle,
@@ -259,13 +282,29 @@ export default function LoginPage() {
         }
 
         if (data.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
+          let profile = null;
+          try {
+            const { data: profData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', data.user.id)
+              .maybeSingle();
+            profile = profData;
+          } catch {}
 
           const effectiveEmail = (profile?.email || data.user.email || cleanEmail).trim().toLowerCase();
+
+          if (!profile && effectiveEmail) {
+            try {
+              const { data: profData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('email', effectiveEmail)
+                .maybeSingle();
+              profile = profData;
+            } catch {}
+          }
+
           let matchedUser =
             dataService.getUserByIdOrEmail(effectiveEmail) ||
             dataService.getUserByIdOrEmail(data.user.id) ||
@@ -285,7 +324,7 @@ export default function LoginPage() {
                 .from('authorized_users')
                 .select('*')
                 .eq('email', effectiveEmail)
-                .single();
+                .maybeSingle();
               if (authRecord && authRecord.active) {
                 isAuthorized = true;
                 authRole = authRecord.role;
@@ -325,6 +364,14 @@ export default function LoginPage() {
               tenantId: currentTenant.id,
               name: authName,
               email: effectiveEmail,
+              role: authRole,
+              isMaster: isMaster,
+              jobTitle: authJobTitle,
+              active: true,
+            });
+          } else {
+            matchedUser = dataService.updateUser(matchedUser.id, {
+              name: authName,
               role: authRole,
               isMaster: isMaster,
               jobTitle: authJobTitle,

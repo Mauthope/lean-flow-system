@@ -5,6 +5,7 @@ import { Tenant, User } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   Users,
   UserPlus,
@@ -121,16 +122,62 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
       });
     }
 
+    // Sincroniza com o Supabase (governança de acesso)
+    if (isSupabaseConfigured()) {
+      supabase
+        .from('authorized_users')
+        .upsert(
+          {
+            tenant_id: tenant.id,
+            email: cleanEmail,
+            name: name.trim(),
+            role: 'admin',
+            job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+            all_sectors: true,
+            active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        )
+        .then(() => {});
+
+      supabase
+        .from('profiles')
+        .update({
+          role: 'admin',
+          name: name.trim(),
+          job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+          status: 'ativo',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail)
+        .then(() => {});
+    }
+
     handleResetForm();
     setActiveTab('list');
     onSuccess();
   };
 
   const handleToggleStatus = (manager: User) => {
+    const nextActive = !manager.active;
     const updated = dataService.updateUser(manager.id, {
-      active: !manager.active,
+      active: nextActive,
     });
     if (updated) {
+      if (isSupabaseConfigured() && manager.email) {
+        const cleanEmail = manager.email.trim().toLowerCase();
+        supabase
+          .from('authorized_users')
+          .update({ active: nextActive, updated_at: new Date().toISOString() })
+          .eq('email', cleanEmail)
+          .then(() => {});
+        supabase
+          .from('profiles')
+          .update({ status: nextActive ? 'ativo' : 'suspenso', updated_at: new Date().toISOString() })
+          .eq('email', cleanEmail)
+          .then(() => {});
+      }
       onSuccess();
     }
   };
@@ -143,6 +190,11 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
     if (confirm(`Deseja realmente remover o gestor "${manager.name}" da entidade "${tenant.name}"?`)) {
       dataService.deleteUser(manager.id);
+      if (isSupabaseConfigured() && manager.email) {
+        const cleanEmail = manager.email.trim().toLowerCase();
+        supabase.from('authorized_users').delete().eq('email', cleanEmail).then(() => {});
+        supabase.from('profiles').update({ status: 'suspenso', updated_at: new Date().toISOString() }).eq('email', cleanEmail).then(() => {});
+      }
       onSuccess();
     }
   };

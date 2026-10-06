@@ -678,12 +678,23 @@ END;
 $$;
 
 -- =============================================================================
--- 14. REVOGAÇÃO GERAL DE PRIVILÉGIOS PARA VISITANTES ANÔNIMOS (SECOPS COMPLIANCE)
+-- 14. PRIVILÉGIOS DE ACESSO (SECOPS COMPLIANCE)
 -- =============================================================================
+-- Revogação total de privilégios para usuários anônimos (Zero Anon Access)
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon;
+
+-- Concessão explícita para o papel authenticated (governança linha a linha gerenciada pelo RLS)
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO authenticated;
 
 -- =============================================================================
 -- 15. SEED INICIAL (ENTIDADE PRINCIPAL RAFITEC)
