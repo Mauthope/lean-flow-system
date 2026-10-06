@@ -78,16 +78,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const currentUsers = dataService.getUsers();
             let changed = false;
 
+            const authEmails = new Set(
+              dbUsers.map((dbU: any) => (dbU.email || '').trim().toLowerCase())
+            );
+            authEmails.add('mauricio.grigol@rafitec.com.br');
+
+            // Remove usuários locais que foram excluídos da base autorizada
+            const filteredUsers = currentUsers.filter((u) =>
+              authEmails.has(u.email.toLowerCase())
+            );
+            if (filteredUsers.length !== currentUsers.length) {
+              changed = true;
+            }
+
             dbUsers.forEach((dbU: any) => {
               const cleanDbEmail = (dbU.email || '').trim().toLowerCase();
               if (!cleanDbEmail) return;
 
-              const existingIdx = currentUsers.findIndex(
+              const existingIdx = filteredUsers.findIndex(
                 (u) => u.email.toLowerCase() === cleanDbEmail
               );
 
               if (existingIdx === -1) {
-                currentUsers.push({
+                filteredUsers.push({
                   id: dbU.id || `usr_supa_${cleanDbEmail.replace(/[^a-z0-9]/g, '_')}`,
                   tenantId: dbU.tenant_id || tenant.id,
                   name: dbU.name || cleanDbEmail.split('@')[0],
@@ -100,14 +113,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 });
                 changed = true;
               } else {
-                const curr = currentUsers[existingIdx];
+                const curr = filteredUsers[existingIdx];
                 if (
                   curr.active !== dbU.active ||
                   curr.role !== dbU.role ||
                   (dbU.name && curr.name !== dbU.name) ||
                   (dbU.job_title && curr.jobTitle !== dbU.job_title)
                 ) {
-                  currentUsers[existingIdx] = {
+                  filteredUsers[existingIdx] = {
                     ...curr,
                     active: dbU.active,
                     role: dbU.role,
@@ -120,8 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
 
             if (changed) {
-              setStoredData(STORAGE_KEYS.USERS, currentUsers);
-              setAllUsers(currentUsers);
+              setStoredData(STORAGE_KEYS.USERS, filteredUsers);
+              setAllUsers(filteredUsers);
               setAllAgents(dataService.getAgents());
               setAllViewers(dataService.getViewers());
             }
