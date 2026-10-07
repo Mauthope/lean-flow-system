@@ -641,6 +641,46 @@ export default function LoginPage() {
           Autenticação corporativa com direcionamento automático por planta fabril. Seus dados e permissões serão vinculados exclusivamente à sua unidade de lotação.
         </div>
       </div>
+
+      {/* Assinatura Corporativa Elegante */}
+      <footer
+        style={{
+          marginTop: '1.75rem',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 10,
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            padding: '0.4rem 0.95rem',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+            fontSize: '0.75rem',
+            letterSpacing: '0.015em',
+            color: 'var(--text-muted, #94a3b8)',
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          <span style={{ color: 'var(--text-dim, #64748b)' }}>Desenvolvido por</span>
+          <strong
+            style={{
+              color: '#f1f5f9',
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+            }}
+          >
+            Mauricio Grigol
+          </strong>
+        </div>
+      </footer>
     </div>
   );
 }
