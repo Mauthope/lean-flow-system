@@ -398,8 +398,8 @@ DECLARE
     user_domain TEXT;
 BEGIN
     user_domain := split_part(lower(NEW.email), '@', 2);
-    IF user_domain NOT IN ('rafitec.com.br', 'vaccaro.com.br') THEN
-        RAISE EXCEPTION 'Acesso negado: Somente e-mails corporativos dos domínios autorizados (@rafitec.com.br ou @vaccaro.com.br) são permitidos.';
+    IF user_domain NOT IN ('rafitec.com.br', 'vaccaro.com.br', 'propex.com.br') THEN
+        RAISE EXCEPTION 'Acesso negado: Somente e-mails corporativos dos domínios autorizados (@rafitec.com.br, @vaccaro.com.br ou @propex.com.br) são permitidos.';
     END IF;
     RETURN NEW;
 END;

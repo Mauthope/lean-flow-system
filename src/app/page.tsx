@@ -361,11 +361,14 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'azure',
           options: {
-            scopes: 'openid email profile offline_access',
+            scopes: 'openid email profile offline_access User.Read',
+            queryParams: {
+              prompt: 'select_account',
+            },
             redirectTo:
               typeof window !== 'undefined'
                 ? window.location.origin
-                : 'https://fluxo-lean-system.vercel.app',
+                : 'https://lean-flow-system.vercel.app',
           },
         });
 
