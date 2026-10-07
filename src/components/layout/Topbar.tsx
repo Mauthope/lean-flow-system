@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Menu,
   LogOut,
-  Factory,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -25,7 +24,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, currentTenant, allTenants, switchTenant, refreshData, toggleMobileMenu, logout } = useAuth();
+  const { currentUser, currentTenant, refreshData, toggleMobileMenu, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -144,42 +143,6 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           </span>
         </button>
 
-        {/* Multi-Tenant Quick Switcher for Developer / Master */}
-        {allTenants.length > 1 && isMaster && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              backgroundColor: 'rgba(6, 182, 212, 0.1)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
-              borderRadius: '8px',
-              padding: '0.35rem 0.65rem',
-            }}
-          >
-            <Factory size={13} color="#22d3ee" />
-            <select
-              value={currentTenant?.id || ''}
-              onChange={(e) => switchTenant(e.target.value)}
-              style={{
-                backgroundColor: 'transparent',
-                border: 'none',
-                color: '#ffffff',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                outline: 'none',
-                cursor: 'pointer',
-              }}
-              title="Alternar planta fabril ativa em todo o sistema"
-            >
-              {allTenants.map((t) => (
-                <option key={t.id} value={t.id} style={{ backgroundColor: '#090e1a', color: '#ffffff' }}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {/* Public Form Shortcut Button */}
         <Link

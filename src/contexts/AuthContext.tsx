@@ -302,14 +302,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (tenant) {
       dataService.setCurrentTenant(tenant);
       setCurrentTenant(tenant);
-
-      // Sincroniza o usuário se o atual não pertencer à nova entidade
-      const usersInTenant = dataService.getUsers(tenantId);
-      const adminInTenant = usersInTenant.find((u) => u.role === 'admin') || usersInTenant[0];
-      if (adminInTenant && currentUser?.tenantId !== tenantId) {
-        dataService.setCurrentUser(adminInTenant);
-        setCurrentUser(adminInTenant);
-      }
       setDataVersion((v) => v + 1);
     }
   };
