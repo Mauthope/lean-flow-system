@@ -5,6 +5,7 @@ import { Tenant } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   Building2,
   Globe,
@@ -12,7 +13,9 @@ import {
   Mail,
   UserCheck,
   ShieldCheck,
+  ShieldAlert,
   Factory,
+  Loader2,
 } from 'lucide-react';
 
 interface TenantModalProps {
@@ -43,8 +46,13 @@ export const TenantModal: React.FC<TenantModalProps> = ({
   const [controladoriaEmail, setControladoriaEmail] = useState('');
   const [autoNotifyControladoria, setAutoNotifyControladoria] = useState(true);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+    setFormError(null);
+    setIsSubmitting(false);
 
     if (tenant) {
       setName(tenant.name);
@@ -79,10 +87,12 @@ export const TenantModal: React.FC<TenantModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
     if (!name.trim() || !slug.trim()) {
-      alert('Por favor, preencha o Nome e o Slug da entidade.');
+      setFormError('Por favor, preencha o Nome e o Slug da entidade.');
       return;
     }
 
@@ -91,40 +101,166 @@ export const TenantModal: React.FC<TenantModalProps> = ({
       .trim()
       .replace(/[^a-z0-9-]/g, '-');
 
-    if (tenant) {
-      // Edit existing tenant
-      dataService.updateTenant(tenant.id, {
-        name: name.trim(),
-        slug: cleanSlug,
-        cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
-        plan: tenant.plan || 'enterprise',
-        aiSettings: {
-          ...tenant.aiSettings,
-          controladoriaName: controladoriaName.trim(),
-          controladoriaEmail: controladoriaEmail.trim(),
-          autoNotifyControladoria,
-          updatedAt: new Date().toISOString(),
-        },
-      });
-    } else {
-      // Create new tenant with defaults
-      if (!adminEmail.trim()) {
-        alert('Por favor, informe o e-mail do Gestor / Supervisor da nova planta.');
-        return;
+    setIsSubmitting(true);
+
+    try {
+      if (tenant) {
+        // Edit existing tenant
+        dataService.updateTenant(tenant.id, {
+          name: name.trim(),
+          slug: cleanSlug,
+          cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
+          plan: tenant.plan || 'enterprise',
+          aiSettings: {
+            ...tenant.aiSettings,
+            controladoriaName: controladoriaName.trim(),
+            controladoriaEmail: controladoriaEmail.trim(),
+            autoNotifyControladoria,
+            updatedAt: new Date().toISOString(),
+          },
+        });
+
+        if (isSupabaseConfigured()) {
+          const { error: updateError } = await supabase
+            .from('tenants')
+            .update({
+              name: name.trim(),
+              slug: cleanSlug,
+              cnpj_or_code: cnpjOrCode.trim() || 'Não informado',
+              ai_settings: {
+                ...tenant.aiSettings,
+                controladoriaName: controladoriaName.trim(),
+                controladoriaEmail: controladoriaEmail.trim(),
+                autoNotifyControladoria,
+                updatedAt: new Date().toISOString(),
+              },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', tenant.id);
+
+          if (updateError) {
+            console.error('[TenantModal] Falha ao atualizar entidade no Supabase:', updateError);
+            setFormError(`Falha ao sincronizar alteração no Supabase: ${updateError.message}`);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      } else {
+        // Create new tenant with defaults
+        const cleanAdminEmail = adminEmail.trim().toLowerCase();
+        if (!cleanAdminEmail || !cleanAdminEmail.includes('@')) {
+          setFormError('Por favor, informe o e-mail do Gestor / Supervisor da nova planta.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validação estrita de domínio corporativo (PSI Grupo Vaccaro)
+        if (!cleanAdminEmail.endsWith('@rafitec.com.br') && !cleanAdminEmail.endsWith('@vaccaro.com.br')) {
+          setFormError(
+            'Política de Segurança (PSI Grupo Vaccaro): O e-mail corporativo do gestor deve pertencer a @rafitec.com.br ou @vaccaro.com.br.'
+          );
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { tenant: createdTenant, adminUser: createdAdmin } = dataService.createTenantWithDefaults({
+          name: name.trim(),
+          slug: cleanSlug,
+          cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
+          plan: 'enterprise',
+          adminName: adminName.trim() || 'Supervisor Lean',
+          adminEmail: cleanAdminEmail,
+        });
+
+        if (isSupabaseConfigured()) {
+          // 1. Grava a nova entidade na tabela public.tenants
+          const { error: tenantError } = await supabase.from('tenants').insert({
+            id: createdTenant.id,
+            name: createdTenant.name,
+            slug: createdTenant.slug,
+            cnpj_or_code: createdTenant.cnpjOrCode || 'Não informado',
+            plan: 'enterprise',
+            ai_settings: {
+              controladoriaName: 'Gerência de Controladoria & Custos',
+              controladoriaEmail: 'controladoria@rafitec.com.br',
+              autoNotifyControladoria: true,
+              model: 'gemini-1.5-flash',
+              preferredVoice: 'pt-BR-Neural2-B',
+            },
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          });
+
+          if (tenantError) {
+            console.error('[TenantModal] Falha ao criar entidade no Supabase:', tenantError);
+            setFormError(`Falha ao salvar entidade no Supabase: ${tenantError.message}`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // 2. Grava os setores padrão criados para esta planta
+          const defaultSectors = dataService.getSectors(createdTenant.id);
+          if (defaultSectors.length > 0) {
+            await supabase.from('sectors').upsert(
+              defaultSectors.map((sec) => ({
+                id: sec.id,
+                tenant_id: createdTenant.id,
+                name: sec.name,
+                code: sec.code,
+                description: sec.description || '',
+                color: sec.color,
+                requires_control_document: !!sec.requiresTrackingDoc,
+                control_document_name: sec.trackingDocLabel || null,
+                updated_at: new Date().toISOString(),
+              }))
+            );
+          }
+
+          // 3. Grava o Gestor Supervisor em public.authorized_users vinculado à nova entidade
+          const { error: authError } = await supabase.from('authorized_users').upsert(
+            {
+              tenant_id: createdTenant.id,
+              email: cleanAdminEmail,
+              name: createdAdmin.name,
+              role: 'admin',
+              job_title: createdAdmin.jobTitle || 'Supervisor & Lean Master',
+              all_sectors: true,
+              active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'email' }
+          );
+
+          if (authError) {
+            console.error('[TenantModal] Falha ao registrar gestor no Supabase:', authError);
+            setFormError(`Entidade criada, mas falhou ao registrar gestor autorizado: ${authError.message}`);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // 4. Se o perfil já existir no Supabase, vincula à nova entidade com status ativo
+          await supabase
+            .from('profiles')
+            .update({
+              tenant_id: createdTenant.id,
+              role: 'admin',
+              name: createdAdmin.name,
+              job_title: createdAdmin.jobTitle || 'Supervisor & Lean Master',
+              status: 'ativo',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanAdminEmail);
+        }
       }
 
-      dataService.createTenantWithDefaults({
-        name: name.trim(),
-        slug: cleanSlug,
-        cnpjOrCode: cnpjOrCode.trim() || 'Não informado',
-        plan: 'enterprise',
-        adminName: adminName.trim() || 'Supervisor Lean',
-        adminEmail: adminEmail.trim(),
-      });
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('[TenantModal] Erro ao salvar:', err);
+      setFormError(err?.message || 'Erro inesperado ao salvar entidade.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onSuccess();
-    onClose();
   };
 
   return (
@@ -311,6 +447,27 @@ export const TenantModal: React.FC<TenantModalProps> = ({
           </div>
         )}
 
+        {/* Mensagem de Erro de Validação ou Banco */}
+        {formError && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : '#fef2f2',
+              border: isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fecaca',
+              color: isDark ? '#fca5a5' : '#b91c1c',
+              fontSize: '0.8125rem',
+              lineHeight: 1.4,
+            }}
+          >
+            <ShieldAlert size={18} style={{ flexShrink: 0, color: '#ef4444' }} />
+            <div>{formError}</div>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div
           style={{
@@ -321,11 +478,26 @@ export const TenantModal: React.FC<TenantModalProps> = ({
             borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
           }}
         >
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </button>
-          <button type="submit" className="btn btn-primary">
-            {tenant ? 'Salvar Configurações' : 'Criar Entidade & Setores'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSubmitting}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}
+          >
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            {isSubmitting
+              ? 'Gravando no Supabase...'
+              : tenant
+              ? 'Salvar Configurações'
+              : 'Criar Entidade & Setores'}
           </button>
         </div>
       </form>

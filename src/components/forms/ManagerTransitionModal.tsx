@@ -5,16 +5,21 @@ import { Tenant, User } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   UserCheck,
   UserPlus,
   ShieldCheck,
+  ShieldAlert,
   ArrowRightLeft,
   AlertTriangle,
   Mail,
   CheckCircle2,
   Lock,
   RotateCcw,
+  Loader2,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 
 interface ManagerTransitionModalProps {
@@ -49,6 +54,12 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
   const [newManagerName, setNewManagerName] = useState('');
   const [newManagerEmail, setNewManagerEmail] = useState('');
   const [suspendPrevious, setSuspendPrevious] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [transitionResult, setTransitionResult] = useState<{
+    newManager: User;
+    previousManager?: User;
+  } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -57,48 +68,218 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
     setNewManagerName('');
     setNewManagerEmail('');
     setSuspendPrevious(true);
+    setFormError(null);
+    setIsSubmitting(false);
+    setTransitionResult(null);
   }, [isOpen, existingAgents]);
 
   if (!tenant) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
-    if (mode === 'new' && (!newManagerName.trim() || !newManagerEmail.trim())) {
-      alert('Por favor, informe o Nome e o E-mail corporativo do novo gestor.');
-      return;
+    const cleanEmail = newManagerEmail.trim().toLowerCase();
+
+    if (mode === 'new') {
+      if (!newManagerName.trim() || !cleanEmail) {
+        setFormError('Por favor, informe o Nome Completo e o E-mail corporativo do novo gestor.');
+        return;
+      }
+
+      if (!cleanEmail.endsWith('@rafitec.com.br') && !cleanEmail.endsWith('@vaccaro.com.br')) {
+        setFormError(
+          'Política de Segurança (PSI Grupo Vaccaro): O e-mail corporativo deve pertencer a @rafitec.com.br ou @vaccaro.com.br.'
+        );
+        return;
+      }
     }
 
     if (mode === 'existing' && !existingUserId) {
-      alert('Por favor, selecione um facilitador existente para ser promovido a Gestor.');
+      setFormError('Por favor, selecione um facilitador existente para ser promovido a Gestor.');
       return;
     }
 
-    const { newManager, previousManager } = dataService.replaceTenantManager({
-      tenantId: tenant.id,
-      previousManagerId: currentManager?.id,
-      suspendPrevious,
-      newManagerMode: mode,
-      existingUserId,
-      newManagerName,
-      newManagerEmail,
-    });
+    setIsSubmitting(true);
 
-    let message = `Transição realizada com sucesso para a planta "${tenant.name}"!\n\n` +
-      `• Novo Gestor: ${newManager.name} (${newManager.email})\n`;
+    try {
+      const { newManager, previousManager } = dataService.replaceTenantManager({
+        tenantId: tenant.id,
+        previousManagerId: currentManager?.id,
+        suspendPrevious,
+        newManagerMode: mode,
+        existingUserId,
+        newManagerName: newManagerName.trim(),
+        newManagerEmail: cleanEmail,
+      });
 
-    if (previousManager && suspendPrevious) {
-      message += `• Gestor Anterior (${previousManager.name}): Acesso revogado com sucesso. Histórico 100% preservado.\n`;
-    } else if (previousManager && !suspendPrevious) {
-      message += `• Gestor Anterior (${previousManager.name}): Mantido ativo temporariamente para período de handover.\n`;
+      if (isSupabaseConfigured()) {
+        const cleanNewEmail = newManager.email.trim().toLowerCase();
+
+        // 1. Grava o novo gestor em public.authorized_users vinculado à unidade
+        const { error: authError } = await supabase.from('authorized_users').upsert(
+          {
+            tenant_id: tenant.id,
+            email: cleanNewEmail,
+            name: newManager.name,
+            role: 'admin',
+            job_title: newManager.jobTitle || 'Gestor & Supervisor Lean da Unidade',
+            avatar_url: newManager.avatarUrl,
+            all_sectors: true,
+            active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        );
+
+        if (authError) {
+          console.error('[ManagerTransitionModal] Falha ao autorizar novo gestor:', authError);
+          setFormError(`Falha ao autorizar novo gestor no Supabase: ${authError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // 2. Atualiza o perfil caso já exista no Supabase
+        await supabase
+          .from('profiles')
+          .update({
+            tenant_id: tenant.id,
+            role: 'admin',
+            name: newManager.name,
+            job_title: newManager.jobTitle || 'Gestor & Supervisor Lean da Unidade',
+            status: 'ativo',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', cleanNewEmail);
+
+        // 3. Se optado por suspender o gestor anterior, revoga na nuvem
+        if (previousManager && suspendPrevious && previousManager.email) {
+          const cleanPrevEmail = previousManager.email.trim().toLowerCase();
+          await supabase
+            .from('authorized_users')
+            .update({
+              active: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanPrevEmail);
+
+          await supabase
+            .from('profiles')
+            .update({
+              status: 'suspenso',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanPrevEmail);
+        }
+      }
+
+      setTransitionResult({ newManager, previousManager });
+    } catch (err: any) {
+      console.error('[ManagerTransitionModal] Erro na transição:', err);
+      setFormError(err?.message || 'Falha inesperada ao processar transição de gestor.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    message += `• Serviços da fábrica continuam operando normalmente sem nenhuma interrupção.`;
-
-    alert(message);
-    onSuccess();
-    onClose();
   };
+
+  if (transitionResult) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const mailtoSubject = encodeURIComponent(
+      `[Lean Flow System] Acesso de Gestor Liberado • Unidade ${tenant.name}`
+    );
+    const mailtoBody = encodeURIComponent(
+      `Olá ${transitionResult.newManager.name},\n\n` +
+        `Seu acesso administrativo como Gestor & Supervisor da unidade "${tenant.name}" no Lean Flow System foi cadastrado e liberado com sucesso.\n\n` +
+        `Como a empresa utiliza Single Sign-On corporativo (Microsoft Entra ID), você não precisa de senha cadastrada por e-mail: basta acessar a plataforma e clicar em "Entrar com Microsoft (SSO Corporativo)" utilizando seu e-mail corporativo ${transitionResult.newManager.email}.\n\n` +
+        `Link de acesso:\n${origin}\n\n` +
+        `Atenciosamente,\n` +
+        `Governança Lean • Grupo Vaccaro`
+    );
+
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          onSuccess();
+          onClose();
+        }}
+        title={`Transição Concluída • ${tenant.name}`}
+        maxWidth="md"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div
+            style={{
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#f0fdf4',
+              border: isDark ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid #86efac',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.85rem',
+            }}
+          >
+            <ShieldCheck size={26} color="#10b981" style={{ flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: 0 }}>
+                Transição de Gestão Efetivada no Supabase!
+              </h3>
+              <p style={{ fontSize: '0.8125rem', color: isDark ? '#cbd5e1' : '#334155', margin: '0.35rem 0 0', lineHeight: 1.5 }}>
+                O novo titular <strong>{transitionResult.newManager.name}</strong> ({transitionResult.newManager.email}) foi registrado na base corporativa de usuários autorizados com papel de Administrador da planta.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+              border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+              borderRadius: '10px',
+              padding: '1rem',
+              fontSize: '0.8125rem',
+              lineHeight: 1.5,
+              color: isDark ? '#cbd5e1' : '#334155',
+            }}
+          >
+            <strong style={{ color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginBottom: '0.35rem' }}>
+              Autenticação Corporativa (SSO Microsoft Entra ID):
+            </strong>
+            O colaborador não necessita de senha avulsa ou link de confirmação do Supabase. O login é autenticado diretamente pela conta Microsoft institucional corporativa da empresa.
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              paddingTop: '0.75rem',
+              borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+            }}
+          >
+            <a
+              href={`mailto:${transitionResult.newManager.email}?subject=${mailtoSubject}&body=${mailtoBody}`}
+              className="btn btn-secondary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            >
+              <Mail size={15} color="#0891b2" /> Notificar por E-mail (Abrir Outlook)
+            </a>
+
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                onSuccess();
+                onClose();
+              }}
+            >
+              Concluir & Fechar
+            </button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
@@ -353,7 +534,7 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
                 <input
                   type="email"
                   required
-                  placeholder="Ex: roberto@empresa.com.br"
+                  placeholder="Ex: roberto@rafitec.com.br"
                   className="form-control"
                   value={newManagerEmail}
                   onChange={(e) => setNewManagerEmail(e.target.value)}
@@ -362,12 +543,33 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
 
               <div style={{ gridColumn: 'span 2' }}>
                 <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-                  No Supabase Auth, o novo gestor receberá imediatamente o e-mail de ativação e definição de senha.
+                  Governança SSO Microsoft: O novo gestor terá acesso liberado imediatamente com seu e-mail institucional (@rafitec.com.br ou @vaccaro.com.br). Não é necessário cadastrar senha por e-mail.
                 </span>
               </div>
             </div>
           )}
         </div>
+
+        {/* Mensagem de Erro de Validação ou Banco */}
+        {formError && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : '#fef2f2',
+              border: isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fecaca',
+              color: isDark ? '#fca5a5' : '#b91c1c',
+              fontSize: '0.8125rem',
+              lineHeight: 1.4,
+            }}
+          >
+            <ShieldAlert size={18} style={{ flexShrink: 0, color: '#ef4444' }} />
+            <div>{formError}</div>
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div
@@ -379,15 +581,26 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
             borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
           }}
         >
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </button>
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            disabled={isSubmitting}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}
           >
-            <CheckCircle2 size={16} /> Confirmar Transição de Gestão
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            {isSubmitting ? 'Gravando no Supabase...' : (
+              <>
+                <CheckCircle2 size={16} /> Confirmar Transição de Gestão
+              </>
+            )}
           </button>
         </div>
       </form>

@@ -12,6 +12,7 @@ import { TenantPurgeModal } from '@/components/forms/TenantPurgeModal';
 import { ManagerTransitionModal } from '@/components/forms/ManagerTransitionModal';
 import { TenantManagersModal } from '@/components/forms/TenantManagersModal';
 import { formatCurrency } from '@/lib/utils';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   Factory,
   Building2,
@@ -162,7 +163,7 @@ export default function AdminEntidadesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (tenant: Tenant) => {
+  const handleDelete = async (tenant: Tenant) => {
     if (allTenants.length <= 1) {
       alert('Você não pode excluir a única entidade cadastrada no sistema.');
       return;
@@ -172,11 +173,18 @@ export default function AdminEntidadesPage() {
     const confirmMessage =
       `ATENÇÃO: Deseja realmente excluir a entidade "${tenant.name}"?\n\n` +
       `• A unidade possui ${stats.sectorsCount} setores, ${stats.agentsCount} agentes e ${stats.actionsCount} ações registradas.\n` +
-      `• Esta operação removerá a empresa e seus dados locais.\n\n` +
+      `• Esta operação removerá a empresa e seus dados locais e em nuvem.\n\n` +
       `Deseja prosseguir com a exclusão?`;
 
     if (confirm(confirmMessage)) {
       dataService.deleteTenant(tenant.id);
+      if (isSupabaseConfigured()) {
+        try {
+          await supabase.from('tenants').delete().eq('id', tenant.id);
+        } catch (err) {
+          console.error('[AdminEntidades] Falha ao excluir entidade no Supabase:', err);
+        }
+      }
       refreshData();
     }
   };

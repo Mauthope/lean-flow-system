@@ -151,6 +151,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           }
+
+          // Sincronização em segundo plano das entidades (public.tenants) do Supabase
+          const { data: dbTenants, error: tenantErr } = await supabase
+            .from('tenants')
+            .select('*');
+
+          if (!tenantErr && dbTenants && dbTenants.length > 0) {
+            const currentTenants = dataService.getTenants();
+            let tenantsChanged = false;
+            const tenantMap = new Map(currentTenants.map((t) => [t.id, t]));
+
+            dbTenants.forEach((dbT: any) => {
+              const existing = tenantMap.get(dbT.id);
+              if (!existing) {
+                currentTenants.push({
+                  id: dbT.id,
+                  name: dbT.name,
+                  slug: dbT.slug,
+                  cnpjOrCode: dbT.cnpj_or_code,
+                  plan: dbT.plan || 'enterprise',
+                  aiSettings: dbT.ai_settings || {},
+                  createdAt: dbT.created_at || new Date().toISOString(),
+                });
+                tenantsChanged = true;
+              } else if (
+                existing.name !== dbT.name ||
+                existing.slug !== dbT.slug ||
+                existing.cnpjOrCode !== dbT.cnpj_or_code
+              ) {
+                existing.name = dbT.name;
+                existing.slug = dbT.slug;
+                existing.cnpjOrCode = dbT.cnpj_or_code;
+                existing.plan = dbT.plan || existing.plan;
+                existing.aiSettings = dbT.ai_settings || existing.aiSettings;
+                tenantsChanged = true;
+              }
+            });
+
+            if (tenantsChanged) {
+              setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
+              setAllTenants([...currentTenants]);
+            }
+          }
         } catch (err) {
           console.warn('[AuthContext] Sincronização em segundo plano não pôde ser completada:', err);
         }
