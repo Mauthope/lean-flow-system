@@ -493,102 +493,96 @@ export default function LoginPage() {
           zIndex: 10,
         }}
       >
-        {/* Header with Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        {/* Header with Sensei Hero & Title */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          {/* Sensei Animated Hero (Substitui o escudo, 4x maior) */}
           <div
+            onClick={handleSenseiInteract}
+            title="Sensei Lean (Clique para interagir)"
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #0d9488 100%)',
-              color: '#020617',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 1rem',
-              boxShadow: '0 0 30px rgba(6, 182, 212, 0.4)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-            }}
-          >
-            <Shield size={28} color="#020617" />
-          </div>
-          <div
-            style={{
+              position: 'relative',
               display: 'inline-flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.65rem',
+              justifyContent: 'flex-end',
+              height: '208px',
+              width: '130px',
+              margin: '0 auto 0.75rem',
+              cursor: 'pointer',
+              userSelect: 'none',
+              transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1) translateY(0)';
             }}
           >
-            {/* Sensei Animated Sprite */}
+            {/* Halo de iluminacao volumetrica ao fundo */}
             <div
-              onClick={handleSenseiInteract}
-              title="Sensei Lean (Clique para interagir)"
               style={{
-                position: 'relative',
-                display: 'inline-flex',
-                alignItems: 'flex-end',
-                justifyContent: 'center',
-                height: '52px',
-                width: '32px',
-                cursor: 'pointer',
-                flexShrink: 0,
-                userSelect: 'none',
-                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '160px',
+                height: '160px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(13, 148, 136, 0.08) 50%, transparent 70%)',
+                pointerEvents: 'none',
+                zIndex: 0,
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.15) translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1) translateY(0)';
-              }}
-            >
-              {/* Sombra de chao suave */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '-2px',
-                  width: '24px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  background: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.5) 0%, transparent 70%)',
-                  zIndex: 0,
-                }}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={senseiSrc}
-                alt="Sensei Lean"
-                style={{
-                  height: '52px',
-                  width: 'auto',
-                  objectFit: 'contain',
-                  position: 'relative',
-                  zIndex: 1,
-                  filter: 'drop-shadow(0 2px 8px rgba(6, 182, 212, 0.35))',
-                  imageRendering: 'pixelated',
-                }}
-              />
-            </div>
+            />
 
-            <h1
+            {/* Sombra de chao eterea */}
+            <div
               style={{
-                fontSize: '1.65rem',
-                fontWeight: 800,
-                color: 'var(--text-heading, #ffffff)',
-                fontFamily: 'var(--font-heading)',
-                letterSpacing: '-0.02em',
-                margin: 0,
+                position: 'absolute',
+                bottom: '2px',
+                width: '90px',
+                height: '14px',
+                borderRadius: '50%',
+                background: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.45) 0%, rgba(2, 6, 23, 0.8) 60%, transparent 80%)',
+                zIndex: 1,
               }}
-            >
-              Fluxo Lean
-            </h1>
+            />
+
+            {/* Imagem do Sensei Pixel Art em alta resolucao */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={senseiSrc}
+              alt="Sensei Lean"
+              style={{
+                height: '204px',
+                width: 'auto',
+                objectFit: 'contain',
+                position: 'relative',
+                zIndex: 2,
+                filter: 'drop-shadow(0 8px 24px rgba(6, 182, 212, 0.35))',
+                imageRendering: 'pixelated',
+                transition: 'opacity 0.2s ease',
+              }}
+            />
           </div>
+
+          <h1
+            style={{
+              fontSize: '1.75rem',
+              fontWeight: 800,
+              color: 'var(--text-heading, #ffffff)',
+              fontFamily: 'var(--font-heading)',
+              letterSpacing: '-0.02em',
+              margin: '0.25rem 0 0',
+            }}
+          >
+            Fluxo Lean
+          </h1>
           <p
             style={{
               fontSize: '0.84375rem',
               color: 'var(--text-muted, #94a3b8)',
-              marginTop: '0.4rem',
+              marginTop: '0.35rem',
               fontFamily: 'var(--font-sans)',
             }}
           >
