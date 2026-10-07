@@ -150,7 +150,7 @@ export default function AdminAgentesPage() {
     setIsModalOpen(true);
   };
 
-  const handleArchive = (member: User) => {
+  const handleArchive = async (member: User) => {
     if (currentUser?.id === member.id) {
       alert('Atenção: Você não pode bloquear o usuário da sua sessão atual.');
       return;
@@ -168,14 +168,24 @@ export default function AdminAgentesPage() {
       dataService.updateUser(member.id, { active: false });
       if (isSupabaseConfigured() && member.email) {
         const cleanEmail = member.email.trim().toLowerCase();
-        supabase.from('authorized_users').update({ active: false }).eq('email', cleanEmail).then(() => {});
-        supabase.from('profiles').update({ status: 'suspenso' }).eq('email', cleanEmail).then(() => {});
+        try {
+          await supabase
+            .from('authorized_users')
+            .update({ active: false, updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: 'suspenso', updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+        } catch (err) {
+          console.error('[AdminAgentes] Falha ao arquivar no Supabase:', err);
+        }
       }
       refreshData();
     }
   };
 
-  const handleReactivate = (member: User) => {
+  const handleReactivate = async (member: User) => {
     if (
       confirm(
         `Deseja REATIVAR o acesso de ${member.name}?\n\n` +
@@ -186,14 +196,24 @@ export default function AdminAgentesPage() {
       dataService.updateUser(member.id, { active: true });
       if (isSupabaseConfigured() && member.email) {
         const cleanEmail = member.email.trim().toLowerCase();
-        supabase.from('authorized_users').update({ active: true }).eq('email', cleanEmail).then(() => {});
-        supabase.from('profiles').update({ status: 'ativo' }).eq('email', cleanEmail).then(() => {});
+        try {
+          await supabase
+            .from('authorized_users')
+            .update({ active: true, updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: 'ativo', updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+        } catch (err) {
+          console.error('[AdminAgentes] Falha ao reativar no Supabase:', err);
+        }
       }
       refreshData();
     }
   };
 
-  const handleHardDelete = (member: User) => {
+  const handleHardDelete = async (member: User) => {
     if (
       confirm(
         `ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE o registro de ${member.name}?\n\n` +
@@ -204,8 +224,15 @@ export default function AdminAgentesPage() {
       dataService.deleteUser(member.id);
       if (isSupabaseConfigured() && member.email) {
         const cleanEmail = member.email.trim().toLowerCase();
-        supabase.from('authorized_users').delete().eq('email', cleanEmail).then(() => {});
-        supabase.from('profiles').update({ status: 'suspenso' }).eq('email', cleanEmail).then(() => {});
+        try {
+          await supabase.from('authorized_users').delete().eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: 'suspenso', updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+        } catch (err) {
+          console.error('[AdminAgentes] Falha ao excluir no Supabase:', err);
+        }
       }
       refreshData();
     }

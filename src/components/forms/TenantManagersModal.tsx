@@ -81,7 +81,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     setFormError(null);
   };
 
-  const handleSaveManager = (e: React.FormEvent) => {
+  const handleSaveManager = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -124,36 +124,38 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
     // Sincroniza com o Supabase (governança de acesso)
     if (isSupabaseConfigured()) {
-      supabase
-        .from('authorized_users')
-        .upsert(
-          {
-            tenant_id: tenant.id,
-            email: cleanEmail,
-            name: name.trim(),
+      try {
+        await supabase
+          .from('authorized_users')
+          .upsert(
+            {
+              tenant_id: tenant.id,
+              email: cleanEmail,
+              name: name.trim(),
+              role: 'admin',
+              job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+              avatar_url: selectedAvatar,
+              all_sectors: true,
+              active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'email' }
+          );
+
+        await supabase
+          .from('profiles')
+          .update({
             role: 'admin',
+            name: name.trim(),
             job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
             avatar_url: selectedAvatar,
-            all_sectors: true,
-            active: true,
+            status: 'ativo',
             updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'email' }
-        )
-        .then(() => {});
-
-      supabase
-        .from('profiles')
-        .update({
-          role: 'admin',
-          name: name.trim(),
-          job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
-          avatar_url: selectedAvatar,
-          status: 'ativo',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', cleanEmail)
-        .then(() => {});
+          })
+          .eq('email', cleanEmail);
+      } catch (err) {
+        console.error('[TenantManagersModal] Falha ao sincronizar com Supabase:', err);
+      }
     }
 
     handleResetForm();
@@ -161,7 +163,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     onSuccess();
   };
 
-  const handleToggleStatus = (manager: User) => {
+  const handleToggleStatus = async (manager: User) => {
     const nextActive = !manager.active;
     const updated = dataService.updateUser(manager.id, {
       active: nextActive,
@@ -169,22 +171,24 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     if (updated) {
       if (isSupabaseConfigured() && manager.email) {
         const cleanEmail = manager.email.trim().toLowerCase();
-        supabase
-          .from('authorized_users')
-          .update({ active: nextActive, updated_at: new Date().toISOString() })
-          .eq('email', cleanEmail)
-          .then(() => {});
-        supabase
-          .from('profiles')
-          .update({ status: nextActive ? 'ativo' : 'suspenso', updated_at: new Date().toISOString() })
-          .eq('email', cleanEmail)
-          .then(() => {});
+        try {
+          await supabase
+            .from('authorized_users')
+            .update({ active: nextActive, updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: nextActive ? 'ativo' : 'suspenso', updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+        } catch (err) {
+          console.error('[TenantManagersModal] Falha ao alternar status no Supabase:', err);
+        }
       }
       onSuccess();
     }
   };
 
-  const handleDeleteManager = (manager: User) => {
+  const handleDeleteManager = async (manager: User) => {
     if (managers.length <= 1) {
       alert('Não é possível remover o único gestor da entidade. Cadastre outro gestor antes de remover este.');
       return;
@@ -194,8 +198,15 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
       dataService.deleteUser(manager.id);
       if (isSupabaseConfigured() && manager.email) {
         const cleanEmail = manager.email.trim().toLowerCase();
-        supabase.from('authorized_users').delete().eq('email', cleanEmail).then(() => {});
-        supabase.from('profiles').update({ status: 'suspenso', updated_at: new Date().toISOString() }).eq('email', cleanEmail).then(() => {});
+        try {
+          await supabase.from('authorized_users').delete().eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: 'suspenso', updated_at: new Date().toISOString() })
+            .eq('email', cleanEmail);
+        } catch (err) {
+          console.error('[TenantManagersModal] Falha ao remover no Supabase:', err);
+        }
       }
       onSuccess();
     }

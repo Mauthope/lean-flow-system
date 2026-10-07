@@ -24,6 +24,8 @@ import {
   Image as ImageIcon,
   Eye,
   Shield,
+  ShieldAlert,
+  Loader2,
 } from 'lucide-react';
 import { AvatarSelector, CURATED_AVATARS } from '@/components/ui/AvatarSelector';
 
@@ -53,6 +55,8 @@ export const AgentModal: React.FC<AgentModalProps> = ({
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [active, setActive] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Sector multi-selection state
   const [allSectors, setAllSectors] = useState(false);
@@ -62,6 +66,8 @@ export const AgentModal: React.FC<AgentModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setFormError(null);
+    setIsSubmitting(false);
 
     const currentSectors = dataService.getSectors();
     if (agent) {
@@ -166,86 +172,111 @@ export const AgentModal: React.FC<AgentModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentTenant) return;
+    setFormError(null);
 
-    const sectorId = allSectors ? (sectors[0]?.id || '') : (selectedSectorIds[0] || '');
-    const sectorIdsToSave = allSectors ? sectors.map((s) => s.id) : selectedSectorIds;
-
-    if (agent) {
-      dataService.updateUser(agent.id, {
-        name,
-        email,
-        role,
-        sectorId,
-        sectorIds: sectorIdsToSave,
-        allSectors,
-        jobTitle,
-        phone,
-        avatarUrl,
-        active,
-      });
-    } else {
-      dataService.createUser({
-        tenantId: currentTenant.id,
-        name,
-        email,
-        role,
-        sectorId,
-        sectorIds: sectorIdsToSave,
-        allSectors,
-        jobTitle: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Especialista Lean'),
-        phone,
-        avatarUrl,
-        active,
-      });
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setFormError('Informe um e-mail corporativo válido (ex: colaborador@rafitec.com.br).');
+      return;
     }
 
-    // Sincroniza com a tabela de usuários autorizados no Supabase (governança corporativa de acesso)
-    if (isSupabaseConfigured()) {
-      const cleanEmail = email.trim().toLowerCase();
-      supabase
-        .from('authorized_users')
-        .upsert(
-          {
-            tenant_id: currentTenant.id,
-            email: cleanEmail,
-            name: name.trim(),
+    if (!cleanEmail.endsWith('@rafitec.com.br') && !cleanEmail.endsWith('@vaccaro.com.br')) {
+      setFormError('Política de Segurança (PSI Grupo Vaccaro): Apenas e-mails corporativos dos domínios autorizados (@rafitec.com.br ou @vaccaro.com.br) são permitidos.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const sectorId = allSectors ? (sectors[0]?.id || '') : (selectedSectorIds[0] || '');
+      const sectorIdsToSave = allSectors ? sectors.map((s) => s.id) : selectedSectorIds;
+
+      // Sincroniza com a tabela de usuários autorizados no Supabase (governança corporativa de acesso)
+      if (isSupabaseConfigured()) {
+        const { error: authError } = await supabase
+          .from('authorized_users')
+          .upsert(
+            {
+              tenant_id: currentTenant.id,
+              email: cleanEmail,
+              name: name.trim(),
+              role,
+              job_title: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Agente de Melhoria Contínua'),
+              avatar_url: avatarUrl,
+              sector_name: allSectors ? 'Todos os Setores (Geral)' : undefined,
+              sector_ids: sectorIdsToSave,
+              all_sectors: allSectors,
+              active,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'email' }
+          );
+
+        if (authError) {
+          console.error('[Supabase Sync] Falha ao sincronizar authorized_users:', authError);
+          setFormError(`Falha ao gravar no banco corporativo Supabase: ${authError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Atualiza também o status e a foto no perfil caso o usuário já tenha efetuado login no Supabase
+        await supabase
+          .from('profiles')
+          .update({
             role,
+            name: name.trim(),
             job_title: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Agente de Melhoria Contínua'),
             avatar_url: avatarUrl,
-            sector_name: allSectors ? 'Todos os Setores (Geral)' : undefined,
-            all_sectors: allSectors,
-            active,
+            status: active ? 'ativo' : 'suspenso',
             updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'email' }
-        )
-        .then(({ error }) => {
-          if (error) console.warn('[Supabase Sync] Falha ao sincronizar authorized_users:', error);
-        });
+          })
+          .eq('email', cleanEmail);
+      }
 
-      // Atualiza também o status e a foto no perfil caso o usuário já tenha efetuado login no Supabase
-      supabase
-        .from('profiles')
-        .update({
-          role,
+      // Persiste na base local
+      if (agent) {
+        dataService.updateUser(agent.id, {
           name: name.trim(),
-          job_title: jobTitle,
-          avatar_url: avatarUrl,
-          status: active ? 'ativo' : 'suspenso',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', cleanEmail)
-        .then(() => {});
-    }
+          email: cleanEmail,
+          role,
+          sectorId,
+          sectorIds: sectorIdsToSave,
+          allSectors,
+          jobTitle,
+          phone,
+          avatarUrl,
+          active,
+        });
+      } else {
+        dataService.createUser({
+          tenantId: currentTenant.id,
+          name: name.trim(),
+          email: cleanEmail,
+          role,
+          sectorId,
+          sectorIds: sectorIdsToSave,
+          allSectors,
+          jobTitle: jobTitle || (role === 'viewer' ? 'Diretor Industrial' : 'Especialista Lean'),
+          phone,
+          avatarUrl,
+          active,
+        });
+      }
 
-    onSuccess();
-    onClose();
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('[AgentModal] Falha na persistência:', err);
+      setFormError(err?.message || 'Erro inesperado ao salvar agente no sistema.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!agent) return;
     if (
       confirm(
@@ -255,22 +286,27 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           `Deseja prosseguir com a exclusão irreversível?`
       )
     ) {
-      if (isSupabaseConfigured() && agent.email) {
-        const cleanEmail = agent.email.trim().toLowerCase();
-        supabase
-          .from('authorized_users')
-          .delete()
-          .eq('email', cleanEmail)
-          .then(() => {});
-        supabase
-          .from('profiles')
-          .update({ status: 'suspenso' })
-          .eq('email', cleanEmail)
-          .then(() => {});
+      setIsSubmitting(true);
+      try {
+        if (isSupabaseConfigured() && agent.email) {
+          const cleanEmail = agent.email.trim().toLowerCase();
+          await supabase
+            .from('authorized_users')
+            .delete()
+            .eq('email', cleanEmail);
+          await supabase
+            .from('profiles')
+            .update({ status: 'suspenso' })
+            .eq('email', cleanEmail);
+        }
+        dataService.deleteUser(agent.id);
+        onSuccess();
+        onClose();
+      } catch (err: any) {
+        alert(`Erro ao excluir usuário: ${err?.message || 'Falha de comunicação'}`);
+      } finally {
+        setIsSubmitting(false);
       }
-      dataService.deleteUser(agent.id);
-      onSuccess();
-      onClose();
     }
   };
 
@@ -699,6 +735,27 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           </div>
         )}
 
+        {/* ERRO DE VALIDAÇÃO OU BANCO */}
+        {formError && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.625rem',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : '#fef2f2',
+              border: isDark ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid #fecaca',
+              color: isDark ? '#fca5a5' : '#b91c1c',
+              fontSize: '0.85rem',
+              lineHeight: 1.4,
+            }}
+          >
+            <ShieldAlert size={18} style={{ flexShrink: 0, color: '#ef4444' }} />
+            <div>{formError}</div>
+          </div>
+        )}
+
         {/* BOTÕES DE AÇÃO */}
         <div
           style={{
@@ -709,18 +766,30 @@ export const AgentModal: React.FC<AgentModalProps> = ({
             borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
           }}
         >
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </button>
           <button
             type="submit"
             className="btn btn-primary"
+            disabled={isSubmitting}
             style={{
               backgroundColor: role === 'viewer' ? '#8b5cf6' : undefined,
               borderColor: role === 'viewer' ? '#a855f7' : undefined,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
             }}
           >
-            {agent
+            {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+            {isSubmitting
+              ? 'Gravando no Supabase...'
+              : agent
               ? 'Salvar Alterações'
               : role === 'viewer'
               ? 'Cadastrar Visualizador Executivo'

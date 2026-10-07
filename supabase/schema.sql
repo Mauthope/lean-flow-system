@@ -327,6 +327,36 @@ BEGIN
 END; 
 $$;
 
+-- Função auxiliar interna: determina se o usuário autenticado possui perfil de Administrador ou Master
+CREATE OR REPLACE FUNCTION private.is_admin_user()
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid()
+          AND (is_master = true OR role = 'admin')
+    );
+END;
+$$;
+
+-- Função auxiliar interna: determina se o usuário é administrador da entidade especificada ou Master
+CREATE OR REPLACE FUNCTION private.is_tenant_admin(target_tenant_id TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid()
+          AND (is_master = true OR (role = 'admin' AND tenant_id = target_tenant_id))
+    );
+END;
+$$;
+
 -- Função auxiliar interna: retorna o tenant_id do usuário autenticado
 CREATE OR REPLACE FUNCTION private.current_user_tenant_id() 
 RETURNS TEXT 
@@ -344,6 +374,12 @@ $$;
 
 REVOKE ALL ON FUNCTION private.is_master_user() FROM public, anon;
 GRANT EXECUTE ON FUNCTION private.is_master_user() TO authenticated;
+
+REVOKE ALL ON FUNCTION private.is_admin_user() FROM public, anon;
+GRANT EXECUTE ON FUNCTION private.is_admin_user() TO authenticated;
+
+REVOKE ALL ON FUNCTION private.is_tenant_admin(TEXT) FROM public, anon;
+GRANT EXECUTE ON FUNCTION private.is_tenant_admin(TEXT) TO authenticated;
 
 REVOKE ALL ON FUNCTION private.current_user_tenant_id() FROM public, anon;
 GRANT EXECUTE ON FUNCTION private.current_user_tenant_id() TO authenticated;
@@ -459,11 +495,64 @@ CREATE TRIGGER trg_validate_master_approval
     BEFORE UPDATE ON public.lean_actions
     FOR EACH ROW EXECUTE FUNCTION public.validate_master_approval();
 
+-- 11.4 Trigger de Sincronização Automática (authorized_users -> profiles)
+CREATE OR REPLACE FUNCTION public.sync_authorized_user_to_profile()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    UPDATE public.profiles
+    SET
+        role = NEW.role,
+        name = COALESCE(NEW.name, public.profiles.name),
+        job_title = COALESCE(NEW.job_title, public.profiles.job_title),
+        avatar_url = COALESCE(NEW.avatar_url, public.profiles.avatar_url),
+        status = CASE WHEN NEW.active THEN 'ativo' ELSE 'suspenso' END,
+        tenant_id = NEW.tenant_id,
+        updated_at = now()
+    WHERE lower(email) = lower(NEW.email);
+
+    RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.sync_authorized_user_to_profile() FROM public, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_sync_authorized_user_to_profile ON public.authorized_users;
+CREATE TRIGGER trg_sync_authorized_user_to_profile
+    AFTER INSERT OR UPDATE ON public.authorized_users
+    FOR EACH ROW EXECUTE FUNCTION public.sync_authorized_user_to_profile();
+
+-- 11.5 Trigger de Blindagem contra Elevação de Privilégio Master
+CREATE OR REPLACE FUNCTION public.protect_master_profile_elevation()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF (NEW.is_master IS DISTINCT FROM OLD.is_master) THEN
+        IF NOT private.is_master_user() THEN
+            RAISE EXCEPTION 'Acesso negado: Somente o Gestor Master pode alterar privilégios de Master.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.protect_master_profile_elevation() FROM public, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_protect_master_profile_elevation ON public.profiles;
+CREATE TRIGGER trg_protect_master_profile_elevation
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.protect_master_profile_elevation();
+
 -- =============================================================================
 -- 12. POLÍTICAS DE ROW LEVEL SECURITY (RLS) RIGOROSAS (TO authenticated APENAS)
 -- =============================================================================
 ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.authorized_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lean_actions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.action_checklists ENABLE ROW LEVEL SECURITY;
@@ -493,9 +582,20 @@ CREATE POLICY "profiles_update_self" ON public.profiles
     USING (id = auth.uid())
     WITH CHECK (id = auth.uid());
 
-CREATE POLICY "profiles_master_all" ON public.profiles
+CREATE POLICY "profiles_admin_management" ON public.profiles
     FOR ALL TO authenticated
-    USING (private.is_master_user());
+    USING (private.is_master_user() OR ((tenant_id = private.current_user_tenant_id()) AND private.is_admin_user()))
+    WITH CHECK (private.is_master_user() OR ((tenant_id = private.current_user_tenant_id()) AND private.is_admin_user()));
+
+-- Authorized Users (Whitelist Corporativa de Acesso)
+CREATE POLICY "authorized_users_select_auth" ON public.authorized_users
+    FOR SELECT TO authenticated
+    USING (true);
+
+CREATE POLICY "authorized_users_admin_all" ON public.authorized_users
+    FOR ALL TO authenticated
+    USING (private.is_tenant_admin(tenant_id))
+    WITH CHECK (private.is_tenant_admin(tenant_id));
 
 -- Sectors
 CREATE POLICY "sectors_select_auth" ON public.sectors

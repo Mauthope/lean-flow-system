@@ -212,6 +212,23 @@ export default function LoginPage() {
           });
         }
 
+        // Garante que o perfil no Supabase esteja com status ativo e dados sincronizados
+        try {
+          await supabase
+            .from('profiles')
+            .update({
+              status: 'ativo',
+              role: authRole,
+              name: authName,
+              job_title: authJobTitle,
+              ...(authAvatar ? { avatar_url: authAvatar } : {}),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+        } catch (e) {
+          console.warn('[SSO Callback] Falha ao atualizar perfil ativo no Supabase:', e);
+        }
+
         // Efetiva a sessão corporativa e redireciona
         loginAs(matchedUser.id);
         if (
