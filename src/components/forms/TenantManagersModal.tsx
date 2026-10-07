@@ -23,6 +23,7 @@ import {
   Crown,
   Edit2,
   Save,
+  Loader2,
 } from 'lucide-react';
 import { AvatarSelector, CURATED_AVATARS } from '@/components/ui/AvatarSelector';
 
@@ -52,6 +53,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
   const [phone, setPhone] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(CURATED_AVATARS[0]);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const managers = useMemo(() => {
     if (!tenant) return [];
@@ -68,6 +70,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     setPhone(manager.phone || '');
     setSelectedAvatar(manager.avatarUrl || CURATED_AVATARS[0]);
     setFormError(null);
+    setIsSubmitting(false);
     setActiveTab('create');
   };
 
@@ -79,6 +82,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
     setPhone('');
     setSelectedAvatar(CURATED_AVATARS[0]);
     setFormError(null);
+    setIsSubmitting(false);
   };
 
   const handleSaveManager = async (e: React.FormEvent) => {
@@ -97,35 +101,66 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
 
     const cleanEmail = email.trim().toLowerCase();
 
-    if (editingManagerId) {
-      dataService.updateUser(editingManagerId, {
-        name: name.trim(),
-        email: cleanEmail,
-        jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
-        phone: phone.trim(),
-        avatarUrl: selectedAvatar,
-      });
-    } else {
-      const existing = dataService.getUserByEmail(cleanEmail);
-      if (existing) {
-        setFormError(`Já existe um usuário cadastrado com o e-mail "${cleanEmail}".`);
-        return;
-      }
-
-      dataService.createTenantManager({
-        tenantId: tenant.id,
-        name: name.trim(),
-        email: cleanEmail,
-        jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
-        phone: phone.trim(),
-        avatarUrl: selectedAvatar,
-      });
+    // Validação estrita de domínio corporativo (PSI Grupo Vaccaro)
+    if (!cleanEmail.endsWith('@rafitec.com.br') && !cleanEmail.endsWith('@vaccaro.com.br')) {
+      setFormError(
+        'Política de Segurança (PSI Grupo Vaccaro): O e-mail corporativo do gestor deve pertencer a @rafitec.com.br ou @vaccaro.com.br.'
+      );
+      return;
     }
 
-    // Sincroniza com o Supabase (governança de acesso)
-    if (isSupabaseConfigured()) {
-      try {
-        await supabase
+    setIsSubmitting(true);
+
+    try {
+      // 1. Sincronização prévia com o Supabase (governança de acesso e integridade de FK)
+      if (isSupabaseConfigured()) {
+        // Passo 1: Garantir que a entidade existe em public.tenants no Supabase
+        const { error: tenantUpsertErr } = await supabase.from('tenants').upsert(
+          {
+            id: tenant.id,
+            name: tenant.name.trim(),
+            slug: tenant.slug.trim(),
+            cnpj_or_code: tenant.cnpjOrCode || 'Não informado',
+            plan: tenant.plan || 'enterprise',
+            ai_settings: tenant.aiSettings || {
+              controladoriaName: 'Gerência de Controladoria & Custos',
+              controladoriaEmail: 'controladoria@rafitec.com.br',
+              autoNotifyControladoria: true,
+            },
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+        if (tenantUpsertErr) {
+          console.error('[TenantManagersModal] Falha ao persistir entidade no Supabase:', tenantUpsertErr);
+          setFormError(`Falha ao registrar entidade no Supabase: ${tenantUpsertErr.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Passo 2: Garantir que os setores padrão da entidade existam em public.sectors
+        const localSectors = dataService.getSectors(tenant.id);
+        if (localSectors.length > 0) {
+          await supabase.from('sectors').upsert(
+            localSectors.map((sec) => ({
+              id: sec.id,
+              tenant_id: tenant.id,
+              name: sec.name,
+              code: sec.code,
+              description: sec.description || '',
+              color: sec.color,
+              requires_control_document: !!sec.requiresTrackingDoc,
+              control_document_name: sec.trackingDocLabel || null,
+              updated_at: new Date().toISOString(),
+            })),
+            { onConflict: 'id' }
+          );
+        }
+
+        // Passo 3: Upsert do Gestor em public.authorized_users vinculado à entidade
+        const { error: authError } = await supabase
           .from('authorized_users')
           .upsert(
             {
@@ -142,9 +177,18 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
             { onConflict: 'email' }
           );
 
+        if (authError) {
+          console.error('[TenantManagersModal] Falha ao autorizar gestor no Supabase:', authError);
+          setFormError(`Falha ao autorizar gestor no Supabase: ${authError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Passo 4: Atualizar perfil no Supabase se já existir login prévio
         await supabase
           .from('profiles')
           .update({
+            tenant_id: tenant.id,
             role: 'admin',
             name: name.trim(),
             job_title: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
@@ -153,14 +197,51 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
             updated_at: new Date().toISOString(),
           })
           .eq('email', cleanEmail);
-      } catch (err) {
-        console.error('[TenantManagersModal] Falha ao sincronizar com Supabase:', err);
       }
-    }
 
-    handleResetForm();
-    setActiveTab('list');
-    onSuccess();
+      // 2. Persistência na camada local (dataService)
+      if (editingManagerId) {
+        dataService.updateUser(editingManagerId, {
+          name: name.trim(),
+          email: cleanEmail,
+          jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+          phone: phone.trim(),
+          avatarUrl: selectedAvatar,
+        });
+      } else {
+        const existing = dataService.getUserByEmail(cleanEmail);
+        if (existing) {
+          dataService.updateUser(existing.id, {
+            tenantId: tenant.id,
+            name: name.trim(),
+            email: cleanEmail,
+            role: 'admin',
+            jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+            phone: phone.trim(),
+            avatarUrl: selectedAvatar,
+            active: true,
+          });
+        } else {
+          dataService.createTenantManager({
+            tenantId: tenant.id,
+            name: name.trim(),
+            email: cleanEmail,
+            jobTitle: jobTitle.trim() || 'Gestor & Supervisor Lean da Unidade',
+            phone: phone.trim(),
+            avatarUrl: selectedAvatar,
+          });
+        }
+      }
+
+      handleResetForm();
+      setActiveTab('list');
+      onSuccess();
+    } catch (err: any) {
+      console.error('[TenantManagersModal] Erro ao salvar gestor:', err);
+      setFormError(err?.message || 'Erro inesperado ao salvar gestor.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleToggleStatus = async (manager: User) => {
@@ -583,6 +664,7 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
                   handleResetForm();
                   setActiveTab('list');
                 }}
+                disabled={isSubmitting}
                 className="btn btn-secondary"
                 style={{ fontSize: '0.8125rem' }}
               >
@@ -590,11 +672,21 @@ export const TenantManagersModal: React.FC<TenantManagersModalProps> = ({
               </button>
               <button
                 type="submit"
+                disabled={isSubmitting}
                 className="btn btn-primary"
                 style={{ fontSize: '0.8125rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
-                {editingManagerId ? <Save size={15} /> : <UserPlus size={15} />}
-                <span>{editingManagerId ? 'Salvar Alterações do Gestor' : 'Cadastrar Gestor da Unidade'}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>Salvando no Supabase...</span>
+                  </>
+                ) : (
+                  <>
+                    {editingManagerId ? <Save size={15} /> : <UserPlus size={15} />}
+                    <span>{editingManagerId ? 'Salvar Alterações do Gestor' : 'Cadastrar Gestor da Unidade'}</span>
+                  </>
+                )}
               </button>
             </div>
           </form>

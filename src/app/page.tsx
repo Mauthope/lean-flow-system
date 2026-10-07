@@ -106,6 +106,7 @@ export default function LoginPage() {
         let authName = profile?.name || userEmail?.split('@')[0] || 'Colaborador';
         let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
         let authAvatar = profile?.avatar_url;
+        let authTenantId = profile?.tenant_id;
         let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
 
         // Camada A: Perfil no banco Supabase
@@ -140,6 +141,7 @@ export default function LoginPage() {
                 authRole = authRecord.role;
                 authName = authRecord.name;
                 authJobTitle = authRecord.job_title || authJobTitle;
+                authTenantId = authRecord.tenant_id || authTenantId;
                 if (!authAvatar && authRecord.avatar_url) {
                   authAvatar = authRecord.avatar_url;
                 }
@@ -189,9 +191,9 @@ export default function LoginPage() {
 
         // Se o usuário foi validado pelo banco de dados Supabase mas ainda não existe no storage local deste navegador:
         if (!matchedUser) {
-          const currentTenant = dataService.getCurrentTenant();
+          const effectiveTenantId = authTenantId || dataService.getCurrentTenant().id;
           matchedUser = dataService.createUser({
-            tenantId: currentTenant.id,
+            tenantId: effectiveTenantId,
             name: authName,
             email: effectiveEmail,
             role: authRole,
@@ -205,11 +207,20 @@ export default function LoginPage() {
           matchedUser = dataService.updateUser(matchedUser.id, {
             name: authName,
             role: authRole,
+            ...(authTenantId ? { tenantId: authTenantId } : {}),
             isMaster: isMaster,
             jobTitle: authJobTitle,
             ...(authAvatar ? { avatarUrl: authAvatar } : {}),
             active: true,
           });
+        }
+
+        // Se o usuário pertence a uma entidade específica, garante que o tenant ativo seja o dele
+        if (matchedUser.tenantId && !matchedUser.isMaster) {
+          const targetTenant = dataService.getTenantById(matchedUser.tenantId);
+          if (targetTenant) {
+            dataService.setCurrentTenant(targetTenant);
+          }
         }
 
         // Garante que o perfil no Supabase esteja com status ativo e dados sincronizados
@@ -219,6 +230,7 @@ export default function LoginPage() {
             .update({
               status: 'ativo',
               role: authRole,
+              ...(authTenantId ? { tenant_id: authTenantId } : {}),
               name: authName,
               job_title: authJobTitle,
               ...(authAvatar ? { avatar_url: authAvatar } : {}),

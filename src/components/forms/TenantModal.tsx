@@ -174,22 +174,25 @@ export const TenantModal: React.FC<TenantModalProps> = ({
 
         if (isSupabaseConfigured()) {
           // 1. Grava a nova entidade na tabela public.tenants
-          const { error: tenantError } = await supabase.from('tenants').insert({
-            id: createdTenant.id,
-            name: createdTenant.name,
-            slug: createdTenant.slug,
-            cnpj_or_code: createdTenant.cnpjOrCode || 'Não informado',
-            plan: 'enterprise',
-            ai_settings: {
-              controladoriaName: 'Gerência de Controladoria & Custos',
-              controladoriaEmail: 'controladoria@rafitec.com.br',
-              autoNotifyControladoria: true,
-              model: 'gemini-1.5-flash',
-              preferredVoice: 'pt-BR-Neural2-B',
+          const { error: tenantError } = await supabase.from('tenants').upsert(
+            {
+              id: createdTenant.id,
+              name: createdTenant.name,
+              slug: createdTenant.slug,
+              cnpj_or_code: createdTenant.cnpjOrCode || 'Não informado',
+              plan: 'enterprise',
+              ai_settings: {
+                controladoriaName: 'Gerência de Controladoria & Custos',
+                controladoriaEmail: 'controladoria@rafitec.com.br',
+                autoNotifyControladoria: true,
+                model: 'gemini-1.5-flash',
+                preferredVoice: 'pt-BR-Neural2-B',
+              },
+              is_active: true,
+              updated_at: new Date().toISOString(),
             },
-            is_active: true,
-            updated_at: new Date().toISOString(),
-          });
+            { onConflict: 'id' }
+          );
 
           if (tenantError) {
             console.error('[TenantModal] Falha ao criar entidade no Supabase:', tenantError);

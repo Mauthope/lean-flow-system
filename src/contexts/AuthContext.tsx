@@ -65,11 +65,131 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Sincronização em segundo plano com authorized_users do Supabase
+    // Sincronização em segundo plano com Supabase
     if (isSupabaseConfigured()) {
       supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (!session?.user) return;
         try {
+          const userEmail = (session.user.email || '').trim().toLowerCase();
+          const isMasterUser =
+            userEmail === 'mauricio.grigol@rafitec.com.br' ||
+            userEmail === 'master@rafitec.com.br';
+
+          // 1. Sincronização em segundo plano das entidades (public.tenants) do Supabase
+          const { data: dbTenants, error: tenantErr } = await supabase
+            .from('tenants')
+            .select('*');
+
+          const currentTenants = dataService.getTenants();
+          const tenantMap = new Map(currentTenants.map((t) => [t.id, t]));
+
+          // Se for usuário Master, auto-provisiona no Supabase quaisquer entidades locais pendentes (ex: Propex)
+          if (isMasterUser && !tenantErr) {
+            const dbTenantIds = new Set((dbTenants || []).map((t: any) => t.id));
+            const missingLocalTenants = currentTenants.filter((t) => !dbTenantIds.has(t.id));
+
+            for (const localT of missingLocalTenants) {
+              try {
+                // Upsert da entidade
+                await supabase.from('tenants').upsert(
+                  {
+                    id: localT.id,
+                    name: localT.name,
+                    slug: localT.slug,
+                    cnpj_or_code: localT.cnpjOrCode || 'Não informado',
+                    plan: localT.plan || 'enterprise',
+                    ai_settings: localT.aiSettings || {
+                      controladoriaName: 'Gerência de Controladoria & Custos',
+                      controladoriaEmail: 'controladoria@rafitec.com.br',
+                      autoNotifyControladoria: true,
+                    },
+                    is_active: true,
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: 'id' }
+                );
+
+                // Upsert dos setores padrão
+                const localSectors = dataService.getSectors(localT.id);
+                if (localSectors.length > 0) {
+                  await supabase.from('sectors').upsert(
+                    localSectors.map((sec) => ({
+                      id: sec.id,
+                      tenant_id: localT.id,
+                      name: sec.name,
+                      code: sec.code,
+                      description: sec.description || '',
+                      color: sec.color,
+                      requires_control_document: !!sec.requiresTrackingDoc,
+                      control_document_name: sec.trackingDocLabel || null,
+                      updated_at: new Date().toISOString(),
+                    })),
+                    { onConflict: 'id' }
+                  );
+                }
+
+                // Upsert dos gestores locais desta entidade
+                const localManagers = dataService.getTenantManagers(localT.id);
+                for (const m of localManagers) {
+                  if (m.email) {
+                    await supabase.from('authorized_users').upsert(
+                      {
+                        tenant_id: localT.id,
+                        email: m.email.trim().toLowerCase(),
+                        name: m.name,
+                        role: 'admin',
+                        job_title: m.jobTitle || 'Gestor & Supervisor Lean da Unidade',
+                        avatar_url: m.avatarUrl,
+                        all_sectors: true,
+                        active: m.active !== false,
+                        updated_at: new Date().toISOString(),
+                      },
+                      { onConflict: 'email' }
+                    );
+                  }
+                }
+              } catch (provErr) {
+                console.warn('[AuthContext] Falha no auto-provisionamento de entidade:', provErr);
+              }
+            }
+          }
+
+          if (!tenantErr && dbTenants && dbTenants.length > 0) {
+            let tenantsChanged = false;
+            dbTenants.forEach((dbT: any) => {
+              const existing = tenantMap.get(dbT.id);
+              if (!existing) {
+                currentTenants.push({
+                  id: dbT.id,
+                  name: dbT.name,
+                  slug: dbT.slug,
+                  cnpjOrCode: dbT.cnpj_or_code,
+                  plan: dbT.plan || 'enterprise',
+                  aiSettings: dbT.ai_settings || {},
+                  createdAt: dbT.created_at || new Date().toISOString(),
+                });
+                tenantsChanged = true;
+              } else if (
+                existing.name !== dbT.name ||
+                existing.slug !== dbT.slug ||
+                existing.cnpjOrCode !== dbT.cnpj_or_code
+              ) {
+                existing.name = dbT.name;
+                existing.slug = dbT.slug;
+                existing.cnpjOrCode = dbT.cnpj_or_code;
+                existing.plan = dbT.plan || existing.plan;
+                existing.aiSettings = dbT.ai_settings || existing.aiSettings;
+                tenantsChanged = true;
+              }
+            });
+
+            if (tenantsChanged) {
+              setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
+              setAllTenants([...currentTenants]);
+            }
+          }
+
+          // 2. Sincronização dos usuários autorizados (public.authorized_users)
           const { data: dbUsers, error } = await supabase
             .from('authorized_users')
             .select('*');
@@ -149,49 +269,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   setCurrentUser(refreshed);
                 }
               }
-            }
-          }
-
-          // Sincronização em segundo plano das entidades (public.tenants) do Supabase
-          const { data: dbTenants, error: tenantErr } = await supabase
-            .from('tenants')
-            .select('*');
-
-          if (!tenantErr && dbTenants && dbTenants.length > 0) {
-            const currentTenants = dataService.getTenants();
-            let tenantsChanged = false;
-            const tenantMap = new Map(currentTenants.map((t) => [t.id, t]));
-
-            dbTenants.forEach((dbT: any) => {
-              const existing = tenantMap.get(dbT.id);
-              if (!existing) {
-                currentTenants.push({
-                  id: dbT.id,
-                  name: dbT.name,
-                  slug: dbT.slug,
-                  cnpjOrCode: dbT.cnpj_or_code,
-                  plan: dbT.plan || 'enterprise',
-                  aiSettings: dbT.ai_settings || {},
-                  createdAt: dbT.created_at || new Date().toISOString(),
-                });
-                tenantsChanged = true;
-              } else if (
-                existing.name !== dbT.name ||
-                existing.slug !== dbT.slug ||
-                existing.cnpjOrCode !== dbT.cnpj_or_code
-              ) {
-                existing.name = dbT.name;
-                existing.slug = dbT.slug;
-                existing.cnpjOrCode = dbT.cnpj_or_code;
-                existing.plan = dbT.plan || existing.plan;
-                existing.aiSettings = dbT.ai_settings || existing.aiSettings;
-                tenantsChanged = true;
-              }
-            });
-
-            if (tenantsChanged) {
-              setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
-              setAllTenants([...currentTenants]);
             }
           }
         } catch (err) {

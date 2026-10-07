@@ -116,6 +116,51 @@ export const ManagerTransitionModal: React.FC<ManagerTransitionModalProps> = ({
       if (isSupabaseConfigured()) {
         const cleanNewEmail = newManager.email.trim().toLowerCase();
 
+        // 0. Garante que a entidade existe em public.tenants no Supabase
+        const { error: tenantUpsertErr } = await supabase.from('tenants').upsert(
+          {
+            id: tenant.id,
+            name: tenant.name.trim(),
+            slug: tenant.slug.trim(),
+            cnpj_or_code: tenant.cnpjOrCode || 'Não informado',
+            plan: tenant.plan || 'enterprise',
+            ai_settings: tenant.aiSettings || {
+              controladoriaName: 'Gerência de Controladoria & Custos',
+              controladoriaEmail: 'controladoria@rafitec.com.br',
+              autoNotifyControladoria: true,
+            },
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+        if (tenantUpsertErr) {
+          console.error('[ManagerTransitionModal] Falha ao persistir entidade no Supabase:', tenantUpsertErr);
+          setFormError(`Falha ao validar entidade no Supabase: ${tenantUpsertErr.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Garante também os setores da entidade em public.sectors
+        const localSectors = dataService.getSectors(tenant.id);
+        if (localSectors.length > 0) {
+          await supabase.from('sectors').upsert(
+            localSectors.map((sec) => ({
+              id: sec.id,
+              tenant_id: tenant.id,
+              name: sec.name,
+              code: sec.code,
+              description: sec.description || '',
+              color: sec.color,
+              requires_control_document: !!sec.requiresTrackingDoc,
+              control_document_name: sec.trackingDocLabel || null,
+              updated_at: new Date().toISOString(),
+            })),
+            { onConflict: 'id' }
+          );
+        }
+
         // 1. Grava o novo gestor em public.authorized_users vinculado à unidade
         const { error: authError } = await supabase.from('authorized_users').upsert(
           {
