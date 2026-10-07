@@ -183,7 +183,7 @@ export function getTreeDashboardData(options?: {
 
   // 5. Nível 1: Hoshin Kanri
   const targetYearNum = selectedYear === 'todos' ? currentYear : selectedYear;
-  const macroMetrics = dataService.getMacroStrategicDashboardMetrics(targetYearNum);
+  const macroMetrics = dataService.getMacroStrategicDashboardMetrics(targetYearNum, effectiveTenantId);
 
   // 6. Nível 2: Entidade
   const totalHomologatedValue = filteredActions.reduce(

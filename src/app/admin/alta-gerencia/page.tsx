@@ -79,8 +79,8 @@ export default function AltaGerenciaPage() {
 
   // Calculate macro metrics
   const macroMetrics: MacroStrategicDashboardMetrics = useMemo(() => {
-    return dataService.getMacroStrategicDashboardMetrics(selectedYear);
-  }, [selectedYear, dataVersion]);
+    return dataService.getMacroStrategicDashboardMetrics(selectedYear, currentTenant?.id);
+  }, [selectedYear, dataVersion, currentTenant?.id]);
 
   // Filtered objectives list
   const filteredObjectives = useMemo(() => {

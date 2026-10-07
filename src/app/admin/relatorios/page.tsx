@@ -28,16 +28,16 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AdminRelatoriosPage() {
   const router = useRouter();
-  const { dataVersion } = useAuth();
+  const { dataVersion, currentTenant } = useAuth();
   const { isDark } = useTheme();
 
   const metrics = useMemo(() => {
-    return dataService.getMetrics();
-  }, [dataVersion]);
+    return dataService.getMetrics(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   const completedActions = useMemo(() => {
-    return dataService.getActions().filter((a) => a.status === 'concluida');
-  }, [dataVersion]);
+    return dataService.getActions(currentTenant?.id).filter((a) => a.status === 'concluida');
+  }, [dataVersion, currentTenant?.id]);
 
   const handlePrint = () => {
     window.print();

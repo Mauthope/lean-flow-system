@@ -50,8 +50,8 @@ export default function AdminDashboardPage() {
   const { isDark } = useTheme();
 
   const metrics = useMemo(() => {
-    return dataService.getMetrics();
-  }, [dataVersion]);
+    return dataService.getMetrics(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   const [boardFilter, setBoardFilter] = useState<'ativos' | 'expirados' | 'todos'>('ativos');
   const [leadTimeTab, setLeadTimeTab] = useState<'pdca' | 'agentes' | 'gargalos'>('pdca');
@@ -98,13 +98,13 @@ export default function AdminDashboardPage() {
   }, [boardFinancials, boardFilter]);
 
   const pendingDemands = useMemo(() => {
-    return dataService.getActions().filter((a) => a.isPublicDemand && a.status === 'aberta' && !a.assignedAgentId);
-  }, [dataVersion]);
+    return dataService.getActions(currentTenant?.id).filter((a) => a.isPublicDemand && a.status === 'aberta' && !a.assignedAgentId);
+  }, [dataVersion, currentTenant?.id]);
 
 
   // Resumo de contagem de alertas de prazos para o badge do Hero
   const { overdueCount, nearDueCount } = useMemo(() => {
-    const all = dataService.getActions();
+    const all = dataService.getActions(currentTenant?.id);
     const now = new Date().setHours(0, 0, 0, 0);
     let ov = 0;
     let nr = 0;
@@ -136,7 +136,7 @@ export default function AdminDashboardPage() {
     });
 
     return { overdueCount: ov, nearDueCount: nr };
-  }, [dataVersion]);
+  }, [dataVersion, currentTenant?.id]);
 
 
 

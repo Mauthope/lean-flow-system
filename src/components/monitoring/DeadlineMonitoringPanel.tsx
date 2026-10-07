@@ -44,12 +44,12 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
   isAdmin = true,
   warningDaysThreshold = 3,
 }) => {
-  const { dataVersion } = useAuth();
+  const { dataVersion, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const [filterTab, setFilterTab] = useState<'all' | 'atrasado' | 'quase_atrasado' | 'projetos' | 'atividades'>('all');
 
   const { items, overdueCount, nearDueCount } = useMemo(() => {
-    const allActions = dataService.getActions();
+    const allActions = dataService.getActions(currentTenant?.id);
     const now = new Date().setHours(0, 0, 0, 0);
 
     const list: MonitoringItem[] = [];
@@ -181,7 +181,7 @@ export const DeadlineMonitoringPanel: React.FC<DeadlineMonitoringPanelProps> = (
       overdueCount: ovCount,
       nearDueCount: nrCount,
     };
-  }, [dataVersion, agentId, agentName, warningDaysThreshold]);
+  }, [dataVersion, agentId, agentName, warningDaysThreshold, currentTenant?.id]);
 
   const totalCount = items.length;
 

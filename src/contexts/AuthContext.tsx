@@ -46,9 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeLocalStorage();
     const tenant = dataService.getCurrentTenant();
     const user = dataService.getCurrentUser();
-    const users = dataService.getUsers();
-    const agents = dataService.getAgents();
-    const viewers = dataService.getViewers();
+    const users = dataService.getUsers(tenant?.id);
+    const agents = dataService.getAgents(tenant?.id);
+    const viewers = dataService.getViewers(tenant?.id);
     const tenants = dataService.getTenants();
 
     setCurrentTenant(tenant);
@@ -302,6 +302,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (tenant) {
       dataService.setCurrentTenant(tenant);
       setCurrentTenant(tenant);
+      setAllUsers(dataService.getUsers(tenant.id));
+      setAllAgents(dataService.getAgents(tenant.id));
+      setAllViewers(dataService.getViewers(tenant.id));
       setDataVersion((v) => v + 1);
     }
   };

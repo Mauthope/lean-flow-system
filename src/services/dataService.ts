@@ -365,20 +365,23 @@ export const dataService = {
 
   getTpmMachinesByTenant(tenantId?: string): TpmMachine[] {
     const all = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
-    if (!tenantId) return all;
-    return all.filter((m) => m.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((m) => m.tenantId === effective);
   },
 
   getTpmAuditsByTenant(tenantId?: string): TpmAudit[] {
     const all = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
-    if (!tenantId) return all;
-    return all.filter((a) => a.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((a) => a.tenantId === effective);
   },
 
   getTpmTagsByTenant(tenantId?: string): TpmTag[] {
     const all = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
-    if (!tenantId) return all;
-    return all.filter((t) => t.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((t) => t.tenantId === effective);
   },
 
   exportTenantBackup(tenantId: string) {
@@ -397,7 +400,7 @@ export const dataService = {
       tpmMachines: this.getTpmMachinesByTenant(tenantId),
       tpmAudits: this.getTpmAuditsByTenant(tenantId),
       tpmTags: this.getTpmTagsByTenant(tenantId),
-      sectorAssessments: this.getSectorAssessments(tenantId),
+      sectorAssessments: this.getSectorAssessments(undefined, tenantId),
       strategicObjectives: this.getStrategicObjectives(tenantId),
     };
   },
@@ -408,15 +411,15 @@ export const dataService = {
       exportType: 'GLOBAL_CONSOLIDATED_SNAPSHOT',
       exportedAt: new Date().toISOString(),
       tenants: this.getTenants(),
-      sectors: this.getSectors(),
-      users: this.getUsers(),
-      actions: this.getActions(),
-      kaizenIdeas: this.getKaizenIdeas(),
-      tpmMachines: this.getTpmMachines(),
-      tpmAudits: this.getTpmAudits(),
-      tpmTags: this.getTpmTags(),
-      sectorAssessments: this.getSectorAssessments(),
-      strategicObjectives: this.getStrategicObjectives(),
+      sectors: this.getSectors('all'),
+      users: this.getUsers('all'),
+      actions: this.getActions('all'),
+      kaizenIdeas: this.getKaizenIdeas('all'),
+      tpmMachines: this.getTpmMachines(undefined, 'all'),
+      tpmAudits: this.getTpmAudits(undefined, 'all'),
+      tpmTags: this.getTpmTags({ tenantId: 'all' }),
+      sectorAssessments: this.getSectorAssessments(undefined, 'all'),
+      strategicObjectives: this.getStrategicObjectives('all'),
     };
   },
 
@@ -519,8 +522,9 @@ export const dataService = {
       return s;
     });
 
-    if (!tenantId) return normalized;
-    return normalized.filter((s) => s.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return normalized;
+    return normalized.filter((s) => s.tenantId === effective);
   },
 
   checkSectorRequiresTrackingDoc(
@@ -551,11 +555,11 @@ export const dataService = {
   },
 
   getSectorById(id: string): Sector | undefined {
-    return this.getSectors().find((s) => s.id === id);
+    return this.getSectors('all').find((s) => s.id === id);
   },
 
   createSector(sector: Omit<Sector, 'id' | 'createdAt'>): Sector {
-    const sectors = this.getSectors();
+    const sectors = this.getSectors('all');
     const newSector: Sector = {
       ...sector,
       id: generateId('sec'),
@@ -567,7 +571,7 @@ export const dataService = {
   },
 
   updateSector(id: string, updates: Partial<Sector>): Sector {
-    const sectors = this.getSectors();
+    const sectors = this.getSectors('all');
     const index = sectors.findIndex((s) => s.id === id);
     if (index === -1) throw new Error('Setor não encontrado');
     
@@ -577,15 +581,16 @@ export const dataService = {
   },
 
   deleteSector(id: string): void {
-    const sectors = this.getSectors().filter((s) => s.id !== id);
+    const sectors = this.getSectors('all').filter((s) => s.id !== id);
     setStoredData(STORAGE_KEYS.SECTORS, sectors);
   },
 
   // ================= USERS / AGENTS =================
   getUsers(tenantId?: string): User[] {
     const all = getStoredData<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
-    if (!tenantId) return all;
-    return all.filter((u) => u.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((u) => u.tenantId === effective);
   },
 
   getAgents(tenantId?: string): User[] {
@@ -751,12 +756,13 @@ export const dataService = {
       setStoredData(STORAGE_KEYS.ACTIONS, all);
     }
 
-    if (!tenantId) return all;
-    return all.filter((a) => a.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((a) => a.tenantId === effective);
   },
 
   getActionById(id: string): LeanAction | undefined {
-    const action = this.getActions().find((a) => a.id === id);
+    const action = this.getActions('all').find((a) => a.id === id);
     if (action && !action.quarterlyFollowUp) {
       action.quarterlyFollowUp = {
         enabled: true,
@@ -773,7 +779,7 @@ export const dataService = {
 
   getActionByProtocol(protocol: string): LeanAction | undefined {
     const cleanProto = protocol.trim().toUpperCase();
-    return this.getActions().find((a) => a.protocol.toUpperCase() === cleanProto);
+    return this.getActions('all').find((a) => a.protocol.toUpperCase() === cleanProto);
   },
 
   getActionsForAgent(agentId: string, tenantId?: string): LeanAction[] {
@@ -783,7 +789,7 @@ export const dataService = {
   },
 
   updateAction(id: string, updates: Partial<LeanAction>): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -865,7 +871,7 @@ export const dataService = {
       registeredBy?: string;
     }
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1192,7 +1198,7 @@ export const dataService = {
     originUrl?: string,
     gainDetails?: Record<string, GainProofDetail>
   ): Promise<{ action: LeanAction; auditUrl: string; token: string }> {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1274,7 +1280,7 @@ export const dataService = {
   // Buscar projeto pelo token de auditoria escopado da Controladoria
   getActionByAuditToken(token: string): LeanAction | null {
     if (!token) return null;
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const action = actions.find((a) => a.controllershipAudit?.token === token);
     return action || null;
   },
@@ -1295,7 +1301,7 @@ export const dataService = {
       rejectionReason?: string;
     }
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.controllershipAudit?.token === token);
     if (index === -1) throw new Error('Projeto não encontrado para este token de auditoria');
 
@@ -1386,7 +1392,7 @@ export const dataService = {
     requesterDepartment?: string;
     priority?: 'baixa' | 'media' | 'alta' | 'critica';
   }): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const currentTenant = this.getCurrentTenant();
     const originSector = this.getSectorById(demand.originSectorId);
 
@@ -1429,7 +1435,7 @@ export const dataService = {
   },
 
   createActionByAdmin(actionData: Omit<LeanAction, 'id' | 'protocol' | 'createdAt' | 'updatedAt'>): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const originSector = this.getSectorById(actionData.originSectorId);
     let agent: User | undefined = undefined;
     if (actionData.assignedAgentId) {
@@ -1499,7 +1505,7 @@ export const dataService = {
       refinedDescription?: string;
     }
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1568,7 +1574,7 @@ export const dataService = {
       conclusionDate?: string;
     }
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1620,7 +1626,7 @@ export const dataService = {
   },
 
   addActionNote(id: string, note: { authorId: string; authorName: string; authorRole: UserRole; text: string }): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1638,7 +1644,7 @@ export const dataService = {
   },
 
   toggleChecklistItem(actionId: string, itemId: string): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1679,7 +1685,7 @@ export const dataService = {
       status?: 'pendente' | 'em_andamento' | 'concluida';
     }
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1719,7 +1725,7 @@ export const dataService = {
     reason: string,
     authorName?: string
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1762,7 +1768,7 @@ export const dataService = {
     activityId: string,
     attachment: ActivityAttachment
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1778,7 +1784,7 @@ export const dataService = {
   },
 
   removeActivityAttachment(actionId: string, activityId: string): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1799,7 +1805,7 @@ export const dataService = {
     activityId: string,
     updates: Partial<ActionChecklistItem>
   ): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1824,7 +1830,7 @@ export const dataService = {
   },
 
   deleteActivityRecord(actionId: string, activityId: string): LeanAction {
-    const actions = this.getActions();
+    const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
 
@@ -1847,9 +1853,10 @@ export const dataService = {
 
   // ================= METRICS & DASHBOARD =================
   getMetrics(tenantId?: string): DashboardMetrics {
-    const actions = this.getActions(tenantId);
-    const users = this.getUsers(tenantId).filter((u) => u.role === 'agent');
-    const sectors = this.getSectors(tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    const actions = this.getActions(effective);
+    const users = this.getUsers(effective).filter((u) => u.role === 'agent');
+    const sectors = this.getSectors(effective);
 
     const totalActions = actions.length;
     const openActions = actions.filter((a) => a.status === 'aberta').length;
@@ -1867,7 +1874,7 @@ export const dataService = {
       return acc + val;
     }, 0);
     const inProgressAnnualCostAvoided = inProgressEstimatedCostAvoided * 12;
-    const boardFinancials = this.getExecutiveBoardFinancials(tenantId);
+    const boardFinancials = this.getExecutiveBoardFinancials(effective);
     const totalActualCostAvoided = boardFinancials.activeAnnualTotal > 0
       ? boardFinancials.activeAnnualTotal
       : actions
@@ -2497,12 +2504,13 @@ export const dataService = {
       setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, all);
     }
 
-    if (!tenantId) return all;
-    return all.filter((k) => k.tenantId === tenantId);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((k) => k.tenantId === effective);
   },
 
   getKaizenIdeaById(id: string): KaizenIdea | undefined {
-    return this.getKaizenIdeas().find((k) => k.id === id);
+    return this.getKaizenIdeas('all').find((k) => k.id === id);
   },
 
   createKaizenIdea(data: {
@@ -2514,7 +2522,7 @@ export const dataService = {
     photoUrl?: string;
     photoName?: string;
   }): KaizenIdea {
-    const ideas = this.getKaizenIdeas();
+    const ideas = this.getKaizenIdeas('all');
     const sector = this.getSectorById(data.sectorId);
     const now = new Date().toISOString();
 
@@ -2553,7 +2561,7 @@ export const dataService = {
       financialGainNotes?: string;
     }
   ): KaizenIdea {
-    const ideas = this.getKaizenIdeas();
+    const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === id);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
 
@@ -2588,7 +2596,7 @@ export const dataService = {
   },
 
   rejectKaizenIdea(id: string, reviewerName: string, reason: string): KaizenIdea {
-    const ideas = this.getKaizenIdeas();
+    const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === id);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
 
@@ -2610,7 +2618,7 @@ export const dataService = {
   },
 
   updateKaizenIdea(id: string, updates: Partial<KaizenIdea>): KaizenIdea {
-    const ideas = this.getKaizenIdeas();
+    const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === id);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
 
@@ -2656,7 +2664,7 @@ export const dataService = {
   },
 
   getKaizenIdeaByProtocol(protocol: string): KaizenIdea | undefined {
-    return this.getKaizenIdeas().find((k) => k.protocol.toUpperCase() === protocol.toUpperCase());
+    return this.getKaizenIdeas('all').find((k) => k.protocol.toUpperCase() === protocol.toUpperCase());
   },
 
   saveKaizenQuarterlyMonthResult(
@@ -2670,7 +2678,7 @@ export const dataService = {
       registeredBy?: string;
     }
   ): KaizenIdea {
-    const ideas = this.getKaizenIdeas();
+    const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === ideaId);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
 
@@ -2726,16 +2734,18 @@ export const dataService = {
   // ================= TPM (MANUTENÇÃO PRODUTIVA TOTAL) =================
 
   // --- Máquinas por Setor ---
-  getTpmMachines(sectorId?: string): TpmMachine[] {
+  getTpmMachines(sectorId?: string, tenantId?: string): TpmMachine[] {
     const all = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    let list = effective ? all.filter((m) => m.tenantId === effective) : all;
     if (sectorId && sectorId !== 'all') {
-      return all.filter((m) => m.sectorId === sectorId);
+      list = list.filter((m) => m.sectorId === sectorId);
     }
-    return all;
+    return list;
   },
 
   getTpmMachineById(id: string): TpmMachine | undefined {
-    const all = this.getTpmMachines();
+    const all = this.getTpmMachines(undefined, 'all');
     return all.find((m) => m.id === id);
   },
 
@@ -2750,7 +2760,7 @@ export const dataService = {
     tpmPhase?: number;
     description?: string;
   }): TpmMachine {
-    const machines = this.getTpmMachines();
+    const machines = this.getTpmMachines(undefined, 'all');
     const currentTenant = this.getCurrentTenant();
 
     const newMachine: TpmMachine = {
@@ -2776,7 +2786,7 @@ export const dataService = {
   },
 
   updateTpmMachine(id: string, updates: Partial<TpmMachine>): TpmMachine {
-    const machines = this.getTpmMachines();
+    const machines = this.getTpmMachines(undefined, 'all');
     const index = machines.findIndex((m) => m.id === id);
     if (index === -1) throw new Error('Máquina não encontrada');
 
@@ -2815,17 +2825,19 @@ export const dataService = {
   },
 
   deleteTpmMachine(id: string): void {
-    const machines = this.getTpmMachines().filter((m) => m.id !== id);
+    const machines = this.getTpmMachines(undefined, 'all').filter((m) => m.id !== id);
     setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
   },
 
   // --- Auditorias TPM & Notas de Avaliação ---
-  getTpmAudits(machineId?: string): TpmAudit[] {
+  getTpmAudits(machineId?: string, tenantId?: string): TpmAudit[] {
     const all = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    let list = effective ? all.filter((a) => a.tenantId === effective) : all;
     if (machineId) {
-      return all.filter((a) => a.machineId === machineId);
+      list = list.filter((a) => a.machineId === machineId);
     }
-    return all;
+    return list;
   },
 
   createTpmAudit(data: {
@@ -2841,7 +2853,7 @@ export const dataService = {
     items: TpmAudit['items'];
     observations?: string;
   }): TpmAudit & { phaseAdvanced?: boolean; previousPhase?: number; newPhase?: number } {
-    const audits = this.getTpmAudits();
+    const audits = this.getTpmAudits(undefined, 'all');
     const currentTenant = this.getCurrentTenant();
     const now = new Date().toISOString();
 
@@ -2917,8 +2929,13 @@ export const dataService = {
     machineId?: string;
     type?: 'vermelha' | 'azul';
     status?: string;
+    tenantId?: string;
   }): TpmTag[] {
     let all = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
+    const effective = filters?.tenantId === 'all' ? undefined : (filters?.tenantId || this.getCurrentTenant()?.id);
+    if (effective) {
+      all = all.filter((t) => t.tenantId === effective);
+    }
 
     if (filters?.sectorId && filters.sectorId !== 'all') {
       all = all.filter((t) => t.sectorId === filters.sectorId);
@@ -2961,7 +2978,7 @@ export const dataService = {
     openedBy: string;
     dueDate: string;
   }): TpmTag {
-    const tags = this.getTpmTags();
+    const tags = this.getTpmTags({ tenantId: 'all' });
     const currentTenant = this.getCurrentTenant();
     const now = new Date().toISOString();
 
@@ -2998,7 +3015,7 @@ export const dataService = {
     status: TpmTag['status'],
     resolution?: { resolvedBy?: string; solutionNotes?: string; resolvedAt?: string }
   ): TpmTag {
-    const tags = this.getTpmTags();
+    const tags = this.getTpmTags({ tenantId: 'all' });
     const index = tags.findIndex((t) => t.id === id);
     if (index === -1) throw new Error('Etiqueta não encontrada');
 
@@ -3015,14 +3032,15 @@ export const dataService = {
   },
 
   deleteTpmTag(id: string): void {
-    const tags = this.getTpmTags().filter((t) => t.id !== id);
+    const tags = this.getTpmTags({ tenantId: 'all' }).filter((t) => t.id !== id);
     setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
   },
 
   // --- Indicadores & KPIs da Manutenção ---
-  getTpmMaintenanceMetrics(sectorId?: string): TpmMaintenanceMetrics {
-    const machines = this.getTpmMachines(sectorId);
-    const audits = this.getTpmAudits().filter((a) => !sectorId || sectorId === 'all' || a.sectorId === sectorId);
+  getTpmMaintenanceMetrics(sectorId?: string, tenantId?: string): TpmMaintenanceMetrics {
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    const machines = this.getTpmMachines(sectorId, effective);
+    const audits = this.getTpmAudits(undefined, effective).filter((a) => !sectorId || sectorId === 'all' || a.sectorId === sectorId);
 
     const totalMachines = machines.length;
     const operationalMachines = machines.filter((m) => m.status === 'operacional').length;
@@ -3628,12 +3646,16 @@ export const dataService = {
   // =========================================================================
   // MÓDULO LEAN ASSESSMENT DOS SETORES
   // =========================================================================
-  getSectorAssessments(sectorId?: string): SectorLeanAssessment[] {
+  getSectorAssessments(sectorId?: string, tenantId?: string): SectorLeanAssessment[] {
     const all = getStoredData<SectorLeanAssessment[]>(
       STORAGE_KEYS.SECTOR_ASSESSMENTS,
       INITIAL_SECTOR_ASSESSMENTS
     );
-    const filtered = sectorId ? all.filter((a) => a.sectorId === sectorId) : all;
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    let filtered = effective ? all.filter((a) => a.tenantId === effective) : all;
+    if (sectorId) {
+      filtered = filtered.filter((a) => a.sectorId === sectorId);
+    }
     return filtered.sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime());
   },
 
@@ -3721,8 +3743,10 @@ export const dataService = {
       STORAGE_KEYS.SECTOR_ASSESSMENTS,
       INITIAL_SECTOR_ASSESSMENTS
     );
+    const currentTenant = this.getCurrentTenant();
     const newEntry: SectorLeanAssessment = {
       ...assessmentData,
+      tenantId: assessmentData.tenantId || currentTenant.id,
       id: generateId('asm'),
       createdAt: new Date().toISOString(),
     };
@@ -4647,9 +4671,10 @@ export const dataService = {
 
   // ================= ALTA GERÊNCIA & OBJETIVOS ESTRATÉGICOS (HOSHIN KANRI) =================
   getStrategicObjectives(tenantId?: string): StrategicObjective[] {
-    const tenant = tenantId || this.getCurrentTenant().id;
     const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
-    return all.filter((o) => o.tenantId === tenant);
+    const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    if (!effective) return all;
+    return all.filter((o) => o.tenantId === effective);
   },
 
   getStrategicObjectiveById(id: string): StrategicObjective | undefined {
@@ -4822,12 +4847,13 @@ export const dataService = {
     return false;
   },
 
-  getMacroStrategicDashboardMetrics(year?: number): MacroStrategicDashboardMetrics {
+  getMacroStrategicDashboardMetrics(year?: number, tenantId?: string): MacroStrategicDashboardMetrics {
     const targetYear = year || new Date().getFullYear();
-    const objectives = this.getStrategicObjectives().filter((o) => o.year === targetYear);
-    const effectiveObjectives = objectives.length > 0 ? objectives : this.getStrategicObjectives();
+    const effectiveTenantId = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+    const objectives = this.getStrategicObjectives(effectiveTenantId).filter((o) => o.year === targetYear);
+    const effectiveObjectives = objectives.length > 0 ? objectives : this.getStrategicObjectives(effectiveTenantId);
 
-    const allActions = this.getActions();
+    const allActions = this.getActions(effectiveTenantId);
     const alignedActions = allActions.filter((a) => a.strategicObjectiveId);
 
     const totalAvoidedCostAligned = alignedActions.reduce((acc, a) => acc + (a.actualCostAvoided || 0), 0);

@@ -14,7 +14,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function AdminSetoresPage() {
-  const { dataVersion, refreshData, currentUser } = useAuth();
+  const { dataVersion, refreshData, currentUser, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,12 +24,12 @@ export default function AdminSetoresPage() {
   const isViewer = currentUser?.role === 'viewer';
 
   const sectors = useMemo(() => {
-    return dataService.getSectors();
-  }, [dataVersion]);
+    return dataService.getSectors(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   const metrics = useMemo(() => {
-    return dataService.getMetrics();
-  }, [dataVersion]);
+    return dataService.getMetrics(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   const handleCreateNew = () => {
     setSelectedSector(null);

@@ -8,14 +8,14 @@ import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { NewActionModal } from '@/components/forms/NewActionModal';
 
 export default function AdminKanbanPage() {
-  const { dataVersion, refreshData, currentUser } = useAuth();
+  const { dataVersion, refreshData, currentUser, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const isViewer = currentUser?.role === 'viewer';
 
   const actions = useMemo(() => {
-    return dataService.getActions();
-  }, [dataVersion]);
+    return dataService.getActions(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

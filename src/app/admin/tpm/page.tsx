@@ -74,7 +74,7 @@ const DEFAULT_CHECKLIST_ITEMS: Omit<TpmAuditChecklistItem, 'id' | 'score' | 'sta
 ];
 
 export default function AdminTPMPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, dataVersion, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
@@ -118,16 +118,16 @@ export default function AdminTPMPage() {
 
   // Carregar dados
   const loadData = () => {
-    const s = dataService.getSectors();
+    const s = dataService.getSectors(currentTenant?.id);
     setSectors(s);
-    setMachines(dataService.getTpmMachines());
-    setAudits(dataService.getTpmAudits());
-    setMetrics(dataService.getTpmMaintenanceMetrics(selectedSectorId === 'all' ? undefined : selectedSectorId));
+    setMachines(dataService.getTpmMachines(undefined, currentTenant?.id));
+    setAudits(dataService.getTpmAudits(undefined, currentTenant?.id));
+    setMetrics(dataService.getTpmMaintenanceMetrics(selectedSectorId === 'all' ? undefined : selectedSectorId, currentTenant?.id));
   };
 
   useEffect(() => {
     loadData();
-  }, [selectedSectorId]);
+  }, [selectedSectorId, dataVersion, currentTenant?.id]);
 
   // Inicializar checklist padrão quando abre modal de auditoria
   const handleOpenNewAuditModal = (preselectedMachineId?: string) => {

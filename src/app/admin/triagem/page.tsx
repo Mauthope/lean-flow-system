@@ -26,7 +26,7 @@ import {
 import Link from 'next/link';
 
 export default function AdminTriagemPage() {
-  const { currentUser, dataVersion, refreshData } = useAuth();
+  const { currentUser, dataVersion, refreshData, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const [selectedDemand, setSelectedDemand] = useState<LeanAction | null>(null);
   const [filterType, setFilterType] = useState<'pending' | 'all' | 'rejected'>('pending');
@@ -78,8 +78,8 @@ export default function AdminTriagemPage() {
   }
 
   const allActions = useMemo(() => {
-    return dataService.getActions();
-  }, [dataVersion]);
+    return dataService.getActions(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   const publicDemands = useMemo(() => {
     return allActions.filter((a) => a.isPublicDemand);

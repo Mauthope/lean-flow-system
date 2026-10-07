@@ -30,8 +30,8 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
   onSuccess,
 }) => {
   const { currentTenant, allAgents } = useAuth();
-  const sectors = React.useMemo(() => dataService.getSectors(), [isOpen]);
-  const strategicObjectives = React.useMemo(() => dataService.getStrategicObjectives(), [isOpen]);
+  const sectors = React.useMemo(() => dataService.getSectors(currentTenant?.id), [isOpen, currentTenant?.id]);
+  const strategicObjectives = React.useMemo(() => dataService.getStrategicObjectives(currentTenant?.id), [isOpen, currentTenant?.id]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -48,8 +48,8 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
 
   React.useEffect(() => {
     if (isOpen) {
-      const currentSectors = dataService.getSectors();
-      const currentObjectives = dataService.getStrategicObjectives();
+      const currentSectors = dataService.getSectors(currentTenant?.id);
+      const currentObjectives = dataService.getStrategicObjectives(currentTenant?.id);
       setTitle('');
       setDescription('');
       setStrategicObjectiveId(currentObjectives[0]?.id || '');

@@ -198,7 +198,7 @@ export default function AdminEntidadesPage() {
 
   const handleSwitchTenant = (tenantId: string, name: string) => {
     switchTenant(tenantId);
-    alert(`Ambiente alternado com sucesso para "${name}"!\nOs dashboards, setores, agentes e Kaizens agora exibem os dados exclusivos desta unidade.`);
+    router.push('/admin/dashboard');
   };
 
   if (currentUser && !isMaster) {
@@ -915,18 +915,23 @@ export default function AdminEntidadesPage() {
                     <ArrowRight size={14} /> Acessar Esta Planta
                   </button>
                 ) : (
-                  <span
+                  <button
+                    onClick={() => router.push('/admin/dashboard')}
+                    className="btn btn-secondary btn-sm"
                     style={{
                       fontSize: '0.75rem',
                       fontWeight: 700,
                       color: isDark ? '#34d399' : '#15803d',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.3rem',
+                      gap: '0.35rem',
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)',
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.35)' : 'rgba(16, 185, 129, 0.3)',
                     }}
+                    title="Ir ao Dashboard da planta ativa"
                   >
-                    <CheckCircle2 size={14} /> Visualizando Atualmente
-                  </span>
+                    <CheckCircle2 size={14} /> Planta Ativa • Abrir Dashboard
+                  </button>
                 )}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

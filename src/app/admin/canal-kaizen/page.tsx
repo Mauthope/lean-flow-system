@@ -40,7 +40,7 @@ import {
 import confetti from 'canvas-confetti';
 
 export default function AdminCanalKaizenPage() {
-  const { dataVersion, currentUser, allAgents, refreshData } = useAuth();
+  const { dataVersion, currentUser, allAgents, refreshData, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
@@ -75,18 +75,18 @@ export default function AdminCanalKaizenPage() {
 
   // Load Sectors
   useEffect(() => {
-    setSectors(dataService.getSectors());
-  }, [dataVersion]);
+    setSectors(dataService.getSectors(currentTenant?.id));
+  }, [dataVersion, currentTenant?.id]);
 
   // Kaizen Ideas List
   const allIdeas = useMemo(() => {
-    return dataService.getKaizenIdeas();
-  }, [dataVersion]);
+    return dataService.getKaizenIdeas(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   // Metrics specifically for Canal Kaizen
   const kaizenMetrics = useMemo(() => {
-    return dataService.getKaizenMetrics();
-  }, [dataVersion]);
+    return dataService.getKaizenMetrics(currentTenant?.id);
+  }, [dataVersion, currentTenant?.id]);
 
   // Filtered Ideas for Tab 1 (Banco de Ideias)
   const filteredIdeas = useMemo(() => {
