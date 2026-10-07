@@ -7,7 +7,6 @@ import { dataService } from '@/services/dataService';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { setStoredData, STORAGE_KEYS } from '@/lib/storage';
 import {
-  Shield,
   ArrowRight,
   AlertCircle,
   CheckCircle2,
@@ -448,34 +447,6 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Top Corporate Badge - Apenas Nome do Sistema */}
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '480px',
-          marginBottom: '1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        <span
-          style={{
-            fontSize: '0.75rem',
-            fontWeight: 800,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted, #94a3b8)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-          }}
-        >
-          <Shield size={14} color="#06b6d4" /> Fluxo Lean
-        </span>
-      </div>
 
       {/* Main Glass Login Card */}
       <div
@@ -576,7 +547,7 @@ export default function LoginPage() {
               margin: '0.25rem 0 0',
             }}
           >
-            Fluxo Lean
+            Fluxo Lean 4.0
           </h1>
           <p
             style={{
