@@ -6,11 +6,7 @@ import { getTreeDashboardData, TreeDashboardData } from '@/lib/treeService';
 import { LeanAction } from '@/lib/types';
 import { TreeHeader } from './tree/TreeHeader';
 import { TreeKpis } from './tree/TreeKpis';
-import { HoshinNode } from './tree/HoshinNode';
-import { EntityNode } from './tree/EntityNode';
-import { AgentNode } from './tree/AgentNode';
-import { SectorNode } from './tree/SectorNode';
-import { SavingsTypeNode } from './tree/SavingsTypeNode';
+import { TreeCanvas } from './tree/TreeCanvas';
 import { TreeOutlineTable } from './tree/TreeOutlineTable';
 import { TreeProjectsModal } from './tree/TreeProjectsModal';
 
@@ -168,182 +164,19 @@ export function TreeDashboardView({ role = 'admin' }: TreeDashboardViewProps) {
       {/* Cards de Resumo Macro (KPIs) */}
       <TreeKpis data={treeData} />
 
-      {/* Conteúdo Principal: Árvore Visual ou Lista WBS */}
+      {/* Conteúdo Principal: Canvas VSM Interativo ou Lista WBS */}
       {viewMode === 'tree' ? (
-        <div
-          style={{
-            overflowX: 'auto',
-            paddingBottom: '2.5rem',
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              minWidth: '1000px',
-              width: '100%',
-            }}
-          >
-            {/* NÍVEL 1: Hoshin Kanri */}
-            <HoshinNode node={treeData.hoshinKanri} />
-
-            {/* Linha vertical conectora Nível 1 -> Nível 2 */}
-            <div
-              style={{
-                width: '3px',
-                height: '32px',
-                backgroundColor: '#06b6d4',
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.6)',
-              }}
-            />
-
-            {/* NÍVEL 2: Entidade Industrial */}
-            <EntityNode entity={treeData.hoshinKanri.entity} />
-
-            {/* Linha vertical conectora Nível 2 -> Barra de Agentes */}
-            <div
-              style={{
-                width: '3px',
-                height: '36px',
-                backgroundColor: '#10b981',
-                boxShadow: '0 0 10px rgba(16, 185, 129, 0.6)',
-              }}
-            />
-
-            {/* Trilho Horizontal e Ramos de Agentes (NÍVEL 3, 4 e 5) */}
-            <div
-              style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-                position: 'relative',
-                paddingTop: '12px',
-              }}
-            >
-              {/* Linha horizontal superior unindo agentes */}
-              {visibleAgents.length > 1 && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '0',
-                    left: '12%',
-                    right: '12%',
-                    height: '3px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  }}
-                />
-              )}
-
-              {/* Grid Horizontal de Agentes */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '2rem',
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
-                  flexWrap: 'nowrap',
-                }}
-              >
-                {visibleAgents.map((agent) => {
-                  const agentExpanded = isAgentExpanded(agent.agentId);
-
-                  return (
-                    <div
-                      key={agent.agentId}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        minWidth: '320px',
-                        maxWidth: '420px',
-                        position: 'relative',
-                      }}
-                    >
-                      {/* Conector Vertical do Trilho ao Card do Agente */}
-                      <div
-                        style={{
-                          width: '2px',
-                          height: '16px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.25)',
-                        }}
-                      />
-
-                      {/* Card do Agente (Nível 3) */}
-                      <AgentNode
-                        agent={agent}
-                        isExpanded={agentExpanded}
-                        onToggle={() => toggleAgent(agent.agentId)}
-                        onOpenProjects={handleOpenProjects}
-                      />
-
-                      {/* Setores e Tipos (Nível 4 & 5) */}
-                      {agentExpanded && agent.sectors.length > 0 && (
-                        <div
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            marginTop: '10px',
-                          }}
-                        >
-                          {/* Linha vertical descendo do Agente para os Setores */}
-                          <div
-                            style={{
-                              width: '2px',
-                              height: '18px',
-                              backgroundColor: 'rgba(139, 92, 246, 0.5)',
-                            }}
-                          />
-
-                          {/* Lista Vertical de Setores */}
-                          <div
-                            style={{
-                              width: '100%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '1.25rem',
-                            }}
-                          >
-                            {agent.sectors.map((sector) => {
-                              const sectorKey = `${agent.agentId}__${sector.sectorId}`;
-                              const sectorExpanded = isSectorExpanded(sectorKey);
-
-                              return (
-                                <SectorNode
-                                  key={sectorKey}
-                                  sector={sector}
-                                  agentName={agent.agentName}
-                                  isExpanded={sectorExpanded}
-                                  onToggle={() => toggleSector(sectorKey)}
-                                  onOpenProjects={handleOpenProjects}
-                                >
-                                  {sector.savingsTypes.map((type) => (
-                                    <SavingsTypeNode
-                                      key={type.key}
-                                      type={type}
-                                      sectorName={sector.sectorName}
-                                      agentName={agent.agentName}
-                                      onOpenProjects={handleOpenProjects}
-                                    />
-                                  ))}
-                                </SectorNode>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
+        <TreeCanvas
+          treeData={treeData}
+          visibleAgents={visibleAgents}
+          isAgentExpanded={isAgentExpanded}
+          toggleAgent={toggleAgent}
+          isSectorExpanded={isSectorExpanded}
+          toggleSector={toggleSector}
+          onOpenProjects={handleOpenProjects}
+          onExpandAll={expandAll}
+          onCollapseAll={collapseAll}
+        />
       ) : (
         /* Visualização em Lista WBS */
         <TreeOutlineTable
