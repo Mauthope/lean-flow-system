@@ -22,6 +22,53 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
+  // Estados e animação do Sensei (sprites)
+  const [senseiPose, setSenseiPose] = useState<'speaking' | 'idea' | 'success' | 'celebrating'>('speaking');
+
+  useEffect(() => {
+    // Pré-carregamento dos sprites na memória do navegador
+    if (typeof window !== 'undefined') {
+      const sprites = [
+        '/sprites/sensei-speaking.png',
+        '/sprites/sensei-idea.png',
+        '/sprites/sensei-success.png',
+        '/sprites/sensei-celebrating.png',
+      ];
+      sprites.forEach((src) => {
+        const img = new window.Image();
+        img.src = src;
+      });
+    }
+
+    // Breve animação de entrada do Sensei (Apresentação -> Ideia -> Confirmação)
+    const t1 = setTimeout(() => {
+      setSenseiPose('idea');
+    }, 1200);
+
+    const t2 = setTimeout(() => {
+      setSenseiPose('success');
+    }, 2500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
+
+  const handleSenseiInteract = () => {
+    setSenseiPose('celebrating');
+    setTimeout(() => {
+      setSenseiPose('success');
+    }, 2000);
+  };
+
+  const senseiSrc = {
+    speaking: '/sprites/sensei-speaking.png',
+    idea: '/sprites/sensei-idea.png',
+    success: '/sprites/sensei-success.png',
+    celebrating: '/sprites/sensei-celebrating.png',
+  }[senseiPose];
+
   // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -465,18 +512,78 @@ export default function LoginPage() {
           >
             <Shield size={28} color="#020617" />
           </div>
-          <h1
+          <div
             style={{
-              fontSize: '1.65rem',
-              fontWeight: 800,
-              color: 'var(--text-heading, #ffffff)',
-              fontFamily: 'var(--font-heading)',
-              letterSpacing: '-0.02em',
-              margin: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.65rem',
             }}
           >
-            Fluxo Lean
-          </h1>
+            {/* Sensei Animated Sprite */}
+            <div
+              onClick={handleSenseiInteract}
+              title="Sensei Lean (Clique para interagir)"
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+                height: '52px',
+                width: '32px',
+                cursor: 'pointer',
+                flexShrink: 0,
+                userSelect: 'none',
+                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.15) translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1) translateY(0)';
+              }}
+            >
+              {/* Sombra de chao suave */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  width: '24px',
+                  height: '5px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.5) 0%, transparent 70%)',
+                  zIndex: 0,
+                }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={senseiSrc}
+                alt="Sensei Lean"
+                style={{
+                  height: '52px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                  position: 'relative',
+                  zIndex: 1,
+                  filter: 'drop-shadow(0 2px 8px rgba(6, 182, 212, 0.35))',
+                  imageRendering: 'pixelated',
+                }}
+              />
+            </div>
+
+            <h1
+              style={{
+                fontSize: '1.65rem',
+                fontWeight: 800,
+                color: 'var(--text-heading, #ffffff)',
+                fontFamily: 'var(--font-heading)',
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              Fluxo Lean
+            </h1>
+          </div>
           <p
             style={{
               fontSize: '0.84375rem',
