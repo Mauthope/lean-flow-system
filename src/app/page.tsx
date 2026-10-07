@@ -461,11 +461,103 @@ export default function LoginPage() {
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65)',
           border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
           position: 'relative',
+          overflow: 'hidden',
           zIndex: 10,
         }}
       >
+        {/* Marca d'Água Japonesa Lean & Kaizen (改善 / リーン / 現場) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            zIndex: 0,
+          }}
+        >
+          {/* Kanji Monumental Central: 改善 (Kaizen / Melhoria) */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '10%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: '11.5rem',
+              fontWeight: 900,
+              lineHeight: 0.9,
+              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif',
+              color: 'rgba(255, 255, 255, 0.025)',
+              textShadow: '0 0 40px rgba(6, 182, 212, 0.06)',
+              letterSpacing: '-0.08em',
+              whiteSpace: 'nowrap',
+              filter: 'blur(0.5px)',
+            }}
+          >
+            改善
+          </div>
+
+          {/* Coluna Vertical Esquerda: 現場 • リーン (Gemba • Lean) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '16%',
+              left: '1.25rem',
+              writingMode: 'vertical-rl',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              letterSpacing: '0.45em',
+              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif',
+              color: 'rgba(6, 182, 212, 0.1)',
+            }}
+          >
+            現場 • リーン
+          </div>
+
+          {/* Coluna Vertical Direita: 継続的改善 (Melhoria Contínua) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '16%',
+              right: '1.25rem',
+              writingMode: 'vertical-rl',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              letterSpacing: '0.45em',
+              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif',
+              color: 'rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            継続的改善
+          </div>
+
+          {/* Selo Minimalista Tradicional Hanko / 印 (Carimbo Kaizen) */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '1.5rem',
+              right: '1.5rem',
+              width: '28px',
+              height: '28px',
+              border: '1px solid rgba(6, 182, 212, 0.18)',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif',
+              color: 'rgba(6, 182, 212, 0.3)',
+              backgroundColor: 'rgba(6, 182, 212, 0.03)',
+            }}
+          >
+            改
+          </div>
+        </div>
+
         {/* Header with Sensei Hero & Title */}
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem', position: 'relative', zIndex: 1 }}>
           {/* Sensei Animated Hero (Substitui o escudo, 4x maior) */}
           <div
             onClick={handleSenseiInteract}
@@ -605,7 +697,7 @@ export default function LoginPage() {
         )}
 
         {/* BOTÃO MICROSOFT SSO OFICIAL */}
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem', position: 'relative', zIndex: 1 }}>
           <div
             onClick={handleMicrosoftSso}
             style={{
@@ -700,6 +792,8 @@ export default function LoginPage() {
         {/* Assinatura Corporativa de Desenvolvimento */}
         <div
           style={{
+            position: 'relative',
+            zIndex: 1,
             padding: '0.75rem 1rem',
             backgroundColor: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.06))',
