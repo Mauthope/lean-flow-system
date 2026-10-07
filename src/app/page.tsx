@@ -426,7 +426,7 @@ export default function LoginPage() {
             gap: '0.45rem',
           }}
         >
-          <Shield size={14} color="#06b6d4" /> Sistema Lean Flow • Governança Industrial
+          <Shield size={14} color="#06b6d4" /> Sistema Lean Flow
         </span>
       </div>
 
@@ -485,7 +485,7 @@ export default function LoginPage() {
               fontFamily: 'var(--font-sans)',
             }}
           >
-            Portal de Governança Industrial & Acesso Corporativo
+            Acesso Corporativo
           </p>
         </div>
 
