@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
@@ -12,8 +13,19 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { refreshData } = useAuth();
+  const router = useRouter();
+  const { currentUser, isLoading, refreshData } = useAuth();
   const [isNewActionOpen, setIsNewActionOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !currentUser) {
+      router.replace('/login');
+    }
+  }, [isLoading, currentUser, router]);
+
+  if (!isLoading && !currentUser) {
+    return null;
+  }
 
   return (
     <div className="app-container">

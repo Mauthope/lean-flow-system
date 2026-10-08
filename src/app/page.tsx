@@ -21,34 +21,13 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  // Se houver callback de OAuth ou sessão corporativa ativa no navegador, entra em modo de autenticação imediato
+  // Apenas entra em modo de autenticação em transição se houver retorno de callback do OAuth (Microsoft SSO)
   const [isAuthenticating, setIsAuthenticating] = useState(() => {
     if (typeof window === 'undefined') return false;
     const hash = window.location.hash || '';
     const search = window.location.search || '';
-    const isOAuth = hash.includes('access_token=') || search.includes('code=');
-    const existing = dataService.getCurrentUser();
-    return isOAuth || Boolean(existing && existing.active && existing.email);
+    return hash.includes('access_token=') || search.includes('code=');
   });
-
-  // Redirecionamento instantâneo caso já exista sessão ativa gravada e não seja fluxo de retorno de OAuth
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hash = window.location.hash || '';
-    const search = window.location.search || '';
-    const isOAuth = hash.includes('access_token=') || search.includes('code=');
-
-    if (!isOAuth) {
-      const existing = dataService.getCurrentUser();
-      if (existing && existing.active && existing.email) {
-        const target =
-          existing.role === 'admin' || existing.isMaster
-            ? '/admin/dashboard'
-            : '/agente/kanban';
-        router.replace(target);
-      }
-    }
-  }, [router]);
 
   // Estados e animação do Sensei (sprites)
   const [senseiPose, setSenseiPose] = useState<'speaking' | 'idea' | 'success' | 'celebrating'>('speaking');
@@ -325,18 +304,27 @@ export default function LoginPage() {
       }
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        handleSessionUser(session.user.id, session.user.email);
-      } else {
-        setIsAuthenticating(false);
-      }
-    });
+    const isOAuth =
+      typeof window !== 'undefined' &&
+      (window.location.hash.includes('access_token=') ||
+        window.location.search.includes('code='));
+
+    if (isOAuth) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          handleSessionUser(session.user.id, session.user.email);
+        } else {
+          setIsAuthenticating(false);
+        }
+      });
+    } else {
+      setIsAuthenticating(false);
+    }
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user && isOAuth) {
         handleSessionUser(session.user.id, session.user.email);
       }
     });

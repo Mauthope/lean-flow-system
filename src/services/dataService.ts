@@ -906,8 +906,8 @@ export const dataService = {
     }
   },
 
-  getCurrentUser(): User {
-    return getStoredData<User>(STORAGE_KEYS.CURRENT_USER, INITIAL_USERS[0]);
+  getCurrentUser(): User | null {
+    return getStoredData<User | null>(STORAGE_KEYS.CURRENT_USER, null);
   },
 
   setCurrentUser(user: User): void {

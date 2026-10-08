@@ -347,18 +347,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       if (isSupabaseConfigured()) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: 'local' });
       }
     } catch (err) {
       console.warn('[SecOps Logout] Falha ao deslogar do Supabase:', err);
     }
 
+    setCurrentUser(null);
+    setDataVersion((v) => v + 1);
+
     if (typeof window !== 'undefined') {
-      // SecOps: Expurgar credenciais e tokens da sessão ativa.
-      // Os dados operacionais da fábrica (ações, setores, usuários, TPM) permanecem preservados.
       try {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
         localStorage.removeItem('lean_flow_auth_token');
+        // Expurgar atomicamente qualquer token de autenticacao do Supabase
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+            localStorage.removeItem(k);
+          }
+        });
         sessionStorage.clear();
         // Remove apenas caches efêmeros de sessão de IA
         const aiSessionKeys = Object.keys(localStorage).filter(
@@ -370,9 +377,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       window.location.href = '/login';
     }
-
-    setCurrentUser(null);
-    setDataVersion((v) => v + 1);
   };
 
   const refreshData = () => {

@@ -157,8 +157,7 @@ export function initializeLocalStorage(): void {
     localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT, JSON.stringify(tenantToSet));
     localStorage.setItem(STORAGE_KEYS.SECTORS, JSON.stringify(INITIAL_SECTORS));
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(INITIAL_USERS));
-    localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     localStorage.setItem(STORAGE_KEYS.STRATEGIC_OBJECTIVES, JSON.stringify(INITIAL_STRATEGIC_OBJECTIVES));
     localStorage.setItem(STORAGE_KEYS.KAIZEN_IDEAS, JSON.stringify(INITIAL_KAIZEN_IDEAS));
     localStorage.setItem(STORAGE_KEYS.TPM_MACHINES, JSON.stringify(INITIAL_TPM_MACHINES));
@@ -186,9 +185,6 @@ export function initializeLocalStorage(): void {
   }
   if (!localStorage.getItem(STORAGE_KEYS.ACTIONS)) {
     localStorage.setItem(STORAGE_KEYS.ACTIONS, JSON.stringify(INITIAL_ACTIONS));
-  }
-  if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_USERS[0]));
   }
   if (!localStorage.getItem(STORAGE_KEYS.KAIZEN_IDEAS)) {
     localStorage.setItem(STORAGE_KEYS.KAIZEN_IDEAS, JSON.stringify(INITIAL_KAIZEN_IDEAS));

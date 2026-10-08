@@ -35,9 +35,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   const isViewer = currentUser?.role === 'viewer';
   const hierarchyInfo = getUserHierarchyInfo(currentUser, currentTenant?.name);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
