@@ -281,6 +281,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           // 3. Sincronização bidirecional de setores, ações e ideias Kaizen (Supabase PostgreSQL)
           await dataService.syncAllFromCloud();
+          if (tenant) {
+            setAllUsers(dataService.getUsers(tenant.id));
+            setAllAgents(dataService.getAgents(tenant.id));
+            setAllViewers(dataService.getViewers(tenant.id));
+          }
+          setDataVersion((v) => v + 1);
         } catch (err) {
           console.warn('[AuthContext] Sincronização em segundo plano não pôde ser completada:', err);
         }
@@ -292,7 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadSession();
-  }, [loadSession, dataVersion]);
+  }, [loadSession]);
 
   const loginAs = (userIdOrEmail: string) => {
     const user = dataService.getUserByIdOrEmail(userIdOrEmail);

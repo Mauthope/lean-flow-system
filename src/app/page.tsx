@@ -21,6 +21,35 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
+  // Se houver callback de OAuth ou sessão corporativa ativa no navegador, entra em modo de autenticação imediato
+  const [isAuthenticating, setIsAuthenticating] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const isOAuth = hash.includes('access_token=') || search.includes('code=');
+    const existing = dataService.getCurrentUser();
+    return isOAuth || Boolean(existing && existing.active && existing.email);
+  });
+
+  // Redirecionamento instantâneo caso já exista sessão ativa gravada e não seja fluxo de retorno de OAuth
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const isOAuth = hash.includes('access_token=') || search.includes('code=');
+
+    if (!isOAuth) {
+      const existing = dataService.getCurrentUser();
+      if (existing && existing.active && existing.email) {
+        const target =
+          existing.role === 'admin' || existing.isMaster
+            ? '/admin/dashboard'
+            : '/agente/kanban';
+        router.replace(target);
+      }
+    }
+  }, [router]);
+
   // Estados e animação do Sensei (sprites)
   const [senseiPose, setSenseiPose] = useState<'speaking' | 'idea' | 'success' | 'celebrating'>('speaking');
 
@@ -95,33 +124,44 @@ export default function LoginPage() {
         } else {
           setAuthError(`Falha na autenticação corporativa Microsoft: ${cleanDesc}`);
         }
+        setIsAuthenticating(false);
         setIsLoading(false);
         window.history.replaceState(null, '', window.location.pathname);
       }
     }
 
     let isMounted = true;
+    let isProcessing = false;
 
     const handleSessionUser = async (userId: string, userEmail?: string) => {
+      if (isProcessing) return;
+      isProcessing = true;
+      setIsAuthenticating(true);
+
       try {
-        let profile = null;
-        try {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-          if (data) profile = data;
-        } catch (profileErr) {
-          console.warn('[SSO Callback] Perfil ainda sincronizando no banco por id:', profileErr);
-        }
+        const rawEmail = (userEmail || '').trim().toLowerCase();
+
+        // 1. Busca perfil e authorized_users em paralelo para eliminar latência
+        const [profileByIdRes, authUserRes] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+          rawEmail
+            ? supabase.from('authorized_users').select('*').eq('email', rawEmail).maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        let profile = profileByIdRes.data;
+        const authRecord = authUserRes.data;
 
         if (!isMounted) return;
 
-        const effectiveEmail = (profile?.email || userEmail || '').trim().toLowerCase();
-        if (!effectiveEmail) return;
+        const effectiveEmail = (profile?.email || rawEmail || authRecord?.email || '').trim().toLowerCase();
+        if (!effectiveEmail) {
+          setIsAuthenticating(false);
+          setIsLoading(false);
+          return;
+        }
 
-        // Fallback por e-mail na tabela profiles caso o id não coincida
+        // Fallback por e-mail na tabela profiles apenas se o id não coincidiu
         if (!profile && effectiveEmail) {
           try {
             const { data } = await supabase
@@ -135,16 +175,13 @@ export default function LoginPage() {
           }
         }
 
-        // 1. Verifica autorização corporativa em 3 camadas de governança:
-        // A) Perfil cadastrado e ativo no Supabase (public.profiles)
-        // B) Lista de usuários pré-autorizados na empresa (public.authorized_users)
-        // C) Cadastro prévio na base local (dataService)
+        // 2. Verifica autorização corporativa em 3 camadas de governança
         let isAuthorized = false;
         let authRole: 'admin' | 'agent' | 'viewer' = 'agent';
-        let authName = profile?.name || userEmail?.split('@')[0] || 'Colaborador';
-        let authJobTitle = profile?.job_title || 'Agente de Melhoria Contínua';
-        let authAvatar = profile?.avatar_url;
-        let authTenantId = profile?.tenant_id;
+        let authName = profile?.name || authRecord?.name || effectiveEmail.split('@')[0] || 'Colaborador';
+        let authJobTitle = profile?.job_title || authRecord?.job_title || 'Agente de Melhoria Contínua';
+        let authAvatar = profile?.avatar_url || authRecord?.avatar_url;
+        let authTenantId = profile?.tenant_id || authRecord?.tenant_id;
         let isMaster = profile?.is_master || effectiveEmail === 'mauricio.grigol@rafitec.com.br';
 
         // Camada A: Perfil no banco Supabase
@@ -156,6 +193,7 @@ export default function LoginPage() {
             authJobTitle = profile.job_title || authJobTitle;
           } else if (profile.status === 'suspenso') {
             await supabase.auth.signOut();
+            setIsAuthenticating(false);
             setAuthError(
               `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
             );
@@ -164,34 +202,23 @@ export default function LoginPage() {
           }
         }
 
-        // Camada B: Lista corporativa de pré-autorizados no Supabase (public.authorized_users)
-        if (!isAuthorized) {
-          try {
-            const { data: authRecord } = await supabase
-              .from('authorized_users')
-              .select('*')
-              .eq('email', effectiveEmail)
-              .maybeSingle();
-
-            if (authRecord) {
-              if (authRecord.active) {
-                isAuthorized = true;
-                authRole = authRecord.role;
-                authName = authRecord.name;
-                authJobTitle = authRecord.job_title || authJobTitle;
-                authTenantId = authRecord.tenant_id || authTenantId;
-                if (!authAvatar && authRecord.avatar_url) {
-                  authAvatar = authRecord.avatar_url;
-                }
-              } else {
-                await supabase.auth.signOut();
-                setAuthError(`Acesso bloqueado: O cadastro de "${effectiveEmail}" está desativado na plataforma.`);
-                setIsLoading(false);
-                return;
-              }
+        // Camada B: Lista corporativa de pré-autorizados (authorized_users)
+        if (!isAuthorized && authRecord) {
+          if (authRecord.active) {
+            isAuthorized = true;
+            authRole = authRecord.role;
+            authName = authRecord.name;
+            authJobTitle = authRecord.job_title || authJobTitle;
+            authTenantId = authRecord.tenant_id || authTenantId;
+            if (!authAvatar && authRecord.avatar_url) {
+              authAvatar = authRecord.avatar_url;
             }
-          } catch {
-            // Continua para checagem na base local
+          } else {
+            await supabase.auth.signOut();
+            setIsAuthenticating(false);
+            setAuthError(`Acesso bloqueado: O cadastro de "${effectiveEmail}" está desativado na plataforma.`);
+            setIsLoading(false);
+            return;
           }
         }
 
@@ -203,6 +230,7 @@ export default function LoginPage() {
         if (matchedUser) {
           if (!matchedUser.active) {
             await supabase.auth.signOut();
+            setIsAuthenticating(false);
             setAuthError(`Acesso bloqueado: O usuário vinculado a "${effectiveEmail}" está desativado nesta plataforma.`);
             setIsLoading(false);
             return;
@@ -220,6 +248,7 @@ export default function LoginPage() {
         // SE NÃO CONSTAR EM NENHUMA DAS BASES: BLOQUEIO TOTAL (Zero Trust)
         if (!isAuthorized) {
           await supabase.auth.signOut();
+          setIsAuthenticating(false);
           setAuthError(
             `Acesso não autorizado (Política de Acesso Lean): O e-mail corporativo "${effectiveEmail}" foi autenticado pela Microsoft, porém não possui cadastro prévio nesta plataforma. Solicite a liberação de acesso ao Administrador do Sistema.`
           );
@@ -227,7 +256,7 @@ export default function LoginPage() {
           return;
         }
 
-        // Se o usuário foi validado pelo banco de dados Supabase mas ainda não existe no storage local deste navegador:
+        // Sincronização da base local
         if (!matchedUser) {
           const effectiveTenantId = authTenantId || dataService.getCurrentTenant().id;
           matchedUser = dataService.createUser({
@@ -241,7 +270,6 @@ export default function LoginPage() {
             active: true,
           });
         } else {
-          // Atualiza dados locais para refletir status, cargo e foto do banco Supabase
           matchedUser = dataService.updateUser(matchedUser.id, {
             name: authName,
             role: authRole,
@@ -253,50 +281,18 @@ export default function LoginPage() {
           });
         }
 
-        // Se o usuário pertence a uma entidade específica, garante que o tenant ativo seja o dele
+        // Garante que o tenant ativo seja o da unidade do colaborador
         const userTenantId = authTenantId || matchedUser.tenantId;
         if (userTenantId && !matchedUser.isMaster) {
-          let targetTenant = dataService.getTenantById(userTenantId);
-          if (!targetTenant && isSupabaseConfigured()) {
-            try {
-              const { data: dbT } = await supabase
-                .from('tenants')
-                .select('*')
-                .eq('id', userTenantId)
-                .maybeSingle();
-
-              if (dbT) {
-                targetTenant = {
-                  id: dbT.id,
-                  name: dbT.name,
-                  slug: dbT.slug,
-                  cnpjOrCode: dbT.cnpj_or_code,
-                  plan: dbT.plan || 'enterprise',
-                  aiSettings: dbT.ai_settings || {},
-                  createdAt: dbT.created_at || new Date().toISOString(),
-                };
-                const currentTenants = dataService.getTenants();
-                const existsIdx = currentTenants.findIndex((t) => t.id === targetTenant!.id);
-                if (existsIdx === -1) {
-                  currentTenants.push(targetTenant);
-                } else {
-                  currentTenants[existsIdx] = targetTenant;
-                }
-                setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
-              }
-            } catch (tErr) {
-              console.warn('[SSO Callback] Falha ao carregar dados da entidade do usuário:', tErr);
-            }
-          }
-
+          const targetTenant = dataService.getTenantById(userTenantId);
           if (targetTenant) {
             dataService.setCurrentTenant(targetTenant);
           }
         }
 
-        // Garante que o perfil no Supabase esteja com status ativo e dados sincronizados
-        try {
-          await supabase
+        // Atualização assíncrona do perfil no Supabase SEM travar a navegação (fire-and-forget)
+        Promise.resolve(
+          supabase
             .from('profiles')
             .update({
               status: 'ativo',
@@ -307,25 +303,23 @@ export default function LoginPage() {
               ...(authAvatar ? { avatar_url: authAvatar } : {}),
               updated_at: new Date().toISOString(),
             })
-            .eq('id', userId);
-        } catch (e) {
-          console.warn('[SSO Callback] Falha ao atualizar perfil ativo no Supabase:', e);
-        }
+            .eq('id', userId)
+        ).catch((e: unknown) => console.warn('[SSO Callback] Atualização assíncrona do perfil:', e));
 
-        // Efetiva a sessão corporativa e redireciona
+        // Efetiva a sessão corporativa e navega imediatamente sem delay
         loginAs(matchedUser.id);
-        if (
+        const targetRoute =
           matchedUser.role === 'admin' ||
           matchedUser.isMaster ||
           isMaster ||
           effectiveEmail === 'mauricio.grigol@rafitec.com.br'
-        ) {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/agente/kanban');
-        }
+            ? '/admin/dashboard'
+            : '/agente/kanban';
+
+        router.replace(targetRoute);
       } catch (err: any) {
         console.warn('[SSO Callback] Falha na sincronização corporativa:', err);
+        setIsAuthenticating(false);
         setAuthError(err?.message || 'Falha ao sincronizar perfil corporativo no acesso SSO.');
         setIsLoading(false);
       }
@@ -334,6 +328,8 @@ export default function LoginPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         handleSessionUser(session.user.id, session.user.email);
+      } else {
+        setIsAuthenticating(false);
       }
     });
 
@@ -388,6 +384,76 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isAuthenticating && !authError) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: 'var(--bg-primary, #060a13)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem 1rem',
+          fontFamily: 'var(--font-sans)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1.25rem',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              backgroundColor: 'rgba(6, 182, 212, 0.12)',
+              border: '1px solid rgba(6, 182, 212, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#22d3ee',
+              boxShadow: '0 0 30px rgba(6, 182, 212, 0.25)',
+            }}
+          >
+            <Loader2 size={26} className="animate-spin" />
+          </div>
+          <div>
+            <h2
+              style={{
+                fontSize: '1.2rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                fontFamily: 'var(--font-heading)',
+                margin: 0,
+              }}
+            >
+              Autenticando Sessão Corporativa
+            </h2>
+            <p
+              style={{
+                fontSize: '0.8125rem',
+                color: 'var(--text-muted, #94a3b8)',
+                marginTop: '0.35rem',
+              }}
+            >
+              Validando credenciais Microsoft SSO e conectando ao Lean Flow System...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
