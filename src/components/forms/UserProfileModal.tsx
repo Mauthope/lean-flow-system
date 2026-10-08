@@ -111,7 +111,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onClose={onClose}
       title="Meu Perfil de Acesso"
       subtitle="Atualize sua foto de perfil corporativa, nome de exibição e dados profissionais"
-      maxWidth="md"
+      maxWidth="lg"
     >
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {/* Banner com Grau Hierárquico do Usuário */}

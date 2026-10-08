@@ -41,7 +41,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   };
 
   return (
-    <header
+    <>
+      <header
       className="topbar"
       style={{
         display: 'flex',
@@ -259,11 +260,13 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         </div>
       </div>
 
+      </header>
+
       {/* Modal de Edição de Perfil do Usuário Logado */}
       <UserProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
-    </header>
+    </>
   );
 };

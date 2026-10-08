@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -20,6 +21,12 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg',
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -34,23 +41,21 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalNode = (
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 100,
+        inset: 0,
+        zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1rem',
-        backgroundColor: 'var(--bg-modal-overlay, rgba(2, 6, 23, 0.82))',
+        padding: '1.5rem 1rem',
+        backgroundColor: 'var(--bg-modal-overlay, rgba(2, 6, 23, 0.85))',
         backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -63,8 +68,19 @@ export const Modal: React.FC<ModalProps> = ({
           border: '1px solid var(--border-modal, rgba(255, 255, 255, 0.12))',
           borderRadius: '16px',
           width: '100%',
-          maxWidth: maxWidth === '4xl' ? '1000px' : maxWidth === '2xl' ? '850px' : maxWidth === 'lg' ? '680px' : '520px',
-          maxHeight: '90vh',
+          maxWidth:
+            maxWidth === '4xl'
+              ? '1000px'
+              : maxWidth === '2xl'
+              ? '850px'
+              : maxWidth === 'xl'
+              ? '780px'
+              : maxWidth === 'lg'
+              ? '680px'
+              : maxWidth === 'md'
+              ? '580px'
+              : '480px',
+          maxHeight: 'min(90vh, 840px)',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(6, 182, 212, 0.15)',
@@ -83,6 +99,7 @@ export const Modal: React.FC<ModalProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             backgroundColor: 'var(--bg-surface, #0f172a)',
+            flexShrink: 0,
           }}
         >
           <div>
@@ -137,4 +154,6 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalNode, document.body);
 };
