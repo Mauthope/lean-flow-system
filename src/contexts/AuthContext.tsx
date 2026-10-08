@@ -367,6 +367,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         });
         sessionStorage.clear();
+        localStorage.setItem('lean_flow_logged_out', 'true');
+        sessionStorage.removeItem('lean_flow_auth_intent');
         // Remove apenas caches efêmeros de sessão de IA
         const aiSessionKeys = Object.keys(localStorage).filter(
           (k) => k.startsWith('sensei_session_') || k.startsWith('gemini_session_')

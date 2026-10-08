@@ -26,12 +26,30 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
+  // Helper para verificar se a navegação atual é um retorno de OAuth ou se há intenção ativa de login
+  const isAuthIntent = () => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const hasParams =
+      hash.includes('access_token=') ||
+      hash.includes('code=') ||
+      search.includes('code=') ||
+      search.includes('access_token=');
+    const storedIntent = sessionStorage.getItem('lean_flow_auth_intent') === 'microsoft_sso';
+    return hasParams || storedIntent;
+  };
+
   // Fases da autenticação corporativa: 'idle' | 'redirecting' | 'authenticating' | 'syncing' | 'ready'
   const [authPhase, setAuthPhase] = useState<'idle' | 'redirecting' | 'authenticating' | 'syncing' | 'ready'>(() => {
     if (typeof window === 'undefined') return 'idle';
-    const hash = window.location.hash || '';
-    const search = window.location.search || '';
-    return hash.includes('access_token=') || search.includes('code=') ? 'authenticating' : 'idle';
+    const returning = isAuthIntent();
+    if (returning) {
+      sessionStorage.setItem('lean_flow_auth_intent', 'microsoft_sso');
+      localStorage.removeItem('lean_flow_logged_out');
+      return 'authenticating';
+    }
+    return 'idle';
   });
 
   // Prefetch antecipado das rotas alvo para eliminar latência de compilação/navegação do Next.js
@@ -251,6 +269,10 @@ export default function LoginPage() {
 
         // Efetiva a sessão corporativa e navega imediatamente sem delay
         loginAs(matchedUser.id);
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('lean_flow_auth_intent');
+          localStorage.removeItem('lean_flow_logged_out');
+        }
         setAuthPhase('ready');
 
         const targetRoute =
@@ -264,48 +286,58 @@ export default function LoginPage() {
         router.replace(targetRoute);
       } catch (err: any) {
         console.warn('[SSO Callback] Falha na sincronização corporativa:', err);
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('lean_flow_auth_intent');
+        }
         setAuthPhase('idle');
         setAuthError(err?.message || 'Falha ao sincronizar perfil corporativo no acesso SSO.');
         setIsLoading(false);
       }
     };
 
-    const isOAuth =
-      typeof window !== 'undefined' &&
-      (window.location.hash.includes('access_token=') ||
-        window.location.search.includes('code='));
+    const hasIntent = isAuthIntent();
 
     let safetyTimer: ReturnType<typeof setTimeout> | null = null;
 
-    if (isOAuth) {
+    if (hasIntent) {
       setAuthPhase('authenticating');
 
       // Tenta recuperar de imediato caso os tokens já tenham sido persistidos
       supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!isMounted) return;
         if (session?.user) {
           handleSessionUser(session.user.id, session.user.email);
         }
-        // Se session for null no primeiro tick, NÃO desativa a tela de autenticação!
-        // O cliente Supabase JS ainda está extraindo e persistindo os tokens da URL.
       });
 
-      // Timeout de segurança (12s) caso o token seja inválido ou ocorra falha de rede
+      // Timeout de segurança (15s) caso o token seja inválido ou ocorra falha de rede
       safetyTimer = setTimeout(() => {
         if (isMounted && !isProcessing) {
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('lean_flow_auth_intent');
+          }
           setAuthError('O tempo limite para validação da sessão corporativa expirou. Por favor, tente novamente.');
           setAuthPhase('idle');
           setIsLoading(false);
         }
-      }, 12000);
-    } else {
-      setAuthPhase('idle');
+      }, 15000);
     }
 
+    // Escuta eventos de autenticação do Supabase (crucial no fluxo PKCE do Microsoft SSO)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user && isOAuth) {
-        handleSessionUser(session.user.id, session.user.email);
+      if (!isMounted) return;
+      if (
+        (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') &&
+        session?.user
+      ) {
+        const wasExplicitlyLoggedOut =
+          typeof window !== 'undefined' && localStorage.getItem('lean_flow_logged_out') === 'true';
+
+        if (!wasExplicitlyLoggedOut || hasIntent || isAuthIntent()) {
+          handleSessionUser(session.user.id, session.user.email);
+        }
       }
     });
 
@@ -321,6 +353,11 @@ export default function LoginPage() {
     setAuthSuccess(null);
     setIsLoading(true);
     setAuthPhase('redirecting');
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('lean_flow_auth_intent', 'microsoft_sso');
+      localStorage.removeItem('lean_flow_logged_out');
+    }
 
     try {
       if (isSupabaseConfigured()) {
@@ -339,18 +376,27 @@ export default function LoginPage() {
         });
 
         if (error) {
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('lean_flow_auth_intent');
+          }
           setAuthPhase('idle');
           setAuthError(
             `Integração Microsoft Entra ID: ${error.message}. (Aguardando ativação do provedor Azure no Supabase pela equipe de TI/Infraestrutura).`
           );
         }
       } else {
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('lean_flow_auth_intent');
+        }
         setAuthPhase('idle');
         setAuthError(
           'Integração Microsoft Entra ID (SSO Corporativo): Requer conexão ativa com o servidor corporativo.'
         );
       }
     } catch (err: any) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('lean_flow_auth_intent');
+      }
       setAuthPhase('idle');
       setAuthError(err?.message || 'Falha ao iniciar autenticação com Microsoft.');
     } finally {
