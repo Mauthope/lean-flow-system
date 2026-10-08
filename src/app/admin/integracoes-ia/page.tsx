@@ -32,15 +32,12 @@ import {
   validateGeminiApiKey,
   synthesizeSpeechGoogleCloud,
   SENSEI_PROFILE,
-  saveGeminiApiKey,
   saveVoicePreference,
-  getGeminiApiKey,
 } from '@/services/geminiService';
 
 export default function IntegracoesIaPage() {
   const { currentTenant, currentUser } = useAuth();
 
-  const [apiKey, setApiKey] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string>(SENSEI_PROFILE.defaultVoice);
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
 
@@ -132,10 +129,6 @@ export default function IntegracoesIaPage() {
   // Carrega configurações da Entidade
   useEffect(() => {
     const tenant = dataService.getCurrentTenant();
-    const effectiveKey = tenant?.aiSettings?.geminiApiKey || getGeminiApiKey();
-    if (effectiveKey) {
-      setApiKey(effectiveKey);
-    }
     if (tenant?.aiSettings?.preferredVoice) {
       setSelectedVoice(tenant.aiSettings.preferredVoice);
     }
@@ -283,23 +276,17 @@ export default function IntegracoesIaPage() {
   };
 
   // ===================================================================
-  // TESTAR VOZ DO SENSEI
+  // TESTAR VOZ DO SENSEI VIA SERVIDOR
   // ===================================================================
   const handleTestVoice = async () => {
-    const cleanKey = apiKey.trim();
-    if (!cleanKey) {
-      setValidationResult({ valid: false, message: 'Por favor, insira uma chave do Google primeiro.' });
-      return;
-    }
-
     setIsTestingVoice(true);
+    setValidationResult(null);
     try {
       const sampleText =
         'Olá! Eu sou o Sensei, o especialista de inteligência artificial da sua fábrica. Todas as integrações de voz e análise Kaizen estão operando com sucesso!';
 
       const tts = await synthesizeSpeechGoogleCloud({
         text: sampleText,
-        apiKey: cleanKey,
         voiceName: selectedVoice,
       });
 
@@ -311,12 +298,12 @@ export default function IntegracoesIaPage() {
       } else {
         setValidationResult({
           valid: false,
-          message: tts.error || 'Não foi possível gerar áudio com esta chave.',
+          message: tts.error || 'Não foi possível gerar áudio com o serviço de IA do servidor.',
         });
       }
     } catch (err: any) {
       setIsTestingVoice(false);
-      setValidationResult({ valid: false, message: err?.message || 'Erro ao testar voz.' });
+      setValidationResult({ valid: false, message: err?.message || 'Erro ao testar voz do servidor.' });
     }
   };
 
@@ -331,7 +318,7 @@ export default function IntegracoesIaPage() {
           </h1>
         </div>
         <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: 0 }}>
-          Centralize os tokens do Google Gemini AI e Google Cloud Text-to-Speech para toda a organização{' '}
+          Infraestrutura corporativa de IA (Google Gemini e Text-to-Speech) gerenciada centralmente no servidor para todas as entidades da organização{' '}
           <strong style={{ color: '#22d3ee' }}>({currentTenant?.name || 'Entidade Lean'})</strong>.
         </p>
       </div>
@@ -350,57 +337,60 @@ export default function IntegracoesIaPage() {
         }}
       >
         {/* Banner Informativo */}
+        {/* Card: Infraestrutura de IA Centralizada no Servidor (Vercel) */}
         <div
           style={{
-            backgroundColor: 'rgba(6, 182, 212, 0.08)',
-            border: '1px solid rgba(6, 182, 212, 0.25)',
-            borderRadius: '12px',
-            padding: '1rem 1.25rem',
+            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: '14px',
+            padding: '1.25rem 1.5rem',
             display: 'flex',
-            alignItems: 'flex-start',
+            flexDirection: 'column',
             gap: '0.75rem',
           }}
         >
-          <Building2 size={20} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <div>
-            <h4 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#22d3ee', margin: '0 0 0.2rem' }}>
-              Gestão Centralizada no Nível da Organização
-            </h4>
-            <p style={{ fontSize: '0.78125rem', color: '#cbd5e1', margin: 0, lineHeight: 1.45 }}>
-              A chave configurada abaixo é compartilhada automaticamente com todos os agentes, líderes e apresentadores da entidade. Ninguém mais precisará colar chaves no navegador.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <ShieldCheck size={22} color="#10b981" />
+              <div>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Chave de IA Corporativa Centralizada no Servidor (Vercel)
+                </h4>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  Governança AppSec Grupo Vaccaro &bull; Compartilhada automaticamente com todas as entidades
+                </span>
+              </div>
+            </div>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#34d399',
+                padding: '0.3rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 8px #10b981',
+                }}
+              />
+              Ativa &bull; Multi-Tenant Automático
+            </div>
           </div>
-        </div>
 
-        {/* Campo 1: Chave de API do Google */}
-        <div>
-          <label style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.45rem' }}>
-            <Key size={14} color="#fbbf24" />
-            Chave de API do Google Cloud (Gemini + Text-to-Speech):
-          </label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-              setValidationResult(null);
-              setIsSaved(false);
-            }}
-            placeholder="Cole sua chave gerada no Google Cloud Console (AIzaSy...)"
-            style={{
-              width: '100%',
-              backgroundColor: '#040711',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '10px',
-              padding: '0.7rem 1rem',
-              color: '#ffffff',
-              fontSize: '0.875rem',
-              fontFamily: 'monospace',
-            }}
-          />
-          <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.35rem' }}>
-            A chave deve ter permissão para <strong>Cloud Text-to-Speech API</strong> no Google Cloud Console.
-          </span>
+          <p style={{ fontSize: '0.8rem', color: '#cbd5e1', margin: 0, lineHeight: 1.5 }}>
+            A autenticação com os serviços de Inteligência Artificial do <strong>Google Gemini</strong> e síntese de voz <strong>Neural2</strong> é gerenciada exclusivamente no servidor backend corporativo (Vercel) via variáveis de ambiente seguras (<code style={{ color: '#22d3ee', fontSize: '0.75rem' }}>AI_API_KEY</code> / <code style={{ color: '#22d3ee', fontSize: '0.75rem' }}>GEMINI_API_KEY</code>). Nenhuma entidade precisa cadastrar, gerenciar ou colar tokens manualmente no navegador.
+          </p>
         </div>
 
         {/* Campo 2: Voz Oficial do Sensei */}
@@ -537,7 +527,7 @@ export default function IntegracoesIaPage() {
           <button
             type="button"
             onClick={handleTestVoice}
-            disabled={isTestingVoice || isValidating || !apiKey.trim()}
+            disabled={isTestingVoice || isValidating}
             className="btn btn-sm"
             style={{
               backgroundColor: 'rgba(6, 182, 212, 0.15)',
@@ -568,7 +558,7 @@ export default function IntegracoesIaPage() {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isValidating || !apiKey.trim()}
+            disabled={isValidating}
             className="btn btn-primary"
             style={{
               padding: '0.65rem 1.75rem',
@@ -594,7 +584,7 @@ export default function IntegracoesIaPage() {
             ) : (
               <>
                 <ShieldCheck size={16} />
-                Salvar para Toda a Entidade
+                Validar Conexão & Salvar Preferências
               </>
             )}
           </button>
