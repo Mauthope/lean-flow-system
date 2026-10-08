@@ -11,9 +11,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  ShieldCheck,
   Workflow,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -679,9 +679,9 @@ export default function LoginPage() {
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', textAlign: 'center' }}>
-              <ShieldCheck size={15} style={{ color: '#22d3ee' }} />
-              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em' }}>Microsoft SSO</span>
-              <span style={{ fontSize: '0.625rem', color: '#64748b' }}>Entra ID Seguro</span>
+              <Sparkles size={15} style={{ color: '#22d3ee' }} />
+              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em' }}>Sensei IA</span>
+              <span style={{ fontSize: '0.625rem', color: '#64748b' }}>Copiloto Integrado</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', textAlign: 'center', borderLeft: '1px solid rgba(255, 255, 255, 0.06)', borderRight: '1px solid rgba(255, 255, 255, 0.06)' }}>
               <Workflow size={15} style={{ color: '#10b981' }} />
