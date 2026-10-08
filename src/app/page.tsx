@@ -11,6 +11,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
+  ShieldCheck,
+  Workflow,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -28,53 +31,6 @@ export default function LoginPage() {
     const search = window.location.search || '';
     return hash.includes('access_token=') || search.includes('code=');
   });
-
-  // Estados e animação do Sensei (sprites)
-  const [senseiPose, setSenseiPose] = useState<'speaking' | 'idea' | 'success' | 'celebrating'>('speaking');
-
-  useEffect(() => {
-    // Pré-carregamento dos sprites na memória do navegador
-    if (typeof window !== 'undefined') {
-      const sprites = [
-        '/sprites/sensei-speaking.png',
-        '/sprites/sensei-idea.png',
-        '/sprites/sensei-success.png',
-        '/sprites/sensei-celebrating.png',
-      ];
-      sprites.forEach((src) => {
-        const img = new window.Image();
-        img.src = src;
-      });
-    }
-
-    // Breve animação de entrada do Sensei (Apresentação -> Ideia -> Confirmação)
-    const t1 = setTimeout(() => {
-      setSenseiPose('idea');
-    }, 1200);
-
-    const t2 = setTimeout(() => {
-      setSenseiPose('success');
-    }, 2500);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, []);
-
-  const handleSenseiInteract = () => {
-    setSenseiPose('celebrating');
-    setTimeout(() => {
-      setSenseiPose('success');
-    }, 2000);
-  };
-
-  const senseiSrc = {
-    speaking: '/sprites/sensei-speaking.png',
-    idea: '/sprites/sensei-idea.png',
-    success: '/sprites/sensei-success.png',
-    celebrating: '/sprites/sensei-celebrating.png',
-  }[senseiPose];
 
   // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
   useEffect(() => {
@@ -522,192 +478,222 @@ export default function LoginPage() {
           zIndex: 10,
         }}
       >
-        {/* Marca d'Água Japonesa Lean & Kaizen (改善 / リーン / 現場) */}
+        {/* Linha superior de brilho executivo */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
-            inset: 0,
-            overflow: 'hidden',
+            top: 0,
+            left: '12%',
+            right: '12%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.7) 40%, rgba(16, 185, 129, 0.7) 60%, transparent 100%)',
+            zIndex: 2,
+            filter: 'blur(0.2px)',
+          }}
+        />
+
+        {/* Respiro luminoso superior suave */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            top: '-80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '320px',
+            height: '160px',
+            background: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.12) 0%, transparent 70%)',
             pointerEvents: 'none',
-            userSelect: 'none',
             zIndex: 0,
           }}
-        >
-          {/* Kanji Monumental Central: 改善 (Kaizen / Melhoria) */}
+        />
+
+        {/* Header Hero Moderno Corporativo */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem', position: 'relative', zIndex: 1 }}>
+          {/* Badge de Plataforma Corporativa 4.0 */}
           <div
             style={{
-              position: 'absolute',
-              bottom: '10%',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              fontSize: '11.5rem',
-              fontWeight: 900,
-              lineHeight: 0.9,
-              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "MS Mincho", serif',
-              color: 'rgba(255, 255, 255, 0.025)',
-              textShadow: '0 0 40px rgba(6, 182, 212, 0.06)',
-              letterSpacing: '-0.08em',
-              whiteSpace: 'nowrap',
-              filter: 'blur(0.5px)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.2)',
+              marginBottom: '1.25rem',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 2px 10px rgba(6, 182, 212, 0.06)',
             }}
           >
-            改善
+            <span
+              style={{
+                position: 'relative',
+                display: 'flex',
+                height: '8px',
+                width: '8px',
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  display: 'inline-flex',
+                  height: '100%',
+                  width: '100%',
+                  borderRadius: '9999px',
+                  backgroundColor: '#34d399',
+                  opacity: 0.75,
+                  animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+                }}
+              />
+              <span
+                style={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  borderRadius: '9999px',
+                  height: '8px',
+                  width: '8px',
+                  backgroundColor: '#10b981',
+                }}
+              />
+            </span>
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: '#22d3ee',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              Plataforma Corporativa 4.0 • Grupo Vaccaro
+            </span>
           </div>
 
-          {/* Coluna Vertical Esquerda: 現場 • リーン (Gemba • Lean) */}
+          {/* Emblema Luminous High-Tech 4.0 */}
           <div
             style={{
-              position: 'absolute',
-              top: '16%',
-              left: '1.25rem',
-              writingMode: 'vertical-rl',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              letterSpacing: '0.45em',
-              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif',
-              color: 'rgba(6, 182, 212, 0.1)',
-            }}
-          >
-            現場 • リーン
-          </div>
-
-          {/* Coluna Vertical Direita: 継続的改善 (Melhoria Contínua) */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '16%',
-              right: '1.25rem',
-              writingMode: 'vertical-rl',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              letterSpacing: '0.45em',
-              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif',
-              color: 'rgba(255, 255, 255, 0.06)',
-            }}
-          >
-            継続的改善
-          </div>
-
-          {/* Selo Minimalista Tradicional Hanko / 印 (Carimbo Kaizen) */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '1.5rem',
-              right: '1.5rem',
-              width: '28px',
-              height: '28px',
-              border: '1px solid rgba(6, 182, 212, 0.18)',
-              borderRadius: '6px',
+              position: 'relative',
+              width: '76px',
+              height: '76px',
+              margin: '0 auto 1.25rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '0.6875rem',
-              fontWeight: 700,
-              fontFamily: '"Noto Serif JP", "Hiragino Mincho ProN", serif',
-              color: 'rgba(6, 182, 212, 0.3)',
-              backgroundColor: 'rgba(6, 182, 212, 0.03)',
             }}
           >
-            改
-          </div>
-        </div>
-
-        {/* Header with Sensei Hero & Title */}
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem', position: 'relative', zIndex: 1 }}>
-          {/* Sensei Animated Hero (Substitui o escudo, 4x maior) */}
-          <div
-            onClick={handleSenseiInteract}
-            title="Sensei Lean (Clique para interagir)"
-            style={{
-              position: 'relative',
-              display: 'inline-flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              height: '208px',
-              width: '130px',
-              margin: '0 auto 0.75rem',
-              cursor: 'pointer',
-              userSelect: 'none',
-              transition: 'transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.06) translateY(-4px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1) translateY(0)';
-            }}
-          >
-            {/* Halo de iluminacao volumetrica ao fundo */}
+            {/* Halo de iluminação volumétrica ambiente */}
             <div
               style={{
                 position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '160px',
-                height: '160px',
+                inset: '-12px',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(13, 148, 136, 0.08) 50%, transparent 70%)',
-                pointerEvents: 'none',
+                background: 'radial-gradient(circle, rgba(34, 211, 238, 0.25) 0%, rgba(16, 185, 129, 0.12) 45%, transparent 70%)',
+                filter: 'blur(8px)',
                 zIndex: 0,
+                pointerEvents: 'none',
               }}
             />
 
-            {/* Sombra de chao eterea */}
+            {/* Moldura Squircle High-Tech */}
             <div
               style={{
-                position: 'absolute',
-                bottom: '2px',
-                width: '90px',
-                height: '14px',
-                borderRadius: '50%',
-                background: 'radial-gradient(ellipse at center, rgba(6, 182, 212, 0.45) 0%, rgba(2, 6, 23, 0.8) 60%, transparent 80%)',
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                borderRadius: '22px',
+                background: 'linear-gradient(145deg, #0f1d36 0%, #060a14 100%)',
+                border: '1px solid rgba(34, 211, 238, 0.35)',
+                boxShadow: '0 12px 28px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(6, 182, 212, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 zIndex: 1,
               }}
-            />
+            >
+              {/* Vetor de Fluxo Contínuo Lean estilizado (Kanban / Value Stream / Continuous Flow) */}
+              <svg
+                width="38"
+                height="38"
+                viewBox="0 0 38 38"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ filter: 'drop-shadow(0 2px 8px rgba(34, 211, 238, 0.4))' }}
+              >
+                <defs>
+                  <linearGradient id="leanFlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#22d3ee" />
+                    <stop offset="100%" stopColor="#10b981" />
+                  </linearGradient>
+                </defs>
 
-            {/* Imagem do Sensei Pixel Art em alta resolucao */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={senseiSrc}
-              alt="Sensei Lean"
-              style={{
-                height: '204px',
-                width: 'auto',
-                objectFit: 'contain',
-                position: 'relative',
-                zIndex: 2,
-                filter: 'drop-shadow(0 8px 24px rgba(6, 182, 212, 0.35))',
-                imageRendering: 'pixelated',
-                transition: 'opacity 0.2s ease',
-              }}
-            />
+                {/* 3 Estações do Fluxo Contínuo Lean (Kanban Columns) */}
+                <rect x="6" y="9" width="6" height="20" rx="3" fill="url(#leanFlowGrad)" fillOpacity="0.3" stroke="url(#leanFlowGrad)" strokeWidth="1.75" />
+                <rect x="16" y="5" width="6" height="28" rx="3" fill="url(#leanFlowGrad)" fillOpacity="0.8" stroke="#22d3ee" strokeWidth="2" />
+                <rect x="26" y="9" width="6" height="20" rx="3" fill="url(#leanFlowGrad)" fillOpacity="0.3" stroke="url(#leanFlowGrad)" strokeWidth="1.75" />
+
+                {/* Linhas de conexão e fluxo contínuo */}
+                <path d="M12 19H16M22 19H26" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="19" cy="19" r="2.2" fill="#ffffff" />
+              </svg>
+            </div>
           </div>
 
           <h1
             style={{
-              fontSize: '1.75rem',
+              fontSize: '1.875rem',
               fontWeight: 800,
-              color: 'var(--text-heading, #ffffff)',
+              color: '#ffffff',
               fontFamily: 'var(--font-heading)',
-              letterSpacing: '-0.02em',
-              margin: '0.25rem 0 0',
+              letterSpacing: '-0.03em',
+              lineHeight: 1.2,
+              margin: '0 0 0.5rem',
             }}
           >
-            Fluxo Lean 4.0
+            Fluxo Lean <span style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #10b981 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>System</span>
           </h1>
           <p
             style={{
-              fontSize: '0.84375rem',
+              fontSize: '0.875rem',
               color: 'var(--text-muted, #94a3b8)',
-              marginTop: '0.35rem',
+              margin: '0 auto 1.5rem',
+              maxWidth: '380px',
+              lineHeight: 1.5,
               fontFamily: 'var(--font-sans)',
             }}
           >
-            Acesso Corporativo
+            Gestão Integrada de Fluxo Contínuo, Kaizen & Custo Evitado no Gemba
           </p>
+
+          {/* Micro-Badges de Confiança Corporativa */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem',
+              padding: '0.65rem 0.75rem',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', textAlign: 'center' }}>
+              <ShieldCheck size={15} style={{ color: '#22d3ee' }} />
+              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em' }}>Microsoft SSO</span>
+              <span style={{ fontSize: '0.625rem', color: '#64748b' }}>Entra ID Seguro</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', textAlign: 'center', borderLeft: '1px solid rgba(255, 255, 255, 0.06)', borderRight: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <Workflow size={15} style={{ color: '#10b981' }} />
+              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em' }}>Fluxo & Kanban</span>
+              <span style={{ fontSize: '0.625rem', color: '#64748b' }}>Metodologia Lean</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem', textAlign: 'center' }}>
+              <TrendingUp size={15} style={{ color: '#38bdf8' }} />
+              <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#e2e8f0', letterSpacing: '-0.01em' }}>Auditoria ROI</span>
+              <span style={{ fontSize: '0.625rem', color: '#64748b' }}>Custo Evitado</span>
+            </div>
+          </div>
         </div>
 
         {/* FEEDBACK MESSAGES */}
