@@ -31,9 +31,19 @@ export const SenseiFloatingAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(false); // Desativado por padrão conforme solicitado
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+
+  const toggleVoice = () => {
+    setVoiceEnabled((prev) => {
+      const next = !prev;
+      if (!next && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      return next;
+    });
+  };
 
   const [messages, setMessages] = useState<SenseiChatMessage[]>(() => {
     return [
@@ -430,7 +440,7 @@ export const SenseiFloatingAssistant: React.FC = () => {
             {/* Ações do Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <button
-                onClick={() => setVoiceEnabled(!voiceEnabled)}
+                onClick={toggleVoice}
                 title={voiceEnabled ? 'Desativar voz do Sensei' : 'Ativar voz do Sensei'}
                 style={{
                   padding: '0.45rem',
