@@ -70,6 +70,7 @@ import {
 } from '../lib/storage';
 import { generateProtocol, generateId } from '../lib/utils';
 import { LEAN_EXAM_QUESTIONS, ExamQuestion } from '../data/leanExamQuestions';
+import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 export const dataService = {
   // ================= TENANTS / ENTIDADES =================
@@ -558,6 +559,103 @@ export const dataService = {
     return this.getSectors('all').find((s) => s.id === id);
   },
 
+  async persistSectorToCloud(sector: Sector): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('sectors').upsert(
+        {
+          id: sector.id,
+          tenant_id: sector.tenantId,
+          name: sector.name,
+          code: sector.code,
+          description: sector.description || null,
+          color: sector.color || '#0284c7',
+          requires_control_document: Boolean(sector.requiresTrackingDoc),
+          control_document_name: sector.trackingDocLabel || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) {
+        console.warn('[dataService] Erro ao sincronizar setor com Supabase:', error.message);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir setor no Supabase:', err);
+    }
+  },
+
+  async deleteSectorFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('sectors').delete().eq('id', id);
+      if (error) {
+        console.warn('[dataService] Erro ao excluir setor no Supabase:', error.message);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir setor no Supabase:', err);
+    }
+  },
+
+  async syncSectorsFromCloud(tenantId?: string): Promise<Sector[]> {
+    if (!isSupabaseConfigured()) return this.getSectors(tenantId);
+
+    try {
+      const { data: cloudSectors, error } = await supabase.from('sectors').select('*');
+      if (error || !cloudSectors) {
+        console.warn('[dataService] Sincronização de setores da nuvem não pôde ser concluída:', error?.message);
+        return this.getSectors(tenantId);
+      }
+
+      const mappedCloudSectors: Sector[] = cloudSectors.map((row: any) => {
+        const docName = row.control_document_name || '';
+        const lower = docName.toLowerCase();
+        const isPurchase = lower.includes('compra') || lower.includes('oc');
+        const isWork = lower.includes('servi') || lower.includes('os');
+        const trackingDocType: 'purchase_order' | 'work_order' | 'custom' = isPurchase
+          ? 'purchase_order'
+          : isWork
+          ? 'work_order'
+          : 'custom';
+
+        return {
+          id: row.id,
+          tenantId: row.tenant_id,
+          name: row.name,
+          code: row.code,
+          description: row.description || '',
+          color: row.color || '#0284c7',
+          requiresTrackingDoc: Boolean(row.requires_control_document),
+          trackingDocType,
+          trackingDocLabel: docName || undefined,
+          createdAt: row.created_at || new Date().toISOString(),
+        };
+      });
+
+      // Setores locais existentes
+      const localSectors = getStoredData<Sector[]>(STORAGE_KEYS.SECTORS, INITIAL_SECTORS);
+      const cloudIdSet = new Set(mappedCloudSectors.map((s) => s.id));
+
+      // Identifica setores cadastrados localmente que ainda não foram para a nuvem
+      const unsyncedLocals = localSectors.filter((s) => !cloudIdSet.has(s.id));
+      if (unsyncedLocals.length > 0) {
+        for (const localSec of unsyncedLocals) {
+          await this.persistSectorToCloud(localSec);
+        }
+      }
+
+      // Mescla base da nuvem com eventuais registros locais novos
+      const merged = [...mappedCloudSectors, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.SECTORS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((s) => s.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de setores:', err);
+      return this.getSectors(tenantId);
+    }
+  },
+
   createSector(sector: Omit<Sector, 'id' | 'createdAt'>): Sector {
     const sectors = this.getSectors('all');
     const newSector: Sector = {
@@ -567,6 +665,9 @@ export const dataService = {
     };
     sectors.push(newSector);
     setStoredData(STORAGE_KEYS.SECTORS, sectors);
+    if (isSupabaseConfigured()) {
+      this.persistSectorToCloud(newSector).catch((err) => console.warn(err));
+    }
     return newSector;
   },
 
@@ -577,12 +678,18 @@ export const dataService = {
     
     sectors[index] = { ...sectors[index], ...updates };
     setStoredData(STORAGE_KEYS.SECTORS, sectors);
+    if (isSupabaseConfigured()) {
+      this.persistSectorToCloud(sectors[index]).catch((err) => console.warn(err));
+    }
     return sectors[index];
   },
 
   deleteSector(id: string): void {
     const sectors = this.getSectors('all').filter((s) => s.id !== id);
     setStoredData(STORAGE_KEYS.SECTORS, sectors);
+    if (isSupabaseConfigured()) {
+      this.deleteSectorFromCloud(id).catch((err) => console.warn(err));
+    }
   },
 
   // ================= USERS / AGENTS =================
@@ -788,6 +895,227 @@ export const dataService = {
     );
   },
 
+  async persistActionToCloud(action: LeanAction): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const isUuid = (val?: string) =>
+        Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
+      const { error } = await supabase.from('lean_actions').upsert(
+        {
+          id: action.id,
+          tenant_id: action.tenantId,
+          protocol: action.protocol,
+          title: action.title,
+          description: action.description || null,
+          origin_sector_id: action.originSectorId || null,
+          target_sector_id: action.targetSectorId || null,
+          assigned_agent_id: isUuid(action.assignedAgentId) ? action.assignedAgentId : null,
+          status: action.status,
+          priority: action.priority,
+          waste_category: action.wasteCategory,
+          assessment_dimension_id: action.assessmentDimensionId || null,
+          strategic_objective_id: action.strategicObjectiveId || null,
+          pdca_stage: action.pdcaStage || 'plan',
+          estimated_cost_avoided: Number(action.estimatedCostAvoided) || 0,
+          actual_cost_avoided: Number(action.actualCostAvoided) || 0,
+          investment_costs: action.projectCosts || {},
+          cost_breakdown: action.costBreakdown || {},
+          due_date: action.dueDate || null,
+          original_end_date: action.originalEndDate || null,
+          postponed_count: Number(action.postponedCount) || 0,
+          conclusion_date: action.conclusionDate || null,
+          poka_yoke_status: action.pokaYokeStatus || 'aprovado',
+          poka_yoke_refined_text: action.pokaYokeRefinedText || null,
+          submitted_for_approval: Boolean(action.submittedForApproval),
+          submitted_at: action.submittedAt || null,
+          master_approved: Boolean(action.masterApproved),
+          master_approved_at: action.masterApprovedAt || null,
+          master_approver_name: action.masterApproverName || null,
+          methodology_data: {
+            checklist: action.checklist || [],
+            quarterlyFollowUp: action.quarterlyFollowUp,
+            problemStatement: action.problemStatement,
+            targetMetricName: action.targetMetricName,
+            targetMetricUnit: action.targetMetricUnit,
+            baselineValue: action.baselineValue,
+            targetGoalValue: action.targetGoalValue,
+            currentProblemCostMonthly: action.currentProblemCostMonthly,
+            fiveWhys: action.fiveWhys,
+            pareto: action.pareto,
+            ishikawa: action.ishikawa,
+            pilotArea: action.pilotArea,
+            pilotTestObservations: action.pilotTestObservations,
+            photoBeforeUrl: action.photoBeforeUrl,
+            photoAfterUrl: action.photoAfterUrl,
+            achievedValue: action.achievedValue,
+            netSavings: action.netSavings,
+            roiPercentage: action.roiPercentage,
+            paybackMonths: action.paybackMonths,
+            hoursSaved: action.hoursSaved,
+            attachments: action.attachments,
+            assignedAgentId: action.assignedAgentId,
+            assignedAgentName: action.assignedAgentName,
+            assignedAgentAvatar: action.assignedAgentAvatar,
+            originSectorName: action.originSectorName,
+            targetSectorName: action.targetSectorName,
+            strategicObjectiveName: action.strategicObjectiveName,
+            senseiStrategicAudit: action.senseiStrategicAudit,
+            controllershipAudit: action.controllershipAudit,
+            isPublicDemand: action.isPublicDemand,
+            requesterName: action.requesterName,
+            requesterEmail: action.requesterEmail,
+            requesterDepartment: action.requesterDepartment,
+            leaderName: action.leaderName,
+            teamMembers: action.teamMembers,
+            notes: action.notes,
+          },
+          timeline_notes: action.notes || [],
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) {
+        console.warn('[dataService] Erro ao sincronizar ação Lean no Supabase:', error.message);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir ação Lean no Supabase:', err);
+    }
+  },
+
+  async deleteActionFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('lean_actions').delete().eq('id', id);
+      if (error) {
+        console.warn('[dataService] Erro ao excluir ação Lean no Supabase:', error.message);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir ação Lean no Supabase:', err);
+    }
+  },
+
+  async syncActionsFromCloud(tenantId?: string): Promise<LeanAction[]> {
+    if (!isSupabaseConfigured()) return this.getActions(tenantId);
+
+    try {
+      const { data: cloudActions, error } = await supabase.from('lean_actions').select('*');
+      if (error || !cloudActions) {
+        console.warn('[dataService] Sincronização de ações da nuvem não pôde ser concluída:', error?.message);
+        return this.getActions(tenantId);
+      }
+
+      const mappedCloudActions: LeanAction[] = cloudActions.map((row: any) => {
+        const method = row.methodology_data || {};
+        return {
+          id: row.id,
+          protocol: row.protocol,
+          tenantId: row.tenant_id,
+          title: row.title,
+          description: row.description || '',
+          wasteCategory: row.waste_category,
+          originSectorId: row.origin_sector_id || method.originSectorId || '',
+          originSectorName: method.originSectorName || '',
+          targetSectorId: row.target_sector_id || method.targetSectorId,
+          targetSectorName: method.targetSectorName,
+          status: row.status,
+          priority: row.priority,
+          pdcaStage: row.pdca_stage,
+          estimatedCostAvoided: Number(row.estimated_cost_avoided) || 0,
+          actualCostAvoided: Number(row.actual_cost_avoided) || 0,
+          costBreakdown: row.cost_breakdown || method.costBreakdown || {},
+          projectCosts: row.investment_costs || method.projectCosts || {},
+          dueDate: row.due_date,
+          originalEndDate: row.original_end_date,
+          postponedCount: Number(row.postponed_count) || 0,
+          conclusionDate: row.conclusion_date,
+          pokaYokeStatus: row.poka_yoke_status,
+          pokaYokeRefinedText: row.poka_yoke_refined_text,
+          submittedForApproval: Boolean(row.submitted_for_approval),
+          submittedAt: row.submitted_at,
+          masterApproved: Boolean(row.master_approved),
+          masterApprovedAt: row.master_approved_at,
+          masterApproverName: row.master_approver_name,
+          createdAt: row.created_at || new Date().toISOString(),
+          updatedAt: row.updated_at || new Date().toISOString(),
+          notes: row.timeline_notes || method.notes || [],
+          checklist: method.checklist || [],
+          quarterlyFollowUp: method.quarterlyFollowUp,
+          problemStatement: method.problemStatement,
+          targetMetricName: method.targetMetricName,
+          targetMetricUnit: method.targetMetricUnit,
+          baselineValue: method.baselineValue,
+          targetGoalValue: method.targetGoalValue,
+          currentProblemCostMonthly: method.currentProblemCostMonthly,
+          fiveWhys: method.fiveWhys,
+          pareto: method.pareto,
+          ishikawa: method.ishikawa,
+          pilotArea: method.pilotArea,
+          pilotTestObservations: method.pilotTestObservations,
+          photoBeforeUrl: method.photoBeforeUrl,
+          photoAfterUrl: method.photoAfterUrl,
+          achievedValue: method.achievedValue,
+          netSavings: method.netSavings,
+          roiPercentage: method.roiPercentage,
+          paybackMonths: method.paybackMonths,
+          hoursSaved: method.hoursSaved || 0,
+          attachments: method.attachments,
+          assignedAgentId: method.assignedAgentId || row.assigned_agent_id,
+          assignedAgentName: method.assignedAgentName,
+          assignedAgentAvatar: method.assignedAgentAvatar,
+          strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
+          strategicObjectiveName: method.strategicObjectiveName,
+          senseiStrategicAudit: method.senseiStrategicAudit,
+          controllershipAudit: method.controllershipAudit,
+          isPublicDemand: Boolean(method.isPublicDemand),
+          requesterName: method.requesterName,
+          requesterEmail: method.requesterEmail,
+          requesterDepartment: method.requesterDepartment,
+          leaderName: method.leaderName,
+          teamMembers: method.teamMembers,
+        };
+      });
+
+      const localActions = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
+      const cloudIdSet = new Set(mappedCloudActions.map((a) => a.id));
+
+      const unsyncedLocals = localActions.filter((a) => !cloudIdSet.has(a.id));
+      if (unsyncedLocals.length > 0) {
+        for (const localAct of unsyncedLocals) {
+          await this.persistActionToCloud(localAct);
+        }
+      }
+
+      const merged = [...mappedCloudActions, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.ACTIONS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((a) => a.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de ações Lean:', err);
+      return this.getActions(tenantId);
+    }
+  },
+
+  deleteAction(id: string): void {
+    const actions = this.getActions('all').filter((a) => a.id !== id);
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    if (isSupabaseConfigured()) {
+      this.deleteActionFromCloud(id).catch((err) => console.warn(err));
+    }
+  },
+
+  saveAndSyncAction(action: LeanAction, actions: LeanAction[]): LeanAction {
+    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    if (isSupabaseConfigured()) {
+      this.persistActionToCloud(action).catch((err) => {
+        console.warn('[dataService] Erro na sincronização da ação com Supabase:', err);
+      });
+    }
+    return action;
+  },
+
   updateAction(id: string, updates: Partial<LeanAction>): LeanAction {
     const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
@@ -855,8 +1183,7 @@ export const dataService = {
 
     merged.updatedAt = new Date().toISOString();
     actions[index] = merged;
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   // Lançar resultado mensal no acompanhamento de 3 meses pós-homologação
@@ -956,8 +1283,7 @@ export const dataService = {
 
     action.updatedAt = new Date().toISOString();
     actions[index] = action;
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   // ===================================================================
@@ -1430,8 +1756,7 @@ export const dataService = {
     }
 
     actions.unshift(newAction);
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return newAction;
+    return this.saveAndSyncAction(newAction, actions);
   },
 
   createActionByAdmin(actionData: Omit<LeanAction, 'id' | 'protocol' | 'createdAt' | 'updatedAt'>): LeanAction {
@@ -1482,8 +1807,7 @@ export const dataService = {
     }
 
     actions.unshift(newAction);
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return newAction;
+    return this.saveAndSyncAction(newAction, actions);
   },
 
   triageDemand(
@@ -1559,8 +1883,7 @@ export const dataService = {
       };
     }
 
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   updateActionStatus(
@@ -1621,8 +1944,7 @@ export const dataService = {
     }
 
     actions[index] = { ...item, ...updates };
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   addActionNote(id: string, note: { authorId: string; authorName: string; authorRole: UserRole; text: string }): LeanAction {
@@ -1639,8 +1961,7 @@ export const dataService = {
     actions[index].notes = [...(actions[index].notes || []), newNote];
     actions[index].updatedAt = new Date().toISOString();
 
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   toggleChecklistItem(actionId: string, itemId: string): LeanAction {
@@ -1664,8 +1985,7 @@ export const dataService = {
 
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   addActivityRecord(
@@ -1714,8 +2034,7 @@ export const dataService = {
 
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   postponeActivityDeadline(
@@ -1759,8 +2078,7 @@ export const dataService = {
 
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   attachFileToActivity(
@@ -1779,8 +2097,7 @@ export const dataService = {
     checklist[actIndex].attachment = attachment;
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   removeActivityAttachment(actionId: string, activityId: string): LeanAction {
@@ -1796,8 +2113,7 @@ export const dataService = {
     delete checklist[actIndex].linkedCronoanaliseId;
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   updateActivityRecord(
@@ -1825,8 +2141,7 @@ export const dataService = {
 
     actions[index].checklist = checklist;
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   deleteActivityRecord(actionId: string, activityId: string): LeanAction {
@@ -1836,8 +2151,7 @@ export const dataService = {
 
     actions[index].checklist = (actions[index].checklist || []).filter((c) => c.id !== activityId);
     actions[index].updatedAt = new Date().toISOString();
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return actions[index];
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   getUncompletedActivities(actionIdOrAction: string | LeanAction): ActionChecklistItem[] {
@@ -2513,6 +2827,108 @@ export const dataService = {
     return this.getKaizenIdeas('all').find((k) => k.id === id);
   },
 
+  async persistKaizenIdeaToCloud(idea: KaizenIdea): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('kaizen_ideas').upsert(
+        {
+          id: idea.id,
+          tenant_id: idea.tenantId,
+          protocol: idea.protocol,
+          title: idea.summary || 'Ideia Kaizen',
+          description: idea.summary || '',
+          sector_id: idea.sectorId || null,
+          author_name: idea.authorName,
+          status: idea.status || 'pendente',
+          triage_notes: idea.rejectionReason || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) {
+        console.warn('[dataService] Erro ao sincronizar ideia Kaizen no Supabase:', error.message);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir ideia Kaizen no Supabase:', err);
+    }
+  },
+
+  async deleteKaizenIdeaFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await supabase.from('kaizen_ideas').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir ideia Kaizen no Supabase:', err);
+    }
+  },
+
+  async syncKaizenIdeasFromCloud(tenantId?: string): Promise<KaizenIdea[]> {
+    if (!isSupabaseConfigured()) return this.getKaizenIdeas(tenantId);
+    try {
+      const { data: cloudIdeas, error } = await supabase.from('kaizen_ideas').select('*');
+      if (error || !cloudIdeas) {
+        return this.getKaizenIdeas(tenantId);
+      }
+
+      const mappedCloudIdeas: KaizenIdea[] = cloudIdeas.map((row: any) => ({
+        id: row.id,
+        protocol: row.protocol,
+        tenantId: row.tenant_id,
+        authorName: row.author_name,
+        sectorId: row.sector_id || '',
+        sectorName: '',
+        authorRoleTitle: 'Colaborador',
+        summary: row.title || row.description || '',
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+        status: row.status,
+        rejectionReason: row.triage_notes || undefined,
+      }));
+
+      const localIdeas = getStoredData<KaizenIdea[]>(STORAGE_KEYS.KAIZEN_IDEAS, INITIAL_KAIZEN_IDEAS);
+      const cloudIdSet = new Set(mappedCloudIdeas.map((i) => i.id));
+
+      const unsyncedLocals = localIdeas.filter((i) => !cloudIdSet.has(i.id));
+      if (unsyncedLocals.length > 0) {
+        for (const localIdea of unsyncedLocals) {
+          await this.persistKaizenIdeaToCloud(localIdea);
+        }
+      }
+
+      const merged = [...mappedCloudIdeas, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((i) => i.tenantId === effective);
+    } catch (err) {
+      return this.getKaizenIdeas(tenantId);
+    }
+  },
+
+  saveAndSyncKaizenIdea(idea: KaizenIdea, ideas: KaizenIdea[]): KaizenIdea {
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    if (isSupabaseConfigured()) {
+      this.persistKaizenIdeaToCloud(idea).catch((err) => {
+        console.warn('[dataService] Erro na sincronização da ideia Kaizen com Supabase:', err);
+      });
+    }
+    return idea;
+  },
+
+  async syncAllFromCloud(tenantId?: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await Promise.all([
+        this.syncSectorsFromCloud(tenantId),
+        this.syncActionsFromCloud(tenantId),
+        this.syncKaizenIdeasFromCloud(tenantId),
+      ]);
+    } catch (err) {
+      console.warn('[dataService] Erro na sincronização consolidada da nuvem:', err);
+    }
+  },
+
   createKaizenIdea(data: {
     tenantId?: string;
     authorName: string;
@@ -2543,8 +2959,7 @@ export const dataService = {
     };
 
     ideas.unshift(newIdea);
-    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
-    return newIdea;
+    return this.saveAndSyncKaizenIdea(newIdea, ideas);
   },
 
   approveKaizenIdea(
@@ -2591,8 +3006,7 @@ export const dataService = {
     };
 
     ideas[index] = updated;
-    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
-    return updated;
+    return this.saveAndSyncKaizenIdea(updated, ideas);
   },
 
   rejectKaizenIdea(id: string, reviewerName: string, reason: string): KaizenIdea {
@@ -2613,8 +3027,7 @@ export const dataService = {
     };
 
     ideas[index] = updated;
-    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
-    return updated;
+    return this.saveAndSyncKaizenIdea(updated, ideas);
   },
 
   updateKaizenIdea(id: string, updates: Partial<KaizenIdea>): KaizenIdea {
@@ -2635,8 +3048,7 @@ export const dataService = {
     }
 
     ideas[index] = updated;
-    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
-    return updated;
+    return this.saveAndSyncKaizenIdea(updated, ideas);
   },
 
   getKaizenMetrics(tenantId?: string) {

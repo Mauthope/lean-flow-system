@@ -25,7 +25,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
   onSuccess,
   onStartAssessment,
 }) => {
-  const { currentTenant } = useAuth();
+  const { currentTenant, refreshData } = useAuth();
   const { isDark } = useTheme();
 
   const [name, setName] = useState('');
@@ -101,6 +101,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
       });
     }
 
+    refreshData();
     onSuccess();
     onClose();
   };
@@ -109,6 +110,7 @@ export const SectorModal: React.FC<SectorModalProps> = ({
     if (!sector) return;
     if (confirm(`Tem certeza que deseja excluir o setor ${sector.name}?`)) {
       dataService.deleteSector(sector.id);
+      refreshData();
       onSuccess();
       onClose();
     }

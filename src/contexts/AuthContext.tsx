@@ -278,6 +278,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           }
+
+          // 3. Sincronização bidirecional de setores, ações e ideias Kaizen (Supabase PostgreSQL)
+          await dataService.syncAllFromCloud();
         } catch (err) {
           console.warn('[AuthContext] Sincronização em segundo plano não pôde ser completada:', err);
         }
@@ -323,6 +326,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAllAgents(dataService.getAgents(tenant.id));
       setAllViewers(dataService.getViewers(tenant.id));
       setDataVersion((v) => v + 1);
+
+      if (isSupabaseConfigured()) {
+        dataService.syncAllFromCloud(tenantId).then(() => {
+          setDataVersion((v) => v + 1);
+        }).catch((err) => console.warn('[AuthContext] Erro ao sincronizar novo tenant:', err));
+      }
     }
   };
 
@@ -358,7 +367,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshData = () => {
-    setDataVersion((v) => v + 1);
+    if (isSupabaseConfigured()) {
+      dataService.syncAllFromCloud(currentTenant?.id).then(() => {
+        setDataVersion((v) => v + 1);
+      }).catch((err) => {
+        console.warn('[AuthContext] Falha no refreshData cloud:', err);
+        setDataVersion((v) => v + 1);
+      });
+    } else {
+      setDataVersion((v) => v + 1);
+    }
   };
 
   const toggleMobileMenu = () => {
