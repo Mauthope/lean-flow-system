@@ -1065,3 +1065,35 @@ th, td {
   }
 }
 
+/* Transição de Autenticação em Ambiente Seguro */
+@keyframes secureLaserFlow {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(10%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulseGlowRing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+.animate-laser-flow {
+  animation: secureLaserFlow 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-glow-ring {
+  animation: pulseGlowRing 2.4s ease-in-out infinite;
+}
+

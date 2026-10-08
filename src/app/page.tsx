@@ -14,6 +14,8 @@ import {
   Workflow,
   TrendingUp,
   Sparkles,
+  ShieldCheck,
+  Lock,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -24,13 +26,19 @@ export default function LoginPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  // Apenas entra em modo de autenticação em transição se houver retorno de callback do OAuth (Microsoft SSO)
-  const [isAuthenticating, setIsAuthenticating] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  // Fases da autenticação corporativa: 'idle' | 'redirecting' | 'authenticating' | 'syncing' | 'ready'
+  const [authPhase, setAuthPhase] = useState<'idle' | 'redirecting' | 'authenticating' | 'syncing' | 'ready'>(() => {
+    if (typeof window === 'undefined') return 'idle';
     const hash = window.location.hash || '';
     const search = window.location.search || '';
-    return hash.includes('access_token=') || search.includes('code=');
+    return hash.includes('access_token=') || search.includes('code=') ? 'authenticating' : 'idle';
   });
+
+  // Prefetch antecipado das rotas alvo para eliminar latência de compilação/navegação do Next.js
+  useEffect(() => {
+    router.prefetch('/admin/dashboard');
+    router.prefetch('/agente/kanban');
+  }, [router]);
 
   // Escuta retorno de login via OAuth (Microsoft Entra ID / SSO) ou sessão ativa
   useEffect(() => {
@@ -59,7 +67,7 @@ export default function LoginPage() {
         } else {
           setAuthError(`Falha na autenticação corporativa Microsoft: ${cleanDesc}`);
         }
-        setIsAuthenticating(false);
+        setAuthPhase('idle');
         setIsLoading(false);
         window.history.replaceState(null, '', window.location.pathname);
       }
@@ -71,7 +79,7 @@ export default function LoginPage() {
     const handleSessionUser = async (userId: string, userEmail?: string) => {
       if (isProcessing) return;
       isProcessing = true;
-      setIsAuthenticating(true);
+      setAuthPhase('syncing');
 
       try {
         const rawEmail = (userEmail || '').trim().toLowerCase();
@@ -91,7 +99,7 @@ export default function LoginPage() {
 
         const effectiveEmail = (profile?.email || rawEmail || authRecord?.email || '').trim().toLowerCase();
         if (!effectiveEmail) {
-          setIsAuthenticating(false);
+          setAuthPhase('idle');
           setIsLoading(false);
           return;
         }
@@ -128,7 +136,7 @@ export default function LoginPage() {
             authJobTitle = profile.job_title || authJobTitle;
           } else if (profile.status === 'suspenso') {
             await supabase.auth.signOut();
-            setIsAuthenticating(false);
+            setAuthPhase('idle');
             setAuthError(
               `Acesso bloqueado: O usuário "${effectiveEmail}" está desativado nesta plataforma. Entre em contato com a administração.`
             );
@@ -150,7 +158,7 @@ export default function LoginPage() {
             }
           } else {
             await supabase.auth.signOut();
-            setIsAuthenticating(false);
+            setAuthPhase('idle');
             setAuthError(`Acesso bloqueado: O cadastro de "${effectiveEmail}" está desativado na plataforma.`);
             setIsLoading(false);
             return;
@@ -165,7 +173,7 @@ export default function LoginPage() {
         if (matchedUser) {
           if (!matchedUser.active) {
             await supabase.auth.signOut();
-            setIsAuthenticating(false);
+            setAuthPhase('idle');
             setAuthError(`Acesso bloqueado: O usuário vinculado a "${effectiveEmail}" está desativado nesta plataforma.`);
             setIsLoading(false);
             return;
@@ -183,7 +191,7 @@ export default function LoginPage() {
         // SE NÃO CONSTAR EM NENHUMA DAS BASES: BLOQUEIO TOTAL (Zero Trust)
         if (!isAuthorized) {
           await supabase.auth.signOut();
-          setIsAuthenticating(false);
+          setAuthPhase('idle');
           setAuthError(
             `Acesso não autorizado (Política de Acesso Lean): O e-mail corporativo "${effectiveEmail}" foi autenticado pela Microsoft, porém não possui cadastro prévio nesta plataforma. Solicite a liberação de acesso ao Administrador do Sistema.`
           );
@@ -243,6 +251,8 @@ export default function LoginPage() {
 
         // Efetiva a sessão corporativa e navega imediatamente sem delay
         loginAs(matchedUser.id);
+        setAuthPhase('ready');
+
         const targetRoute =
           matchedUser.role === 'admin' ||
           matchedUser.isMaster ||
@@ -254,7 +264,7 @@ export default function LoginPage() {
         router.replace(targetRoute);
       } catch (err: any) {
         console.warn('[SSO Callback] Falha na sincronização corporativa:', err);
-        setIsAuthenticating(false);
+        setAuthPhase('idle');
         setAuthError(err?.message || 'Falha ao sincronizar perfil corporativo no acesso SSO.');
         setIsLoading(false);
       }
@@ -265,16 +275,30 @@ export default function LoginPage() {
       (window.location.hash.includes('access_token=') ||
         window.location.search.includes('code='));
 
+    let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
     if (isOAuth) {
+      setAuthPhase('authenticating');
+
+      // Tenta recuperar de imediato caso os tokens já tenham sido persistidos
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           handleSessionUser(session.user.id, session.user.email);
-        } else {
-          setIsAuthenticating(false);
         }
+        // Se session for null no primeiro tick, NÃO desativa a tela de autenticação!
+        // O cliente Supabase JS ainda está extraindo e persistindo os tokens da URL.
       });
+
+      // Timeout de segurança (12s) caso o token seja inválido ou ocorra falha de rede
+      safetyTimer = setTimeout(() => {
+        if (isMounted && !isProcessing) {
+          setAuthError('O tempo limite para validação da sessão corporativa expirou. Por favor, tente novamente.');
+          setAuthPhase('idle');
+          setIsLoading(false);
+        }
+      }, 12000);
     } else {
-      setIsAuthenticating(false);
+      setAuthPhase('idle');
     }
 
     const {
@@ -287,6 +311,7 @@ export default function LoginPage() {
 
     return () => {
       isMounted = false;
+      if (safetyTimer) clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, [loginAs, router]);
@@ -295,6 +320,7 @@ export default function LoginPage() {
     setAuthError(null);
     setAuthSuccess(null);
     setIsLoading(true);
+    setAuthPhase('redirecting');
 
     try {
       if (isSupabaseConfigured()) {
@@ -313,23 +339,62 @@ export default function LoginPage() {
         });
 
         if (error) {
+          setAuthPhase('idle');
           setAuthError(
             `Integração Microsoft Entra ID: ${error.message}. (Aguardando ativação do provedor Azure no Supabase pela equipe de TI/Infraestrutura).`
           );
         }
       } else {
+        setAuthPhase('idle');
         setAuthError(
           'Integração Microsoft Entra ID (SSO Corporativo): Requer conexão ativa com o servidor corporativo.'
         );
       }
     } catch (err: any) {
+      setAuthPhase('idle');
       setAuthError(err?.message || 'Falha ao iniciar autenticação com Microsoft.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isAuthenticating && !authError) {
+  // TELA DE TRANSIÇÃO MODERNA: "CARREGANDO AMBIENTE SEGURO"
+  if (authPhase !== 'idle' && !authError) {
+    const phaseConfig = {
+      redirecting: {
+        badge: 'SEC-OPS • CANAL CRIPTOGRAFADO',
+        title: 'Conectando ao Ambiente Seguro',
+        subtitle: 'Estabelecendo canal seguro com Microsoft Entra ID...',
+        step1Active: true,
+        step2Active: false,
+        step3Active: false,
+      },
+      authenticating: {
+        badge: 'SEC-OPS • VALIDAÇÃO DE IDENTIDADE',
+        title: 'Carregando Ambiente Seguro',
+        subtitle: 'Validando credenciais Microsoft SSO e token corporativo...',
+        step1Active: true,
+        step2Active: true,
+        step3Active: false,
+      },
+      syncing: {
+        badge: 'SEC-OPS • GOVERNANÇA ZERO TRUST',
+        title: 'Carregando Ambiente Seguro',
+        subtitle: 'Sincronizando perfil corporativo, permissões e ecossistema Gemba...',
+        step1Active: true,
+        step2Active: true,
+        step3Active: true,
+      },
+      ready: {
+        badge: 'SEC-OPS • ACESSO AUTORIZADO',
+        title: 'Ambiente Seguro Pronto',
+        subtitle: 'Sessão validada com sucesso. Inicializando painel de controle...',
+        step1Active: true,
+        step2Active: true,
+        step3Active: true,
+      },
+    }[authPhase];
+
     return (
       <div
         style={{
@@ -339,60 +404,249 @@ export default function LoginPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '2rem 1rem',
+          padding: '2rem 1.5rem',
           fontFamily: 'var(--font-sans)',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
+        {/* Background Ambient Glow Orbs */}
         <div
           style={{
+            position: 'absolute',
+            top: '20%',
+            left: '30%',
+            width: '460px',
+            height: '460px',
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(6, 182, 212, 0.18) 0%, rgba(14, 165, 233, 0.08) 50%, transparent 70%)',
+            filter: 'blur(90px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '15%',
+            right: '25%',
+            width: '420px',
+            height: '420px',
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(16, 185, 129, 0.14) 0%, transparent 70%)',
+            filter: 'blur(90px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+
+        {/* Card de Transição Segura */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '460px',
+            backgroundColor: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
+            borderRadius: '20px',
+            padding: '2.5rem 2rem',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.75)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
             position: 'relative',
-            zIndex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1.25rem',
+            overflow: 'hidden',
+            zIndex: 10,
             textAlign: 'center',
           }}
         >
+          {/* Linha superior de brilho executivo */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '10%',
+              right: '10%',
+              height: '1px',
+              background:
+                'linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.8) 40%, rgba(16, 185, 129, 0.8) 60%, transparent 100%)',
+              zIndex: 2,
+            }}
+          />
+
+          {/* Badge Sec-Ops */}
           <div
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(6, 182, 212, 0.12)',
-              border: '1px solid rgba(6, 182, 212, 0.35)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'rgba(6, 182, 212, 0.08)',
+              border: '1px solid rgba(6, 182, 212, 0.25)',
+              marginBottom: '1.5rem',
+            }}
+          >
+            <Lock size={12} style={{ color: '#22d3ee' }} />
+            <span
+              style={{
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: '#22d3ee',
+              }}
+            >
+              {phaseConfig.badge}
+            </span>
+          </div>
+
+          {/* Emblema com Aura Pulsante */}
+          <div
+            style={{
+              position: 'relative',
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 1.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#22d3ee',
-              boxShadow: '0 0 30px rgba(6, 182, 212, 0.25)',
             }}
           >
-            <Loader2 size={26} className="animate-spin" />
+            {/* Halo com pulso suave */}
+            <div
+              className="animate-glow-ring"
+              style={{
+                position: 'absolute',
+                inset: '-8px',
+                borderRadius: '50%',
+                background:
+                  'radial-gradient(circle, rgba(34, 211, 238, 0.3) 0%, rgba(16, 185, 129, 0.15) 50%, transparent 70%)',
+                filter: 'blur(8px)',
+                zIndex: 0,
+              }}
+            />
+
+            {/* Squircle Icon Box */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                borderRadius: '22px',
+                background: 'linear-gradient(145deg, #0f1d36 0%, #060a14 100%)',
+                border: '1px solid rgba(34, 211, 238, 0.4)',
+                boxShadow:
+                  '0 12px 28px -4px rgba(0, 0, 0, 0.8), 0 0 24px rgba(6, 182, 212, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1,
+              }}
+            >
+              <ShieldCheck size={36} style={{ color: '#22d3ee' }} />
+            </div>
           </div>
-          <div>
-            <h2
+
+          {/* Título & Subtítulo */}
+          <h2
+            style={{
+              fontSize: '1.45rem',
+              fontWeight: 800,
+              color: '#ffffff',
+              fontFamily: 'var(--font-heading)',
+              letterSpacing: '-0.02em',
+              margin: '0 0 0.5rem',
+            }}
+          >
+            {phaseConfig.title}
+          </h2>
+          <p
+            style={{
+              fontSize: '0.84375rem',
+              color: 'var(--text-muted, #94a3b8)',
+              lineHeight: 1.5,
+              margin: '0 auto 1.75rem',
+              maxWidth: '360px',
+            }}
+          >
+            {phaseConfig.subtitle}
+          </p>
+
+          {/* Barra de Progresso Laser Flow */}
+          <div
+            style={{
+              width: '100%',
+              height: '5px',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              borderRadius: '9999px',
+              overflow: 'hidden',
+              position: 'relative',
+              marginBottom: '1.75rem',
+            }}
+          >
+            <div
+              className="animate-laser-flow"
               style={{
-                fontSize: '1.2rem',
-                fontWeight: 800,
-                color: '#ffffff',
-                fontFamily: 'var(--font-heading)',
-                margin: 0,
+                width: '100%',
+                height: '100%',
+                background:
+                  'linear-gradient(90deg, transparent 0%, #22d3ee 50%, #10b981 100%)',
+                borderRadius: '9999px',
               }}
-            >
-              Autenticando Sessão Corporativa
-            </h2>
-            <p
-              style={{
-                fontSize: '0.8125rem',
-                color: 'var(--text-muted, #94a3b8)',
-                marginTop: '0.35rem',
-              }}
-            >
-              Validando credenciais Microsoft SSO e conectando ao Lean Flow System...
-            </p>
+            />
+          </div>
+
+          {/* Micro-etapas de Governança SecOps */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.65rem',
+              textAlign: 'left',
+              padding: '0.85rem 1rem',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78125rem' }}>
+              {phaseConfig.step1Active ? (
+                <CheckCircle2 size={15} style={{ color: '#10b981', flexShrink: 0 }} />
+              ) : (
+                <Loader2 size={15} className="animate-spin" style={{ color: '#22d3ee', flexShrink: 0 }} />
+              )}
+              <span style={{ color: phaseConfig.step1Active ? '#e2e8f0' : '#94a3b8' }}>
+                Conexão Segura & Microsoft Entra ID
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78125rem' }}>
+              {phaseConfig.step2Active ? (
+                <CheckCircle2 size={15} style={{ color: '#10b981', flexShrink: 0 }} />
+              ) : phaseConfig.step1Active ? (
+                <Loader2 size={15} className="animate-spin" style={{ color: '#22d3ee', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: '15px', height: '15px', borderRadius: '50%', border: '1px solid #475569', flexShrink: 0 }} />
+              )}
+              <span style={{ color: phaseConfig.step2Active ? '#e2e8f0' : '#64748b' }}>
+                Governança Zero Trust & Permissões Lean
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78125rem' }}>
+              {phaseConfig.step3Active ? (
+                <CheckCircle2 size={15} style={{ color: '#10b981', flexShrink: 0 }} />
+              ) : phaseConfig.step2Active ? (
+                <Loader2 size={15} className="animate-spin" style={{ color: '#22d3ee', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: '15px', height: '15px', borderRadius: '50%', border: '1px solid #475569', flexShrink: 0 }} />
+              )}
+              <span style={{ color: phaseConfig.step3Active ? '#e2e8f0' : '#64748b' }}>
+                Inicialização do Ecossistema Gemba
+              </span>
+            </div>
           </div>
         </div>
       </div>
