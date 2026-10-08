@@ -44,8 +44,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadSession = useCallback(() => {
     initializeLocalStorage();
-    const tenant = dataService.getCurrentTenant();
+    let tenant = dataService.getCurrentTenant();
     const user = dataService.getCurrentUser();
+    if (user && !user.isMaster && user.tenantId && tenant.id !== user.tenantId) {
+      const userTenant = dataService.getTenantById(user.tenantId);
+      if (userTenant) {
+        dataService.setCurrentTenant(userTenant);
+        tenant = userTenant;
+      }
+    }
     const users = dataService.getUsers(tenant?.id);
     const agents = dataService.getAgents(tenant?.id);
     const viewers = dataService.getViewers(tenant?.id);
@@ -289,6 +296,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       dataService.setCurrentUser(user);
       setCurrentUser(user);
+      if (!user.isMaster && user.tenantId) {
+        const userTenant = dataService.getTenantById(user.tenantId);
+        if (userTenant) {
+          dataService.setCurrentTenant(userTenant);
+          setCurrentTenant(userTenant);
+          setAllUsers(dataService.getUsers(userTenant.id));
+          setAllAgents(dataService.getAgents(userTenant.id));
+          setAllViewers(dataService.getViewers(userTenant.id));
+        }
+      }
       setDataVersion((v) => v + 1);
     }
   };
