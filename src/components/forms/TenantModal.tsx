@@ -185,7 +185,7 @@ export const TenantModal: React.FC<TenantModalProps> = ({
                 controladoriaName: 'Gerência de Controladoria & Custos',
                 controladoriaEmail: 'controladoria@rafitec.com.br',
                 autoNotifyControladoria: true,
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.0-flash',
                 preferredVoice: 'pt-BR-Neural2-B',
               },
               is_active: true,

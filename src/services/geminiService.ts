@@ -128,7 +128,7 @@ export async function callSenseiBackend({
   prompt,
   contents,
   systemInstruction,
-  model = 'gemini-1.5-flash',
+  model = 'gemini-2.0-flash',
   temperature = 0.5,
   maxTokens = 1200,
   responseMimeType,
@@ -332,10 +332,11 @@ export async function validateGeminiApiKey(
     });
 
     if (res.ok) {
+      const data = await res.json().catch(() => ({}));
       return {
         valid: true,
         ttsEnabled: true,
-        workingModel: 'gemini-1.5-flash',
+        workingModel: data?.model || 'gemini-2.0-flash',
         isKeyRestricted: false,
       };
     }

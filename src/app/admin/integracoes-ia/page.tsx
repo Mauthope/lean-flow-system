@@ -42,7 +42,7 @@ export default function IntegracoesIaPage() {
 
   const [apiKey, setApiKey] = useState('');
   const [selectedVoice, setSelectedVoice] = useState<string>(SENSEI_PROFILE.defaultVoice);
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
 
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{
@@ -455,9 +455,10 @@ export default function IntegracoesIaPage() {
                 fontSize: '0.8125rem',
               }}
             >
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Ultra Rápido & Recomendado)</option>
-              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Alta Precisão)</option>
-              <option value="gemini-pro">Gemini Pro</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recomendado & Alta Velocidade)</option>
+              <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (Baixa Latência)</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Raciocínio Avançado)</option>
             </select>
           </div>
         </div>
