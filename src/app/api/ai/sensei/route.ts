@@ -111,47 +111,69 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Ação: Geração de Conteúdo (Texto / Análise / Chat)
-    let payloadContents: any[] = [];
-
+    let rawIncoming: any[] = [];
     if (Array.isArray(incomingContents) && incomingContents.length > 0) {
-      payloadContents = [...incomingContents];
-      if (systemInstruction) {
-        payloadContents.unshift({
-          role: 'user',
-          parts: [{ text: systemInstruction }],
-        });
-        payloadContents.splice(1, 0, {
-          role: 'model',
-          parts: [{ text: 'Entendido! Estou pronto para auxiliar com rigor técnico Lean.' }],
-        });
-      }
-    } else if (prompt) {
-      if (systemInstruction) {
-        payloadContents = [
-          {
-            role: 'user',
-            parts: [{ text: `${systemInstruction}\n\n${prompt}` }],
-          },
-        ];
-      } else {
-        payloadContents = [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ];
-      }
+      rawIncoming = incomingContents;
+    } else if (prompt && typeof prompt === 'string') {
+      rawIncoming = [{ role: 'user', parts: [{ text: prompt }] }];
     } else {
       return NextResponse.json({ error: 'Conteúdo ou prompt não fornecido.' }, { status: 400 });
     }
 
-    const candidateModels = [
+    // Sanitização e conformidade estrita com a API do Google Gemini:
+    // 1. O primeiro item deve ser obrigatoriamente 'user'.
+    // 2. As roles devem alternar estritamente entre 'user' e 'model'.
+    const sanitizedContents: any[] = [];
+    let lastRole: string | null = null;
+
+    for (const item of rawIncoming) {
+      if (!item || !item.parts || !Array.isArray(item.parts) || item.parts.length === 0) continue;
+      const textContent = item.parts.map((p: any) => p.text || '').join('\n').trim();
+      if (!textContent) continue;
+
+      const currentRole = item.role === 'model' ? 'model' : 'user';
+
+      // A API do Google Gemini rejeita conversas iniciadas com 'model'
+      if (sanitizedContents.length === 0 && currentRole === 'model') {
+        continue;
+      }
+
+      // Agrupa mensagens consecutivas da mesma role para evitar erro 400 da API
+      if (currentRole === lastRole && sanitizedContents.length > 0) {
+        sanitizedContents[sanitizedContents.length - 1].parts[0].text += `\n\n${textContent}`;
+      } else {
+        sanitizedContents.push({
+          role: currentRole,
+          parts: [{ text: textContent }],
+        });
+        lastRole = currentRole;
+      }
+    }
+
+    if (sanitizedContents.length === 0) {
+      sanitizedContents.push({
+        role: 'user',
+        parts: [{ text: prompt || 'Olá Sensei' }],
+      });
+    }
+
+    // Modelos oficiais ativos na API v1beta do Google Generative Language
+    const rawCandidateModels = [
       model,
       'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-8b',
       'gemini-2.0-flash',
-      'gemini-pro',
+      'gemini-1.5-pro',
     ];
+
+    // Remove duplicatas e elimina modelos descontinuados (ex: gemini-pro legado)
+    const candidateModels = Array.from(
+      new Set(
+        rawCandidateModels.filter(
+          (m): m is string => Boolean(m) && m !== 'gemini-pro' && m !== 'gemini-1.0-pro'
+        )
+      )
+    );
 
     const generationConfig: any = {
       temperature,
@@ -161,7 +183,21 @@ export async function POST(req: NextRequest) {
       generationConfig.responseMimeType = responseMimeType;
     }
 
+    // Monta o body padrão com system_instruction nativo da API v1beta
+    const requestBody: any = {
+      contents: sanitizedContents,
+      generationConfig,
+    };
+
+    if (systemInstruction && typeof systemInstruction === 'string' && systemInstruction.trim()) {
+      requestBody.system_instruction = {
+        parts: [{ text: systemInstruction.trim() }],
+      };
+    }
+
     let lastError = '';
+    const diagnosticErrors: string[] = [];
+
     for (const targetModel of candidateModels) {
       try {
         const geminiRes = await fetch(
@@ -169,10 +205,7 @@ export async function POST(req: NextRequest) {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: payloadContents,
-              generationConfig,
-            }),
+            body: JSON.stringify(requestBody),
           }
         );
 
@@ -182,14 +215,19 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ text: responseText, modelUsed: targetModel });
         } else {
           lastError = await geminiRes.text();
+          diagnosticErrors.push(`[${targetModel}]: ${lastError}`);
         }
       } catch (err: any) {
         lastError = err?.message || String(err);
+        diagnosticErrors.push(`[${targetModel}]: ${lastError}`);
       }
     }
 
     return NextResponse.json(
-      { error: `Falha ao processar requisição com modelos Gemini: ${lastError}` },
+      {
+        error: `Falha ao processar requisição com modelos Gemini. Detalhes: ${lastError}`,
+        diagnostics: diagnosticErrors,
+      },
       { status: 502 }
     );
   } catch (err: any) {
