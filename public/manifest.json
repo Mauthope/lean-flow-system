@@ -1,0 +1,111 @@
+{
+  "name": "Lean Flow System",
+  "short_name": "Lean Flow",
+  "description": "Sistema de Gestão de Fluxo Lean, Custo Evitado e Acompanhamento Contínuo no Gemba",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#090e1a",
+  "theme_color": "#090e1a",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kanban Operacional",
+      "short_name": "Kanban",
+      "description": "Visualizar fluxo de trabalho e projetos em andamento",
+      "url": "/admin/kanban",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Lean",
+      "short_name": "Dashboard",
+      "description": "Métricas executivas de custo evitado e horas salvas",
+      "url": "/admin/dashboard",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Canal Kaizen",
+      "short_name": "Kaizen",
+      "description": "Registro de ideias de melhoria contínua da fábrica",
+      "url": "/admin/canal-kaizen",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Manutenção TPM",
+      "short_name": "TPM",
+      "description": "Auditorias 5S, etiquetas vermelhas e OEE de máquinas",
+      "url": "/admin/tpm",
+      "icons": [
+        {
+          "src": "/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "business",
+    "productivity",
+    "utilities"
+  ]
+}
