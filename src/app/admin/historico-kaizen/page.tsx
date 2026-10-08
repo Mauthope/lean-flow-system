@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { dataService } from '@/services/dataService';
 import { LeanAction, KaizenIdea, IshikawaAnalysis, ParetoAnalysis } from '@/lib/types';
 import { formatCurrency, formatDate, WASTE_CATEGORIES } from '@/lib/utils';
+import { callSenseiBackend } from '@/services/geminiService';
 import {
   Sparkles,
   Search,
@@ -134,7 +135,7 @@ export default function HistoricoKaizenPage() {
     {
       id: 'msg_welcome',
       sender: 'ai',
-      text: 'Olá! Sou o Assistente de Inteligência Artificial Kaizen da fábrica.\n\nPosso vasculhar todo o histórico de Projetos Lean (PDCA), causas raízes (Ishikawa 6M / 5 Porquês), Pareto e lições aprendidas (Yokoten) para responder suas dúvidas técnicas ou buscar precedentes de soluções.\n\nO que você gostaria de pesquisar hoje?',
+      text: 'Olá! Sou o Sensei, seu especialista de Inteligência Artificial e Lean Manufacturing da fábrica.\n\nTenho acesso a toda a memória histórica de Kaizens e Projetos Lean (PDCA) concluídos. Posso analisar causas raízes (Ishikawa 6M / 5 Porquês), Pareto, ganhos financeiros e lições aprendidas (Yokoten) para encontrar soluções comprovadas para o seu setor.\n\nO que você gostaria de pesquisar hoje?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -380,8 +381,8 @@ export default function HistoricoKaizenPage() {
     };
   }, [filteredKaizens]);
 
-  // Handle AI Chat Messages
-  const handleSendMessage = (customText?: string) => {
+  // Handle AI Chat Messages (Sensei Kaizen Memory)
+  const handleSendMessage = async (customText?: string) => {
     const textToSend = (customText || chatInput).trim();
     if (!textToSend) return;
 
@@ -396,38 +397,71 @@ export default function HistoricoKaizenPage() {
     setChatInput('');
     setIsAiThinking(true);
 
-    setTimeout(() => {
-      const q = textToSend.toLowerCase();
-      const matched = unifiedKaizens.filter((k) => {
-        const textToSearch = [
-          k.title,
-          k.description,
-          k.problemStatement,
-          k.sectorName,
-          k.leaderOrAuthor,
-          k.lessonsLearned,
-          k.yokotenReplication,
-          ...(k.fiveWhys || []),
-          k.ishikawa?.method,
-          k.ishikawa?.machine,
-          k.ishikawa?.material,
-          k.ishikawa?.manpower,
-          k.ishikawa?.measurement,
-          k.ishikawa?.environment,
-          k.ishikawa?.primaryRootCause,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+    const q = textToSend.toLowerCase();
+    const matched = unifiedKaizens.filter((k) => {
+      const textToSearch = [
+        k.protocol,
+        k.title,
+        k.description,
+        k.problemStatement,
+        k.sectorName,
+        k.leaderOrAuthor,
+        k.lessonsLearned,
+        k.yokotenReplication,
+        ...(k.fiveWhys || []),
+        k.ishikawa?.method,
+        k.ishikawa?.machine,
+        k.ishikawa?.material,
+        k.ishikawa?.manpower,
+        k.ishikawa?.measurement,
+        k.ishikawa?.environment,
+        k.ishikawa?.primaryRootCause,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
 
-        const words = q.split(/\s+/).filter((w) => w.length > 2);
-        return words.some((word) => textToSearch.includes(word));
+      const words = q.split(/\s+/).filter((w) => w.length > 2);
+      return words.some((word) => textToSearch.includes(word));
+    });
+
+    const items = matched.length > 0 ? matched : unifiedKaizens.slice(0, 3);
+    const totalSavingsFound = items.reduce((acc, k) => acc + (k.actualCostAvoided || 0), 0);
+
+    // Contexto resumido dos Kaizens para o Sensei analisar
+    const contextSummary = items.slice(0, 5).map((k) =>
+      `• [${k.protocol}] "${k.title}" (${k.sectorName}): Economia ${formatCurrency(k.actualCostAvoided)}/ano. Causa raiz: ${k.problemStatement || 'N/A'}. Padronização/Yokoten: ${k.lessonsLearned || k.yokotenReplication || 'N/A'}`
+    ).join('\n');
+
+    let answer = '';
+
+    try {
+      const senseiReply = await callSenseiBackend({
+        systemInstruction: `Você é o "Sensei", o Consultor Especialista Sênior em Lean Manufacturing, TPS e PDCA da fábrica.
+O usuário está consultando o histórico de Kaizens e Projetos Lean concluídos sobre: "${textToSend}".
+
+HISTÓRICO DE KAIZENS ENCONTRADOS NO GEMBA:
+${contextSummary}
+
+SUAS DIRETRIZES DE RESPOSTA:
+1. Responda com a voz técnica, pedagógica e encorajadora do Sensei.
+2. Destaque os números consolidados (ex: ${formatCurrency(totalSavingsFound)}/ano) e as soluções comprovadas que a fábrica já desenvolveu.
+3. Forneça uma recomendação técnica Lean prática com foco em trabalho padronizado (POP) e replicação lateral (Yokoten).
+4. Responda em português direto e bem estruturado em 2 a 3 parágrafos.`,
+        prompt: textToSend,
+        temperature: 0.35,
+        maxTokens: 800,
       });
 
-      const items = matched.length > 0 ? matched : unifiedKaizens.slice(0, 2);
-      const totalSavingsFound = items.reduce((acc, k) => acc + (k.actualCostAvoided || 0), 0);
+      if (senseiReply && senseiReply.trim()) {
+        answer = senseiReply.trim();
+      }
+    } catch {
+      // continua para o fallback estruturado
+    }
 
-      let answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" no histórico da fábrica.`;
+    if (!answer) {
+      answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" na memória técnica da fábrica.`;
       if (totalSavingsFound > 0) {
         answer += `\n\n**Impacto Financeiro Acumulado**: ${formatCurrency(totalSavingsFound)}/ano economizados.`;
       }
@@ -437,18 +471,18 @@ export default function HistoricoKaizenPage() {
       if (items[0]?.lessonsLearned || items[0]?.yokotenReplication) {
         answer += `\n\n**Padrão / Lição Yokoten**: ${items[0].lessonsLearned || items[0].yokotenReplication}`;
       }
+    }
 
-      const aiMsg: ChatMessage = {
-        id: 'ai_' + Date.now(),
-        sender: 'ai',
-        text: answer,
-        matchedKaizens: items,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+    const aiMsg: ChatMessage = {
+      id: 'ai_' + Date.now(),
+      sender: 'ai',
+      text: answer,
+      matchedKaizens: items,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
 
-      setChatMessages((prev) => [...prev, aiMsg]);
-      setIsAiThinking(false);
-    }, 700);
+    setChatMessages((prev) => [...prev, aiMsg]);
+    setIsAiThinking(false);
   };
 
   const clearFilters = () => {
@@ -553,6 +587,25 @@ export default function HistoricoKaizenPage() {
           >
             <Layers size={14} color="#22d3ee" /> Kanban Geral
           </Link>
+
+          <button
+            type="button"
+            onClick={() => setIsAiChatOpen(true)}
+            className="btn btn-primary btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              border: '1px solid rgba(34, 211, 238, 0.4)',
+              color: '#ffffff',
+            }}
+            title="Abrir o Sensei IA com histórico e precedentes de Kaizens"
+          >
+            <Sparkles size={14} color="#38bdf8" /> Consultar o Sensei
+          </button>
         </div>
       </div>
 
@@ -1323,7 +1376,7 @@ export default function HistoricoKaizenPage() {
       )}
 
       {/* ========================================================================= */}
-      {/* BOTÃO FLUTUANTE & GAVETA DE CHAT DA IA KAIZEN (FAB WIDGET)               */}
+      {/* BOTÃO FLUTUANTE & GAVETA DE CHAT DO SENSEI (MEMÓRIA KAIZEN)               */}
       {/* ========================================================================= */}
       {!isAiChatOpen && (
         <button
@@ -1331,55 +1384,60 @@ export default function HistoricoKaizenPage() {
           onClick={() => setIsAiChatOpen(true)}
           style={{
             position: 'fixed',
-            bottom: '1.75rem',
-            right: '1.75rem',
-            zIndex: 9999,
+            bottom: '86px',
+            right: '24px',
+            zIndex: 9970,
             display: 'flex',
             alignItems: 'center',
             gap: '0.65rem',
-            padding: '0.85rem 1.4rem',
+            padding: '0.75rem 1.35rem',
             borderRadius: '9999px',
-            background: 'linear-gradient(135deg, #9333ea 0%, #2563eb 50%, #06b6d4 100%)',
+            background: 'linear-gradient(135deg, #08101e 0%, #0c1829 100%)',
             color: '#ffffff',
-            fontWeight: 900,
-            fontSize: '0.875rem',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            boxShadow: '0 8px 30px rgba(147, 51, 234, 0.5), 0 0 15px rgba(6, 182, 212, 0.4)',
+            fontWeight: 800,
+            fontSize: '0.85rem',
+            border: '1px solid rgba(34, 211, 238, 0.45)',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.25)',
             cursor: 'pointer',
-            transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
+            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
           }}
-          title="Abrir Assistente de Inteligência Artificial Kaizen"
+          title="Consultar o Sensei - Especialista Lean & Memória Histórica de Kaizens"
         >
           <div
             style={{
               width: '28px',
               height: '28px',
               borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: 'rgba(34, 211, 238, 0.15)',
+              border: '1px solid rgba(34, 211, 238, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <BrainCircuit size={17} color="#ffffff" />
+            <Sparkles size={15} color="#22d3ee" />
           </div>
-          <span>Consultar IA Kaizen</span>
+          <span>Consultar o Sensei</span>
           <span
             style={{
               fontSize: '0.65rem',
               fontWeight: 900,
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
+              backgroundColor: 'rgba(34, 211, 238, 0.15)',
+              color: '#38bdf8',
+              border: '1px solid rgba(34, 211, 238, 0.3)',
               padding: '0.1rem 0.45rem',
               borderRadius: '9999px',
               letterSpacing: '0.04em',
             }}
           >
-            IA ATIVA
+            MEMÓRIA KAIZEN
           </span>
         </button>
       )}
 
-      {/* JANELA FLUTUANTE DE CONVERSA COM A IA */}
+      {/* JANELA FLUTUANTE DE CONVERSA COM O SENSEI */}
       {isAiChatOpen && (
         <div
           style={{
@@ -1392,10 +1450,10 @@ export default function HistoricoKaizenPage() {
             maxHeight: 'calc(100vh - 3rem)',
             backgroundColor: isDark ? 'var(--bg-surface-elevated)' : '#ffffff',
             borderRadius: '20px',
-            border: isDark ? '1.5px solid rgba(168, 85, 247, 0.5)' : '1.5px solid #a855f7',
+            border: isDark ? '1.5px solid rgba(34, 211, 238, 0.4)' : '1.5px solid #0284c7',
             boxShadow: isDark
-              ? '0 20px 50px rgba(0, 0, 0, 0.3), 0 0 30px rgba(168, 85, 247, 0.15)'
-              : '0 20px 50px rgba(0, 0, 0, 0.12), 0 0 30px rgba(168, 85, 247, 0.1)',
+              ? '0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(6, 182, 212, 0.15)'
+              : '0 20px 50px rgba(0, 0, 0, 0.15), 0 0 30px rgba(2, 132, 199, 0.12)',
             display: 'flex',
             flexDirection: 'column',
             zIndex: 10000,
@@ -1407,8 +1465,8 @@ export default function HistoricoKaizenPage() {
           <div
             style={{
               padding: '0.85rem 1.15rem',
-              background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
-              borderBottom: '1px solid rgba(168, 85, 247, 0.3)',
+              background: 'linear-gradient(135deg, #090e1a 0%, #0369a1 100%)',
+              borderBottom: '1px solid rgba(34, 211, 238, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1420,23 +1478,24 @@ export default function HistoricoKaizenPage() {
                   width: '36px',
                   height: '36px',
                   borderRadius: '10px',
-                  background: 'rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(34, 211, 238, 0.15)',
+                  border: '1px solid rgba(34, 211, 238, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <BrainCircuit size={20} color="#ffffff" />
+                <Sparkles size={18} color="#22d3ee" />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <h4 style={{ fontSize: '0.9375rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                    IA Kaizen Assistant
+                    Sensei IA &bull; Memória Kaizen
                   </h4>
                   <span style={{ width: '8px', height: '8px', backgroundColor: '#34d399', borderRadius: '50%', display: 'inline-block' }} />
                 </div>
-                <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                  {unifiedKaizens.length} Kaizens indexados na memória
+                <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)' }}>
+                  {unifiedKaizens.length} Kaizens indexados na memória técnica
                 </span>
               </div>
             </div>
@@ -1544,8 +1603,8 @@ export default function HistoricoKaizenPage() {
 
             {isAiThinking && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', backgroundColor: isDark ? 'var(--bg-muted)' : '#f1f5f9', borderRadius: '12px', width: 'fit-content' }}>
-                <Clock size={13} color="#9333ea" className="animate-spin" />
-                <span style={{ fontSize: '0.75rem', color: isDark ? 'var(--text-secondary)' : '#334155' }}>Vasculhando memória de Kaizens...</span>
+                <Sparkles size={13} color="#22d3ee" className="animate-spin" />
+                <span style={{ fontSize: '0.75rem', color: isDark ? 'var(--text-secondary)' : '#334155' }}>Sensei vasculhando memória de Kaizens e padrões Lean...</span>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -1609,7 +1668,7 @@ export default function HistoricoKaizenPage() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Pergunte sobre diagnósticos, causas ou lições..."
+                placeholder="Pergunte ao Sensei sobre diagnósticos, causas ou lições..."
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 style={{
@@ -1621,8 +1680,8 @@ export default function HistoricoKaizenPage() {
                 disabled={!chatInput.trim() || isAiThinking}
                 className="btn btn-primary"
                 style={{
-                  backgroundColor: '#8b5cf6',
-                  borderColor: '#8b5cf6',
+                  backgroundColor: '#0284c7',
+                  borderColor: '#0284c7',
                   padding: '0 0.85rem',
                   display: 'flex',
                   alignItems: 'center',
