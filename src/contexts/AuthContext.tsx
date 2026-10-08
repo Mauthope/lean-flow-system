@@ -202,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select('*');
 
           if (!error && dbUsers && dbUsers.length > 0) {
-            const currentUsers = dataService.getUsers();
+            const currentUsers = dataService.getUsers('all');
             let changed = false;
 
             const authEmails = new Set(
@@ -264,9 +264,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (changed) {
               setStoredData(STORAGE_KEYS.USERS, filteredUsers);
-              setAllUsers(filteredUsers);
-              setAllAgents(dataService.getAgents());
-              setAllViewers(dataService.getViewers());
+              setAllUsers(dataService.getUsers(tenant.id));
+              setAllAgents(dataService.getAgents(tenant.id));
+              setAllViewers(dataService.getViewers(tenant.id));
 
               const activeUsr = dataService.getCurrentUser();
               if (activeUsr) {
@@ -329,6 +329,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isSupabaseConfigured()) {
         dataService.syncAllFromCloud(tenantId).then(() => {
+          setAllUsers(dataService.getUsers(tenant.id));
+          setAllAgents(dataService.getAgents(tenant.id));
+          setAllViewers(dataService.getViewers(tenant.id));
           setDataVersion((v) => v + 1);
         }).catch((err) => console.warn('[AuthContext] Erro ao sincronizar novo tenant:', err));
       }
@@ -369,6 +372,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshData = () => {
     if (isSupabaseConfigured()) {
       dataService.syncAllFromCloud(currentTenant?.id).then(() => {
+        if (currentTenant) {
+          setAllUsers(dataService.getUsers(currentTenant.id));
+          setAllAgents(dataService.getAgents(currentTenant.id));
+          setAllViewers(dataService.getViewers(currentTenant.id));
+        }
         setDataVersion((v) => v + 1);
       }).catch((err) => {
         console.warn('[AuthContext] Falha no refreshData cloud:', err);

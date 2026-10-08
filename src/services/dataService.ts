@@ -308,7 +308,7 @@ export const dataService = {
 
   // ================= GOVERNANÇA MASTER, BACKUP & PURGE =================
   getMasterUser(): User | undefined {
-    const users = this.getUsers();
+    const users = this.getUsers('all');
     return (
       users.find((u) => u.isMaster === true && u.active !== false) ||
       users.find((u) => u.isMaster === true) ||
@@ -324,7 +324,7 @@ export const dataService = {
     newMasterJobTitle?: string;
     keepCurrentMasterAsAdmin: boolean;
   }): { newMaster: User; previousMaster: User } {
-    const users = this.getUsers();
+    const users = this.getUsers('all');
     const currentMaster = users.find((u) => u.id === params.currentMasterId);
     if (!currentMaster) throw new Error('Titular Master atual não encontrado');
 
@@ -709,25 +709,136 @@ export const dataService = {
   },
 
   getUserById(id: string): User | undefined {
-    return this.getUsers().find((u) => u.id === id);
+    return this.getUsers('all').find((u) => u.id === id);
   },
 
   getUserByEmail(email: string): User | undefined {
     if (!email) return undefined;
     const clean = email.trim().toLowerCase();
-    return this.getUsers().find((u) => u.email && u.email.trim().toLowerCase() === clean);
+    return this.getUsers('all').find((u) => u.email && u.email.trim().toLowerCase() === clean);
   },
 
   getUserByIdOrEmail(idOrEmail: string): User | undefined {
     if (!idOrEmail) return undefined;
     const clean = idOrEmail.trim().toLowerCase();
-    return this.getUsers().find(
+    return this.getUsers('all').find(
       (u) => u.id === idOrEmail || (u.email && u.email.trim().toLowerCase() === clean)
     );
   },
 
+  async persistUserToCloud(user: User): Promise<void> {
+    if (!isSupabaseConfigured() || !user.email) return;
+    try {
+      const cleanEmail = user.email.trim().toLowerCase();
+      const payload: any = {
+        id: user.id || `auth_usr_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`,
+        tenant_id: user.tenantId,
+        email: cleanEmail,
+        name: user.name.trim(),
+        role: user.role,
+        job_title: user.jobTitle || (user.role === 'viewer' ? 'Diretor Industrial' : user.role === 'admin' ? 'Supervisor Lean' : 'Agente de Melhoria Contínua'),
+        department: 'Operações Industriais',
+        sector_name: user.allSectors ? 'Todos os Setores (Geral)' : user.sectorName || null,
+        sector_ids: user.sectorIds || (user.sectorId ? [user.sectorId] : []),
+        all_sectors: Boolean(user.allSectors),
+        active: user.active !== false,
+        avatar_url: user.avatarUrl || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('authorized_users')
+        .upsert(payload, { onConflict: 'email' });
+
+      if (error) {
+        console.warn('[dataService] Erro ao sincronizar usuário com Supabase:', error.message);
+      } else {
+        await supabase
+          .from('profiles')
+          .update({
+            role: user.role,
+            name: user.name.trim(),
+            job_title: user.jobTitle || payload.job_title,
+            avatar_url: user.avatarUrl || null,
+            status: user.active !== false ? 'ativo' : 'suspenso',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', cleanEmail);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir usuário no Supabase:', err);
+    }
+  },
+
+  async deleteUserFromCloud(id: string, email?: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      if (email) {
+        const cleanEmail = email.trim().toLowerCase();
+        await supabase.from('authorized_users').delete().eq('email', cleanEmail);
+        await supabase.from('profiles').update({ status: 'suspenso' }).eq('email', cleanEmail);
+      } else {
+        await supabase.from('authorized_users').delete().eq('id', id);
+      }
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir usuário no Supabase:', err);
+    }
+  },
+
+  async syncUsersFromCloud(tenantId?: string): Promise<User[]> {
+    if (!isSupabaseConfigured()) return this.getUsers(tenantId);
+
+    try {
+      const { data: cloudUsers, error } = await supabase.from('authorized_users').select('*');
+      if (error || !cloudUsers) {
+        console.warn('[dataService] Sincronização de usuários da nuvem não pôde ser concluída:', error?.message);
+        return this.getUsers(tenantId);
+      }
+
+      const mappedCloudUsers: User[] = cloudUsers.map((row: any) => {
+        const cleanEmail = (row.email || '').trim().toLowerCase();
+        return {
+          id: row.id || `usr_supa_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`,
+          tenantId: row.tenant_id,
+          name: row.name,
+          email: cleanEmail,
+          role: row.role as UserRole,
+          jobTitle: row.job_title || undefined,
+          avatarUrl: row.avatar_url || undefined,
+          sectorId: Array.isArray(row.sector_ids) && row.sector_ids.length > 0 ? row.sector_ids[0] : undefined,
+          sectorIds: Array.isArray(row.sector_ids) ? row.sector_ids : [],
+          sectorName: row.sector_name || undefined,
+          allSectors: Boolean(row.all_sectors),
+          active: row.active !== false,
+          isMaster: row.role === 'admin' && cleanEmail === 'mauricio.grigol@rafitec.com.br',
+          createdAt: row.created_at || new Date().toISOString(),
+        };
+      });
+
+      const localUsers = getStoredData<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+      const cloudEmailSet = new Set(mappedCloudUsers.map((u) => u.email.toLowerCase()));
+
+      const unsyncedLocals = localUsers.filter((u) => u.email && !cloudEmailSet.has(u.email.toLowerCase()));
+      if (unsyncedLocals.length > 0) {
+        for (const localUsr of unsyncedLocals) {
+          await this.persistUserToCloud(localUsr);
+        }
+      }
+
+      const merged = [...mappedCloudUsers, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.USERS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((u) => u.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de usuários:', err);
+      return this.getUsers(tenantId);
+    }
+  },
+
   createUser(user: Omit<User, 'id' | 'createdAt'>): User {
-    const users = this.getUsers();
+    const users = this.getUsers('all');
     
     // Check sector name if sectorId or allSectors provided
     let sectorName: string | undefined = user.sectorName;
@@ -749,11 +860,16 @@ export const dataService = {
     };
     users.push(newUser);
     setStoredData(STORAGE_KEYS.USERS, users);
+
+    if (isSupabaseConfigured()) {
+      this.persistUserToCloud(newUser).catch((err) => console.warn(err));
+    }
+
     return newUser;
   },
 
   updateUser(id: string, updates: Partial<User>): User {
-    const users = this.getUsers();
+    const users = this.getUsers('all');
     const index = users.findIndex((u) => u.id === id);
     if (index === -1) throw new Error('Usuário não encontrado');
 
@@ -771,13 +887,23 @@ export const dataService = {
 
     users[index] = { ...users[index], ...updates };
     setStoredData(STORAGE_KEYS.USERS, users);
+
+    if (isSupabaseConfigured()) {
+      this.persistUserToCloud(users[index]).catch((err) => console.warn(err));
+    }
+
     return users[index];
   },
 
   deleteUser(id: string): void {
-    // Soft or hard delete (we filter out or mark inactive)
-    const users = this.getUsers().filter((u) => u.id !== id);
-    setStoredData(STORAGE_KEYS.USERS, users);
+    const users = this.getUsers('all');
+    const target = users.find((u) => u.id === id);
+    const filtered = users.filter((u) => u.id !== id);
+    setStoredData(STORAGE_KEYS.USERS, filtered);
+
+    if (isSupabaseConfigured() && target) {
+      this.deleteUserFromCloud(id, target.email).catch((err) => console.warn(err));
+    }
   },
 
   getCurrentUser(): User {
@@ -2921,6 +3047,7 @@ export const dataService = {
     try {
       await Promise.all([
         this.syncSectorsFromCloud(tenantId),
+        this.syncUsersFromCloud(tenantId),
         this.syncActionsFromCloud(tenantId),
         this.syncKaizenIdeasFromCloud(tenantId),
       ]);
