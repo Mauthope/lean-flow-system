@@ -21,6 +21,10 @@ import {
   FileCheck2,
   DollarSign,
   Check,
+  Send,
+  Eye,
+  RefreshCw,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
@@ -57,6 +61,28 @@ export default function IntegracoesIaPage() {
   const [autoNotifyControladoria, setAutoNotifyControladoria] = useState(true);
   const [isSavingControladoria, setIsSavingControladoria] = useState(false);
   const [controladoriaSaved, setControladoriaSaved] = useState(false);
+
+  // Estados de Notificações Microsoft Graph API
+  const [graphStatus, setGraphStatus] = useState<{
+    isConfigured: boolean;
+    hasTenantId: boolean;
+    hasClientId: boolean;
+    hasClientSecret: boolean;
+    hasMailSender: boolean;
+    senderAddress: string;
+    isEmailEnabled: boolean;
+  } | null>(null);
+  const [isLoadingGraphStatus, setIsLoadingGraphStatus] = useState(false);
+  const [testEmailRecipient, setTestEmailRecipient] = useState('');
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+  const [testEmailResult, setTestEmailResult] = useState<{
+    success?: boolean;
+    simulated?: boolean;
+    message?: string;
+    error?: string;
+  } | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewTemplateType, setPreviewTemplateType] = useState<'controladoria' | 'test'>('controladoria');
 
   if (currentUser?.role === 'viewer') {
     return (
@@ -193,6 +219,67 @@ export default function IntegracoesIaPage() {
       setControladoriaSaved(true);
       setTimeout(() => setControladoriaSaved(false), 4000);
     }, 400);
+  };
+
+  // ===================================================================
+  // NOTIFICAÇÕES & DISPARO MICROSOFT GRAPH API (M365)
+  // ===================================================================
+  const loadGraphStatus = async () => {
+    setIsLoadingGraphStatus(true);
+    try {
+      const res = await fetch('/api/email/status');
+      const data = await res.json();
+      if (data.success) {
+        setGraphStatus(data);
+      }
+    } catch (err) {
+      console.warn('[IntegracoesIaPage] Falha ao consultar status do Microsoft Graph:', err);
+    } finally {
+      setIsLoadingGraphStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGraphStatus();
+    if (currentUser?.email) {
+      setTestEmailRecipient(currentUser.email);
+    }
+  }, [currentUser?.email]);
+
+  const handleSendTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testEmailRecipient.trim()) return;
+
+    setIsSendingTestEmail(true);
+    setTestEmailResult(null);
+
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: testEmailRecipient.trim(),
+          type: 'test',
+          tenantName: currentTenant?.name || 'Rafitec S.A.',
+          tenantId: currentTenant?.id,
+        }),
+      });
+
+      const data = await res.json();
+      setTestEmailResult({
+        success: data.success,
+        simulated: data.simulated,
+        message: data.message,
+        error: data.error,
+      });
+    } catch (err: any) {
+      setTestEmailResult({
+        success: false,
+        error: err?.message || 'Falha de comunicação ao testar envio.',
+      });
+    } finally {
+      setIsSendingTestEmail(false);
+    }
   };
 
   // ===================================================================
@@ -717,6 +804,416 @@ export default function IntegracoesIaPage() {
           </div>
         </form>
       </div>
+
+      {/* =================================================================== */}
+      {/* SEÇÃO 3: NOTIFICAÇÕES CORPORATIVAS MICROSOFT 365 / ENTRA ID        */}
+      {/* =================================================================== */}
+      <div
+        className="card"
+        style={{
+          marginTop: '2rem',
+          padding: '2rem',
+          borderRadius: '16px',
+          background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+          border: '1px solid rgba(6, 182, 212, 0.25)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(14, 165, 233, 0.4) 100%)',
+                border: '1px solid rgba(6, 182, 212, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Send size={22} color="#22d3ee" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                Notificações Corporativas Microsoft 365 (Microsoft Graph)
+              </h2>
+              <p style={{ fontSize: '0.875rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
+                Disparo transacional seguro de alertas, prazos e auditorias via Entra ID para todas as unidades do grupo
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button
+              onClick={loadGraphStatus}
+              disabled={isLoadingGraphStatus}
+              title="Atualizar diagnóstico"
+              style={{
+                padding: '0.45rem 0.75rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#cbd5e1',
+                fontSize: '0.78125rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+              }}
+            >
+              <RefreshCw size={13} className={isLoadingGraphStatus ? 'animate-spin' : ''} />
+              Atualizar Status
+            </button>
+
+            <button
+              onClick={() => setIsPreviewModalOpen(true)}
+              style={{
+                padding: '0.45rem 0.85rem',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                color: '#22d3ee',
+                fontSize: '0.78125rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              <Eye size={14} />
+              Pré-visualizar E-mail (Outlook)
+            </button>
+          </div>
+        </div>
+
+        {/* Diagnóstico das 5 Variáveis de Servidor */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem', marginBottom: '1.5rem' }}>
+          {/* Tenant ID */}
+          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#0b1120', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>AZURE_TENANT_ID</div>
+            <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: graphStatus?.hasTenantId ? '#10b981' : '#f59e0b' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: graphStatus?.hasTenantId ? '#34d399' : '#fbbf24' }}>
+                {graphStatus?.hasTenantId ? 'Detectado' : 'Aguardando TI'}
+              </span>
+            </div>
+          </div>
+
+          {/* Client ID */}
+          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#0b1120', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>AZURE_CLIENT_ID</div>
+            <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: graphStatus?.hasClientId ? '#10b981' : '#f59e0b' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: graphStatus?.hasClientId ? '#34d399' : '#fbbf24' }}>
+                {graphStatus?.hasClientId ? 'Detectado' : 'Aguardando TI'}
+              </span>
+            </div>
+          </div>
+
+          {/* Client Secret */}
+          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#0b1120', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>AZURE_CLIENT_SECRET</div>
+            <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: graphStatus?.hasClientSecret ? '#10b981' : '#f59e0b' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: graphStatus?.hasClientSecret ? '#34d399' : '#fbbf24' }}>
+                {graphStatus?.hasClientSecret ? 'Configurado' : 'Aguardando TI'}
+              </span>
+            </div>
+          </div>
+
+          {/* Mail Sender */}
+          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#0b1120', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Caixa Oficial (Sender)</div>
+            <div style={{ marginTop: '0.35rem', fontSize: '0.8125rem', fontWeight: 700, color: '#38bdf8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={graphStatus?.senderAddress}>
+              {graphStatus?.senderAddress || 'Não informado'}
+            </div>
+          </div>
+
+          {/* Flag EMAIL_ENABLED */}
+          <div style={{ padding: '0.85rem 1rem', borderRadius: '10px', backgroundColor: '#0b1120', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>Chave EMAIL_ENABLED</div>
+            <div style={{ marginTop: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: graphStatus?.isEmailEnabled ? '#10b981' : '#38bdf8' }} />
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: graphStatus?.isEmailEnabled ? '#34d399' : '#38bdf8' }}>
+                {graphStatus?.isEmailEnabled ? 'Envio Real (Ativo)' : 'Modo Simulado'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Informativo de Segurança SecOps */}
+        <div
+          style={{
+            padding: '1rem 1.25rem',
+            borderRadius: '10px',
+            backgroundColor: 'rgba(6, 182, 212, 0.06)',
+            border: '1px solid rgba(6, 182, 212, 0.2)',
+            fontSize: '0.8125rem',
+            color: '#cffafe',
+            lineHeight: 1.5,
+            marginBottom: '1.75rem',
+          }}
+        >
+          <strong style={{ color: '#ffffff', display: 'block', marginBottom: '0.25rem' }}>
+            Arquitetura Pré-configurada e Blindada (SecOps):
+          </strong>
+          O sistema conecta-se ao Microsoft Graph via <strong>OAuth2 Client Credentials</strong> exclusivamente no backend Next.js. Os templates são construídos em <strong>tabelas HTML com estilos inline</strong> para compatibilidade perfeita no Microsoft Outlook do PC e celulares. Para testar o envio sem enviar e-mails reais, mantenha <code>EMAIL_ENABLED=false</code> no <code>.env.local</code>.
+        </div>
+
+        {/* Formulário de Teste de Disparo */}
+        <form onSubmit={handleSendTestEmail} style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '1.25rem' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 0.5rem 0' }}>
+            Disparo de Teste e Homologação de Conectividade
+          </h3>
+          <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0 0 1rem 0' }}>
+            Envie uma mensagem de teste para verificar a entrega na caixa do Outlook. Se o envio real estiver desligado, o sistema validará a rota em modo simulado.
+          </p>
+
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '260px' }}>
+              <input
+                type="email"
+                required
+                value={testEmailRecipient}
+                onChange={(e) => setTestEmailRecipient(e.target.value)}
+                placeholder="Digite seu e-mail corporativo (ex: seu.nome@rafitec.com.br)"
+                className="input"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: '10px',
+                  backgroundColor: '#0b1120',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#ffffff',
+                  fontSize: '0.875rem',
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSendingTestEmail || !testEmailRecipient.trim()}
+              className="btn btn-primary"
+              style={{
+                padding: '0.65rem 1.5rem',
+                borderRadius: '10px',
+                fontWeight: 800,
+                fontSize: '0.875rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: '#0284c7',
+              }}
+            >
+              {isSendingTestEmail ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Testando Envio...
+                </>
+              ) : (
+                <>
+                  <Send size={15} />
+                  Enviar E-mail de Teste
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Feedback do Resultado do Teste */}
+          {testEmailResult && (
+            <div
+              style={{
+                marginTop: '1rem',
+                padding: '0.85rem 1rem',
+                borderRadius: '10px',
+                backgroundColor: testEmailResult.success
+                  ? testEmailResult.simulated
+                    ? 'rgba(6, 182, 212, 0.12)'
+                    : 'rgba(16, 185, 129, 0.12)'
+                  : 'rgba(239, 68, 68, 0.12)',
+                border: testEmailResult.success
+                  ? testEmailResult.simulated
+                    ? '1px solid rgba(6, 182, 212, 0.35)'
+                    : '1px solid rgba(16, 185, 129, 0.35)'
+                  : '1px solid rgba(239, 68, 68, 0.35)',
+                color: testEmailResult.success
+                  ? testEmailResult.simulated
+                    ? '#22d3ee'
+                    : '#34d399'
+                  : '#f87171',
+                fontSize: '0.8125rem',
+                lineHeight: 1.5,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                {testEmailResult.success ? (
+                  <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                ) : (
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                )}
+                <div>
+                  <strong>
+                    {testEmailResult.success
+                      ? testEmailResult.simulated
+                        ? 'Simulação Concluída com Sucesso'
+                        : 'E-mail Transacional Entregue com Sucesso'
+                      : 'Falha no Teste de Conexão'}
+                    :
+                  </strong>{' '}
+                  {testEmailResult.message || testEmailResult.error}
+                </div>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* Modal de Pré-visualização do Template HTML */}
+      {isPreviewModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: '90vh',
+              backgroundColor: '#0d1527',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            {/* Cabeçalho do Modal */}
+            <div
+              style={{
+                padding: '1rem 1.5rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#0a1020',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#ffffff' }}>
+                  Pré-visualização do Template de E-mail (Compatibilidade Outlook)
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  Renderização de tabela HTML com largura fixa de 600px e estilos inline
+                </span>
+              </div>
+
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Seletor de Tipo de Template */}
+            <div
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#111d35',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'flex',
+                gap: '0.5rem',
+              }}
+            >
+              <button
+                onClick={() => setPreviewTemplateType('controladoria')}
+                style={{
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '6px',
+                  backgroundColor: previewTemplateType === 'controladoria' ? '#0284c7' : 'transparent',
+                  color: previewTemplateType === 'controladoria' ? '#ffffff' : '#94a3b8',
+                  border: '1px solid',
+                  borderColor: previewTemplateType === 'controladoria' ? '#0284c7' : 'rgba(255, 255, 255, 0.1)',
+                  fontSize: '0.78125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Notificação de Auditoria da Controladoria
+              </button>
+
+              <button
+                onClick={() => setPreviewTemplateType('test')}
+                style={{
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '6px',
+                  backgroundColor: previewTemplateType === 'test' ? '#0284c7' : 'transparent',
+                  color: previewTemplateType === 'test' ? '#ffffff' : '#94a3b8',
+                  border: '1px solid',
+                  borderColor: previewTemplateType === 'test' ? '#0284c7' : 'rgba(255, 255, 255, 0.1)',
+                  fontSize: '0.78125rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                E-mail de Teste de Homologação M365
+              </button>
+            </div>
+
+            {/* Iframe com a Renderização Real do Template */}
+            <div style={{ flex: 1, backgroundColor: '#060a13', padding: '1rem', overflowY: 'auto' }}>
+              <iframe
+                title="Pré-visualização do e-mail"
+                src={`/api/email/preview?type=${previewTemplateType}&tenantName=${encodeURIComponent(currentTenant?.name || 'Rafitec S.A.')}`}
+                style={{
+                  width: '100%',
+                  height: '520px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  backgroundColor: '#060a13',
+                }}
+              />
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div
+              style={{
+                padding: '0.85rem 1.5rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: '#0a1020',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="btn btn-secondary btn-sm"
+              >
+                Fechar Visualização
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
