@@ -1288,8 +1288,8 @@ export const dataService = {
       merged.paybackMonths = monthlySavings > 0 && totalCost > 0 ? Number((totalCost / monthlySavings).toFixed(1)) : 0;
     }
 
-    // Auto-inicializar acompanhamento trimestral para que o agente registre os 3 meses antes da homologação
-    if (!merged.quarterlyFollowUp) {
+    // Auto-inicializar acompanhamento contínuo (12 meses) quando houver ganho financeiro
+    if (this.hasMonetaryGain(merged) && !merged.quarterlyFollowUp) {
       merged.quarterlyFollowUp = {
         enabled: true,
         startedAt: merged.startedAt || merged.createdAt || new Date().toISOString(),

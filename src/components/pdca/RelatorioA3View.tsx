@@ -730,19 +730,19 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
               </p>
             </div>
 
-            {/* COMPROVAÇÃO DE SUSTENTAÇÃO EM 3 MESES PELO AGENTE */}
+            {/* RESULTADOS INICIAIS DE SUSTENTAÇÃO (MESES 1 A 3) */}
             <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.25rem', textTransform: 'uppercase' }}>
-                  <Calendar size={12} color="#475569" /> Acompanhamento de 3 Meses pelo Agente:
+                  <Calendar size={12} color="#475569" /> Sustentação Inicial (Meses 1 a 3):
                 </span>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isThreeMonthsFollowUpCompleted(action) ? '#059669' : '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: isThreeMonthsFollowUpCompleted(action) ? '#059669' : '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
                   {isThreeMonthsFollowUpCompleted(action) ? (
                     <>
-                      <Check size={11} /> 3/3 Meses Consolidados
+                      <Check size={11} /> 3/3 Meses Registrados
                     </>
                   ) : (
-                    `${getFollowUpMonthsFilledCount(action)}/3 Meses`
+                    `${getFollowUpMonthsFilledCount(action)}/3 Meses Registrados`
                   )}
                 </span>
               </div>

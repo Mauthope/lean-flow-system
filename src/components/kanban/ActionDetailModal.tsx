@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { LeanAction, ActionStatus, User, ActionChecklistItem, ActivityStatus, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
 import { Modal } from '@/components/ui/Modal';
 import { PriorityBadge, WasteCategoryBadge, StatusBadge } from '@/components/ui/Badge';
-import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted } from '@/lib/utils';
+import { formatCurrency, formatDateTime, formatDate, WASTE_CATEGORIES, getFollowUpMonthsFilledCount } from '@/lib/utils';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
@@ -194,10 +194,10 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         );
         return;
       }
-      const monthsFilled = getFollowUpMonthsFilledCount(action);
-      if (monthsFilled < 3) {
+      const hasGain = dataService.hasMonetaryGain(action);
+      if (hasGain && !dataService.isControllershipApproved(action)) {
         alert(
-          `Submissão Bloqueada!\n\nConforme o fluxo Lean, o projeto só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.\n\nAbra a "Página Completa" do projeto para registrar as medições mensais pendentes.`
+          'SUBMISSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados. Pela governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e ter o parecer aprovado no Passo 4.2b da Página Completa antes de enviar para Homologação Master.'
         );
         return;
       }
@@ -228,16 +228,6 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
           'CONCLUSÃO BLOQUEADA PELA CONTROLADORIA!\n\nEste projeto possui ganhos monetários identificados. Pela governança corporativa, projetos com retorno financeiro devem ser obrigatoriamente submetidos à Controladoria e homologados pelo auditor contábil antes da conclusão final.\n\nPor favor, abra a "Página Completa" do projeto (Passo 4.2b) para submeter à Controladoria.'
         );
         return;
-      }
-
-      if (hasGain) {
-        const monthsFilled = getFollowUpMonthsFilledCount(action);
-        if (monthsFilled < 3) {
-          alert(
-            `Homologação / Conclusão Bloqueada!\n\nA homologação de projetos com retorno financeiro exige a comprovação prévia dos 3 meses de acompanhamento pelo agente (atualmente ${monthsFilled}/3 meses preenchidos).\n\nAbra a "Página Completa" do projeto para lançar as medições.`
-          );
-          return;
-        }
       }
       setShowCompletionForm(true);
       setConclusionDateInput(action.conclusionDate || new Date().toISOString().split('T')[0]);
@@ -714,26 +704,27 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
             })()}
 
             {(() => {
-              const monthsFilled = getFollowUpMonthsFilledCount(action);
-              if (action.status === 'concluida') return null;
+              const hasGain = dataService.hasMonetaryGain(action);
+              if (!hasGain) return null;
+              const count = action.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action);
               return (
                 <span
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 800,
-                    color: monthsFilled === 3 ? '#15803d' : '#b45309',
-                    backgroundColor: monthsFilled === 3 ? '#dcfce7' : '#fef3c7',
-                    border: `1px solid ${monthsFilled === 3 ? '#86efac' : '#fde68a'}`,
+                    color: '#0284c7',
+                    backgroundColor: '#e0f2fe',
+                    border: '1px solid #bae6fd',
                     padding: '0.2rem 0.5rem',
                     borderRadius: '6px',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.25rem',
                   }}
-                  title="Acompanhamento obrigatório de 3 meses pelo agente para homologação"
+                  title="Acompanhamento mensal contínuo de resultados (12 meses)"
                 >
-                  <Calendar size={12} color={monthsFilled === 3 ? '#15803d' : '#b45309'} />
-                  <span>{monthsFilled}/3 meses {monthsFilled === 3 ? '(Pronto)' : '(Aferição)'}</span>
+                  <Calendar size={12} color="#0284c7" />
+                  <span>{count}/12 meses apurados</span>
                 </span>
               );
             })()}

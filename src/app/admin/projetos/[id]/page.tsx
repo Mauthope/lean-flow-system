@@ -964,14 +964,6 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    if (hasMonetaryGain) {
-      const monthsFilled = getFollowUpMonthsFilledCount(action);
-      if (monthsFilled < 3) {
-        alert(`Atenção: O projeto com retorno financeiro só pode ser enviado para homologação após a adição dos resultados de 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos. Preencha todos os 3 meses para liberar a submissão.`);
-        return;
-      }
-    }
-
     // Se ainda não tinha diretriz vinculada, o Sensei IA conecta automaticamente
     let currentObjectiveId = action.strategicObjectiveId;
     let currentObjectiveName = action.strategicObjectiveName;
@@ -1031,14 +1023,6 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    if (hasMonetaryGain) {
-      const monthsFilled = getFollowUpMonthsFilledCount(action);
-      if (monthsFilled < 3) {
-        alert(`Atenção: A homologação master de projetos com retorno financeiro só pode ser aprovada após a adição e comprovação dos resultados dos 3 meses de acompanhamento pelo agente (Fase 4.3).\n\nProgresso atual: ${monthsFilled}/3 meses preenchidos.`);
-        return;
-      }
-    }
-
     let currentObjectiveId = action.strategicObjectiveId;
     let currentObjectiveName = action.strategicObjectiveName;
     let audit = action.senseiStrategicAudit;
@@ -1076,6 +1060,17 @@ export default function AdminProjectDetailPage() {
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Gestão Master',
       actualCostAvoided: finalAnnualCostAvoided,
+      quarterlyFollowUp: action.quarterlyFollowUp || (hasMonetaryGain ? {
+        enabled: true,
+        startedAt: new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+        monthsFilledCount: 0,
+        averageCostAvoided: monthlyAverage || 0,
+      } : undefined),
       strategicObjectiveId: currentObjectiveId,
       strategicObjectiveName: currentObjectiveName,
       senseiStrategicAudit: audit || action.senseiStrategicAudit,
@@ -4582,14 +4577,10 @@ export default function AdminProjectDetailPage() {
               padding: '1.75rem',
               borderRadius: '16px',
               backgroundColor: '#0f172a',
-              border: isThreeMonthsFollowUpCompleted(action)
-                ? '2px solid rgba(16, 185, 129, 0.45)'
-                : getFollowUpMonthsFilledCount(action) > 0
+              border: (action?.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action)) > 0
                 ? '1.5px solid rgba(6, 182, 212, 0.4)'
                 : '1px solid rgba(255, 255, 255, 0.12)',
-              boxShadow: isThreeMonthsFollowUpCompleted(action)
-                ? '0 10px 30px -5px rgba(16, 185, 129, 0.12)'
-                : '0 4px 20px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.5rem',
@@ -4603,22 +4594,22 @@ export default function AdminProjectDetailPage() {
                     width: '44px',
                     height: '44px',
                     borderRadius: '12px',
-                    backgroundColor: isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                    border: `1px solid ${isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.35)' : 'rgba(6, 182, 212, 0.35)'}`,
+                    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: isThreeMonthsFollowUpCompleted(action) ? '0 0 15px rgba(16, 185, 129, 0.2)' : '0 0 15px rgba(6, 182, 212, 0.2)',
+                    boxShadow: '0 0 15px rgba(6, 182, 212, 0.2)',
                   }}
                 >
-                  <Calendar size={22} color={isThreeMonthsFollowUpCompleted(action) ? '#34d399' : '#22d3ee'} />
+                  <Calendar size={22} color="#22d3ee" />
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                      4.3 Ciclo Real de 12 Meses de Ganhos Fabris (Homologação & Caixa Real)
+                      4.3 Ciclo Real de 12 Meses de Ganhos Fabris (Acompanhamento Contínuo)
                     </h3>
-                    {isThreeMonthsFollowUpCompleted(action) ? (
+                    {hasMonetaryGain && (
                       <span
                         style={{
                           fontSize: '0.7rem',
@@ -4633,24 +4624,7 @@ export default function AdminProjectDetailPage() {
                           gap: '0.25rem',
                         }}
                       >
-                        <CheckCircle2 size={12} /> SUSTENTAÇÃO CONSOLIDADA (3/3 MESES)
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                          color: '#fbbf24',
-                          border: '1px solid rgba(245, 158, 11, 0.35)',
-                          padding: '0.15rem 0.55rem',
-                          borderRadius: '9999px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.25rem',
-                        }}
-                      >
-                        <Hourglass size={11} /> HOMOLOGAÇÃO EM ACOMPANHAMENTO ({getFollowUpMonthsFilledCount(action)}/3 MESES OBRIGATÓRIOS)
+                        <TrendingUp size={11} /> ACOMPANHAMENTO CONTÍNUO (12 MESES)
                       </span>
                     )}
 
@@ -4673,14 +4647,14 @@ export default function AdminProjectDetailPage() {
                     </span>
                   </div>
                   <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: '0.25rem 0 0', maxWidth: '850px', lineHeight: 1.5 }}>
-                    Metodologia Lean adaptada à realidade fabril: os <strong>3 primeiros meses</strong> constituem a homologação obrigatória de sustentação para a Controladoria e Diretoria. Do <strong>4º ao 12º mês</strong>, o agente continua alimentando o resultado apurado à medida que os dados de refugo, setup ou energia ficarem disponíveis (sem travas de dia fatal), compondo o caixa real no Gemba.
+                    Alimentação mensal contínua dos resultados por 12 meses: a homologação do projeto é liberada mediante o aval da Controladoria (ou de forma direta para projetos sem retorno financeiro). Os meses de 1 a 12 integram o ciclo de sustentação regular no chão de fábrica, compondo o caixa real apurado no Gemba.
                   </p>
                 </div>
               </div>
             </div>
 
             {/* ========================================================================= */}
-            {/* FASE 1: PORTÃO DE HOMOLOGAÇÃO DA SUSTENTAÇÃO (MESES 1 A 3 - OBRIGATÓRIO)  */}
+            {/* MESES 1 A 3: RESULTADOS INICIAIS DE SUSTENTAÇÃO                           */}
             {/* ========================================================================= */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
@@ -4697,14 +4671,14 @@ export default function AdminProjectDetailPage() {
                       textTransform: 'uppercase',
                     }}
                   >
-                    Fase 1 • Portão de Homologação
+                    Meses 1 a 3
                   </span>
                   <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#ffffff' }}>
-                    Meses 1 a 3 (Requisito Controladoria)
+                    Resultados Iniciais de Sustentação
                   </span>
                 </div>
                 <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                  {isThreeMonthsFollowUpCompleted(action) ? 'Pronto para homologação' : `${3 - getFollowUpMonthsFilledCount(action)} mês(es) para homologar`}
+                  {getFollowUpMonthsFilledCount(action)} de 3 meses iniciais preenchidos
                 </span>
               </div>
 
@@ -4855,40 +4829,32 @@ export default function AdminProjectDetailPage() {
                       backgroundColor: isThreeMonthsFollowUpCompleted(action)
                         ? 'rgba(16, 185, 129, 0.2)'
                         : 'rgba(6, 182, 212, 0.2)',
-                      border: `1px solid ${isThreeMonthsFollowUpCompleted(action) ? 'rgba(16, 185, 129, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
+                      border: '1px solid rgba(6, 182, 212, 0.4)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <Sigma size={24} color={isThreeMonthsFollowUpCompleted(action) ? '#34d399' : '#22d3ee'} />
+                    <Sigma size={24} color="#22d3ee" />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <h4 style={{ fontSize: '1rem', fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
-                        Média Trimestral de Sustentação
+                        Média de Sustentação Apurada
                       </h4>
-                      {isThreeMonthsFollowUpCompleted(action) ? (
-                        <span style={{ fontSize: '0.675rem', fontWeight: 900, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.1rem 0.45rem', borderRadius: '9999px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <CheckCircle2 size={11} /> PRONTO PARA HOMOLOGAÇÃO
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.675rem', fontWeight: 700, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '9999px' }}>
-                          {getFollowUpMonthsFilledCount(action)}/3 MESES PREENCHIDOS
-                        </span>
-                      )}
+                      <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#22d3ee', backgroundColor: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.35)', padding: '0.1rem 0.45rem', borderRadius: '9999px', fontFamily: 'var(--font-mono)' }}>
+                        {action.quarterlyFollowUp?.monthsFilledCount || getFollowUpMonthsFilledCount(action)}/12 MESES APURADOS
+                      </span>
                     </div>
                     <p style={{ fontSize: '0.78125rem', color: '#94a3b8', margin: '0.2rem 0 0' }}>
-                      {isThreeMonthsFollowUpCompleted(action)
-                        ? 'Os 3 meses foram aferidos com sucesso pelo agente! A média definitiva está consolidada para homologação do Gestor Master no passo 4.4 abaixo.'
-                        : `Preencha os ${3 - getFollowUpMonthsFilledCount(action)} mês(es) restante(s) acima para consolidar a média definitiva e habilitar o envio para Homologação Master.`}
+                      Média mensal de custo evitado apurada a partir dos lançamentos do acompanhamento contínuo no chão de fábrica.
                     </p>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '0.675rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700 }}>
-                    Média dos 3 Meses
+                    Média Mensal Apurada
                   </span>
                   <h3 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
                     {action.quarterlyFollowUp?.averageCostAvoided
@@ -5308,15 +5274,11 @@ export default function AdminProjectDetailPage() {
 
           {/* Card 4.4: Homologação Final da Entidade Master */}
           {(() => {
-            const monthsFilled = getFollowUpMonthsFilledCount(action);
-            const isThreeMonthsDone = monthsFilled === 3;
             const hasUncompleted = uncompletedActivities.length > 0;
             const isControllershipSatisfied = !hasMonetaryGain || isControllershipApproved;
-            const isFollowUpSatisfied = hasMonetaryGain ? isThreeMonthsDone : true;
-            const isFullyReady = !hasUncompleted && isControllershipSatisfied && isFollowUpSatisfied;
+            const isFullyReady = !hasUncompleted && isControllershipSatisfied;
             const isAwaitingApproval = action.status === 'aguardando_aprovacao' || action.submittedForApproval;
             const isBlockedByControladoria = hasMonetaryGain && !isControllershipApproved;
-            const isBlockedByFollowUp = hasMonetaryGain && !isThreeMonthsDone;
 
             return (
               <div
@@ -5332,8 +5294,6 @@ export default function AdminProjectDetailPage() {
                     ? '2px solid rgba(239, 68, 68, 0.45)'
                     : isBlockedByControladoria
                     ? '2px solid rgba(245, 158, 11, 0.5)'
-                    : isBlockedByFollowUp
-                    ? '2px solid rgba(6, 182, 212, 0.5)'
                     : '2px solid rgba(16, 185, 129, 0.4)',
                   backgroundColor: action.masterApproved
                     ? 'rgba(16, 185, 129, 0.1)'
@@ -5343,8 +5303,6 @@ export default function AdminProjectDetailPage() {
                     ? 'rgba(239, 68, 68, 0.06)'
                     : isBlockedByControladoria
                     ? 'rgba(245, 158, 11, 0.06)'
-                    : isBlockedByFollowUp
-                    ? 'rgba(6, 182, 212, 0.06)'
                     : 'rgba(16, 185, 129, 0.05)',
                   display: 'flex',
                   alignItems: 'center',
@@ -5450,8 +5408,6 @@ export default function AdminProjectDetailPage() {
                         ? '#dc2626'
                         : isBlockedByControladoria
                         ? '#d97706'
-                        : isBlockedByFollowUp
-                        ? '#0284c7'
                         : '#10b981',
                       color: '#ffffff',
                       display: 'flex',
@@ -5470,8 +5426,6 @@ export default function AdminProjectDetailPage() {
                       <AlertTriangle size={24} color="#ffffff" />
                     ) : isBlockedByControladoria ? (
                       <Landmark size={24} color="#ffffff" />
-                    ) : isBlockedByFollowUp ? (
-                      <Lock size={24} color="#ffffff" />
                     ) : (
                       <Rocket size={24} color="#ffffff" />
                     )}
@@ -5490,8 +5444,6 @@ export default function AdminProjectDetailPage() {
                           ? '#f87171'
                           : isBlockedByControladoria
                           ? '#fbbf24'
-                          : isBlockedByFollowUp
-                          ? '#94a3b8'
                           : '#34d399',
                         margin: 0,
                         fontFamily: 'var(--font-heading)',
@@ -5504,9 +5456,7 @@ export default function AdminProjectDetailPage() {
                         : hasUncompleted
                         ? `4.4 Homologação Bloqueada (${uncompletedActivities.length} Ação(ões) 5W2H Pendente(s))`
                         : isBlockedByControladoria
-                        ? '4.4 Homologação Bloqueada (Exige Parecer da Controladoria)'
-                        : isBlockedByFollowUp
-                        ? `4.4 Homologação Master (Acompanhamento: ${monthsFilled}/3 Meses)`
+                        ? '4.4 Homologação Bloqueada (Exige Aval da Controladoria)'
                         : '4.4 Pronto para Homologação Master'}
                     </h4>
 
@@ -5518,12 +5468,10 @@ export default function AdminProjectDetailPage() {
                         : hasUncompleted
                         ? `O projeto não pode ser homologado enquanto existirem ${uncompletedActivities.length} atividade(s) 5W2H pendentes de conclusão no Passo 2.`
                         : isBlockedByControladoria
-                        ? `Este projeto possui ganho monetário identificado (${formatCurrency(identifiedGainValue)}). O envio e parecer aprovado da Controladoria no Passo 4.2b são obrigatórios.`
-                        : isBlockedByFollowUp
-                        ? `O agente deve registrar os 3 meses de acompanhamento no Passo 4.3 acima (Progresso: ${monthsFilled}/3 meses) para comprovação da sustentação fabril.`
+                        ? `Este projeto possui ganho monetário identificado (${formatCurrency(identifiedGainValue)}). O envio e parecer aprovado da Controladoria no Passo 4.2b são obrigatórios para homologação.`
                         : !hasMonetaryGain
                         ? 'Todas as ações 5W2H foram finalizadas com sucesso e o envio à Controladoria está dispensado. O projeto está 100% pronto para homologação técnica.'
-                        : 'Os 3 meses de acompanhamento, ações 5W2H e certificação da Controladoria foram concluídos com sucesso! O projeto está pronto para a homologação do Gestor Master.'}
+                        : 'Ações 5W2H concluídas e certificação contábil da Controladoria aprovada com sucesso! O projeto está 100% liberado para homologação do Gestor Master.'}
                     </p>
                   </div>
                 </div>
@@ -5606,8 +5554,6 @@ export default function AdminProjectDetailPage() {
                           ? `A homologação está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
                           : isBlockedByControladoria
                           ? `Submissão bloqueada: projetos com ganho financeiro (${formatCurrency(identifiedGainValue)}) exigem aprovação da Controladoria no Passo 4.2b.`
-                          : isBlockedByFollowUp
-                          ? `A submissão só é liberada após o preenchimento dos 3 meses de resultados pelo agente (${monthsFilled}/3 preenchidos).`
                           : undefined
                       }
                     >
@@ -5619,8 +5565,6 @@ export default function AdminProjectDetailPage() {
                           ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H)`
                           : isBlockedByControladoria
                           ? 'Homologação Bloqueada (Aguardando Controladoria)'
-                          : isBlockedByFollowUp
-                          ? `Homologação Bloqueada (${monthsFilled}/3 meses)`
                           : 'Submeter para Homologação Master'}
                       </span>
                     </button>
@@ -5660,8 +5604,6 @@ export default function AdminProjectDetailPage() {
                           ? `A homologação master está bloqueada: existem ${uncompletedActivities.length} atividade(s) 5W2H não concluída(s) no Passo 2.`
                           : isBlockedByControladoria
                           ? `Homologação bloqueada: projetos com ganho monetário (${formatCurrency(identifiedGainValue)}) exigem parecer aprovado da Controladoria no Passo 4.2b.`
-                          : isBlockedByFollowUp
-                          ? `A homologação master só pode ser realizada após a adição dos resultados de 3 meses pelo agente (${monthsFilled}/3 preenchidos).`
                           : 'Homologar projeto e concluir ciclo PDCA'
                       }
                     >
@@ -5671,8 +5613,6 @@ export default function AdminProjectDetailPage() {
                           ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H)`
                           : isBlockedByControladoria
                           ? 'Homologação Bloqueada (Aguardando Controladoria)'
-                          : isBlockedByFollowUp
-                          ? `Homologação Bloqueada (${monthsFilled}/3 meses)`
                           : 'Homologar Projeto & Concluir Ciclo PDCA'}
                       </span>
                     </button>
@@ -6668,12 +6608,12 @@ export default function AdminProjectDetailPage() {
                       </div>
                     </div>
 
-                    {/* Card 3: Auditoria dos 3 Meses */}
+                    {/* Card 3: Sustentação Inicial (Meses 1 a 3) */}
                     <div style={{ backgroundColor: '#0f172a', padding: '1.15rem', borderRadius: '14px', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <Calendar size={18} color="#22d3ee" />
                         <h4 style={{ fontSize: '0.84375rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                          Auditoria dos 3 Meses
+                          Sustentação Inicial (Meses 1 a 3)
                         </h4>
                       </div>
 
