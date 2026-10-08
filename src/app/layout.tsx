@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { PwaRegister } from '@/components/pwa/PwaRegister';
+import { SenseiFloatingAssistant } from '@/components/sensei/SenseiFloatingAssistant';
 
 export const viewport: Viewport = {
   themeColor: '#090e1a',
@@ -68,6 +69,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             {children}
+            <SenseiFloatingAssistant />
             <PwaRegister />
           </AuthProvider>
         </ThemeProvider>
