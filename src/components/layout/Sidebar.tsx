@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { MagneticDock, type DockItem } from '@/components/ui/MagneticDock';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Modal } from '@/components/ui/Modal';
@@ -167,7 +168,28 @@ export const Sidebar: React.FC = () => {
     },
   ];
 
+  const router = useRouter();
   const currentNav = isViewer ? viewerNav : isAdmin ? adminNav : agentNav;
+
+  const dockItems: DockItem[] = React.useMemo(() => {
+    const allItems = currentNav.flatMap((section) => section.items);
+    return allItems.map((item) => {
+      const Icon = item.icon;
+      const isActive = pathname === item.href;
+      return {
+        id: item.href,
+        label: item.label,
+        active: isActive,
+        icon: <Icon size={18} className="stroke-[2]" />,
+        tint: isActive ? ['#06b6d4', '#10b981'] : ['#1e293b', '#0f172a'],
+      };
+    });
+  }, [currentNav, pathname]);
+
+  const handleDockSelect = (href: string) => {
+    router.push(href);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -189,7 +211,7 @@ export const Sidebar: React.FC = () => {
       <aside
         className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
         style={{
-          width: isSidebarCollapsed ? '72px' : '260px',
+          width: isSidebarCollapsed ? '78px' : '260px',
           backgroundColor: 'var(--bg-sidebar)',
           color: 'var(--text-primary)',
           display: 'flex',
@@ -201,7 +223,7 @@ export const Sidebar: React.FC = () => {
           top: 0,
           zIndex: 95,
           transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease, background-color 0.2s ease',
-          overflow: 'hidden',
+          overflow: isSidebarCollapsed ? 'visible' : 'hidden',
         }}
       >
         {/* Brand & Toggle Header */}
@@ -519,122 +541,131 @@ export const Sidebar: React.FC = () => {
           )}
         </div>
 
-        {/* Navigation Sections */}
-        <div
-          style={{
-            flex: 1,
-            padding: isSidebarCollapsed ? '0.75rem 0.4rem' : '0.85rem 0.65rem',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: isSidebarCollapsed ? '0.85rem' : '1.15rem',
-          }}
-        >
-          {currentNav.map((section, idx) => (
-            <div key={idx}>
-              {!isSidebarCollapsed && (
+        {/* Navigation Sections & Magnetic Dock */}
+        {isSidebarCollapsed ? (
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0.4rem 0',
+            }}
+            className="no-scrollbar"
+          >
+            <MagneticDock
+              items={dockItems}
+              orientation="vertical"
+              wallSide="left"
+              magnetRadius={85}
+              maxScale={1.46}
+              lift={18}
+              idleWave
+              tooltip
+              onSelect={handleDockSelect}
+            />
+          </div>
+        ) : (
+          <div
+            style={{
+              flex: 1,
+              padding: '0.85rem 0.65rem',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.15rem',
+            }}
+          >
+            {currentNav.map((section, idx) => (
+              <div key={idx}>
                 <p
                   style={{
                     fontSize: '0.65rem',
                     fontWeight: 800,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
-                    color: isDark ? '#64748b' : '#64748b',
+                    color: '#64748b',
                     padding: '0 0.5rem 0.35rem',
                   }}
                 >
                   {section.label}
                 </p>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      title={isSidebarCollapsed ? item.label : undefined}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-                        padding: isSidebarCollapsed ? '0.65rem 0' : '0.55rem 0.7rem',
-                        borderRadius: '9px',
-                        fontSize: '0.8125rem',
-                        fontWeight: isActive ? 800 : 600,
-                        color: isActive
-                          ? (isDark ? '#22d3ee' : '#0284c7')
-                          : (isDark ? '#94a3b8' : '#475569'),
-                        backgroundColor: isActive
-                          ? (isDark ? 'rgba(6, 182, 212, 0.14)' : '#e0f2fe')
-                          : 'transparent',
-                        border: isActive
-                          ? (isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd')
-                          : '1px solid transparent',
-                        textDecoration: 'none',
-                        transition: 'all 0.15s ease',
-                        boxShadow: isActive
-                          ? (isDark ? '0 2px 10px rgba(6, 182, 212, 0.15)' : '0 2px 8px rgba(2, 132, 199, 0.12)')
-                          : 'none',
-                        position: 'relative',
-                      }}
-                      onMouseOver={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
-                          e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
-                        }
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Icon size={18} color={isActive ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#475569')} />
-                        {!isSidebarCollapsed && <span>{item.label}</span>}
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  {section.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.55rem 0.7rem',
+                          borderRadius: '9px',
+                          fontSize: '0.8125rem',
+                          fontWeight: isActive ? 800 : 600,
+                          color: isActive
+                            ? (isDark ? '#22d3ee' : '#0284c7')
+                            : (isDark ? '#94a3b8' : '#475569'),
+                          backgroundColor: isActive
+                            ? (isDark ? 'rgba(6, 182, 212, 0.14)' : '#e0f2fe')
+                            : 'transparent',
+                          border: isActive
+                            ? (isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd')
+                            : '1px solid transparent',
+                          textDecoration: 'none',
+                          transition: 'all 0.15s ease',
+                          boxShadow: isActive
+                            ? (isDark ? '0 2px 10px rgba(6, 182, 212, 0.15)' : '0 2px 8px rgba(2, 132, 199, 0.12)')
+                            : 'none',
+                          position: 'relative',
+                        }}
+                        onMouseOver={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
+                            e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (!isActive) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
+                          }
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <Icon size={18} color={isActive ? (isDark ? '#22d3ee' : '#0284c7') : (isDark ? '#94a3b8' : '#475569')} />
+                          <span>{item.label}</span>
+                        </div>
 
-                      {!isSidebarCollapsed && item.badge && (
-                        <span
-                          style={{
-                            fontSize: '0.625rem',
-                            fontWeight: 800,
-                            backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe',
-                            color: isDark ? '#22d3ee' : '#0284c7',
-                            padding: '0.08rem 0.35rem',
-                            borderRadius: '9999px',
-                            border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
-                          }}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-
-                      {/* Small dot indicator when collapsed & active */}
-                      {isSidebarCollapsed && isActive && (
-                        <span
-                          style={{
-                            position: 'absolute',
-                            right: '6px',
-                            width: '4px',
-                            height: '4px',
-                            borderRadius: '50%',
-                            backgroundColor: isDark ? '#22d3ee' : '#0284c7',
-                            boxShadow: isDark ? '0 0 6px #22d3ee' : '0 0 4px #0284c7',
-                          }}
-                        />
-                      )}
-                    </Link>
-                  );
-                })}
+                        {item.badge && (
+                          <span
+                            style={{
+                              fontSize: '0.625rem',
+                              fontWeight: 800,
+                              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe',
+                              color: isDark ? '#22d3ee' : '#0284c7',
+                              padding: '0.08rem 0.35rem',
+                              borderRadius: '9999px',
+                              border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid #bae6fd',
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Footer Area */}
         <div

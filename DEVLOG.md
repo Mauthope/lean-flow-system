@@ -32,3 +32,27 @@
 - Segurança da informação e isolamento por Tenant mantidos em conformidade estrita com a PSI do Grupo Vaccaro e políticas Supabase RLS.
 
 ---
+
+## [2026-10-09] Implementação Blindada: Menu Lateral com Magnetic Dock & Sensei Copilot com Orbe 3D
+**Agentes Responsáveis:** `legal-counsel`, `designer`, `cleancod`, `chronicler`  
+**Veredito Jurídico:** `[MIT LICENSE CONFORME]` / `[BLINDAGEM JURÍDICA E DE PROPRIEDADE INTELECTUAL CERTIFICADA]`
+
+### 1. Parecer de Propriedade Intelectual & Licenciamento
+- Origem dos recursos de interface inspecionados: repositório `Mauthope/akiom-rh`, derivados da biblioteca comunitária aberta `21st.dev`.
+- Componentes avaliados: `magnetic-dock.tsx` (autor: Motiq) e `ai-thinking-orb-and-input.tsx` (autor: @anark17r).
+- Regime jurídico: **MIT License** (licença permissiva comercial irrestrita, permitindo modificação, integração e uso em software proprietário).
+- Blindagem legal aplicada:
+  - Inserção dos cabeçalhos formais de copyright e atribuição MIT em `src/components/ui/MagneticDock.tsx` e `src/components/ui/AiThinkingOrb.tsx` em cumprimento à Lei Federal nº 9.609/1998 e Lei Federal nº 9.610/1998.
+  - Princípio de Reengenharia *Clean Room*: expurgo integral de termos e lógicas de RH (candidatos, vagas, triagem); transposição estrita para o domínio industrial Lean TPS (Kaizen, Gemba, A3, 5S, Custo Evitado).
+
+### 2. Implementação UI/UX e Design System Obsidian Navy
+- `src/components/ui/MagneticDock.tsx`: Dock magnético vertical/horizontal com física Euler, molas gaussianas e tooltips com Framer Motion. Integrado à `Sidebar.tsx` no modo recolhido (`collapsed`).
+- `src/components/ui/AiThinkingOrb.tsx` & `ai-thinking-orb.css`: Orbe tridimensional interativo em canvas pontilhado Obsidian Navy, keyframes de pulso e rotação, timeline de raciocínio Lean Sensei e captura de voz por demanda via Web Speech API.
+- `src/components/sensei/SenseiFloatingAssistant.tsx`: Assistente flutuante executivo com alternância entre Orbe 3D e Histórico interativo, comando de atalho `Alt + S`, expansão em modal maximizado (`Maximize2`), comandos rápidos operacionais e conformidade com voz desativada por padrão.
+
+### 3. Validação Técnica
+- Dependência `tailwind-merge` instalada de forma segura.
+- Compilação estrita em TypeScript (`tsc --noEmit`): 0 erros.
+- Build Next.js 14 App Router: 100% aprovado (41/41 rotas compiladas com sucesso, 0 erros e 0 warnings).
+
+---

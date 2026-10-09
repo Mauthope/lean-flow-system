@@ -1,3 +1,15 @@
+/**
+ * SenseiFloatingAssistant.tsx
+ *
+ * Copiloto Operacional de Inteligência Artificial para o Lean Flow System
+ *
+ * Conformidade & Compliance (Leis Federais 9.609/98, 9.610/98 e 13.709/18 - LGPD):
+ * - Modo duplo interativo: Orbe 3D Animado (MorphOrb) e Histórico de Ações Executivas.
+ * - Integração com fala (Web Speech API) e síntese de áudio (TTS) sob demanda.
+ * - Sanitização automática de PII via endpoint /api/ai/sensei.
+ * - Restrição rigorosa de Zero Emojis conforme diretrizes de governança do projeto.
+ */
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -18,20 +30,27 @@ import {
   Workflow,
   TrendingUp,
   Lightbulb,
+  MessageSquare,
+  Maximize2,
+  Minimize2,
+  FileText,
 } from 'lucide-react';
 import {
   SenseiChatMessage,
   askSenseiAssistant,
 } from '@/services/senseiAgentService';
+import { AiThinkingOrb } from '@/components/ui/AiThinkingOrb';
 
 export const SenseiFloatingAssistant: React.FC = () => {
   const router = useRouter();
   const { currentUser, currentTenant, refreshData } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'orb' | 'chat'>('orb');
+  const [isExpanded, setIsExpanded] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false); // Desativado por padrão conforme solicitado
+  const [voiceEnabled, setVoiceEnabled] = useState(false); // Desativado por padrão conforme diretriz
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
 
@@ -50,24 +69,44 @@ export const SenseiFloatingAssistant: React.FC = () => {
       {
         id: 'init_sensei',
         sender: 'sensei',
-        text: 'Olá! Sou o Sensei IA, seu copiloto operacional Lean. Tenho acesso total ao Gemba: posso cadastrar projetos, consultar indicadores e registrar ideias no Canal Kaizen. Como posso ajudar?',
+        text: 'Olá! Sou o Sensei IA, seu copiloto operacional Lean. Tenho acesso total ao Gemba: posso cadastrar projetos Kaizen, consultar indicadores de custo evitado e registrar ideias no Canal Kaizen. Como posso ajudar?',
         timestamp: 'Agora',
       },
     ];
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Rolagem automática para o final das mensagens
+  // Rolagem automática para o final das mensagens no modo chat
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && viewMode === 'chat') {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, viewMode]);
 
-  // Inicialização do Reconhecimento de Voz (Web Speech API nativo)
+  // Foco automático no input ao alternar para modo chat
+  useEffect(() => {
+    if (isOpen && viewMode === 'chat') {
+      setTimeout(() => inputRef.current?.focus(), 200);
+    }
+  }, [isOpen, viewMode]);
+
+  // Atalho global de teclado: Alt + S ou Alt + A
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.altKey && (e.key === 's' || e.key === 'S' || e.key === 'a' || e.key === 'A')) {
+        e.preventDefault();
+        setIsOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Inicialização do Reconhecimento de Voz nativo
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const SpeechRecognition =
@@ -106,6 +145,14 @@ export const SenseiFloatingAssistant: React.FC = () => {
         recognitionRef.current = recognition;
       }
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+    };
   }, []);
 
   // Não renderiza se o usuário não estiver logado
@@ -116,12 +163,14 @@ export const SenseiFloatingAssistant: React.FC = () => {
   // Alterna gravação por voz
   const toggleListening = () => {
     if (!speechSupported || !recognitionRef.current) {
-      alert('Seu navegador não possui suporte nativo à gravação de voz. Você pode digitar sua mensagem normalmente.');
+      alert('Seu navegador não possui suporte nativo à gravação de voz. Recomendamos o Google Chrome ou Microsoft Edge.');
       return;
     }
 
     if (isListening) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch {}
       setIsListening(false);
     } else {
       try {
@@ -132,14 +181,12 @@ export const SenseiFloatingAssistant: React.FC = () => {
     }
   };
 
-  // Reproduz áudio TTS
+  // Reproduz áudio TTS (somente sob demanda ou se voz estiver ativada)
   const playSpeech = (text: string, base64Audio?: string | null) => {
-    if (!voiceEnabled) return;
-
     if (base64Audio) {
       try {
         if (!audioPlayerRef.current) {
-          audioPlayerRef.current = new window.Image() as any; // placeholder
+          audioPlayerRef.current = new window.Image() as any;
         }
         const audio = new Audio(`data:audio/mp3;base64,${base64Audio}`);
         audio.play().catch(() => {});
@@ -150,21 +197,79 @@ export const SenseiFloatingAssistant: React.FC = () => {
     }
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text.slice(0, 300));
-      utterance.lang = 'pt-BR';
-      utterance.rate = 1.05;
-      window.speechSynthesis.speak(utterance);
+      try {
+        window.speechSynthesis.cancel();
+        const cleanText = text.replace(/[*_#`]/g, '').replace(/\n+/g, '. ');
+        const utterance = new SpeechSynthesisUtterance(cleanText.slice(0, 350));
+        utterance.lang = 'pt-BR';
+        utterance.rate = 1.05;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('[Sensei TTS Error]:', e);
+      }
     }
   };
 
-  // Envia mensagem para o Sensei
+  // Submissão pelo Orbe 3D interativo
+  const handleOrbSubmit = async (promptText: string): Promise<string> => {
+    const textToSend = promptText.trim();
+    if (!textToSend) return 'Nenhum comando informado.';
+
+    const userMsg: SenseiChatMessage = {
+      id: 'usr_' + Date.now(),
+      sender: 'user',
+      text: textToSend,
+      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+
+    try {
+      const senseiReply = await askSenseiAssistant({
+        message: textToSend,
+        context: {
+          currentTenant,
+          currentUser,
+          refreshData,
+        },
+        chatHistory: messages,
+        enableVoiceResponse: voiceEnabled,
+      });
+
+      setMessages((prev) => [...prev, senseiReply]);
+
+      if (voiceEnabled && senseiReply.text) {
+        playSpeech(senseiReply.text, senseiReply.audioBase64);
+      }
+
+      return senseiReply.text;
+    } catch (err: any) {
+      const errorText = 'Ocorreu uma falha momentânea ao processar sua solicitação no Gemba. Por favor, tente novamente.';
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: 'err_' + Date.now(),
+          sender: 'sensei',
+          text: errorText,
+          timestamp: 'Agora',
+        },
+      ]);
+      return errorText;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Envia mensagem no modo chat tradicional
   const handleSendMessage = async (customText?: string) => {
-    const textToSend = (customText || inputText).trim();
+    const textToSend = (customText !== undefined ? customText : inputText).trim();
     if (!textToSend || isLoading) return;
 
     if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch {}
       setIsListening(false);
     }
 
@@ -227,634 +332,400 @@ export const SenseiFloatingAssistant: React.FC = () => {
 
   return (
     <>
-      {/* BOTÃO FLUTUANTE "AJUDA DO SENSEI" */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          zIndex: 9980,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-        }}
-      >
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          title="Ajuda do Sensei IA (Copiloto Operacional)"
+      {/* BOTÃO FLUTUANTE "AJUDA DO SENSEI" (FAB) */}
+      {!isOpen && (
+        <div
           style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 9980,
             display: 'flex',
             alignItems: 'center',
             gap: '0.65rem',
-            padding: isOpen ? '0.75rem 1rem' : '0.8rem 1.25rem',
-            borderRadius: '9999px',
-            backgroundColor: isOpen ? '#0f172a' : '#08101e',
-            border: isOpen ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(34, 211, 238, 0.45)',
-            boxShadow: isOpen
-              ? '0 10px 30px rgba(0, 0, 0, 0.6)'
-              : '0 10px 35px -5px rgba(6, 182, 212, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
-            color: '#ffffff',
-            cursor: 'pointer',
-            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-          }}
-          onMouseEnter={(e) => {
-            if (!isOpen) {
-              e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-              e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.7)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(6, 182, 212, 0.55)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isOpen) {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.45)';
-              e.currentTarget.style.boxShadow = '0 10px 35px -5px rgba(6, 182, 212, 0.4)';
-            }
           }}
         >
-          {/* Ícone com animação de pulso etéreo */}
-          <div
-            style={{
-              position: 'relative',
-              width: '24px',
-              height: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+          <button
+            onClick={() => setIsOpen(true)}
+            title="Ajuda do Sensei IA (Atalho: Alt + S)"
+            className="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-slate-950/95 border border-cyan-500/40 text-white shadow-xl shadow-cyan-500/25 hover:border-cyan-400 transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-xl"
           >
-            {isOpen ? (
-              <X size={18} style={{ color: '#94a3b8' }} />
-            ) : (
-              <>
-                <span
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    backgroundColor: '#22d3ee',
-                    opacity: 0.25,
-                    animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                  }}
-                />
-                <Sparkles size={18} style={{ color: '#22d3ee', position: 'relative', zIndex: 1 }} />
-              </>
-            )}
-          </div>
+            {/* Brilho neon de fundo */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-teal-500/15 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
 
-          <span
-            style={{
-              fontSize: '0.84375rem',
-              fontWeight: 700,
-              fontFamily: 'var(--font-heading)',
-              letterSpacing: '-0.01em',
-              color: '#ffffff',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isOpen ? 'Fechar Sensei' : 'Ajuda do Sensei'}
-          </span>
+            {/* Ícone com pulsador */}
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-500 shadow-inner group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400 font-extrabold text-xs">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950 animate-ping" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950" />
+            </div>
 
-          {!isOpen && (
-            <span
-              style={{
-                display: 'inline-block',
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: '#10b981',
-                boxShadow: '0 0 8px #10b981',
-              }}
-            />
-          )}
-        </button>
-      </div>
+            {/* Rótulo e Atalho */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white tracking-tight group-hover:text-cyan-200 transition-colors">
+                Ajuda do Sensei
+              </span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 font-mono font-semibold">
+                Alt+S
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
 
       {/* JANELA DO CHAT COM O SENSEI */}
       {isOpen && (
         <div
-          style={{
-            position: 'fixed',
-            bottom: '84px',
-            right: '24px',
-            width: '430px',
-            maxWidth: 'calc(100vw - 32px)',
-            height: '620px',
-            maxHeight: 'calc(100vh - 110px)',
-            backgroundColor: 'rgba(11, 19, 36, 0.94)',
-            backdropFilter: 'blur(28px)',
-            WebkitBackdropFilter: 'blur(28px)',
-            borderRadius: '20px',
-            border: '1px solid rgba(34, 211, 238, 0.3)',
-            boxShadow: '0 25px 65px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(6, 182, 212, 0.15)',
-            zIndex: 9981,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            fontFamily: 'var(--font-sans)',
-            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
+          className={`fixed bottom-6 right-6 z-[9981] transition-all duration-300 flex flex-col overflow-hidden rounded-3xl shadow-2xl backdrop-blur-2xl border ${
+            isExpanded
+              ? 'w-[calc(100vw-32px)] sm:w-[720px] h-[780px] max-h-[92vh]'
+              : 'w-full sm:w-[480px] h-[640px] max-h-[88vh]'
+          } bg-slate-950/95 border-cyan-500/40 text-slate-100 shadow-2xl shadow-black/90 animate-in fade-in slide-in-from-bottom-5`}
         >
-          {/* Linha superior de brilho executivo */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: '10%',
-              right: '10%',
-              height: '1px',
-              background: 'linear-gradient(90deg, transparent 0%, rgba(34, 211, 238, 0.8) 50%, transparent 100%)',
-              zIndex: 2,
-            }}
-          />
+          {/* Linha superior de destaque neon */}
+          <div className="h-1 w-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-500 shrink-0" />
 
           {/* HEADER DO SENSEI */}
-          <div
-            style={{
-              padding: '1.1rem 1.25rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: 'rgba(6, 10, 19, 0.65)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #0e1d35 0%, #060a14 100%)',
-                  border: '1px solid rgba(34, 211, 238, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#22d3ee',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                <Sparkles size={18} />
+          <div className="p-3.5 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="relative w-8 h-8 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-500 shadow-inner shrink-0">
+                <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950" />
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: '0.9375rem',
-                      fontWeight: 800,
-                      color: '#ffffff',
-                      fontFamily: 'var(--font-heading)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold text-white tracking-tight truncate">
                     Sensei IA
                   </h3>
-                  <span
-                    style={{
-                      fontSize: '0.625rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      padding: '0.15rem 0.45rem',
-                      borderRadius: '6px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                      color: '#34d399',
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                    }}
-                  >
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800/60 font-mono">
                     Gemba 4.0
                   </span>
                 </div>
-                <span style={{ fontSize: '0.71875rem', color: '#94a3b8' }}>
-                  {currentTenant?.name || 'Unidade'} • Acesso Total
-                </span>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {currentTenant?.name || 'Unidade'} • Copiloto Operacional
+                </p>
               </div>
             </div>
 
-            {/* Ações do Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <button
-                onClick={toggleVoice}
-                title={voiceEnabled ? 'Desativar voz do Sensei' : 'Ativar voz do Sensei'}
-                style={{
-                  padding: '0.45rem',
-                  borderRadius: '8px',
-                  backgroundColor: voiceEnabled ? 'rgba(34, 211, 238, 0.12)' : 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid',
-                  borderColor: voiceEnabled ? 'rgba(34, 211, 238, 0.3)' : 'rgba(255, 255, 255, 0.08)',
-                  color: voiceEnabled ? '#22d3ee' : '#64748b',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {voiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-              </button>
-
-              <button
-                onClick={handleClearChat}
-                title="Reiniciar conversa"
-                style={{
-                  padding: '0.45rem',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <RotateCcw size={15} />
-              </button>
-
-              <button
-                onClick={() => setIsOpen(false)}
-                title="Fechar"
-                style={{
-                  padding: '0.45rem',
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <X size={15} />
-              </button>
-            </div>
-          </div>
-
-          {/* CORPO DE MENSAGENS */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '1.25rem 1rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-            }}
-          >
-            {/* Sugestões Rápidas de Ação */}
-            {messages.length <= 2 && (
-              <div
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  marginBottom: '0.5rem',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '0.6875rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#64748b',
-                    letterSpacing: '0.05em',
-                    display: 'block',
-                    marginBottom: '0.5rem',
-                  }}
+            {/* Controles do Header */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Segmented Control: Orbe 3D vs Histórico */}
+              <div className="flex items-center p-0.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('orb')}
+                  className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    viewMode === 'orb'
+                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 shadow-sm font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Modo Orbe 3D Animado"
                 >
-                  Sugestões Rápidas:
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  <button
-                    onClick={() => handleSendMessage('Cadastre um projeto para eliminar perdas de matéria-prima no setor de Extrusão com custo evitado de 12000')}
-                    style={{
-                      textAlign: 'left',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(34, 211, 238, 0.06)',
-                      border: '1px solid rgba(34, 211, 238, 0.18)',
-                      color: '#22d3ee',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <Workflow size={13} style={{ flexShrink: 0 }} />
-                    <span>Cadastrar projeto no Kanban (Extrusão)</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSendMessage('Qual é o resumo atual de custo evitado e ações em andamento nesta unidade?')}
-                    style={{
-                      textAlign: 'left',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.06)',
-                      border: '1px solid rgba(16, 185, 129, 0.18)',
-                      color: '#34d399',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <TrendingUp size={13} style={{ flexShrink: 0 }} />
-                    <span>Consultar resumo de custo evitado no Gemba</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleSendMessage('Registre uma ideia no Canal Kaizen para otimizar o tempo de setup de bobinas')}
-                    style={{
-                      textAlign: 'left',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      color: '#cbd5e1',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
-                  >
-                    <Lightbulb size={13} style={{ flexShrink: 0 }} />
-                    <span>Registrar nova ideia no Canal Kaizen</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Lista de Mensagens */}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: '88%',
-                    padding: '0.85rem 1rem',
-                    borderRadius: msg.sender === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    backgroundColor:
-                      msg.sender === 'user' ? 'rgba(14, 116, 144, 0.35)' : 'rgba(15, 23, 42, 0.85)',
-                    border:
-                      msg.sender === 'user'
-                        ? '1px solid rgba(34, 211, 238, 0.4)'
-                        : '1px solid rgba(255, 255, 255, 0.08)',
-                    color: msg.sender === 'user' ? '#ffffff' : '#f1f5f9',
-                    fontSize: '0.8125rem',
-                    lineHeight: 1.5,
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
+                  <Sparkles className="w-3 h-3" />
+                  <span>Orbe 3D</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('chat')}
+                  className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    viewMode === 'chat'
+                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 shadow-sm font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Modo Histórico e Ações"
                 >
-                  {msg.text}
-
-                  {/* Card Interativo de Ação Executada */}
-                  {msg.actionResult && (
-                    <div
-                      style={{
-                        marginTop: '0.75rem',
-                        padding: '0.75rem 0.85rem',
-                        borderRadius: '10px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                        border: '1px solid rgba(16, 185, 129, 0.35)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.45rem',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <CheckCircle2 size={16} style={{ color: '#34d399', flexShrink: 0 }} />
-                        <span style={{ fontWeight: 700, fontSize: '0.8125rem', color: '#ffffff' }}>
-                          {msg.actionResult.title}
-                        </span>
-                      </div>
-
-                      {msg.actionResult.protocol && (
-                        <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>
-                          Protocolo: <strong style={{ color: '#22d3ee' }}>{msg.actionResult.protocol}</strong>
-                        </span>
-                      )}
-
-                      {msg.actionResult.description && (
-                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#cbd5e1' }}>
-                          {msg.actionResult.description}
-                        </p>
-                      )}
-
-                      {msg.actionResult.linkUrl && (
-                        <button
-                          onClick={() => {
-                            if (msg.actionResult?.linkUrl) {
-                              router.push(msg.actionResult.linkUrl);
-                              setIsOpen(false);
-                            }
-                          }}
-                          style={{
-                            marginTop: '0.25rem',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.4rem',
-                            padding: '0.4rem 0.75rem',
-                            borderRadius: '6px',
-                            backgroundColor: '#10b981',
-                            color: '#060a14',
-                            fontWeight: 700,
-                            fontSize: '0.71875rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <span>Acessar no Sistema</span>
-                          <ExternalLink size={12} />
-                        </button>
-                      )}
-                    </div>
+                  <MessageSquare className="w-3 h-3" />
+                  <span>Histórico</span>
+                  {messages.length > 1 && (
+                    <span className="text-[9px] px-1 py-0.2 rounded-full bg-slate-800 text-cyan-300 ml-0.5 font-mono">
+                      {messages.length - 1}
+                    </span>
                   )}
-                </div>
-
-                <span
-                  style={{
-                    fontSize: '0.625rem',
-                    color: '#64748b',
-                    marginTop: '0.25rem',
-                    padding: '0 0.25rem',
-                  }}
-                >
-                  {msg.timestamp}
-                </span>
+                </button>
               </div>
-            ))}
 
-            {isLoading && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#22d3ee', fontSize: '0.75rem' }}>
-                <Loader2 size={15} className="animate-spin" />
-                <span>Sensei analisando e processando com rigor Lean...</span>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* ÁREA DE ENTRADA (VOZ & TEXTO) */}
-          <div
-            style={{
-              padding: '0.85rem 1rem',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: 'rgba(6, 10, 19, 0.8)',
-            }}
-          >
-            {isListening && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '0.5rem',
-                  padding: '0.35rem 0.65rem',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  color: '#f87171',
-                  fontSize: '0.6875rem',
-                  fontWeight: 600,
-                }}
-              >
-                <span
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ef4444',
-                    animation: 'ping 1s infinite',
-                  }}
-                />
-                <span>Ouvindo sua voz... Fale seu comando ou solicitação ao Sensei.</span>
-              </div>
-            )}
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-              }}
-            >
-              {/* Botão de Gravação de Voz */}
+              {/* Botão de Áudio (Voz) */}
               <button
                 type="button"
-                onClick={toggleListening}
-                title={isListening ? 'Parar gravação' : 'Falar com o Sensei por áudio'}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: isListening ? '#ef4444' : 'rgba(34, 211, 238, 0.12)',
-                  border: '1px solid',
-                  borderColor: isListening ? '#ef4444' : 'rgba(34, 211, 238, 0.35)',
-                  color: isListening ? '#ffffff' : '#22d3ee',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease',
-                  boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.5)' : 'none',
-                }}
+                onClick={toggleVoice}
+                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                  voiceEnabled
+                    ? 'bg-cyan-950/80 border-cyan-500/50 text-cyan-300'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                }`}
+                title={voiceEnabled ? 'Voz do Sensei ativa' : 'Ativar voz do Sensei'}
               >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                {voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
               </button>
 
-              {/* Input de Texto */}
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder={isListening ? 'Gravando sua fala...' : 'Fale ou digite para o Sensei...'}
-                disabled={isLoading}
-                style={{
-                  flex: 1,
-                  height: '38px',
-                  backgroundColor: 'rgba(15, 23, 42, 0.7)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: '10px',
-                  padding: '0 0.85rem',
-                  color: '#ffffff',
-                  fontSize: '0.8125rem',
-                  outline: 'none',
-                  fontFamily: 'var(--font-sans)',
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.6)';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-                }}
-              />
-
-              {/* Botão de Enviar */}
+              {/* Botão Expandir / Restaurar */}
               <button
-                type="submit"
-                disabled={isLoading || !inputText.trim()}
-                title="Enviar mensagem"
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  backgroundColor: inputText.trim() && !isLoading ? '#22d3ee' : 'rgba(255, 255, 255, 0.06)',
-                  border: 'none',
-                  color: inputText.trim() && !isLoading ? '#060a14' : '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: inputText.trim() && !isLoading ? 'pointer' : 'not-allowed',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease',
-                  fontWeight: 700,
-                }}
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer hidden sm:flex"
+                title={isExpanded ? 'Restaurar tamanho' : 'Expandir janela'}
               >
-                {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
               </button>
-            </form>
 
-            {/* Aviso Jurídico & Ético de IA (LGPD / Cyber Law Compliance) */}
-            <div
-              style={{
-                marginTop: '0.45rem',
-                fontSize: '0.65rem',
-                color: '#64748b',
-                textAlign: 'center',
-                lineHeight: 1.3,
-                letterSpacing: '0.01em',
-              }}
-            >
-              O Sensei IA opera em caráter consultivo e assistencial. Decisões técnicas e financeiras devem ser validadas pelos líderes no Gemba.
+              {/* Botão Reiniciar Conversa */}
+              <button
+                type="button"
+                onClick={handleClearChat}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-900/60 transition-colors cursor-pointer"
+                title="Reiniciar conversa"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Botão Fechar (Alt + S) */}
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Minimizar (Alt + S)"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
+
+          {/* Quick Suggestions Chips */}
+          <div className="px-3 py-1.5 bg-slate-950/90 border-b border-slate-800/70 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px] shrink-0">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+              Sugestões:
+            </span>
+            <button
+              onClick={() => {
+                setViewMode('chat');
+                handleSendMessage('Cadastre um projeto para eliminar perdas de matéria-prima no setor de Extrusão com custo evitado de 12000');
+              }}
+              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <Workflow className="w-3 h-3 text-cyan-400" />
+              <span>Cadastrar projeto (Extrusão)</span>
+            </button>
+            <button
+              onClick={() => {
+                setViewMode('chat');
+                handleSendMessage('Qual é o resumo atual de custo evitado e ações em andamento nesta unidade?');
+              }}
+              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <TrendingUp className="w-3 h-3 text-emerald-400" />
+              <span>Resumo de Custo Evitado</span>
+            </button>
+            <button
+              onClick={() => {
+                setViewMode('chat');
+                handleSendMessage('Registre uma ideia no Canal Kaizen para otimizar o tempo de setup de bobinas');
+              }}
+              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <Lightbulb className="w-3 h-3 text-amber-400" />
+              <span>Ideia no Canal Kaizen</span>
+            </button>
+          </div>
+
+          {/* CORPO DO ASSISTENTE: MODO ORBE 3D vs MODO HISTÓRICO */}
+          {viewMode === 'orb' ? (
+            <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col bg-slate-950">
+              <AiThinkingOrb
+                onSubmit={handleOrbSubmit}
+                onViewHistory={() => setViewMode('chat')}
+                minThinkMs={2400}
+                voiceEnabled={true}
+                copy={{
+                  placeholder: 'Peça uma ação ou fale ao Sensei...',
+                  labels: [
+                    'Consultando Gemba e projetos...',
+                    'Analisando histórico Kaizen...',
+                    'Processando regras operacionais...',
+                    'Executando ação no sistema...',
+                  ],
+                  done: 'Concluído',
+                  answerTitle: 'Resposta do Sensei',
+                  answerBody: 'Processando resposta...',
+                  reset: 'Nova Pergunta',
+                  send: 'Enviar',
+                }}
+                className="w-full h-full flex-1"
+              />
+            </div>
+          ) : (
+            <>
+              {/* ÁREA DE MENSAGENS / HISTÓRICO */}
+              <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar text-xs bg-slate-950/70">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {msg.sender === 'sensei' && (
+                      <div className="w-7 h-7 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500/80 to-emerald-500/80 shadow-md shrink-0 mt-0.5">
+                        <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400">
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[85%] rounded-2xl p-3.5 shadow-md ${
+                        msg.sender === 'user'
+                          ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-medium rounded-tr-none shadow-cyan-950/20'
+                          : 'bg-slate-900/90 border border-slate-800 text-slate-200 rounded-tl-none leading-relaxed'
+                      }`}
+                    >
+                      {/* Conteúdo com Quebras de Linha */}
+                      <div className="space-y-1.5 whitespace-pre-wrap">{msg.text}</div>
+
+                      {/* Card Interativo de Ação Executada */}
+                      {msg.actionResult && (
+                        <div className="mt-3 pt-2.5 border-t border-slate-800 space-y-1.5">
+                          <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            <span>Ação Executada pelo Sensei:</span>
+                          </div>
+                          <div className="p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-[11px] space-y-1">
+                            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                              <span>{msg.actionResult.title}</span>
+                            </div>
+                            {msg.actionResult.protocol && (
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Protocolo: <strong className="text-cyan-300">{msg.actionResult.protocol}</strong>
+                              </div>
+                            )}
+                            {msg.actionResult.description && (
+                              <div className="text-[10px] text-slate-400">
+                                {msg.actionResult.description}
+                              </div>
+                            )}
+                            {msg.actionResult.linkUrl && (
+                              <button
+                                onClick={() => {
+                                  if (msg.actionResult?.linkUrl) {
+                                    router.push(msg.actionResult.linkUrl);
+                                    setIsOpen(false);
+                                  }
+                                }}
+                                className="mt-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-[10px] cursor-pointer transition-colors"
+                              >
+                                <span>Acessar no Sistema</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Rodapé da Mensagem */}
+                      <div
+                        className={`flex items-center justify-between gap-2 mt-2 text-[9px] ${
+                          msg.sender === 'user' ? 'text-white/80' : 'text-slate-500'
+                        }`}
+                      >
+                        <span>{msg.timestamp}</span>
+                        {msg.sender === 'sensei' && (
+                          <button
+                            onClick={() => playSpeech(msg.text, msg.audioBase64)}
+                            className="hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                            title="Ouvir esta mensagem sob demanda"
+                          >
+                            <Volume2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 w-fit">
+                    <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                    <span className="text-xs">Sensei analisando e processando no Gemba...</span>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Banner de status de gravação de voz */}
+              {isListening && (
+                <div className="px-4 py-2 bg-rose-950/90 border-t border-rose-900/80 text-rose-300 text-xs flex items-center justify-between animate-pulse shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                    <span className="font-semibold">Ouvindo comando por voz... Fale agora</span>
+                  </div>
+                  <button
+                    onClick={toggleListening}
+                    className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold cursor-pointer"
+                  >
+                    Parar
+                  </button>
+                </div>
+              )}
+
+              {/* CAMPO DE ENTRADA NO MODO HISTÓRICO */}
+              <div className="p-3 bg-slate-950 border-t border-slate-800/80 shrink-0">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  {/* Botão de Microfone */}
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                      isListening
+                        ? 'bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-900/50 scale-105'
+                        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-cyan-500/40 text-slate-400 hover:text-cyan-300'
+                    }`}
+                    title={isListening ? 'Parar gravação' : 'Falar comando por voz (Microfone)'}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4 animate-bounce" /> : <Mic className="w-4 h-4" />}
+                  </button>
+
+                  {/* Input de Texto */}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder={isListening ? 'Ouvindo sua fala...' : 'Peça uma ação ou faça uma pergunta...'}
+                    disabled={isLoading}
+                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                  />
+
+                  {/* Botão Enviar */}
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim() || isLoading}
+                    className="p-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-slate-950 font-bold hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-40 transition-all cursor-pointer shadow-md shadow-cyan-500/20"
+                    title="Enviar comando"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+
+                {/* Disclaimer Jurídico / Ético (LGPD & Cyber Law) */}
+                <div className="mt-2 text-[10px] text-slate-500 text-center leading-tight">
+                  O Sensei IA opera em caráter consultivo e analítico. Decisões técnicas e financeiras devem ser validadas pelos líderes no Gemba.
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>
   );
 };
+
+export default SenseiFloatingAssistant;
