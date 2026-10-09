@@ -34,6 +34,8 @@ import {
   Maximize2,
   Minimize2,
   FileText,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   SenseiChatMessage,
@@ -41,6 +43,61 @@ import {
 } from '@/services/senseiAgentService';
 import { AiThinkingOrb } from '@/components/ui/AiThinkingOrb';
 import './sensei-assistant.css';
+
+function parseBold(text: string): React.ReactNode[] {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} style={{ color: '#22d3ee', fontWeight: 700 }}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function formatMessageContent(content: string) {
+  if (!content) return null;
+  // Normaliza asteriscos avulsos no meio do texto para virarem linhas separadas
+  const normalized = content.replace(/\s+\*\s+/g, '\n* ');
+  const lines = normalized.split('\n');
+
+  return (
+    <div className="sensei-formatted-text">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} style={{ height: '6px' }} />;
+        }
+        if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ')) {
+          const bulletText = trimmed.replace(/^[*•-]\s+/, '');
+          return (
+            <div key={idx} className="sensei-bullet-item">
+              <span className="sensei-bullet-dot" />
+              <span>{parseBold(bulletText)}</span>
+            </div>
+          );
+        }
+        const numMatch = trimmed.match(/^(\d+)[.)]\s+(.*)/);
+        if (numMatch) {
+          return (
+            <div key={idx} className="sensei-bullet-item">
+              <span className="sensei-bullet-num">{numMatch[1]}.</span>
+              <span>{parseBold(numMatch[2])}</span>
+            </div>
+          );
+        }
+        return (
+          <p key={idx} style={{ margin: '0 0 3px 0', lineHeight: 1.55 }}>
+            {parseBold(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export const SenseiFloatingAssistant: React.FC = () => {
   const router = useRouter();
@@ -81,6 +138,16 @@ export const SenseiFloatingAssistant: React.FC = () => {
   const recognitionRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopy = (id: string, text: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  };
+
   // Rolagem automática para o final das mensagens no modo chat
   useEffect(() => {
     if (isOpen && viewMode === 'chat') {
@@ -88,12 +155,12 @@ export const SenseiFloatingAssistant: React.FC = () => {
     }
   }, [messages, isOpen, viewMode]);
 
-  // Foco automático no input ao alternar para modo chat
+  // Foco automático no input ao alternar para modo chat ou ao receber nova resposta
   useEffect(() => {
     if (isOpen && viewMode === 'chat') {
-      setTimeout(() => inputRef.current?.focus(), 200);
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [isOpen, viewMode]);
+  }, [isOpen, viewMode, messages]);
 
   // Atalho global de teclado: Alt + S ou Alt + A
   useEffect(() => {
@@ -244,6 +311,12 @@ export const SenseiFloatingAssistant: React.FC = () => {
         playSpeech(senseiReply.text, senseiReply.audioBase64);
       }
 
+      // Transiciona suavemente para o modo de conversa completa
+      // Garante exibição 100% integral sem corte de linhas e com o campo de entrada ativo para continuar a conversa
+      setTimeout(() => {
+        setViewMode('chat');
+      }, 650);
+
       return senseiReply.text;
     } catch (err: any) {
       const errorText = 'Ocorreu uma falha momentânea ao processar sua solicitação no Gemba. Por favor, tente novamente.';
@@ -256,6 +329,9 @@ export const SenseiFloatingAssistant: React.FC = () => {
           timestamp: 'Agora',
         },
       ]);
+      setTimeout(() => {
+        setViewMode('chat');
+      }, 650);
       return errorText;
     } finally {
       setIsLoading(false);
@@ -318,17 +394,20 @@ export const SenseiFloatingAssistant: React.FC = () => {
   };
 
   const handleClearChat = () => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    if (confirm('Deseja reiniciar a conversa e voltar para a tela inicial do Sensei?')) {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      setMessages([
+        {
+          id: 'init_sensei_' + Date.now(),
+          sender: 'sensei',
+          text: 'Conversa reiniciada. Como posso auxiliá-lo agora no Gemba?',
+          timestamp: 'Agora',
+        },
+      ]);
+      setViewMode('orb');
     }
-    setMessages([
-      {
-        id: 'init_sensei_' + Date.now(),
-        sender: 'sensei',
-        text: 'Histórico reiniciado. Como posso auxiliá-lo agora no Gemba?',
-        timestamp: 'Agora',
-      },
-    ]);
   };
 
   return (
@@ -397,7 +476,7 @@ export const SenseiFloatingAssistant: React.FC = () => {
 
             {/* Controles do Header */}
             <div className="sensei-header-actions">
-              {/* Segmented Control: Orbe 3D vs Histórico */}
+              {/* Segmented Control: Orbe 3D vs Conversa */}
               <div className="sensei-mode-segmented">
                 <button
                   type="button"
@@ -412,10 +491,10 @@ export const SenseiFloatingAssistant: React.FC = () => {
                   type="button"
                   onClick={() => setViewMode('chat')}
                   className={`sensei-mode-btn ${viewMode === 'chat' ? 'active' : ''}`}
-                  title="Modo Histórico e Ações"
+                  title="Modo Conversa Completa"
                 >
                   <MessageSquare size={12} />
-                  <span>Histórico</span>
+                  <span>Conversa</span>
                   {messages.length > 1 && (
                     <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '999px', background: 'rgba(255,255,255,0.1)', marginLeft: '2px', fontFamily: 'monospace' }}>
                       {messages.length - 1}
@@ -547,8 +626,12 @@ export const SenseiFloatingAssistant: React.FC = () => {
                     )}
 
                     <div className={`sensei-msg-bubble ${msg.sender === 'user' ? 'user' : 'bot'}`}>
-                      {/* Conteúdo com Quebras de Linha */}
-                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                      {/* Conteúdo com Formatação Rica e Quebras de Linha */}
+                      {msg.sender === 'user' ? (
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                      ) : (
+                        formatMessageContent(msg.text)
+                      )}
 
                       {/* Card Interativo de Ação Executada */}
                       {msg.actionResult && (
@@ -603,22 +686,24 @@ export const SenseiFloatingAssistant: React.FC = () => {
                       <div className="sensei-msg-meta">
                         <span>{msg.timestamp}</span>
                         {msg.sender === 'sensei' && (
-                          <button
-                            type="button"
-                            onClick={() => playSpeech(msg.text, msg.audioBase64)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#94a3b8',
-                              cursor: 'pointer',
-                              padding: '2px',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                            }}
-                            title="Ouvir esta mensagem sob demanda"
-                          >
-                            <Volume2 size={12} />
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(msg.id, msg.text)}
+                              className="sensei-copy-btn"
+                              title={copiedId === msg.id ? 'Texto copiado!' : 'Copiar resposta'}
+                            >
+                              {copiedId === msg.id ? <Check size={12} color="#10b981" /> : <Copy size={12} />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => playSpeech(msg.text, msg.audioBase64)}
+                              className="sensei-copy-btn"
+                              title="Ouvir esta mensagem sob demanda"
+                            >
+                              <Volume2 size={12} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -686,7 +771,7 @@ export const SenseiFloatingAssistant: React.FC = () => {
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder={isListening ? 'Ouvindo sua fala...' : 'Peça uma ação ou faça uma pergunta...'}
+                    placeholder={isListening ? 'Ouvindo sua fala... Fale agora' : 'Continue a conversa ou faça uma pergunta...'}
                     disabled={isLoading}
                     className="sensei-input-field"
                   />

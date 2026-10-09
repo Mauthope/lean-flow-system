@@ -81,7 +81,7 @@ const ORB_D = 132;
 const ORB_R = 66;
 const CANVAS = 220;
 const FLY_D = 138;
-const CARD_H = 136;
+const CARD_H = 220;
 const pillW = (w?: number) => Math.max(260, Math.min(560, (w || (typeof window !== 'undefined' ? window.innerWidth : 1200)) - 32));
 const cardW = (w?: number) => Math.max(260, Math.min(420, (w || (typeof window !== 'undefined' ? window.innerWidth : 1200)) - 32));
 const homeDy = (h?: number) => (h || (typeof window !== 'undefined' ? window.innerHeight : 600)) * 0.54 - 96;
@@ -1192,9 +1192,9 @@ export function AiThinkingOrb(props: MorphOrbProps) {
             type="button"
             className="mo-history-btn"
             onClick={props.onViewHistory}
-            aria-label="Ver Histórico no Chat"
+            aria-label="Continuar Conversa no Chat"
           >
-            Ver Histórico
+            Continuar Conversa no Chat
           </button>
         )}
       </div>
