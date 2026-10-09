@@ -63,4 +63,12 @@
   - Refatoração dos componentes `MagneticDock.tsx`, `Sidebar.tsx` e `SenseiFloatingAssistant.tsx` com desacoplamento de dependências externas.
 - **Homologação:** Build Next.js 14 compilado com 100% de sucesso (41 rotas).
 
+### 5. Harmonização Cromática e Fluidez Estética Inspirada no Akiom-RH
+- **Paleta Luminosa & Cores Vivas:** Restauração dos gradientes multicromáticos de alta tecnologia inspirados no `AkiomWallDock`: Ciano Elétrico (`#00f2fe`/`#4facfe`), Âmbar Coral (`#f6b94a`/`#ff6b5e`), Esmeralda (`#10b981`/`#059669`), Rosa Choque (`#ec4899`/`#f43f5e`), Roxo Neon (`#a855f7`/`#7e22ce`), Azul Céu (`#38bdf8`/`#0284c7`) e Índigo (`#6366f1`/`#4338ca`), eliminando o aspecto monocromático e opaco anterior.
+- **Supressão Total de Barras de Rolagem:**
+  - Aplicação de `overflow-x: hidden !important;` e `scrollbar-width: none !important;` em `.app-sidebar.sidebar-collapsed` no `globals.css` e `magnetic-dock.css`.
+  - Recalibração de física no dock da sidebar: amortecimento de elevação (`lift = 3px`) e escala controlada (`maxScale = 1.25`), garantindo que os botões permaneçam rigorosamente dentro dos 72px da barra lateral sem disparar rolagem horizontal.
+- **Acabamento do Copiloto Sensei:** Botão flutuante FAB calibrado com brilho ciano volumétrico, avatar com beacon verde pulsante e pílula de atalho `Alt+S` em ciano vívido no padrão `AkiomCopilotWidget`.
+- **Homologação:** Build Next.js 14 compilado com 100% de sucesso (41 rotas).
+
 ---

@@ -171,20 +171,46 @@ export const Sidebar: React.FC = () => {
   const router = useRouter();
   const currentNav = isViewer ? viewerNav : isAdmin ? adminNav : agentNav;
 
+  const ROUTE_TINTS: Record<string, [string, string]> = React.useMemo(() => ({
+    '/admin/dashboard': ['#00f2fe', '#4facfe'],
+    '/admin/alta-gerencia': ['#f6b94a', '#ff6b5e'],
+    '/admin/arvore': ['#00f2fe', '#10b981'],
+    '/admin/kanban': ['#10b981', '#059669'],
+    '/admin/triagem': ['#38bdf8', '#0284c7'],
+    '/admin/entidades': ['#ec4899', '#f43f5e'],
+    '/admin/agentes': ['#8b5cf6', '#6366f1'],
+    '/admin/setores': ['#f59e0b', '#d97706'],
+    '/admin/historico-kaizen': ['#a855f7', '#7e22ce'],
+    '/admin/integracoes-ia': ['#06b6d4', '#0d9488'],
+    '/admin/relatorios': ['#22c7d9', '#0d9488'],
+    '/agente/ferramentas': ['#3b82f6', '#1d4ed8'],
+    '/admin/tpm': ['#6366f1', '#4338ca'],
+    '/admin/canal-kaizen': ['#fbbf24', '#f59e0b'],
+    '/agente/kanban': ['#10b981', '#059669'],
+    '/agente/arvore': ['#00f2fe', '#10b981'],
+    '/agente/setores': ['#f59e0b', '#d97706'],
+    '/agente/relatorio-pessoal': ['#22c7d9', '#0d9488'],
+    '/agente/historico-kaizen': ['#a855f7', '#7e22ce'],
+    '/agente/ferramentas/calculadora-roi': ['#10b981', '#059669'],
+    '/agente/tpm': ['#6366f1', '#4338ca'],
+    '/agente/canal-kaizen': ['#fbbf24', '#f59e0b'],
+  }), []);
+
   const dockItems: DockItem[] = React.useMemo(() => {
     const allItems = currentNav.flatMap((section) => section.items);
     return allItems.map((item) => {
       const Icon = item.icon;
       const isActive = pathname === item.href;
+      const tint = ROUTE_TINTS[item.href] || (isActive ? ['#00f2fe', '#10b981'] : ['#4f7cff', '#22c7d9']);
       return {
         id: item.href,
         label: item.label,
         active: isActive,
-        icon: <Icon size={18} className="stroke-[2]" />,
-        tint: isActive ? ['#06b6d4', '#10b981'] : ['#1e293b', '#0f172a'],
+        icon: <Icon size={18} className="stroke-[2.2]" />,
+        tint: tint,
       };
     });
-  }, [currentNav, pathname]);
+  }, [currentNav, pathname, ROUTE_TINTS]);
 
   const handleDockSelect = (href: string) => {
     router.push(href);
@@ -547,13 +573,15 @@ export const Sidebar: React.FC = () => {
             style={{
               flex: 1,
               overflowY: 'auto',
-              overflowX: 'visible',
+              overflowX: 'hidden',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'flex-start',
-              padding: '0.6rem 0',
+              padding: '0.4rem 0',
               width: '100%',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
             }}
             className="no-scrollbar"
           >
@@ -561,9 +589,9 @@ export const Sidebar: React.FC = () => {
               items={dockItems}
               orientation="vertical"
               wallSide="left"
-              magnetRadius={75}
-              maxScale={1.35}
-              lift={14}
+              magnetRadius={70}
+              maxScale={1.25}
+              lift={3}
               idleWave
               tooltip
               onSelect={handleDockSelect}

@@ -689,7 +689,24 @@ input[type=number] {
     width: 72px !important;
     min-width: 72px !important;
     max-width: 72px !important;
+    overflow-x: hidden !important;
   }
+}
+
+/* Supressão Total de Barras de Rolagem na Sidebar Recolhida e Utilitário Geral */
+.no-scrollbar,
+.app-sidebar.sidebar-collapsed,
+.app-sidebar.sidebar-collapsed * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.app-sidebar.sidebar-collapsed::-webkit-scrollbar,
+.app-sidebar.sidebar-collapsed *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Animations */
