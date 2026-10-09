@@ -40,6 +40,7 @@ import {
   askSenseiAssistant,
 } from '@/services/senseiAgentService';
 import { AiThinkingOrb } from '@/components/ui/AiThinkingOrb';
+import './sensei-assistant.css';
 
 export const SenseiFloatingAssistant: React.FC = () => {
   const router = useRouter();
@@ -334,40 +335,27 @@ export const SenseiFloatingAssistant: React.FC = () => {
     <>
       {/* BOTÃO FLUTUANTE "AJUDA DO SENSEI" (FAB) */}
       {!isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 9980,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.65rem',
-          }}
-        >
+        <div className="sensei-fab-container">
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
             title="Ajuda do Sensei IA (Atalho: Alt + S)"
-            className="group relative flex items-center gap-3 px-3.5 py-2.5 rounded-2xl bg-slate-950/95 border border-cyan-500/40 text-white shadow-xl shadow-cyan-500/25 hover:border-cyan-400 transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-xl"
+            className="sensei-fab-button"
           >
-            {/* Brilho neon de fundo */}
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-teal-500/15 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-
             {/* Ícone com pulsador */}
-            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-500 shadow-inner group-hover:scale-105 transition-transform shrink-0">
-              <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400 font-extrabold text-xs">
-                <Sparkles className="w-4 h-4" />
+            <div className="sensei-fab-icon-box">
+              <div className="sensei-fab-icon-inner">
+                <Sparkles size={16} />
               </div>
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950 animate-ping" />
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950" />
+              <span className="sensei-fab-beacon" />
             </div>
 
             {/* Rótulo e Atalho */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white tracking-tight group-hover:text-cyan-200 transition-colors">
+            <div className="sensei-fab-text-box">
+              <span className="sensei-fab-title">
                 Ajuda do Sensei
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 font-mono font-semibold">
+              <span className="sensei-fab-shortcut">
                 Alt+S
               </span>
             </div>
@@ -378,70 +366,58 @@ export const SenseiFloatingAssistant: React.FC = () => {
       {/* JANELA DO CHAT COM O SENSEI */}
       {isOpen && (
         <div
-          className={`fixed bottom-6 right-6 z-[9981] transition-all duration-300 flex flex-col overflow-hidden rounded-3xl shadow-2xl backdrop-blur-2xl border ${
-            isExpanded
-              ? 'w-[calc(100vw-32px)] sm:w-[720px] h-[780px] max-h-[92vh]'
-              : 'w-full sm:w-[480px] h-[640px] max-h-[88vh]'
-          } bg-slate-950/95 border-cyan-500/40 text-slate-100 shadow-2xl shadow-black/90 animate-in fade-in slide-in-from-bottom-5`}
+          className={`sensei-window-modal ${isExpanded ? 'expanded' : 'normal'}`}
         >
           {/* Linha superior de destaque neon */}
-          <div className="h-1 w-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-500 shrink-0" />
+          <div className="sensei-window-top-accent" />
 
           {/* HEADER DO SENSEI */}
-          <div className="p-3.5 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between gap-2 shrink-0">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative w-8 h-8 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500 via-teal-500 to-emerald-500 shadow-inner shrink-0">
-                <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400">
-                  <Sparkles className="w-4 h-4" />
+          <div className="sensei-header">
+            <div className="sensei-header-brand">
+              <div className="sensei-header-avatar">
+                <div className="sensei-header-avatar-inner">
+                  <Sparkles size={15} />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-slate-950" />
+                <span className="sensei-fab-beacon" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-xs font-bold text-white tracking-tight truncate">
+              <div className="sensei-header-titles">
+                <div className="sensei-header-name-row">
+                  <h3 className="sensei-header-name">
                     Sensei IA
                   </h3>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800/60 font-mono">
+                  <span className="sensei-header-badge">
                     Gemba 4.0
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 truncate">
+                <p className="sensei-header-tenant">
                   {currentTenant?.name || 'Unidade'} • Copiloto Operacional
                 </p>
               </div>
             </div>
 
             {/* Controles do Header */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="sensei-header-actions">
               {/* Segmented Control: Orbe 3D vs Histórico */}
-              <div className="flex items-center p-0.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-semibold">
+              <div className="sensei-mode-segmented">
                 <button
                   type="button"
                   onClick={() => setViewMode('orb')}
-                  className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'orb'
-                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 shadow-sm font-bold'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`sensei-mode-btn ${viewMode === 'orb' ? 'active' : ''}`}
                   title="Modo Orbe 3D Animado"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles size={12} />
                   <span>Orbe 3D</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode('chat')}
-                  className={`px-2 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'chat'
-                      ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-slate-950 shadow-sm font-bold'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
+                  className={`sensei-mode-btn ${viewMode === 'chat' ? 'active' : ''}`}
                   title="Modo Histórico e Ações"
                 >
-                  <MessageSquare className="w-3 h-3" />
+                  <MessageSquare size={12} />
                   <span>Histórico</span>
                   {messages.length > 1 && (
-                    <span className="text-[9px] px-1 py-0.2 rounded-full bg-slate-800 text-cyan-300 ml-0.5 font-mono">
+                    <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '999px', background: 'rgba(255,255,255,0.1)', marginLeft: '2px', fontFamily: 'monospace' }}>
                       {messages.length - 1}
                     </span>
                   )}
@@ -452,88 +428,87 @@ export const SenseiFloatingAssistant: React.FC = () => {
               <button
                 type="button"
                 onClick={toggleVoice}
-                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                  voiceEnabled
-                    ? 'bg-cyan-950/80 border-cyan-500/50 text-cyan-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                }`}
+                className={`sensei-icon-btn ${voiceEnabled ? 'active' : ''}`}
                 title={voiceEnabled ? 'Voz do Sensei ativa' : 'Ativar voz do Sensei'}
               >
-                {voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                {voiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
               </button>
 
               {/* Botão Expandir / Restaurar */}
               <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer hidden sm:flex"
+                className="sensei-icon-btn"
                 title={isExpanded ? 'Restaurar tamanho' : 'Expandir janela'}
               >
-                {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
 
               {/* Botão Reiniciar Conversa */}
               <button
                 type="button"
                 onClick={handleClearChat}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-900/60 transition-colors cursor-pointer"
+                className="sensei-icon-btn"
                 title="Reiniciar conversa"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw size={14} />
               </button>
 
               {/* Botão Fechar (Alt + S) */}
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="sensei-icon-btn"
                 title="Minimizar (Alt + S)"
               >
-                <X className="w-3.5 h-3.5" />
+                <X size={14} />
               </button>
             </div>
           </div>
 
           {/* Quick Suggestions Chips */}
-          <div className="px-3 py-1.5 bg-slate-950/90 border-b border-slate-800/70 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px] shrink-0">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+          <div className="sensei-chips-container no-scrollbar">
+            <span className="sensei-chips-label">
               Sugestões:
             </span>
             <button
+              type="button"
               onClick={() => {
                 setViewMode('chat');
                 handleSendMessage('Cadastre um projeto para eliminar perdas de matéria-prima no setor de Extrusão com custo evitado de 12000');
               }}
-              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+              className="sensei-chip-pill"
             >
-              <Workflow className="w-3 h-3 text-cyan-400" />
+              <Workflow size={12} color="#22d3ee" />
               <span>Cadastrar projeto (Extrusão)</span>
             </button>
             <button
+              type="button"
               onClick={() => {
                 setViewMode('chat');
                 handleSendMessage('Qual é o resumo atual de custo evitado e ações em andamento nesta unidade?');
               }}
-              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+              className="sensei-chip-pill"
             >
-              <TrendingUp className="w-3 h-3 text-emerald-400" />
+              <TrendingUp size={12} color="#34d399" />
               <span>Resumo de Custo Evitado</span>
             </button>
             <button
+              type="button"
               onClick={() => {
                 setViewMode('chat');
                 handleSendMessage('Registre uma ideia no Canal Kaizen para otimizar o tempo de setup de bobinas');
               }}
-              className="px-2 py-0.5 rounded-lg bg-slate-900/90 hover:bg-cyan-950/60 hover:text-cyan-300 border border-slate-800 hover:border-cyan-500/40 text-slate-300 whitespace-nowrap transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+              className="sensei-chip-pill"
             >
-              <Lightbulb className="w-3 h-3 text-amber-400" />
+              <Lightbulb size={12} color="#fbbf24" />
               <span>Ideia no Canal Kaizen</span>
             </button>
           </div>
 
           {/* CORPO DO ASSISTENTE: MODO ORBE 3D vs MODO HISTÓRICO */}
           {viewMode === 'orb' ? (
-            <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col bg-slate-950">
+            <div style={{ position: 'relative', flex: 1, width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', backgroundColor: '#060a13' }}>
               <AiThinkingOrb
                 onSubmit={handleOrbSubmit}
                 onViewHistory={() => setViewMode('chat')}
@@ -559,64 +534,65 @@ export const SenseiFloatingAssistant: React.FC = () => {
           ) : (
             <>
               {/* ÁREA DE MENSAGENS / HISTÓRICO */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 custom-scrollbar text-xs bg-slate-950/70">
+              <div className="sensei-chat-scroll custom-scrollbar">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`sensei-msg-row ${msg.sender === 'user' ? 'user' : 'bot'}`}
                   >
                     {msg.sender === 'sensei' && (
-                      <div className="w-7 h-7 rounded-xl p-0.5 bg-gradient-to-tr from-cyan-500/80 to-emerald-500/80 shadow-md shrink-0 mt-0.5">
-                        <div className="w-full h-full bg-[#060a13] rounded-[9px] flex items-center justify-center text-cyan-400">
-                          <Sparkles className="w-3.5 h-3.5" />
-                        </div>
+                      <div className="sensei-msg-avatar bot">
+                        <Sparkles size={14} />
                       </div>
                     )}
 
-                    <div
-                      className={`max-w-[85%] rounded-2xl p-3.5 shadow-md ${
-                        msg.sender === 'user'
-                          ? 'bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-medium rounded-tr-none shadow-cyan-950/20'
-                          : 'bg-slate-900/90 border border-slate-800 text-slate-200 rounded-tl-none leading-relaxed'
-                      }`}
-                    >
+                    <div className={`sensei-msg-bubble ${msg.sender === 'user' ? 'user' : 'bot'}`}>
                       {/* Conteúdo com Quebras de Linha */}
-                      <div className="space-y-1.5 whitespace-pre-wrap">{msg.text}</div>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
 
                       {/* Card Interativo de Ação Executada */}
                       {msg.actionResult && (
-                        <div className="mt-3 pt-2.5 border-t border-slate-800 space-y-1.5">
-                          <div className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            <span>Ação Executada pelo Sensei:</span>
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-[11px] space-y-1">
-                            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                              <span>{msg.actionResult.title}</span>
-                            </div>
+                        <div className="sensei-action-card">
+                          <CheckCircle2 size={14} color="#34d399" />
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                            <span>{msg.actionResult.title}</span>
                             {msg.actionResult.protocol && (
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                Protocolo: <strong className="text-cyan-300">{msg.actionResult.protocol}</strong>
-                              </div>
+                              <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                                Protocolo: <strong style={{ color: '#22d3ee' }}>{msg.actionResult.protocol}</strong>
+                              </span>
                             )}
                             {msg.actionResult.description && (
-                              <div className="text-[10px] text-slate-400">
+                              <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                                 {msg.actionResult.description}
-                              </div>
+                              </span>
                             )}
                             {msg.actionResult.linkUrl && (
                               <button
+                                type="button"
                                 onClick={() => {
                                   if (msg.actionResult?.linkUrl) {
                                     router.push(msg.actionResult.linkUrl);
                                     setIsOpen(false);
                                   }
                                 }}
-                                className="mt-1 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-[10px] cursor-pointer transition-colors"
+                                style={{
+                                  marginTop: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  background: 'rgba(16, 185, 129, 0.2)',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                                  color: '#6ee7b7',
+                                  fontWeight: 700,
+                                  fontSize: '10px',
+                                  cursor: 'pointer',
+                                  width: 'fit-content',
+                                }}
                               >
                                 <span>Acessar no Sistema</span>
-                                <ExternalLink className="w-3 h-3" />
+                                <ExternalLink size={10} />
                               </button>
                             )}
                           </div>
@@ -624,19 +600,24 @@ export const SenseiFloatingAssistant: React.FC = () => {
                       )}
 
                       {/* Rodapé da Mensagem */}
-                      <div
-                        className={`flex items-center justify-between gap-2 mt-2 text-[9px] ${
-                          msg.sender === 'user' ? 'text-white/80' : 'text-slate-500'
-                        }`}
-                      >
+                      <div className="sensei-msg-meta">
                         <span>{msg.timestamp}</span>
                         {msg.sender === 'sensei' && (
                           <button
+                            type="button"
                             onClick={() => playSpeech(msg.text, msg.audioBase64)}
-                            className="hover:text-cyan-400 transition-colors p-0.5 cursor-pointer"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#94a3b8',
+                              cursor: 'pointer',
+                              padding: '2px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                            }}
                             title="Ouvir esta mensagem sob demanda"
                           >
-                            <Volume2 className="w-3 h-3" />
+                            <Volume2 size={12} />
                           </button>
                         )}
                       </div>
@@ -645,9 +626,9 @@ export const SenseiFloatingAssistant: React.FC = () => {
                 ))}
 
                 {isLoading && (
-                  <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 w-fit">
-                    <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                    <span className="text-xs">Sensei analisando e processando no Gemba...</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '12px', background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8', width: 'fit-content', fontSize: '11px' }}>
+                    <Loader2 size={14} color="#06b6d4" className="animate-spin" />
+                    <span>Sensei analisando e processando no Gemba...</span>
                   </div>
                 )}
 
@@ -656,14 +637,24 @@ export const SenseiFloatingAssistant: React.FC = () => {
 
               {/* Banner de status de gravação de voz */}
               {isListening && (
-                <div className="px-4 py-2 bg-rose-950/90 border-t border-rose-900/80 text-rose-300 text-xs flex items-center justify-between animate-pulse shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                    <span className="font-semibold">Ouvindo comando por voz... Fale agora</span>
+                <div className="sensei-voice-active-bar animate-pulse">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f43f5e' }} />
+                    <span>Ouvindo comando por voz... Fale agora</span>
                   </div>
                   <button
+                    type="button"
                     onClick={toggleListening}
-                    className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold cursor-pointer"
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: '#be123c',
+                      border: 'none',
+                      color: '#ffffff',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
                   >
                     Parar
                   </button>
@@ -671,26 +662,22 @@ export const SenseiFloatingAssistant: React.FC = () => {
               )}
 
               {/* CAMPO DE ENTRADA NO MODO HISTÓRICO */}
-              <div className="p-3 bg-slate-950 border-t border-slate-800/80 shrink-0">
+              <div className="sensei-footer">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     handleSendMessage();
                   }}
-                  className="flex items-center gap-2"
+                  className="sensei-input-row"
                 >
                   {/* Botão de Microfone */}
                   <button
                     type="button"
                     onClick={toggleListening}
-                    className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                      isListening
-                        ? 'bg-rose-600 border-rose-500 text-white shadow-lg shadow-rose-900/50 scale-105'
-                        : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-cyan-500/40 text-slate-400 hover:text-cyan-300'
-                    }`}
+                    className={`sensei-mic-btn ${isListening ? 'recording' : ''}`}
                     title={isListening ? 'Parar gravação' : 'Falar comando por voz (Microfone)'}
                   >
-                    {isListening ? <MicOff className="w-4 h-4 animate-bounce" /> : <Mic className="w-4 h-4" />}
+                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
                   </button>
 
                   {/* Input de Texto */}
@@ -701,22 +688,22 @@ export const SenseiFloatingAssistant: React.FC = () => {
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={isListening ? 'Ouvindo sua fala...' : 'Peça uma ação ou faça uma pergunta...'}
                     disabled={isLoading}
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/80 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                    className="sensei-input-field"
                   />
 
                   {/* Botão Enviar */}
                   <button
                     type="submit"
                     disabled={!inputText.trim() || isLoading}
-                    className="p-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-slate-950 font-bold hover:from-cyan-400 hover:to-emerald-400 disabled:opacity-40 transition-all cursor-pointer shadow-md shadow-cyan-500/20"
+                    className="sensei-send-btn"
                     title="Enviar comando"
                   >
-                    <Send className="w-4 h-4" />
+                    <Send size={15} />
                   </button>
                 </form>
 
                 {/* Disclaimer Jurídico / Ético (LGPD & Cyber Law) */}
-                <div className="mt-2 text-[10px] text-slate-500 text-center leading-tight">
+                <div className="sensei-disclaimer">
                   O Sensei IA opera em caráter consultivo e analítico. Decisões técnicas e financeiras devem ser validadas pelos líderes no Gemba.
                 </div>
               </div>

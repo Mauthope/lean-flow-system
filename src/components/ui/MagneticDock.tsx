@@ -36,6 +36,7 @@
 import * as React from 'react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import './magnetic-dock.css';
 
 const MOTIQ_TOKENS = `@layer motiq {
   :root {
@@ -439,8 +440,8 @@ function MagneticDockBase({
       data-paused={paused ? 'true' : 'false'}
       data-orientation={orientation}
       className={cn(
-        'relative select-none',
-        isVertical ? 'flex h-full min-h-[320px] items-center' : 'w-full',
+        'magnetic-dock-root',
+        isVertical ? 'vertical' : 'horizontal',
         className
       )}
       style={{ touchAction: isVertical ? 'pan-x' : 'pan-y', ...style }}
@@ -450,20 +451,10 @@ function MagneticDockBase({
       onPointerCancel={release}
       {...props}
     >
-      <div className={cn('flex', isVertical ? 'h-full items-center p-2' : 'w-full justify-center px-3 pb-3 pt-24')}>
+      <div className={cn('magnetic-dock-wrap', isVertical ? 'vertical' : 'horizontal')}>
         <div
           ref={barRef}
-          className={cn(
-            'relative flex gap-2.5 rounded-[20px]',
-            isVertical
-              ? 'flex-col items-center justify-center px-2 py-3'
-              : 'max-w-full flex-wrap items-end justify-center px-[16px] py-2.5',
-            'border border-[var(--motiq-border,#1e293b)] backdrop-blur-[14px]'
-          )}
-          style={{
-            background: 'color-mix(in oklab, var(--motiq-surface, #0b1329) 78%, transparent)',
-            boxShadow: '0 16px 40px -16px color-mix(in oklab, var(--motiq-accent, #06b6d4) 30%, transparent)',
-          }}
+          className={cn('magnetic-dock-bar', isVertical ? 'vertical' : 'horizontal')}
         >
           {items.map((item, i) => {
             const [a, b] = item.tint ?? TINTS[i % TINTS.length];
@@ -484,27 +475,13 @@ function MagneticDockBase({
                 onBlur={() => {
                   if (focusRef.current === i) focusRef.current = -1;
                 }}
-                className={cn(
-                  'relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[12px]',
-                  isVertical
-                    ? wallSide === 'right'
-                      ? 'origin-right'
-                      : 'origin-left'
-                    : 'origin-bottom',
-                  'cursor-pointer border-0 p-0 text-[14px] font-bold',
-                  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[2px] focus-visible:outline-[var(--motiq-accent,#06b6d4)]',
-                  isActive && 'ring-2 ring-cyan-400/80 shadow-md shadow-cyan-500/30',
-                  staticMode &&
-                    (isVertical
-                      ? wallSide === 'right'
-                        ? 'transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:-translate-x-2 hover:scale-[1.12] focus-visible:-translate-x-2 focus-visible:scale-[1.12]'
-                        : 'transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:translate-x-2 hover:scale-[1.12] focus-visible:translate-x-2 focus-visible:scale-[1.12]'
-                      : 'transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] hover:-translate-y-2 hover:scale-[1.12] focus-visible:-translate-y-2 focus-visible:scale-[1.12]')
-                )}
+                className={cn('magnetic-dock-button', isActive && 'is-active')}
                 style={{
                   color: '#ffffff',
                   backgroundImage: `linear-gradient(140deg, ${a}, ${b})`,
-                  boxShadow: `inset 0 1px 0 color-mix(in oklab, ${FG} 22%, transparent), 0 8px 18px -6px color-mix(in oklab, ${a} 60%, transparent)`,
+                  boxShadow: isActive
+                    ? '0 0 0 2px #22d3ee, 0 6px 18px rgba(6, 182, 212, 0.45)'
+                    : `inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 6px 14px -4px rgba(0, 0, 0, 0.45)`,
                   willChange: 'transform',
                 }}
               >
@@ -519,7 +496,7 @@ function MagneticDockBase({
         <div
           ref={tipRef}
           aria-hidden="true"
-          className="pointer-events-none absolute left-0 top-0 z-[100] whitespace-nowrap rounded-lg px-[10px] py-[4px] text-xs font-semibold opacity-0 shadow-2xl border border-slate-700/60 bg-slate-900 text-slate-100 backdrop-blur-md"
+          className="magnetic-dock-tooltip"
           style={{
             transform: 'translate3d(-999px,-999px,0)',
             willChange: 'transform, opacity',

@@ -549,9 +549,11 @@ export const Sidebar: React.FC = () => {
               overflowY: 'auto',
               overflowX: 'visible',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0.4rem 0',
+              justifyContent: 'flex-start',
+              padding: '0.6rem 0',
+              width: '100%',
             }}
             className="no-scrollbar"
           >
@@ -559,9 +561,9 @@ export const Sidebar: React.FC = () => {
               items={dockItems}
               orientation="vertical"
               wallSide="left"
-              magnetRadius={85}
-              maxScale={1.46}
-              lift={18}
+              magnetRadius={75}
+              maxScale={1.35}
+              lift={14}
               idleWave
               tooltip
               onSelect={handleDockSelect}

@@ -1,0 +1,539 @@
+/**
+ * sensei-assistant.css
+ *
+ * Estilos puros de alta tecnologia para o Sensei Floating Assistant e Copiloto Lean.
+ * Alinhado com o Obsidian Navy Executive Design System (Zero Tailwind dependency).
+ */
+
+/* ==========================================================================
+   1. BOTÃO FLUTUANTE (FAB)
+   ========================================================================== */
+
+.sensei-fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9980;
+  display: flex;
+  align-items: center;
+}
+
+.sensei-fab-button {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(6, 182, 212, 0.45);
+  outline: none;
+  background: linear-gradient(135deg, rgba(6, 10, 19, 0.96) 0%, rgba(15, 23, 42, 0.94) 100%);
+  color: #ffffff;
+  padding: 8px 16px 8px 10px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(6, 182, 212, 0.22), 0 4px 12px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sensei-fab-button:hover {
+  border-color: #22d3ee;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(6, 182, 212, 0.35), 0 6px 16px rgba(0, 0, 0, 0.7);
+}
+
+.sensei-fab-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 50%, #10b981 100%);
+  padding: 1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4);
+}
+
+.sensei-fab-icon-inner {
+  width: 100%;
+  height: 100%;
+  background-color: #060a13;
+  border-radius: 8.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22d3ee;
+}
+
+.sensei-fab-beacon {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #10b981;
+  border: 2px solid #060a13;
+}
+
+.sensei-fab-text-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sensei-fab-title {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.sensei-fab-shortcut {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: #22d3ee;
+  background-color: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   2. JANELA DO CHAT FLUTUANTE
+   ========================================================================== */
+
+.sensei-window-modal {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9981;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgba(6, 10, 19, 0.97);
+  border: 1px solid rgba(6, 182, 212, 0.38);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(6, 182, 212, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  color: #f8fafc;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.sensei-window-modal.normal {
+  width: 490px;
+  height: 650px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+}
+
+.sensei-window-modal.expanded {
+  width: 760px;
+  height: 790px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+}
+
+.sensei-window-top-accent {
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #06b6d4 0%, #14b8a6 50%, #10b981 100%);
+  flex-shrink: 0;
+}
+
+/* Header */
+.sensei-header {
+  padding: 12px 16px;
+  background: #060a13;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sensei-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sensei-header-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #06b6d4, #10b981);
+  padding: 1.5px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sensei-header-avatar-inner {
+  width: 100%;
+  height: 100%;
+  background-color: #060a13;
+  border-radius: 7.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #22d3ee;
+}
+
+.sensei-header-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sensei-header-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sensei-header-name {
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sensei-header-badge {
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.sensei-header-tenant {
+  font-size: 10px;
+  color: #94a3b8;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Header Controls */
+.sensei-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sensei-mode-segmented {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.sensei-mode-btn {
+  appearance: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.sensei-mode-btn.active {
+  background: linear-gradient(135deg, #06b6d4, #0d9488);
+  color: #020617;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.35);
+}
+
+.sensei-icon-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  background: rgba(15, 23, 42, 0.85);
+  color: #94a3b8;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sensei-icon-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sensei-icon-btn.active {
+  background: rgba(6, 182, 212, 0.2);
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+/* Chips Bar */
+.sensei-chips-container {
+  padding: 8px 14px;
+  background: #090e1b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sensei-chips-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.sensei-chip-pill {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sensei-chip-pill:hover {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.4);
+  color: #22d3ee;
+}
+
+/* Chat Body (Messages) */
+.sensei-chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sensei-msg-row {
+  display: flex;
+  gap: 10px;
+  max-width: 86%;
+}
+
+.sensei-msg-row.user {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.sensei-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sensei-msg-avatar.user {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.sensei-msg-avatar.bot {
+  background: linear-gradient(135deg, #06b6d4, #10b981);
+  color: #060a13;
+}
+
+.sensei-msg-bubble {
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+
+.sensei-msg-bubble.user {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-top-right-radius: 4px;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.sensei-msg-bubble.bot {
+  background: rgba(15, 23, 42, 0.95);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-top-left-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.sensei-msg-meta {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sensei-action-card {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+}
+
+/* Voice Active Alert */
+.sensei-voice-active-bar {
+  padding: 8px 14px;
+  background: rgba(159, 18, 57, 0.9);
+  border-top: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fecdd3;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+/* Footer & Input */
+.sensei-footer {
+  padding: 12px 14px;
+  background: #060a13;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.sensei-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sensei-input-field {
+  flex: 1;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #f8fafc;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.sensei-input-field:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.25);
+}
+
+.sensei-mic-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  outline: none;
+  background: #0f172a;
+  color: #94a3b8;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sensei-mic-btn:hover {
+  color: #22d3ee;
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.sensei-mic-btn.recording {
+  background: #e11d48;
+  color: #ffffff;
+  border-color: #f43f5e;
+  box-shadow: 0 0 14px rgba(225, 29, 72, 0.6);
+}
+
+.sensei-send-btn {
+  appearance: none;
+  border: none;
+  outline: none;
+  background: linear-gradient(135deg, #06b6d4 0%, #14b8a6 50%, #10b981 100%);
+  color: #060a13;
+  font-weight: 800;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+
+.sensei-send-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.sensei-disclaimer {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.3;
+}

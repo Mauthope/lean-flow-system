@@ -55,4 +55,12 @@
 - Compilação estrita em TypeScript (`tsc --noEmit`): 0 erros.
 - Build Next.js 14 App Router: 100% aprovado (41/41 rotas compiladas com sucesso, 0 erros e 0 warnings).
 
+### 4. Correção Arquitetural de Renderização CSS Pura
+- **Diagnóstico da Anomalia Visual:** Identificado que o projeto opera exclusivamente com CSS modular e variáveis nativas (sem compilador Tailwind ativo). As classes utilitárias importadas do repositório de referência não estavam sendo processadas, resultando na renderização de botões brutos do navegador com borda chanfrada padrão e quebra em três colunas na sidebar.
+- **Ações Implementadas:**
+  - Criação de `src/components/ui/magnetic-dock.css`: estilização pura para container vertical em coluna única (54px), botões sem borda com gradientes e sombras, e tooltip com vidro escuro.
+  - Criação de `src/components/sensei/sensei-assistant.css`: estilização completa para o botão FAB em pílula (`border-radius: 9999px;`), badge `Alt+S`, avatar com beacon pulsante e modal executivo com suporte a expansão e histórico.
+  - Refatoração dos componentes `MagneticDock.tsx`, `Sidebar.tsx` e `SenseiFloatingAssistant.tsx` com desacoplamento de dependências externas.
+- **Homologação:** Build Next.js 14 compilado com 100% de sucesso (41 rotas).
+
 ---
