@@ -4,9 +4,11 @@ Este projeto conta com instruções especializadas para agentes de IA localizada
 
 ## Agentes Ativos:
 - [`security-expert`](./agents/security-expert.md): Arquiteto Sênior de AppSec (Next.js, Supabase RLS, PSI Grupo Vaccaro).
+- [`legal-counsel`](./agents/legal-counsel.md): Advogado Sênior e Chief Compliance Officer (Cyber Law, LGPD, Propriedade Intelectual, Veto Jurídico Definitivo).
 - [`designer`](./agents/designer.md): Especialista em Design System Executivo (Obsidian Navy, Lucide React, Proibição Absoluta de Emojis).
 - [`copywriter`](./agents/copywriter.md): Especialista em UX Writing e Terminologia Industrial Lean / TPS.
 - [`cleancod`](./agents/cleancod.md): Especialista em Clean Code, SOLID/SRP, TypeScript Estrito e Otimização de Tokens de IA.
+- [`chronicler`](./agents/chronicler.md): Cronista Técnico e Guardião da Memória do Repositório (DEVLOG.md).
 
 ## Instruções Gerais para o Assistente:
 1. **Consultar Especialistas Locais:** Sempre que uma tarefa envolver áreas especializadas (como Segurança da Informação, Design System, Redação Técnica, Engenharia Lean/TPM, Arquitetura de Software ou Banco de Dados Supabase), verifique se há arquivos de instrução correspondentes dentro do diretório [`agents/`](./agents). Em tarefas de alteração de banco, rotas de API, chaves de API ou autenticação, acione e siga as diretrizes do `security-expert`.

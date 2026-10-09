@@ -59,6 +59,21 @@ async function fetchAvailableModels(apiKey: string): Promise<string[]> {
 }
 
 /**
+ * Higienização de Dados Pessoais e Sensíveis (LGPD Art. 46 / Cyber Law Compliance)
+ * Mascara CPFs, cartões de crédito e senhas explícitas antes do envio para APIs externas de LLM.
+ */
+function sanitizePiiFromText(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    // Mascara CPF (ex: 123.456.789-00 ou 12345678900)
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '[DADO_PESSOAL_CPF_REMOVIDO]')
+    // Mascara potenciais números de cartões de crédito
+    .replace(/\b(?:\d{4}[ -]?){3}\d{4}\b/g, '[CARTAO_REMOVIDO]')
+    // Mascara menções de credenciais ou senhas em anotações
+    .replace(/(?:senha|password|token)\s*[:=]\s*\S+/gi, '[CREDENCIAL_REMOVIDA]');
+}
+
+/**
  * Monta a lista ordenada de modelos candidatos a serem testados,
  * priorizando o modelo solicitado e os modelos modernos ativos (Gemini 2.0 / 1.5).
  */
@@ -331,7 +346,8 @@ export async function POST(req: NextRequest) {
     for (const item of rawIncoming) {
       if (!item || !item.parts || !Array.isArray(item.parts) || item.parts.length === 0)
         continue;
-      const textContent = item.parts.map((p: any) => p.text || '').join('\n').trim();
+      const rawText = item.parts.map((p: any) => p.text || '').join('\n').trim();
+      const textContent = sanitizePiiFromText(rawText);
       if (!textContent) continue;
 
       const currentRole = item.role === 'model' ? 'model' : 'user';
@@ -356,7 +372,7 @@ export async function POST(req: NextRequest) {
     if (sanitizedContents.length === 0) {
       sanitizedContents.push({
         role: 'user',
-        parts: [{ text: prompt || 'Olá Sensei' }],
+        parts: [{ text: sanitizePiiFromText(prompt || 'Olá Sensei') }],
       });
     }
 

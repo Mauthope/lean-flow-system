@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
@@ -1161,6 +1162,47 @@ export default function LoginPage() {
           >
             Mauricio Grigol
           </strong>
+        </div>
+
+        {/* Rodapé Jurídico & Governança LGPD */}
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 1,
+            marginTop: '0.65rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.85rem',
+            fontSize: '0.75rem',
+            color: 'var(--text-dim, #64748b)',
+          }}
+        >
+          <Link
+            href="/termos"
+            style={{
+              color: 'var(--text-muted, #94a3b8)',
+              textDecoration: 'none',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = '#22d3ee')}
+            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-muted, #94a3b8)')}
+          >
+            Termos de Uso
+          </Link>
+          <span>&bull;</span>
+          <Link
+            href="/privacidade"
+            style={{
+              color: 'var(--text-muted, #94a3b8)',
+              textDecoration: 'none',
+              transition: 'color 0.15s ease',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.color = '#34d399')}
+            onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-muted, #94a3b8)')}
+          >
+            Privacidade & LGPD
+          </Link>
         </div>
       </div>
     </div>

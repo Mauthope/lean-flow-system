@@ -1691,6 +1691,20 @@ SUAS DIRETRIZES DE RESPOSTA:
                 <Send size={15} />
               </button>
             </form>
+
+            {/* Aviso Jurídico & Ético de IA (LGPD / Cyber Law Compliance) */}
+            <div
+              style={{
+                marginTop: '0.45rem',
+                fontSize: '0.65rem',
+                color: isDark ? 'var(--text-muted)' : '#64748b',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                letterSpacing: '0.01em',
+              }}
+            >
+              O Sensei IA opera em caráter consultivo. Decisões técnicas e financeiras devem ser validadas pelos líderes no Gemba.
+            </div>
           </div>
         </div>
       )}

@@ -838,6 +838,20 @@ export const SenseiFloatingAssistant: React.FC = () => {
                 {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
               </button>
             </form>
+
+            {/* Aviso Jurídico & Ético de IA (LGPD / Cyber Law Compliance) */}
+            <div
+              style={{
+                marginTop: '0.45rem',
+                fontSize: '0.65rem',
+                color: '#64748b',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                letterSpacing: '0.01em',
+              }}
+            >
+              O Sensei IA opera em caráter consultivo e assistencial. Decisões técnicas e financeiras devem ser validadas pelos líderes no Gemba.
+            </div>
           </div>
         </div>
       )}
