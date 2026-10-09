@@ -212,12 +212,12 @@ function MagneticDockBase({
   items,
   orientation = 'vertical',
   wallSide = 'left',
-  magnetRadius = 78,
-  maxScale = 1.5,
-  lift = 24,
+  magnetRadius = 110,
+  maxScale = 1.55,
+  lift = 22,
   stiffness = 420,
   damping = 26,
-  idleWave = true,
+  idleWave = false,
   tooltip = true,
   onSelect,
   seed = 1,
@@ -294,7 +294,10 @@ function MagneticDockBase({
 
     if (!animate) {
       iconsRef.current.forEach((el) => {
-        if (el) el.style.transform = '';
+        if (el) {
+          el.style.transform = '';
+          el.style.setProperty('--dock-inf', '0');
+        }
       });
       if (tipRef.current) tipRef.current.style.opacity = '0';
       return;
@@ -356,6 +359,8 @@ function MagneticDockBase({
 
       let bestI = -1;
       let bestInf = 0;
+      const isUserInteracting = p.inside || fi >= 0;
+
       for (let i = 0; i < count; i++) {
         const b = bases[i];
         const el = iconsRef.current[i];
@@ -371,6 +376,10 @@ function MagneticDockBase({
           bestInf = inf;
           bestI = i;
         }
+
+        // A cor so aparece com a proximidade do mouse / hover do usuario
+        const colorInf = isUserInteracting ? inf : 0;
+        el.style.setProperty('--dock-inf', Math.max(0, Math.min(1, colorInf * 1.35)).toFixed(3));
 
         spring(st.s, 1 + grow * inf, cfg.stiffness, cfg.damping, dt);
 
@@ -431,6 +440,9 @@ function MagneticDockBase({
 
   const release = React.useCallback(() => {
     pointerRef.current = { x: -1e4, y: -1e4, inside: false };
+    iconsRef.current.forEach((el) => {
+      if (el) el.style.setProperty('--dock-inf', '0');
+    });
   }, []);
 
   return (
@@ -477,15 +489,19 @@ function MagneticDockBase({
                 }}
                 className={cn('magnetic-dock-button', isActive && 'is-active')}
                 style={{
-                  color: '#ffffff',
-                  backgroundImage: `linear-gradient(140deg, ${a}, ${b})`,
-                  boxShadow: isActive
-                    ? '0 0 0 2px #22d3ee, 0 6px 18px rgba(6, 182, 212, 0.45)'
-                    : `inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 6px 14px -4px rgba(0, 0, 0, 0.45)`,
                   willChange: 'transform',
                 }}
               >
-                {item.icon ?? <span aria-hidden="true">{item.label.slice(0, 1).toUpperCase()}</span>}
+                <span
+                  className="dock-color-layer"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${a}, ${b})`,
+                    boxShadow: `0 8px 24px -4px ${a}aa, inset 0 1px 1px rgba(255, 255, 255, 0.45)`,
+                  }}
+                />
+                <span className="dock-icon-layer">
+                  {item.icon ?? <span aria-hidden="true">{item.label.slice(0, 1).toUpperCase()}</span>}
+                </span>
               </button>
             );
           })}

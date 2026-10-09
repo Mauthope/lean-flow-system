@@ -196,23 +196,133 @@ export const Sidebar: React.FC = () => {
     '/agente/canal-kaizen': ['#fbbf24', '#f59e0b'],
   }), []);
 
-  const dockItems: DockItem[] = React.useMemo(() => {
-    const allItems = currentNav.flatMap((section) => section.items);
-    return allItems.map((item) => {
-      const Icon = item.icon;
-      const isActive = pathname === item.href;
-      const tint = ROUTE_TINTS[item.href] || (isActive ? ['#00f2fe', '#10b981'] : ['#4f7cff', '#22c7d9']);
-      return {
-        id: item.href,
-        label: item.label,
-        active: isActive,
-        icon: <Icon size={18} className="stroke-[2.2]" />,
-        tint: tint,
-      };
-    });
-  }, [currentNav, pathname, ROUTE_TINTS]);
+  const floatingDockItems: DockItem[] = React.useMemo(() => {
+    if (isViewer || isAdmin) {
+      return [
+        {
+          id: '/admin/dashboard',
+          label: 'Dashboard Lean',
+          active: pathname === '/admin/dashboard',
+          icon: <LayoutDashboard size={20} className="stroke-[2.2]" />,
+          tint: ['#00f2fe', '#4facfe'],
+        },
+        {
+          id: '/admin/alta-gerencia',
+          label: 'Alta Gerência (Hoshin)',
+          active: pathname === '/admin/alta-gerencia',
+          icon: <Target size={20} className="stroke-[2.2]" />,
+          tint: ['#f6b94a', '#ff6b5e'],
+        },
+        {
+          id: '/admin/kanban',
+          label: 'Kanban Geral',
+          active: pathname === '/admin/kanban',
+          icon: <Kanban size={20} className="stroke-[2.2]" />,
+          tint: ['#10b981', '#059669'],
+        },
+        {
+          id: isMaster ? '/admin/entidades' : '/admin/setores',
+          label: isMaster ? 'Gestão de Entidades' : 'Setores & Assessment',
+          active: pathname === '/admin/entidades' || pathname === '/admin/setores',
+          icon: isMaster ? <Factory size={20} className="stroke-[2.2]" /> : <Building2 size={20} className="stroke-[2.2]" />,
+          tint: ['#ec4899', '#f43f5e'],
+        },
+        {
+          id: '/admin/historico-kaizen',
+          label: 'Histórico Kaizen & Sensei IA',
+          active: pathname === '/admin/historico-kaizen',
+          icon: <Sparkles size={20} className="stroke-[2.2]" />,
+          tint: ['#a855f7', '#7e22ce'],
+        },
+        {
+          id: '/admin/relatorios',
+          label: 'Custo Evitado & ROI',
+          active: pathname === '/admin/relatorios',
+          icon: <TrendingUp size={20} className="stroke-[2.2]" />,
+          tint: ['#22c7d9', '#0d9488'],
+        },
+        {
+          id: '/admin/tpm',
+          label: 'TPM & Manutenção',
+          active: pathname === '/admin/tpm',
+          icon: <Settings size={20} className="stroke-[2.2]" />,
+          tint: ['#6366f1', '#4338ca'],
+        },
+        {
+          id: 'expand-menu',
+          label: 'Expandir Menu Completo',
+          active: false,
+          icon: <PanelLeftOpen size={20} className="stroke-[2.2]" />,
+          tint: ['#38bdf8', '#0284c7'],
+        },
+      ];
+    }
+
+    return [
+      {
+        id: '/agente/kanban',
+        label: 'Meu Kanban',
+        active: pathname === '/agente/kanban',
+        icon: <Kanban size={20} className="stroke-[2.2]" />,
+        tint: ['#10b981', '#059669'],
+      },
+      {
+        id: '/agente/arvore',
+        label: 'Árvore Lean (Espinha)',
+        active: pathname === '/agente/arvore',
+        icon: <Network size={20} className="stroke-[2.2]" />,
+        tint: ['#00f2fe', '#10b981'],
+      },
+      {
+        id: '/agente/historico-kaizen',
+        label: 'Histórico Kaizen & Sensei IA',
+        active: pathname === '/agente/historico-kaizen',
+        icon: <Sparkles size={20} className="stroke-[2.2]" />,
+        tint: ['#a855f7', '#7e22ce'],
+      },
+      {
+        id: '/agente/relatorio-pessoal',
+        label: 'Minhas Entregas & ROI',
+        active: pathname === '/agente/relatorio-pessoal',
+        icon: <TrendingUp size={20} className="stroke-[2.2]" />,
+        tint: ['#22c7d9', '#0d9488'],
+      },
+      {
+        id: '/agente/ferramentas',
+        label: 'Academia & Ferramentas',
+        active: pathname === '/agente/ferramentas',
+        icon: <BookOpen size={20} className="stroke-[2.2]" />,
+        tint: ['#3b82f6', '#1d4ed8'],
+      },
+      {
+        id: '/agente/tpm',
+        label: 'TPM & Manutenção',
+        active: pathname === '/agente/tpm',
+        icon: <Settings size={20} className="stroke-[2.2]" />,
+        tint: ['#6366f1', '#4338ca'],
+      },
+      {
+        id: '/agente/canal-kaizen',
+        label: 'Canal Kaizen & Ideias',
+        active: pathname === '/agente/canal-kaizen',
+        icon: <Lightbulb size={20} className="stroke-[2.2]" />,
+        tint: ['#fbbf24', '#f59e0b'],
+      },
+      {
+        id: 'expand-menu',
+        label: 'Expandir Menu Completo',
+        active: false,
+        icon: <PanelLeftOpen size={20} className="stroke-[2.2]" />,
+        tint: ['#38bdf8', '#0284c7'],
+      },
+    ];
+  }, [isViewer, isAdmin, isMaster, pathname]);
 
   const handleDockSelect = (href: string) => {
+    if (href === 'expand-menu') {
+      toggleSidebar();
+      return;
+    }
     router.push(href);
     setIsMobileMenuOpen(false);
   };
@@ -234,39 +344,149 @@ export const Sidebar: React.FC = () => {
         />
       )}
 
-      <aside
-        className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
-        style={{
-          width: isSidebarCollapsed ? '78px' : '260px',
-          backgroundColor: 'var(--bg-sidebar)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid var(--border-subtle)',
-          flexShrink: 0,
-          height: '100vh',
-          position: 'sticky',
-          top: 0,
-          zIndex: 95,
-          transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease, background-color 0.2s ease',
-          overflow: isSidebarCollapsed ? 'visible' : 'hidden',
-        }}
-      >
-        {/* Brand & Toggle Header */}
-        <div
+      {isSidebarCollapsed && !isMobileMenuOpen ? (
+        <>
+          {/* Floating Wall Dock — Solto na Parede (Akiom-RH Style) */}
+          <nav
+            aria-label="Menu Vertical Magnético na Parede"
+            className="fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 flex items-center pointer-events-auto"
+            style={{ overflow: 'visible' }}
+          >
+            <MagneticDock
+              items={floatingDockItems}
+              orientation="vertical"
+              wallSide="left"
+              magnetRadius={110}
+              maxScale={1.55}
+              lift={22}
+              idleWave={false}
+              tooltip
+              onSelect={handleDockSelect}
+            />
+          </nav>
+
+          {/* Floating Brand Trigger no Topo Esquerdo */}
+          <div className="fixed top-3 left-3 sm:left-4 z-50 flex items-center">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              title="Expandir menu completo (FluxoLean PRO)"
+              style={{
+                background: isDark ? 'rgba(8, 12, 20, 0.85)' : 'rgba(255, 255, 255, 0.92)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+                borderRadius: '12px',
+                padding: '6px 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                boxShadow: isDark
+                  ? '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.15)'
+                  : '0 4px 14px rgba(15, 23, 42, 0.1)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+                e.currentTarget.style.boxShadow = '0 8px 28px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.3)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1';
+                e.currentTarget.style.boxShadow = isDark
+                  ? '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.15)'
+                  : '0 4px 14px rgba(15, 23, 42, 0.1)';
+              }}
+            >
+              <div
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '7px',
+                  background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)',
+                  padding: '1px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: '#060a13',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 900,
+                    fontSize: '0.65rem',
+                    color: '#22d3ee',
+                  }}
+                >
+                  FL
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: isDark ? '#e2e8f0' : '#1e293b',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Menu
+              </span>
+              <PanelLeftOpen size={14} color="#06b6d4" />
+            </button>
+          </div>
+
+          {/* Espacador transparente para respiro da area principal no desktop */}
+          <div
+            aria-hidden="true"
+            className="hidden lg:block"
+            style={{
+              width: '68px',
+              flexShrink: 0,
+              backgroundColor: 'transparent',
+              border: 'none',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      ) : (
+        <aside
+          className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
           style={{
-            padding: isSidebarCollapsed ? '1rem 0.5rem' : '1.15rem 1.15rem',
-            borderBottom: '1px solid var(--border-subtle)',
+            width: '260px',
+            backgroundColor: 'var(--bg-sidebar)',
+            color: 'var(--text-primary)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.65rem',
+            borderRight: '1px solid var(--border-subtle)',
+            flexShrink: 0,
+            height: '100vh',
+            position: 'sticky',
+            top: 0,
+            zIndex: 95,
+            transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease, background-color 0.2s ease',
+            overflow: 'hidden',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between' }}>
+          {/* Brand & Toggle Header */}
+          <div
+            style={{
+              padding: '1.15rem 1.15rem',
+              borderBottom: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.65rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              {/* BagTime-style LF Logo */}
+              {/* LF Logo */}
               <div
-                onClick={isSidebarCollapsed ? toggleSidebar : undefined}
                 style={{
                   width: '36px',
                   height: '36px',
@@ -274,10 +494,9 @@ export const Sidebar: React.FC = () => {
                   background: 'linear-gradient(135deg, #06b6d4 0%, #14b8a6 50%, #10b981 100%)',
                   padding: '1.5px',
                   boxShadow: '0 4px 12px rgba(6, 182, 212, 0.35)',
-                  cursor: isSidebarCollapsed ? 'pointer' : 'default',
                   flexShrink: 0,
                 }}
-                title={isSidebarCollapsed ? 'Clique para expandir o menu' : 'FluxoLean PRO'}
+                title="FluxoLean PRO"
               >
                 <div
                   style={{
@@ -297,62 +516,59 @@ export const Sidebar: React.FC = () => {
                 </div>
               </div>
 
-              {!isSidebarCollapsed && (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
-                      Fluxo<span style={{ background: 'linear-gradient(90deg, #06b6d4, #0d9488, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lean</span>
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '0.6rem',
-                        fontWeight: 800,
-                        backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : 'rgba(2, 132, 199, 0.12)',
-                        color: isDark ? '#22d3ee' : '#0284c7',
-                        border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(2, 132, 199, 0.3)',
-                        padding: '0.05rem 0.3rem',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      PRO
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>Engenharia Lean & ROI</p>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ fontWeight: 800, fontSize: '1.05rem', letterSpacing: '-0.02em', color: isDark ? '#ffffff' : '#0f172a', fontFamily: 'var(--font-heading)' }}>
+                    Fluxo<span style={{ background: 'linear-gradient(90deg, #06b6d4, #0d9488, #10b981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lean</span>
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 800,
+                      backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : 'rgba(2, 132, 199, 0.12)',
+                      color: isDark ? '#22d3ee' : '#0284c7',
+                      border: isDark ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(2, 132, 199, 0.3)',
+                      padding: '0.05rem 0.3rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    PRO
+                  </span>
                 </div>
-              )}
+                <p style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>Engenharia Lean & ROI</p>
+              </div>
             </div>
 
             {/* Toggle Button in Header */}
-            {!isSidebarCollapsed && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <button
-                  type="button"
-                  onClick={toggleSidebar}
-                  title="Recolher menu lateral"
-                  style={{
-                    background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
-                    border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
-                    color: isDark ? '#94a3b8' : '#475569',
-                    borderRadius: '8px',
-                    width: '30px',
-                    height: '30px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0';
-                    e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
-                    e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
-                  }}
-                >
-                  <PanelLeftClose size={15} />
-                </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                title="Recolher para Dock Magnético Flutuante"
+                style={{
+                  background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
+                  color: isDark ? '#94a3b8' : '#475569',
+                  borderRadius: '8px',
+                  width: '30px',
+                  height: '30px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0';
+                  e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
+                  e.currentTarget.style.color = isDark ? '#94a3b8' : '#475569';
+                }}
+              >
+                <PanelLeftClose size={15} />
+              </button>
 
                 {/* Close Button for Mobile Drawer */}
                 <button
@@ -374,12 +590,10 @@ export const Sidebar: React.FC = () => {
                   <X size={16} />
                 </button>
               </div>
-            )}
           </div>
 
           {/* Tenant Pill when Expanded */}
-          {!isSidebarCollapsed && (
-            isMaster ? (
+          {isMaster ? (
               <Link
                 href="/admin/entidades"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -466,143 +680,110 @@ export const Sidebar: React.FC = () => {
                   Planta
                 </span>
               </div>
-            )
-          )}
+            )}
 
           {/* Hierarchy Role Badge Pill */}
-          {!isSidebarCollapsed && (
-            isMaster ? (
-              <div
-                style={{
-                  marginTop: '0.45rem',
-                  backgroundColor: isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe',
-                  border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  padding: '0.35rem 0.6rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                }}
-              >
-                <Shield size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#67e8f9' : '#0369a1', lineHeight: 1.2 }}>
-                    Grau 1 • Gestor Master
-                  </span>
-                  <span style={{ fontSize: '0.6rem', color: isDark ? '#22d3ee' : '#0284c7' }}>
-                    Governança Global de Entidades
-                  </span>
-                </div>
+          {isMaster ? (
+            <div
+              style={{
+                marginTop: '0.45rem',
+                backgroundColor: isDark ? 'rgba(6, 182, 212, 0.12)' : '#e0f2fe',
+                border: isDark ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid #bae6fd',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <Shield size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#67e8f9' : '#0369a1', lineHeight: 1.2 }}>
+                  Grau 1 • Gestor Master
+                </span>
+                <span style={{ fontSize: '0.6rem', color: isDark ? '#22d3ee' : '#0284c7' }}>
+                  Governança Global de Entidades
+                </span>
               </div>
-            ) : isEntityMgr ? (
-              <div
-                style={{
-                  marginTop: '0.45rem',
-                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
-                  border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  padding: '0.35rem 0.6rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                }}
-              >
-                <Building2 size={13} color={isDark ? '#38bdf8' : '#0284c7'} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#7dd3fc' : '#0369a1', lineHeight: 1.2 }}>
-                    Grau 2 • Gestor da Unidade
-                  </span>
-                  <span style={{ fontSize: '0.6rem', color: isDark ? '#38bdf8' : '#0284c7' }}>
-                    Liderança de Agentes da Fábrica
-                  </span>
-                </div>
+            </div>
+          ) : isEntityMgr ? (
+            <div
+              style={{
+                marginTop: '0.45rem',
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <Building2 size={13} color={isDark ? '#38bdf8' : '#0284c7'} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#7dd3fc' : '#0369a1', lineHeight: 1.2 }}>
+                  Grau 2 • Gestor da Unidade
+                </span>
+                <span style={{ fontSize: '0.6rem', color: isDark ? '#38bdf8' : '#0284c7' }}>
+                  Liderança de Agentes da Fábrica
+                </span>
               </div>
-            ) : isViewer ? (
-              <div
-                style={{
-                  marginTop: '0.45rem',
-                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
-                  border: isDark ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid #d8b4fe',
-                  borderRadius: '8px',
-                  padding: '0.35rem 0.6rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                }}
-              >
-                <Eye size={13} color={isDark ? '#c084fc' : '#7e22ce'} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#d8b4fe' : '#7e22ce', lineHeight: 1.2 }}>
-                    Consulta Executiva
-                  </span>
-                  <span style={{ fontSize: '0.6rem', color: isDark ? '#a855f7' : '#9333ea' }}>
-                    Modo Somente Leitura
-                  </span>
-                </div>
+            </div>
+          ) : isViewer ? (
+            <div
+              style={{
+                marginTop: '0.45rem',
+                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : '#f3e8ff',
+                border: isDark ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid #d8b4fe',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <Eye size={13} color={isDark ? '#c084fc' : '#7e22ce'} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#d8b4fe' : '#7e22ce', lineHeight: 1.2 }}>
+                  Consulta Executiva
+                </span>
+                <span style={{ fontSize: '0.6rem', color: isDark ? '#a855f7' : '#9333ea' }}>
+                  Modo Somente Leitura
+                </span>
               </div>
-            ) : (
-              <div
-                style={{
-                  marginTop: '0.45rem',
-                  backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7',
-                  border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
-                  borderRadius: '8px',
-                  padding: '0.35rem 0.6rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                }}
-              >
-                <UserCheck size={13} color={isDark ? '#34d399' : '#15803d'} />
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#6ee7b7' : '#15803d', lineHeight: 1.2 }}>
-                    Grau 3 • Agente Lean
-                  </span>
-                  <span style={{ fontSize: '0.6rem', color: isDark ? '#34d399' : '#16a34a' }}>
-                    Facilitador de Melhoria Contínua
-                  </span>
-                </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                marginTop: '0.45rem',
+                backgroundColor: isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7',
+                border: isDark ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #bbf7d0',
+                borderRadius: '8px',
+                padding: '0.35rem 0.6rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+              }}
+            >
+              <UserCheck size={13} color={isDark ? '#34d399' : '#15803d'} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.675rem', fontWeight: 800, color: isDark ? '#6ee7b7' : '#15803d', lineHeight: 1.2 }}>
+                  Grau 3 • Agente Lean
+                </span>
+                <span style={{ fontSize: '0.6rem', color: isDark ? '#34d399' : '#16a34a' }}>
+                  Facilitador de Melhoria Contínua
+                </span>
               </div>
-            )
+            </div>
           )}
         </div>
 
-        {/* Navigation Sections & Magnetic Dock */}
-        {isSidebarCollapsed ? (
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              padding: '0.4rem 0',
-              width: '100%',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-            }}
-            className="no-scrollbar"
-          >
-            <MagneticDock
-              items={dockItems}
-              orientation="vertical"
-              wallSide="left"
-              magnetRadius={70}
-              maxScale={1.25}
-              lift={3}
-              idleWave
-              tooltip
-              onSelect={handleDockSelect}
-            />
-          </div>
-        ) : (
-          <div
-            style={{
-              flex: 1,
-              padding: '0.85rem 0.65rem',
-              overflowY: 'auto',
+        {/* Navigation Sections */}
+        <div
+          style={{
+            flex: 1,
+            padding: '0.85rem 0.65rem',
+            overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
               gap: '1.15rem',
@@ -695,12 +876,11 @@ export const Sidebar: React.FC = () => {
               </div>
             ))}
           </div>
-        )}
 
         {/* Footer Area */}
         <div
           style={{
-            padding: isSidebarCollapsed ? '0.75rem 0.35rem' : '0.75rem 0.85rem',
+            padding: '0.75rem 0.85rem',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
@@ -715,8 +895,8 @@ export const Sidebar: React.FC = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
-              padding: isSidebarCollapsed ? '0.45rem 0' : '0.45rem 0.65rem',
+              justifyContent: 'space-between',
+              padding: '0.45rem 0.65rem',
               borderRadius: '8px',
               border: '1px solid var(--border-subtle)',
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9',
@@ -730,26 +910,22 @@ export const Sidebar: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
               {isDark ? <Sun size={14} color="#fbbf24" /> : <Moon size={14} color="#0284c7" />}
-              {!isSidebarCollapsed && (
-                <span>
-                  {isDark ? 'Tema Escuro' : 'Tema Claro'}
-                </span>
-              )}
-            </div>
-            {!isSidebarCollapsed && (
-              <span
-                style={{
-                  fontSize: '0.625rem',
-                  fontWeight: 800,
-                  color: isDark ? '#38bdf8' : '#0284c7',
-                  backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.12)',
-                  padding: '0.1rem 0.35rem',
-                  borderRadius: '4px',
-                }}
-              >
-                {isDark ? 'Mudar p/ Claro' : 'Mudar p/ Escuro'}
+              <span>
+                {isDark ? 'Tema Escuro' : 'Tema Claro'}
               </span>
-            )}
+            </div>
+            <span
+              style={{
+                fontSize: '0.625rem',
+                fontWeight: 800,
+                color: isDark ? '#38bdf8' : '#0284c7',
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.12)',
+                padding: '0.1rem 0.35rem',
+                borderRadius: '4px',
+              }}
+            >
+              {isDark ? 'Mudar p/ Claro' : 'Mudar p/ Escuro'}
+            </span>
           </button>
 
           {/* Creator Pill */}
@@ -758,11 +934,11 @@ export const Sidebar: React.FC = () => {
             style={{
               backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : '#f8fafc',
               border: '1px solid var(--border-subtle)',
-              padding: isSidebarCollapsed ? '0.5rem 0' : '0.5rem 0.65rem',
+              padding: '0.5rem 0.65rem',
               borderRadius: '9px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+              justifyContent: 'flex-start',
               gap: '0.55rem',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -796,74 +972,43 @@ export const Sidebar: React.FC = () => {
               MG
             </div>
 
-            {!isSidebarCollapsed && (
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 6px #34d399' }} />
-                  <span style={{ fontSize: '0.6rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
-                    Desenvolvido por:
-                  </span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.1rem' }}>
-                  <strong style={{ fontSize: '0.78125rem', color: isDark ? '#ffffff' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Mauricio Grigol
-                  </strong>
-                  <Link
-                    href="/memorial"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      fontSize: '0.625rem',
-                      fontWeight: 800,
-                      backgroundColor: isDark ? 'rgba(14, 165, 233, 0.2)' : '#e0f2fe',
-                      color: isDark ? '#38bdf8' : '#0284c7',
-                      border: isDark ? '1px solid rgba(14, 165, 233, 0.4)' : '1px solid #bae6fd',
-                      padding: '0.1rem 0.4rem',
-                      borderRadius: '4px',
-                      textDecoration: 'none',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                    }}
-                    title="Acessar Memorial Descritivo Metodológico"
-                  >
-                    <BookOpen size={10} /> Obra
-                  </Link>
-                </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#34d399', boxShadow: '0 0 6px #34d399' }} />
+                <span style={{ fontSize: '0.6rem', color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+                  Desenvolvido por:
+                </span>
               </div>
-            )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem', marginTop: '0.1rem' }}>
+                <strong style={{ fontSize: '0.78125rem', color: isDark ? '#ffffff' : '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Mauricio Grigol
+                </strong>
+                <Link
+                  href="/memorial"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    fontSize: '0.625rem',
+                    fontWeight: 800,
+                    backgroundColor: isDark ? 'rgba(14, 165, 233, 0.2)' : '#e0f2fe',
+                    color: isDark ? '#38bdf8' : '#0284c7',
+                    border: isDark ? '1px solid rgba(14, 165, 233, 0.4)' : '1px solid #bae6fd',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="Acessar Memorial Descritivo Metodológico"
+                >
+                  <BookOpen size={10} /> Obra
+                </Link>
+              </div>
+            </div>
           </div>
-
-          {/* Quick Expand Button at the bottom when collapsed */}
-          {isSidebarCollapsed && (
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              title="Expandir menu lateral"
-              style={{
-                background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
-                color: isDark ? '#22d3ee' : '#0284c7',
-                borderRadius: '8px',
-                width: '100%',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
-              }}
-            >
-              <PanelLeftOpen size={16} />
-            </button>
-          )}
         </div>
       </aside>
+    )}
 
       {/* Developer Authorship Modal */}
       <Modal

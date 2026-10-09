@@ -71,4 +71,21 @@
 - **Acabamento do Copiloto Sensei:** Botão flutuante FAB calibrado com brilho ciano volumétrico, avatar com beacon verde pulsante e pílula de atalho `Alt+S` em ciano vívido no padrão `AkiomCopilotWidget`.
 - **Homologação:** Build Next.js 14 compilado com 100% de sucesso (41 rotas).
 
+### 6. Refatoração do Magnetic Wall Dock Solto na Parede & Revelação Cromática Dinâmica
+- **Arquitetura Solta na Parede (Wall Mount Desacoplado):**
+  - Desacoplamento total do Magnetic Dock em relação à estrutura de coluna/container de 100vh (`<aside>`).
+  - No modo recolhido (`isSidebarCollapsed = true`), o dock opera como componente flutuante autônomo centralizado no eixo vertical (`fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50`), espelhando fielmente o comportamento de referência do `AkiomWallDock`.
+  - Disparo de expansão da árvore completa reposicionado para um botão flutuante executivo discreto no topo esquerdo (`FL Menu`), mantendo a tela limpa e imersiva.
+- **Revelação de Cor sob Hover / Proximidade Magnética:**
+  - Em estado de repouso, todos os botões permanecem em vidro escuro neutro Obsidian Navy (`rgba(11, 19, 41, 0.88)`), sem gradientes estáticos forçados.
+  - Implementação de injeção dinâmica de `--dock-inf` durante o loop de animação rAF com base na função de influência gaussiana em sino de Gauss.
+  - A camada de cor (`.dock-color-layer`) transiciona suavemente de opacidade 0 para 1 apenas com a aproximação física ou passagem do cursor do mouse, acendendo o gradiente vibrante e o brilho volumétrico sob demanda.
+- **Curva Magnética e Física Autêntica:**
+  - Restauração dos parâmetros físicos de atração: `magnetRadius = 110`, `maxScale = 1.55`, `lift = 22`.
+  - Projeção elástica lateral dos ícones para fora da parede em direção ao cursor, gerando a curvatura de onda contínua nos botões vizinhos sem qualquer barra de rolagem.
+  - Configuração do conjunto executivo com 8 rotas chave na parede flutuante, incluindo atalho de abertura da árvore de navegação completa.
+- **Validação de Engenharia:**
+  - TypeScript estrito: 0 erros.
+  - Next.js 14 App Router: 41/41 rotas compiladas com sucesso em produção.
+
 ---

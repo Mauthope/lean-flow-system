@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [dataVersion, setDataVersion] = useState(1);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   const loadSession = useCallback(() => {
     initializeLocalStorage();
@@ -67,7 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (typeof window !== 'undefined') {
       const savedCollapsed = localStorage.getItem('leanflow_sidebar_collapsed');
-      if (savedCollapsed === 'true') {
+      if (savedCollapsed !== null) {
+        setIsSidebarCollapsed(savedCollapsed === 'true');
+      } else {
         setIsSidebarCollapsed(true);
       }
     }
