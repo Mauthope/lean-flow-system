@@ -111,6 +111,25 @@
   will-change: transform;
 }
 
+.magnetic-wall-nav {
+  position: fixed !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 50 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 1024px) {
+  .magnetic-wall-nav {
+    display: none !important;
+  }
+}
+
 .magnetic-dock-button .dock-color-layer {
   position: absolute;
   inset: 0;
@@ -121,7 +140,8 @@
   z-index: 1;
 }
 
-.magnetic-dock-button:hover .dock-color-layer {
+.magnetic-dock-button:hover .dock-color-layer,
+.magnetic-dock-button.is-active .dock-color-layer {
   opacity: 1 !important;
 }
 
@@ -137,12 +157,12 @@
 
 .magnetic-dock-button:hover .dock-icon-layer,
 .magnetic-dock-button.is-active .dock-icon-layer {
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .magnetic-dock-button svg {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
   stroke-width: 2.2;
   fill: none;
@@ -155,8 +175,8 @@
 }
 
 .magnetic-dock-button.is-active {
-  border-color: rgba(0, 242, 254, 0.6);
-  box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.5) !important;
 }
 
 .magnetic-dock-tooltip {

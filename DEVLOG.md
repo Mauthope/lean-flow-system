@@ -95,9 +95,25 @@
   - Substituição da montagem e desmontagem destrutiva da sidebar por uma arquitetura permanente de **Slide Drawer em Overlay** (`position: fixed; width: 280px; height: 100vh; transform: translateX(-100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)`).
   - Como a gaveta desliza sobre a página com aceleração de hardware (GPU), a área principal (`.main-content`) nunca tem sua largura alterada: **zero reflow de página, zero recálculo de grid ou tabelas e zero congelamento/stutter ao abrir ou fechar o menu**.
   - Integração do botão executivo `[Menu]` nativamente no fluxo do TopBar, permitindo abertura instantânea tanto pelo topo quanto pelo botão de expansão no rodapé do Dock.
-- **Validação de Engenharia & Build:**
-  - `npx tsc --noEmit`: 0 erros de tipagem.
-  - `npm run build`: 100% aprovado (41/41 rotas compiladas estaticamente em produção).
+### 8. Centralização Absoluta do Magnetic Wall Dock, Persistência da Cor Ativa e Otimização 60 FPS
+- **Centralização Vertical Matemática via CSS Nativo:**
+  - Diagnóstico: Como o projeto não possui compilador Tailwind ativo, as classes utilitárias de centralização (`top-1/2 -translate-y-1/2`) não eram interpretadas, mantendo o dock renderizado no topo (`top: 0`).
+  - Solução: Criação da classe `.magnetic-wall-nav` em `src/components/ui/magnetic-dock.css` e aplicação de estilo inline com `position: fixed !important; left: 14px !important; top: 50% !important; transform: translateY(-50%) !important; z-index: 50 !important;`. O dock agora repousa com centralização milimétrica na parede lateral em qualquer resolução de tela.
+- **Persistência da Cor Ativa na Rota Selecionada:**
+  - O item correspondente à página atualmente acessada (`isActive === true`) mantém permanentemente acesa sua camada de gradiente vibrante (`.dock-color-layer { opacity: 1 !important; }`), ícone em branco nítido (`#ffffff !important`) e borda com brilho e sombra de néon volumétrica individual (`--dock-inf: 1`).
+  - Ao retirar o cursor e com o menu em repouso absoluto, os demais itens voltam ao vidro escuro Obsidian Navy, mas o módulo selecionado permanece aceso e destacado, conferindo clara orientação espacial ao usuário.
+- **Otimização de Performance 60 FPS (Fim do Travamento ao Navegar):**
+  - Identificada a causa raiz do congelamento ao clicar no menu: o hook `useEffect` do loop rAF em `MagneticDock.tsx` dependia diretamente do array `items`, sendo destruído e recriado com alocação e reinicialização de todas as molas físicas a cada navegação de rota.
+  - Refatoração com `itemsRef`: o loop de animação mantém continuidade física ininterrupta sem cancelar frames (`cancelAnimationFrame`), eliminando qualquer engasgo (stutter) entre as transições de página.
+- **Eliminação Definitiva da Expansão de Menu no Desktop:**
+  - Conforme solicitação do usuário, a função redundante de gaveta/expandir menu foi completamente extinta no desktop.
+  - Removido o botão `[Menu]` da Topbar e expurgado o item `expand-menu` das listas de rotas. O Magnetic Dock na parede assume a governança integral e soberana da navegação no desktop.
+- **Ajuste Fino de Espaçamento Horizontal:**
+  - Recalibração de `padding-left: 4.25rem` no cabeçalho e corpo da página em `@media (min-width: 1025px)`, aproximando o conteúdo da aplicação do menu dock na parede e eliminando o vazio lateral excessivo.
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - `npm run build`: 100% aprovado com 41/41 rotas compiladas estaticamente com sucesso.
 
 ---
+
 

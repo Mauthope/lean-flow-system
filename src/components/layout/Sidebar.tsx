@@ -269,13 +269,6 @@ export const Sidebar: React.FC = () => {
           icon: <Lightbulb size={18} className="stroke-[2.2]" />,
           tint: ROUTE_TINTS['/admin/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
         },
-        {
-          id: 'expand-menu',
-          label: 'Expandir Menu Completo',
-          active: false,
-          icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
-          tint: ['#38bdf8', '#0284c7'],
-        },
       ];
     }
 
@@ -383,13 +376,6 @@ export const Sidebar: React.FC = () => {
           icon: <Lightbulb size={18} className="stroke-[2.2]" />,
           tint: ROUTE_TINTS['/admin/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
         },
-        {
-          id: 'expand-menu',
-          label: 'Expandir Menu Completo',
-          active: false,
-          icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
-          tint: ['#38bdf8', '#0284c7'],
-        },
       ];
     }
 
@@ -457,51 +443,30 @@ export const Sidebar: React.FC = () => {
         icon: <Lightbulb size={18} className="stroke-[2.2]" />,
         tint: ROUTE_TINTS['/agente/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
       },
-      {
-        id: 'expand-menu',
-        label: 'Expandir Menu Completo',
-        active: false,
-        icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
-        tint: ['#38bdf8', '#0284c7'],
-      },
     ];
   }, [isViewer, isAdmin, isMaster, pathname, ROUTE_TINTS]);
 
   const handleDockSelect = (href: string) => {
-    if (href === 'expand-menu') {
-      toggleSidebar();
-      return;
-    }
     router.push(href);
     setIsMobileMenuOpen(false);
   };
 
   return (
     <>
-      {/* Backdrop suave em Overlay para fechar o Drawer */}
-      {(!isSidebarCollapsed || isMobileMenuOpen) && (
-        <div
-          onClick={() => {
-            if (isMobileMenuOpen) setIsMobileMenuOpen(false);
-            if (!isSidebarCollapsed) toggleSidebar();
-          }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(2, 6, 23, 0.65)',
-            backdropFilter: 'blur(5px)',
-            WebkitBackdropFilter: 'blur(5px)',
-            zIndex: 90,
-            animation: 'fadeIn 0.2s ease',
-          }}
-        />
-      )}
-
-      {/* Floating Wall Dock — Solto na Parede (Akiom-RH Style) no Desktop */}
+      {/* Wall Dock (Desktop) — 100% dos Menus do Sistema, Centralizado na Parede e Fluido */}
       <nav
         aria-label="Menu Vertical Magnético na Parede"
-        className="fixed left-2 sm:left-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex items-center pointer-events-auto"
-        style={{ overflow: 'visible' }}
+        className="magnetic-wall-nav"
+        style={{
+          position: 'fixed',
+          left: '14px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          overflow: 'visible',
+        }}
       >
         <MagneticDock
           items={floatingDockItems}
@@ -509,39 +474,45 @@ export const Sidebar: React.FC = () => {
           wallSide="left"
           magnetRadius={100}
           maxScale={1.45}
-          lift={18}
+          lift={16}
           idleWave={false}
           tooltip
           onSelect={handleDockSelect}
         />
       </nav>
 
-      {/* Executive Slide Drawer — Gaveta deslizante suave em Overlay (Zero travamento / Zero reflow de página) */}
-      <aside
-        className={`app-sidebar-drawer ${!isSidebarCollapsed ? 'open' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}
-        style={{
-          width: '280px',
-          backgroundColor: 'var(--bg-sidebar)',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid var(--border-subtle)',
-          height: '100vh',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          boxShadow: !isSidebarCollapsed || isMobileMenuOpen
-            ? '0 0 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(6, 182, 212, 0.25)'
-            : 'none',
-          transform: !isSidebarCollapsed || isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease',
-          overflow: 'hidden',
-          willChange: 'transform',
-          pointerEvents: !isSidebarCollapsed || isMobileMenuOpen ? 'auto' : 'none',
-        }}
-      >
+      {/* Mobile Drawer (Apenas para Smartphones quando aberto via Bottom Nav) */}
+      {isMobileMenuOpen && (
+        <>
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(2, 6, 23, 0.75)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 90,
+            }}
+          />
+          <aside
+            className="app-sidebar-drawer mobile-open"
+            style={{
+              width: '280px',
+              backgroundColor: 'var(--bg-sidebar)',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRight: '1px solid var(--border-subtle)',
+              height: '100vh',
+              position: 'fixed',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 100,
+              boxShadow: '0 0 50px rgba(0, 0, 0, 0.8)',
+              overflow: 'hidden',
+            }}
+          >
           {/* Brand & Toggle Header */}
           <div
             style={{
@@ -1086,6 +1057,8 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       </aside>
+      </>
+    )}
 
       {/* Developer Authorship Modal */}
       <Modal

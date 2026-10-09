@@ -247,6 +247,9 @@ function MagneticDockBase({
   const count = items.length;
   const labels = items.map((i) => i.label).join('\u0000');
 
+  const itemsRef = React.useRef(items);
+  itemsRef.current = items;
+
   const params = React.useRef({
     magnetRadius,
     maxScale,
@@ -377,9 +380,15 @@ function MagneticDockBase({
           bestI = i;
         }
 
-        // A cor so aparece com a proximidade do mouse / hover do usuario
-        const colorInf = isUserInteracting ? inf : 0;
-        el.style.setProperty('--dock-inf', Math.max(0, Math.min(1, colorInf * 1.35)).toFixed(3));
+        // A cor do item ativo permanece sempre visivel (100%), mesmo quando o menu se apaga (sem hover)
+        // Os demais itens revelam a cor dinamicamente sob aproximacao do cursor
+        const isItemActive = itemsRef.current[i]?.active;
+        if (isItemActive) {
+          el.style.setProperty('--dock-inf', '1');
+        } else {
+          const colorInf = isUserInteracting ? inf : 0;
+          el.style.setProperty('--dock-inf', Math.max(0, Math.min(1, colorInf * 1.35)).toFixed(3));
+        }
 
         spring(st.s, 1 + grow * inf, cfg.stiffness, cfg.damping, dt);
 
@@ -399,7 +408,7 @@ function MagneticDockBase({
       if (!tip) return;
       const showTip = cfg.tooltip && (p.inside || fi >= 0) && bestInf > 0.55 && bestI >= 0;
       if (showTip) {
-        const next = items[bestI]?.label ?? '';
+        const next = itemsRef.current[bestI]?.label ?? '';
         if (tip.textContent !== next) tip.textContent = next;
         spring(tipPos, cfg.isVertical ? bases[bestI].y : bases[bestI].x, TIP_K, TIP_C, dt);
       }
@@ -429,7 +438,7 @@ function MagneticDockBase({
     last = typeof performance !== 'undefined' ? performance.now() : 0;
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [animate, count, items, seed, isVertical]);
+  }, [animate, count, seed, isVertical]);
 
   const track = React.useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const root = rootRef.current;
@@ -440,8 +449,11 @@ function MagneticDockBase({
 
   const release = React.useCallback(() => {
     pointerRef.current = { x: -1e4, y: -1e4, inside: false };
-    iconsRef.current.forEach((el) => {
-      if (el) el.style.setProperty('--dock-inf', '0');
+    iconsRef.current.forEach((el, i) => {
+      if (el) {
+        const isItemActive = itemsRef.current[i]?.active;
+        el.style.setProperty('--dock-inf', isItemActive ? '1' : '0');
+      }
     });
   }, []);
 
@@ -477,6 +489,9 @@ function MagneticDockBase({
                 type="button"
                 ref={(el) => {
                   iconsRef.current[i] = el;
+                  if (el) {
+                    el.style.setProperty('--dock-inf', isActive ? '1' : '0');
+                  }
                 }}
                 data-dock-item={item.id}
                 aria-label={item.label}
@@ -490,13 +505,21 @@ function MagneticDockBase({
                 className={cn('magnetic-dock-button', isActive && 'is-active')}
                 style={{
                   willChange: 'transform',
+                  ...(isActive
+                    ? {
+                        borderColor: `${a}cc`,
+                        boxShadow: `0 0 16px ${a}99, inset 0 1px 1px rgba(255, 255, 255, 0.5)`,
+                      }
+                    : {}),
                 }}
               >
                 <span
                   className="dock-color-layer"
                   style={{
                     backgroundImage: `linear-gradient(135deg, ${a}, ${b})`,
-                    boxShadow: `0 8px 24px -4px ${a}aa, inset 0 1px 1px rgba(255, 255, 255, 0.45)`,
+                    boxShadow: isActive
+                      ? `0 0 20px -2px ${a}cc, 0 4px 14px -2px ${b}aa, inset 0 1px 1px rgba(255, 255, 255, 0.6)`
+                      : `0 8px 24px -4px ${a}aa, inset 0 1px 1px rgba(255, 255, 255, 0.45)`,
                   }}
                 />
                 <span className="dock-icon-layer">

@@ -348,12 +348,12 @@ code, pre {
   .app-topbar,
   .topbar {
     height: 64px !important;
-    padding: 0 2rem 0 4.75rem !important;
+    padding: 0 1.75rem 0 4.25rem !important;
     flex-wrap: nowrap !important;
   }
 
   .content-body {
-    padding: 1.5rem 2rem 1.5rem 4.75rem !important;
+    padding: 1.25rem 1.75rem 1.5rem 4.25rem !important;
   }
 
   .topbar-actions {
