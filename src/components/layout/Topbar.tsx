@@ -24,7 +24,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, currentTenant, refreshData, toggleMobileMenu, logout } = useAuth();
+  const { currentUser, currentTenant, refreshData, toggleMobileMenu, toggleSidebar, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -47,7 +47,6 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 1.5rem',
         borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
         backgroundColor: isDark ? 'rgba(6, 10, 19, 0.85)' : 'rgba(255, 255, 255, 0.94)',
         backdropFilter: 'blur(16px)',
@@ -57,26 +56,43 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
         minHeight: '60px',
       }}
     >
-      {/* Route Title Context & Mobile Trigger */}
+      {/* Route Title Context & Mobile/Desktop Trigger */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-        {/* Mobile Hamburger Button */}
+        {/* Menu Drawer Toggle Button */}
         <button
-          onClick={toggleMobileMenu}
-          className="mobile-hamburger-btn"
-          aria-label="Abrir menu lateral"
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
+              toggleMobileMenu();
+            } else {
+              toggleSidebar();
+            }
+          }}
+          aria-label="Abrir menu completo"
+          title="Abrir menu completo e navegação estruturada"
           style={{
-            background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
+            background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
             border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
-            padding: '0.45rem',
-            borderRadius: '8px',
-            display: 'none',
+            padding: '0.4rem 0.65rem',
+            borderRadius: '9px',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            gap: '0.45rem',
             cursor: 'pointer',
             color: isDark ? '#f8fafc' : '#0f172a',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = isDark ? 'rgba(6, 182, 212, 0.15)' : '#e0f2fe';
+            e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9';
+            e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1';
           }}
         >
-          <Menu size={18} />
+          <Menu size={16} color="#06b6d4" />
+          <span style={{ fontSize: '0.78125rem', fontWeight: 700, letterSpacing: '-0.01em' }}>Menu</span>
         </button>
 
         <div>

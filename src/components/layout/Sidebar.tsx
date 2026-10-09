@@ -197,62 +197,197 @@ export const Sidebar: React.FC = () => {
   }), []);
 
   const floatingDockItems: DockItem[] = React.useMemo(() => {
-    if (isViewer || isAdmin) {
+    if (isViewer) {
       return [
         {
           id: '/admin/dashboard',
           label: 'Dashboard Lean',
           active: pathname === '/admin/dashboard',
-          icon: <LayoutDashboard size={20} className="stroke-[2.2]" />,
-          tint: ['#00f2fe', '#4facfe'],
+          icon: <LayoutDashboard size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/dashboard'] || ['#00f2fe', '#4facfe'],
         },
         {
           id: '/admin/alta-gerencia',
           label: 'Alta Gerência (Hoshin)',
           active: pathname === '/admin/alta-gerencia',
-          icon: <Target size={20} className="stroke-[2.2]" />,
-          tint: ['#f6b94a', '#ff6b5e'],
+          icon: <Target size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/alta-gerencia'] || ['#f6b94a', '#ff6b5e'],
+        },
+        {
+          id: '/admin/arvore',
+          label: 'Árvore Lean (Espinha)',
+          active: pathname === '/admin/arvore',
+          icon: <Network size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/arvore'] || ['#00f2fe', '#10b981'],
         },
         {
           id: '/admin/kanban',
           label: 'Kanban Geral',
           active: pathname === '/admin/kanban',
-          icon: <Kanban size={20} className="stroke-[2.2]" />,
-          tint: ['#10b981', '#059669'],
-        },
-        {
-          id: isMaster ? '/admin/entidades' : '/admin/setores',
-          label: isMaster ? 'Gestão de Entidades' : 'Setores & Assessment',
-          active: pathname === '/admin/entidades' || pathname === '/admin/setores',
-          icon: isMaster ? <Factory size={20} className="stroke-[2.2]" /> : <Building2 size={20} className="stroke-[2.2]" />,
-          tint: ['#ec4899', '#f43f5e'],
-        },
-        {
-          id: '/admin/historico-kaizen',
-          label: 'Histórico Kaizen & Sensei IA',
-          active: pathname === '/admin/historico-kaizen',
-          icon: <Sparkles size={20} className="stroke-[2.2]" />,
-          tint: ['#a855f7', '#7e22ce'],
+          icon: <Kanban size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/kanban'] || ['#10b981', '#059669'],
         },
         {
           id: '/admin/relatorios',
           label: 'Custo Evitado & ROI',
           active: pathname === '/admin/relatorios',
-          icon: <TrendingUp size={20} className="stroke-[2.2]" />,
-          tint: ['#22c7d9', '#0d9488'],
+          icon: <TrendingUp size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/relatorios'] || ['#22c7d9', '#0d9488'],
+        },
+        {
+          id: '/admin/historico-kaizen',
+          label: 'Histórico Kaizen & Sensei IA',
+          active: pathname === '/admin/historico-kaizen',
+          icon: <Sparkles size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/historico-kaizen'] || ['#a855f7', '#7e22ce'],
+        },
+        {
+          id: '/agente/ferramentas',
+          label: 'Academia & Ferramentas',
+          active: pathname === '/agente/ferramentas',
+          icon: <BookOpen size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/agente/ferramentas'] || ['#3b82f6', '#1d4ed8'],
+        },
+        {
+          id: '/admin/setores',
+          label: 'Setores & Assessment',
+          active: pathname === '/admin/setores',
+          icon: <Building2 size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/setores'] || ['#f59e0b', '#d97706'],
         },
         {
           id: '/admin/tpm',
           label: 'TPM & Manutenção',
           active: pathname === '/admin/tpm',
-          icon: <Settings size={20} className="stroke-[2.2]" />,
-          tint: ['#6366f1', '#4338ca'],
+          icon: <Settings size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/tpm'] || ['#6366f1', '#4338ca'],
+        },
+        {
+          id: '/admin/canal-kaizen',
+          label: 'Canal Kaizen & Ideias',
+          active: pathname === '/admin/canal-kaizen',
+          icon: <Lightbulb size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
         },
         {
           id: 'expand-menu',
           label: 'Expandir Menu Completo',
           active: false,
-          icon: <PanelLeftOpen size={20} className="stroke-[2.2]" />,
+          icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
+          tint: ['#38bdf8', '#0284c7'],
+        },
+      ];
+    }
+
+    if (isAdmin) {
+      return [
+        {
+          id: '/admin/dashboard',
+          label: 'Dashboard Lean',
+          active: pathname === '/admin/dashboard',
+          icon: <LayoutDashboard size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/dashboard'] || ['#00f2fe', '#4facfe'],
+        },
+        {
+          id: '/admin/alta-gerencia',
+          label: 'Alta Gerência (Hoshin)',
+          active: pathname === '/admin/alta-gerencia',
+          icon: <Target size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/alta-gerencia'] || ['#f6b94a', '#ff6b5e'],
+        },
+        {
+          id: '/admin/arvore',
+          label: 'Árvore Lean (Espinha)',
+          active: pathname === '/admin/arvore',
+          icon: <Network size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/arvore'] || ['#00f2fe', '#10b981'],
+        },
+        {
+          id: '/admin/kanban',
+          label: 'Kanban Geral',
+          active: pathname === '/admin/kanban',
+          icon: <Kanban size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/kanban'] || ['#10b981', '#059669'],
+        },
+        {
+          id: '/admin/triagem',
+          label: 'Triagem de Demandas',
+          active: pathname === '/admin/triagem',
+          icon: <Inbox size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/triagem'] || ['#38bdf8', '#0284c7'],
+        },
+        ...(isMaster
+          ? [
+              {
+                id: '/admin/entidades',
+                label: 'Gestão de Entidades',
+                active: pathname === '/admin/entidades',
+                icon: <Factory size={18} className="stroke-[2.2]" />,
+                tint: ROUTE_TINTS['/admin/entidades'] || ['#ec4899', '#f43f5e'],
+              },
+            ]
+          : []),
+        {
+          id: '/admin/agentes',
+          label: isMaster ? 'Equipe & Agentes' : 'Agentes da Unidade',
+          active: pathname === '/admin/agentes',
+          icon: <Users size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/agentes'] || ['#8b5cf6', '#6366f1'],
+        },
+        {
+          id: '/admin/setores',
+          label: 'Setores & Assessment',
+          active: pathname === '/admin/setores',
+          icon: <Building2 size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/setores'] || ['#f59e0b', '#d97706'],
+        },
+        {
+          id: '/admin/historico-kaizen',
+          label: 'Histórico Kaizen & Sensei IA',
+          active: pathname === '/admin/historico-kaizen',
+          icon: <Sparkles size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/historico-kaizen'] || ['#a855f7', '#7e22ce'],
+        },
+        {
+          id: '/admin/integracoes-ia',
+          label: 'Integrações de IA & Sensei',
+          active: pathname === '/admin/integracoes-ia',
+          icon: <Bot size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/integracoes-ia'] || ['#06b6d4', '#0d9488'],
+        },
+        {
+          id: '/admin/relatorios',
+          label: 'Custo Evitado & ROI',
+          active: pathname === '/admin/relatorios',
+          icon: <TrendingUp size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/relatorios'] || ['#22c7d9', '#0d9488'],
+        },
+        {
+          id: '/agente/ferramentas',
+          label: 'Academia & Ferramentas',
+          active: pathname === '/agente/ferramentas',
+          icon: <BookOpen size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/agente/ferramentas'] || ['#3b82f6', '#1d4ed8'],
+        },
+        {
+          id: '/admin/tpm',
+          label: 'TPM & Manutenção',
+          active: pathname === '/admin/tpm',
+          icon: <Settings size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/tpm'] || ['#6366f1', '#4338ca'],
+        },
+        {
+          id: '/admin/canal-kaizen',
+          label: 'Canal Kaizen & Ideias',
+          active: pathname === '/admin/canal-kaizen',
+          icon: <Lightbulb size={18} className="stroke-[2.2]" />,
+          tint: ROUTE_TINTS['/admin/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
+        },
+        {
+          id: 'expand-menu',
+          label: 'Expandir Menu Completo',
+          active: false,
+          icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
           tint: ['#38bdf8', '#0284c7'],
         },
       ];
@@ -263,60 +398,74 @@ export const Sidebar: React.FC = () => {
         id: '/agente/kanban',
         label: 'Meu Kanban',
         active: pathname === '/agente/kanban',
-        icon: <Kanban size={20} className="stroke-[2.2]" />,
-        tint: ['#10b981', '#059669'],
+        icon: <Kanban size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/kanban'] || ['#10b981', '#059669'],
       },
       {
         id: '/agente/arvore',
         label: 'Árvore Lean (Espinha)',
         active: pathname === '/agente/arvore',
-        icon: <Network size={20} className="stroke-[2.2]" />,
-        tint: ['#00f2fe', '#10b981'],
+        icon: <Network size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/arvore'] || ['#00f2fe', '#10b981'],
       },
       {
-        id: '/agente/historico-kaizen',
-        label: 'Histórico Kaizen & Sensei IA',
-        active: pathname === '/agente/historico-kaizen',
-        icon: <Sparkles size={20} className="stroke-[2.2]" />,
-        tint: ['#a855f7', '#7e22ce'],
+        id: '/agente/setores',
+        label: 'Setores & Assessment',
+        active: pathname === '/agente/setores',
+        icon: <Building2 size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/setores'] || ['#f59e0b', '#d97706'],
       },
       {
         id: '/agente/relatorio-pessoal',
         label: 'Minhas Entregas & ROI',
         active: pathname === '/agente/relatorio-pessoal',
-        icon: <TrendingUp size={20} className="stroke-[2.2]" />,
-        tint: ['#22c7d9', '#0d9488'],
+        icon: <TrendingUp size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/relatorio-pessoal'] || ['#22c7d9', '#0d9488'],
+      },
+      {
+        id: '/agente/historico-kaizen',
+        label: 'Histórico Kaizen & Sensei IA',
+        active: pathname === '/agente/historico-kaizen',
+        icon: <Sparkles size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/historico-kaizen'] || ['#a855f7', '#7e22ce'],
       },
       {
         id: '/agente/ferramentas',
         label: 'Academia & Ferramentas',
         active: pathname === '/agente/ferramentas',
-        icon: <BookOpen size={20} className="stroke-[2.2]" />,
-        tint: ['#3b82f6', '#1d4ed8'],
+        icon: <BookOpen size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/ferramentas'] || ['#3b82f6', '#1d4ed8'],
+      },
+      {
+        id: '/agente/ferramentas/calculadora-roi',
+        label: 'Calculadora de ROI',
+        active: pathname === '/agente/ferramentas/calculadora-roi',
+        icon: <Calculator size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/ferramentas/calculadora-roi'] || ['#10b981', '#059669'],
       },
       {
         id: '/agente/tpm',
         label: 'TPM & Manutenção',
         active: pathname === '/agente/tpm',
-        icon: <Settings size={20} className="stroke-[2.2]" />,
-        tint: ['#6366f1', '#4338ca'],
+        icon: <Settings size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/tpm'] || ['#6366f1', '#4338ca'],
       },
       {
         id: '/agente/canal-kaizen',
         label: 'Canal Kaizen & Ideias',
         active: pathname === '/agente/canal-kaizen',
-        icon: <Lightbulb size={20} className="stroke-[2.2]" />,
-        tint: ['#fbbf24', '#f59e0b'],
+        icon: <Lightbulb size={18} className="stroke-[2.2]" />,
+        tint: ROUTE_TINTS['/agente/canal-kaizen'] || ['#fbbf24', '#f59e0b'],
       },
       {
         id: 'expand-menu',
         label: 'Expandir Menu Completo',
         active: false,
-        icon: <PanelLeftOpen size={20} className="stroke-[2.2]" />,
+        icon: <PanelLeftOpen size={18} className="stroke-[2.2]" />,
         tint: ['#38bdf8', '#0284c7'],
       },
     ];
-  }, [isViewer, isAdmin, isMaster, pathname]);
+  }, [isViewer, isAdmin, isMaster, pathname, ROUTE_TINTS]);
 
   const handleDockSelect = (href: string) => {
     if (href === 'expand-menu') {
@@ -329,150 +478,70 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
-      {isMobileMenuOpen && (
+      {/* Backdrop suave em Overlay para fechar o Drawer */}
+      {(!isSidebarCollapsed || isMobileMenuOpen) && (
         <div
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={() => {
+            if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+            if (!isSidebarCollapsed) toggleSidebar();
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(4px)',
+            backgroundColor: 'rgba(2, 6, 23, 0.65)',
+            backdropFilter: 'blur(5px)',
+            WebkitBackdropFilter: 'blur(5px)',
             zIndex: 90,
             animation: 'fadeIn 0.2s ease',
           }}
         />
       )}
 
-      {isSidebarCollapsed && !isMobileMenuOpen ? (
-        <>
-          {/* Floating Wall Dock — Solto na Parede (Akiom-RH Style) */}
-          <nav
-            aria-label="Menu Vertical Magnético na Parede"
-            className="fixed left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 flex items-center pointer-events-auto"
-            style={{ overflow: 'visible' }}
-          >
-            <MagneticDock
-              items={floatingDockItems}
-              orientation="vertical"
-              wallSide="left"
-              magnetRadius={110}
-              maxScale={1.55}
-              lift={22}
-              idleWave={false}
-              tooltip
-              onSelect={handleDockSelect}
-            />
-          </nav>
+      {/* Floating Wall Dock — Solto na Parede (Akiom-RH Style) no Desktop */}
+      <nav
+        aria-label="Menu Vertical Magnético na Parede"
+        className="fixed left-2 sm:left-3 top-1/2 -translate-y-1/2 z-40 hidden lg:flex items-center pointer-events-auto"
+        style={{ overflow: 'visible' }}
+      >
+        <MagneticDock
+          items={floatingDockItems}
+          orientation="vertical"
+          wallSide="left"
+          magnetRadius={100}
+          maxScale={1.45}
+          lift={18}
+          idleWave={false}
+          tooltip
+          onSelect={handleDockSelect}
+        />
+      </nav>
 
-          {/* Floating Brand Trigger no Topo Esquerdo */}
-          <div className="fixed top-3 left-3 sm:left-4 z-50 flex items-center">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              title="Expandir menu completo (FluxoLean PRO)"
-              style={{
-                background: isDark ? 'rgba(8, 12, 20, 0.85)' : 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
-                borderRadius: '12px',
-                padding: '6px 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                boxShadow: isDark
-                  ? '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.15)'
-                  : '0 4px 14px rgba(15, 23, 42, 0.1)',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
-                e.currentTarget.style.boxShadow = '0 8px 28px rgba(0, 0, 0, 0.6), 0 0 20px rgba(6, 182, 212, 0.3)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1';
-                e.currentTarget.style.boxShadow = isDark
-                  ? '0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(6, 182, 212, 0.15)'
-                  : '0 4px 14px rgba(15, 23, 42, 0.1)';
-              }}
-            >
-              <div
-                style={{
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '7px',
-                  background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)',
-                  padding: '1px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    backgroundColor: '#060a13',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 900,
-                    fontSize: '0.65rem',
-                    color: '#22d3ee',
-                  }}
-                >
-                  FL
-                </div>
-              </div>
-              <span
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  color: isDark ? '#e2e8f0' : '#1e293b',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Menu
-              </span>
-              <PanelLeftOpen size={14} color="#06b6d4" />
-            </button>
-          </div>
-
-          {/* Espacador transparente para respiro da area principal no desktop */}
-          <div
-            aria-hidden="true"
-            className="hidden lg:block"
-            style={{
-              width: '68px',
-              flexShrink: 0,
-              backgroundColor: 'transparent',
-              border: 'none',
-              pointerEvents: 'none',
-            }}
-          />
-        </>
-      ) : (
-        <aside
-          className={`app-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}
-          style={{
-            width: '260px',
-            backgroundColor: 'var(--bg-sidebar)',
-            color: 'var(--text-primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            borderRight: '1px solid var(--border-subtle)',
-            flexShrink: 0,
-            height: '100vh',
-            position: 'sticky',
-            top: 0,
-            zIndex: 95,
-            transition: 'width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.25s ease, background-color 0.2s ease',
-            overflow: 'hidden',
-          }}
-        >
+      {/* Executive Slide Drawer — Gaveta deslizante suave em Overlay (Zero travamento / Zero reflow de página) */}
+      <aside
+        className={`app-sidebar-drawer ${!isSidebarCollapsed ? 'open' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}
+        style={{
+          width: '280px',
+          backgroundColor: 'var(--bg-sidebar)',
+          color: 'var(--text-primary)',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRight: '1px solid var(--border-subtle)',
+          height: '100vh',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          zIndex: 100,
+          boxShadow: !isSidebarCollapsed || isMobileMenuOpen
+            ? '0 0 50px rgba(0, 0, 0, 0.8), 0 0 25px rgba(6, 182, 212, 0.25)'
+            : 'none',
+          transform: !isSidebarCollapsed || isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease',
+          overflow: 'hidden',
+          willChange: 'transform',
+          pointerEvents: !isSidebarCollapsed || isMobileMenuOpen ? 'auto' : 'none',
+        }}
+      >
           {/* Brand & Toggle Header */}
           <div
             style={{
@@ -543,8 +612,11 @@ export const Sidebar: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
               <button
                 type="button"
-                onClick={toggleSidebar}
-                title="Recolher para Dock Magnético Flutuante"
+                onClick={() => {
+                  if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+                  if (!isSidebarCollapsed) toggleSidebar();
+                }}
+                title="Recolher menu lateral"
                 style={{
                   background: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
                   border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1',
@@ -596,7 +668,10 @@ export const Sidebar: React.FC = () => {
           {isMaster ? (
               <Link
                 href="/admin/entidades"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (!isSidebarCollapsed) toggleSidebar();
+                }}
                 style={{
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc',
                   border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
@@ -811,7 +886,10 @@ export const Sidebar: React.FC = () => {
                       <Link
                         key={item.href}
                         href={item.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          if (!isSidebarCollapsed) toggleSidebar();
+                        }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -1008,7 +1086,6 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       </aside>
-    )}
 
       {/* Developer Authorship Modal */}
       <Modal

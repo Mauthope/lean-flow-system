@@ -84,8 +84,20 @@
   - Restauração dos parâmetros físicos de atração: `magnetRadius = 110`, `maxScale = 1.55`, `lift = 22`.
   - Projeção elástica lateral dos ícones para fora da parede em direção ao cursor, gerando a curvatura de onda contínua nos botões vizinhos sem qualquer barra de rolagem.
   - Configuração do conjunto executivo com 8 rotas chave na parede flutuante, incluindo atalho de abertura da árvore de navegação completa.
-- **Validação de Engenharia:**
-  - TypeScript estrito: 0 erros.
-  - Next.js 14 App Router: 41/41 rotas compiladas com sucesso em produção.
+### 7. Resolução de Layout Shift, Eliminação de Travamento via Drawer Slide-Over & Inclusão de 100% dos Menus no Dock
+- **Inclusão Integral de Todos os Menus do Sistema:**
+  - O Magnetic Dock flutuante agora contém rigorosamente 100% dos módulos do sistema, sem qualquer omissão: Dashboard Lean, Alta Gerência (Hoshin), Árvore Lean, Kanban Geral, Triagem de Demandas, Gestão de Entidades (Master), Equipe & Agentes, Setores & Assessment, Histórico Kaizen, Integrações de IA (Sensei), Custo Evitado & ROI, Academia & Ferramentas, TPM & Manutenção, Canal Kaizen e Abertura do Menu Completo.
+  - Cada módulo conta com ícone dedicado Lucide React, paleta vibrante gradiente individual sob proximidade/hover e tooltip descritivo em vidro escuro.
+- **Eliminação do Deslocamento da Página para a Direita (Zero Layout Shift):**
+  - Supressão definitiva do espaçador rígido de 68px dentro de `.app-container` e do botão flutuante avulso no topo esquerdo.
+  - Alinhamento harmonioso no desktop entre o cabeçalho executivo (`.topbar`) e os cards da área principal (`.content-body`) com recuo balanceado de `4.75rem` (80px), criando uma calha perfeitamente proporcional para a flutuação do Magnetic Dock.
+- **Erradicação do Travamento/Congelamento via Drawer em GPU Overlay:**
+  - Substituição da montagem e desmontagem destrutiva da sidebar por uma arquitetura permanente de **Slide Drawer em Overlay** (`position: fixed; width: 280px; height: 100vh; transform: translateX(-100%); transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)`).
+  - Como a gaveta desliza sobre a página com aceleração de hardware (GPU), a área principal (`.main-content`) nunca tem sua largura alterada: **zero reflow de página, zero recálculo de grid ou tabelas e zero congelamento/stutter ao abrir ou fechar o menu**.
+  - Integração do botão executivo `[Menu]` nativamente no fluxo do TopBar, permitindo abertura instantânea tanto pelo topo quanto pelo botão de expansão no rodapé do Dock.
+- **Validação de Engenharia & Build:**
+  - `npx tsc --noEmit`: 0 erros de tipagem.
+  - `npm run build`: 100% aprovado (41/41 rotas compiladas estaticamente em produção).
 
 ---
+
