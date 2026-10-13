@@ -1074,8 +1074,9 @@ export default function IntegracoesIaPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.5rem',
+            padding: '0.75rem',
           }}
+          className="sm:p-6"
         >
           <div
             style={{
@@ -1128,11 +1129,12 @@ export default function IntegracoesIaPage() {
             {/* Seletor de Tipo de Template */}
             <div
               style={{
-                padding: '0.75rem 1.5rem',
+                padding: '0.75rem 1rem',
                 backgroundColor: '#111d35',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 display: 'flex',
                 gap: '0.5rem',
+                flexWrap: 'wrap',
               }}
             >
               <button

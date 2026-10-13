@@ -8,6 +8,7 @@ Este projeto conta com instruções especializadas para agentes de IA localizada
 - [`designer`](./agents/designer.md): Especialista em Design System Executivo (Obsidian Navy, Lucide React, Proibição Absoluta de Emojis).
 - [`copywriter`](./agents/copywriter.md): Especialista em UX Writing e Terminologia Industrial Lean / TPS.
 - [`cleancod`](./agents/cleancod.md): Especialista em Clean Code, SOLID/SRP, TypeScript Estrito e Otimização de Tokens de IA.
+- [`responsive`](./agents/responsive.md): Especialista Sênior em Responsividade, Ergonomia Multi-dispositivo e Adaptação Fluida (320px a 4K).
 - [`chronicler`](./agents/chronicler.md): Cronista Técnico e Guardião da Memória do Repositório (DEVLOG.md).
 
 ## Instruções Gerais para o Assistente:

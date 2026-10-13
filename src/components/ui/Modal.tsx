@@ -45,14 +45,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalNode = (
     <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6"
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem 1rem',
         backgroundColor: 'var(--bg-modal-overlay, rgba(2, 6, 23, 0.85))',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
@@ -80,7 +74,7 @@ export const Modal: React.FC<ModalProps> = ({
               : maxWidth === 'md'
               ? '580px'
               : '480px',
-          maxHeight: 'min(90vh, 840px)',
+          maxHeight: 'min(92vh, 840px)',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(6, 182, 212, 0.15)',
@@ -91,23 +85,23 @@ export const Modal: React.FC<ModalProps> = ({
       >
         {/* Header */}
         <div
-          className="modal-header-surface"
+          className="modal-header-surface px-4 py-3 sm:px-6 sm:py-4"
           style={{
-            padding: '1.25rem 1.75rem',
             borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             backgroundColor: 'var(--bg-surface, #0f172a)',
             flexShrink: 0,
+            gap: '0.75rem',
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-heading, #ffffff)', fontFamily: 'var(--font-heading)', margin: 0 }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-heading, #ffffff)', fontFamily: 'var(--font-heading)', margin: 0 }}>
               {title}
             </h3>
             {subtitle && (
-              <p style={{ fontSize: '0.78125rem', color: 'var(--text-muted, #94a3b8)', marginTop: '0.2rem', margin: 0 }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', marginTop: '0.2rem', margin: 0 }}>
                 {subtitle}
               </p>
             )}
@@ -115,17 +109,18 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Fechar modal"
+            className="min-h-[44px] min-w-[44px]"
             style={{
               background: 'var(--bg-surface-elevated, rgba(255, 255, 255, 0.06))',
               border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
               cursor: 'pointer',
               color: 'var(--text-muted, #94a3b8)',
-              padding: '0.375rem',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s ease',
+              flexShrink: 0,
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--border-strong, rgba(255, 255, 255, 0.15))';
@@ -142,8 +137,8 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Content */}
         <div
+          className="p-3.5 sm:p-5 md:p-6"
           style={{
-            padding: '1.75rem',
             overflowY: 'auto',
             flex: 1,
             backgroundColor: 'var(--bg-modal, #0d1527)',

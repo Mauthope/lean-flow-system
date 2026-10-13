@@ -764,6 +764,7 @@ export default function LoginPage() {
 
       {/* Main Glass Login Card */}
       <div
+        className="px-4 py-7 sm:px-8 sm:py-10"
         style={{
           width: '100%',
           maxWidth: '480px',
@@ -771,7 +772,6 @@ export default function LoginPage() {
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderRadius: '20px',
-          padding: '2.5rem 2rem',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65)',
           border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
           position: 'relative',

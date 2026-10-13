@@ -3062,6 +3062,12 @@ export const dataService = {
     sectorId: string;
     authorRoleTitle: string;
     summary: string;
+    origin?: 'web' | 'toten';
+    title?: string;
+    problem?: string;
+    solution?: string;
+    benefits?: string;
+    category?: string;
     photoUrl?: string;
     photoName?: string;
   }): KaizenIdea {
@@ -3078,6 +3084,12 @@ export const dataService = {
       sectorName: sector?.name || 'Geral',
       authorRoleTitle: data.authorRoleTitle.trim(),
       summary: data.summary.trim(),
+      origin: data.origin || 'web',
+      title: data.title?.trim(),
+      problem: data.problem?.trim(),
+      solution: data.solution?.trim(),
+      benefits: data.benefits?.trim(),
+      category: data.category?.trim(),
       photoUrl: data.photoUrl,
       photoName: data.photoName,
       createdAt: now,

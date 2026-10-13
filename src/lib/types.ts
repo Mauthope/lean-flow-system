@@ -622,6 +622,12 @@ export interface KaizenIdea {
   sectorName: string;                   // Setor onde a melhoria se aplica
   authorRoleTitle: string;              // Cargo (ex: Operador de Máquina, Auxiliar, Líder)
   summary: string;                      // Resumo da ideia
+  origin?: 'web' | 'toten';             // Origem da submissão: formulário Web ou Toten do Chão de Fábrica
+  title?: string;                       // Título resumido da oportunidade
+  problem?: string;                     // Descrição do problema / oportunidade observada
+  solution?: string;                    // Solução prática proposta
+  benefits?: string;                    // Benefícios esperados (segurança, agilidade, ergonomia)
+  category?: string;                    // Categoria ou pilar Lean / 5S
   photoUrl?: string;                    // Foto da ideia (Base64 ou URL)
   photoName?: string;
   createdAt: string;                    // Salva automaticamente a data do cadastro
@@ -677,6 +683,9 @@ export interface KaizenIdea {
   conclusionDate?: string;              // Data de conclusão no formato YYYY-MM-DD
   quarterlyFollowUp?: QuarterlyFollowUp; // Acompanhamento dos 3 meses pós-homologação
 }
+
+// Estados visuais e anímicos do Sensei no Toten do Chão de Fábrica
+export type SenseiState = 'idle' | 'detected' | 'interacting' | 'celebrating' | 'idea' | 'success';
 
 // ==========================================
 // MÓDULO TPM (Manutenção Produtiva Total)

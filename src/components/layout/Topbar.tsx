@@ -117,11 +117,10 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           }}
         >
           {isDark ? <Sun size={14} color="#fbbf24" /> : <Moon size={14} color="#0284c7" />}
-          <span style={{ fontSize: '0.725rem', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.725rem', fontWeight: 700 }} className="hidden sm:inline">
             {isDark ? 'Claro' : 'Escuro'}
           </span>
         </button>
-
 
         {/* Public Form Shortcut Button */}
         <Link
@@ -143,7 +142,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
           title="Abrir link de coleta da fábrica em nova aba"
         >
           <ExternalLink size={13} color={isDark ? '#22d3ee' : '#0284c7'} />
-          <span>Link de Coleta ({currentTenant?.slug || 'rafitec'})</span>
+          <span className="hidden sm:inline">Link de Coleta ({currentTenant?.slug || 'rafitec'})</span>
+          <span className="sm:hidden">Coleta</span>
         </Link>
 
         {/* New Action Button for Admin */}
@@ -154,7 +154,8 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
             style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
           >
             <Plus size={15} />
-            <span>Nova Ação Lean</span>
+            <span className="hidden sm:inline">Nova Ação Lean</span>
+            <span className="sm:hidden">Ação</span>
           </button>
         )}
 
@@ -195,7 +196,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
               boxShadow: `0 0 10px ${isMaster ? 'rgba(6, 182, 212, 0.35)' : isEntityMgr ? 'rgba(56, 189, 248, 0.35)' : isViewer ? 'rgba(168, 85, 247, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
             }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }} className="hidden md:flex">
             <span style={{ fontSize: '0.78125rem', fontWeight: 800, color: isDark ? '#f8fafc' : '#0f172a', lineHeight: 1.2 }}>
               {currentUser?.name || 'Usuário'}
             </span>

@@ -5,6 +5,36 @@
 
 ---
 
+## [2026-10-13] Criação do Agente Especialista: responsive.md (Engenharia de Responsividade & Ergonomia Multi-dispositivo)
+**Agentes Responsáveis:** `responsive`, `designer`, `cleancod`, `chronicler`  
+**Escopo:** Criação do agente `agents/responsive.md` e atualização da governança em `AGENTS.md` e `agents/README.md`.
+
+### 1. Diretrizes & Pilares do Agente `responsive`
+- **Tolerância Zero a Scroll Horizontal:** Eliminação de qualquer transbordamento de página de 320px a 4K.
+- **Ergonomia de Toque (Touch Targets 44x44px):** Área mínima de clique confortável para polegares em smartphones e tablets industriais (Apple HIG & WCAG).
+- **Adaptação de Tabelas Complexas:** Scroll horizontal isolado no container ou conversão para cards empilhados no mobile.
+- **Modais e Drawers Adaptáveis:** Transformação em Bottom Sheets ou tela cheia com scroll interno em telas compactas.
+- **Formulários à Prova de Zoom no iOS:** Padronização de inputs com tamanho mínimo de 16px no mobile.
+- **Zero Emojis:** Conformidade estrita com o Design System Obsidian Navy e ícones vetoriais da biblioteca `lucide-react`.
+
+### 2. Execução da Auditoria & Refatoração Cirúrgica
+- **Sensei Floating Assistant (`sensei-assistant.css`):**
+  - Botão flutuante FAB elevado para `bottom: 76px` em telas `<= 1024px`, eliminando colisão direta com a barra inferior de navegação (`MobileBottomNav`).
+  - Janela modal do Sensei ajustada para modo adaptativo total (`100vw` e `100dvh`) em smartphones `<= 640px`.
+  - Campo de texto ajustado para `font-size: 16px` no mobile, eliminando bug de zoom automático forçado no Safari/iPhone.
+  - Touch targets de microfone e envio calibrados para `44x44px`.
+- **Topbar (`Topbar.tsx`):**
+  - Rótulos longos compactados no mobile (`hidden sm:inline`), preservando ícones e evitando quebra em 4 linhas.
+  - Ocultação responsiva do bloco de texto de usuário em telas pequenas (`hidden md:flex`), mantendo o avatar clicável.
+- **Modais Globais (`Modal.tsx`):**
+  - Espaçamentos e paddings recalibrados para telas compactas (`p-2 sm:p-4 md:p-6`), botão de fechar com área de toque mínima de `44x44px`.
+- **Página de Login (`page.tsx`):**
+  - Padding do card de vidro ajustado para `px-4 py-7 sm:px-8 sm:py-10`, garantindo respiração confortável em telas de 320px-375px.
+- **Validação de Build:**
+  - Compilação estrita `npm run build` executada com sucesso (41 páginas estáticas geradas, 0 erros TypeScript, 0 warnings de CSS).
+
+---
+
 ## [2026-10-09] Auditoria Jurídica Geral & Certificação Cyber Law / LGPD
 **Agente Responsável:** `legal-counsel` (Chief Legal & Compliance Officer)  
 **Veredito:** `[CONFORMIDADE ESTABELECIDA]` / `[JURIDICAMENTE APROVADO]`
@@ -136,3 +166,26 @@
 
 
 
+
+
+### 10. Integração Oficial do Toten do Chão de Fábrica ao Canal Kaizen (Zero-Bloat & Arquitetura Unificada)
+- **Objetivo & Governança:**
+  - Integração do projeto Toten (`/toten`) ao ecossistema do Lean Flow System como quiosque interativo de chão de fábrica.
+  - Conforme solicitação do usuário, **nenhum novo item foi inserido no menu lateral** (`Sidebar`/Magnetic Dock), evitando poluição visual. O acesso ao Toten ocorre exclusivamente a partir da página do Canal Kaizen (`/admin/canal-kaizen` e `/agente/canal-kaizen`) via botão de destaque *"Abrir Toten do Chão de Fábrica"* que abre a rota `/toten` em nova aba/janela Kiosk (`target="_blank"`).
+- **Alimentação Direta da Base Oficial do Canal Kaizen:**
+  - Todas as ideias registradas pelo colaborador no Toten (por digitação ou gravação de voz) alimentam diretamente a função `dataService.createKaizenIdea(...)`.
+  - Cada proposta ganha protocolo oficial do sistema (`KZN-2026-XXXX`), vinculação ao setor e identificação de origem (`origin: 'toten'`).
+  - Na tabela e cards de triagem do Canal Kaizen, foi implementada a badge visual `Toten Fábrica` (com ícone `Zap`) diferenciando as ideias vindas do quiosque daquelas submetidas pelo formulário Web tradicional.
+- **Isolamento de Performance & Bundle Zero-Bloat:**
+  - Expurgada a dependência pesada de `@tensorflow/tfjs` e `@tensorflow-models/coco-ssd` (~45MB) que onerava o Toten original.
+  - A rota `/toten` implementa detecção óptica de presença e movimento em tempo real via **Canvas Motion Diff nativo** (ou modo interativo Touch/Simulação para quiosques touch), sem custos de CPU/GPU em modelos neurais pesados.
+  - Reconhecimento de fala e síntese de áudio em PT-BR baseados estritamente na **Web Speech API** nativa dos navegadores.
+  - Rota de backend `/api/toten/sensei` utilizando chamadas `fetch` nativas à API REST do Google Generative Language com fallback inteligente local offline, garantindo que o Toten continue operacional mesmo sem internet ou sem chave de API.
+- **Conformidade Estrita com o Design System Obsidian Navy (Zero Emojis):**
+  - Eliminação de todos os emojis herdados do protótipo original (`🥋`, `⚡`, `🔍`, etc.) e substituição por ícones do `lucide-react` (`Zap`, `Lightbulb`, `Bot`, `Sparkles`, `ShieldCheck`, etc.).
+  - Preservação integral dos sprites Pixel Art do mascote Sensei com suporte a animações suaves de flutuação via CSS acelerado por GPU.
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - `npm run build`: 100% de sucesso, gerando **43/43 páginas estáticas**. O First Load JS das páginas administrativas permaneceu estável em 260 kB sem qualquer degradação.
+
+---

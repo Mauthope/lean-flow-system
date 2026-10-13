@@ -12,6 +12,7 @@ Este repositório reúne especificações de agentes inteligentes em formato Mar
 | **Designer (UI/UX)** | [`designer.md`](./designer.md) | O artista visual e maestro de UI/UX: estética de alto impacto, domínio e genialidade (estilo Qualidade & Bahia, Dual Theme, glassmorphism de precisão), biblioteca de referências e **responsividade absoluta de 360px a 4K (zero scroll horizontal e touch targets 44px+)**. | `copywriter`, `start`, `chronicler` |
 | **Copywriter & UX Writer** | [`copywriter.md`](./copywriter.md) | Especialista em redação de interfaces, escaneabilidade, microcopy enxuto, eliminação de acúmulo de textos e consenso obrigatório com o `designer` para validação de cards e telas. | `designer`, `cleancod` |
 | **Clean Code & Lean** | [`cleancod.md`](./cleancod.md) | Especialista sênior em boas práticas, código limpo, eliminação de desperdício (Lean), proibição total de emojis nos sistemas, modularidade extrema (máx 150 linhas/arquivo) e economia de tokens para agentes de IA. | `start`, `security-expert` |
+| **Responsive & Multi-Device** | [`responsive.md`](./responsive.md) | Especialista sênior em ergonomia multi-dispositivo e responsividade absoluta (320px a 4K): eliminação de scroll horizontal acidental, touch targets (44px+), modais/drawers adaptáveis e tabelas fluidas. | `designer`, `cleancod`, `start` |
 | **Security Expert** | [`security-expert.md`](./security-expert.md) | Auditor sênior de AppSec para SaaS comercial e escalável: isolamento multi-tenant hermético (RLS), blindagem agnóstica de provedores de IA, cabeçalhos HTTP, prevenção de IDOR e zero emojis. | `start`, `cleancod`, `legal-counsel` |
 | **Legal Counsel & Cyber Law** | [`legal-counsel.md`](./legal-counsel.md) | **Autoridade Jurídica com Poder de Veto Definitivo:** Auditoria de licenças no `package.json` (bloqueio de GPL/AGPL viral em SaaS fechado), compliance LGPD/GDPR, geração de Termos de Uso e Política de Privacidade. Paralisa a esteira se houver risco de litígio ou multa. | `security-expert`, `chronicler`, `cleancod` |
 | **Dev Chronicler & Historian** | [`chronicler.md`](./chronicler.md) | O guardião da história do sistema, autor do diário de bordo (`DEVLOG.md`) e contador de horas: cataloga tudo o que a solução entrega, registra cada solicitação do usuário, organiza a galeria de prints/evidências, contabiliza e soma todas as horas trabalhadas e calcula a precificação do projeto. | Todos os agentes da esteira |
@@ -37,16 +38,18 @@ Você só precisa chamar o **`start.md`**. Ele assume o controle do projeto e ac
 flowchart LR
     A["start.md<br>(Setup Base)"] --> B["designer.md +<br>copywriter.md<br>(Mesa Criativa)"]
     B --> C["cleancod.md<br>(Saneamento Lean)"]
-    C --> D["security-expert.md<br>(Blindagem AppSec)"]
-    D --> E["legal-counsel.md<br>(Veto Jurídico / Compliance)"]
-    E --> F["chronicler.md<br>(DEVLOG.md & Prints)"]
+    C --> D["responsive.md<br>(Auditoria Mobile/4K)"]
+    D --> E["security-expert.md<br>(Blindagem AppSec)"]
+    E --> F["legal-counsel.md<br>(Veto Jurídico / Compliance)"]
+    F --> G["chronicler.md<br>(DEVLOG.md & Prints)"]
 ```
 
 ### O Fluxo Automático Passo a Passo:
 1. **`start.md` (Passos 1 a 4):** Coleta as diretrizes do usuário, cria o projeto Next.js + Tailwind v4 + TypeScript e configura a governança multi-tenant.
 2. **`designer.md` + `copywriter.md` (Passo 5):** Convocados em consenso para criar a atmosfera visual (cores, mesh, glassmorphism) e redigir microcopys sem prolixidade e sem emojis.
 3. **`cleancod.md` (Passo 6):** Audita os arquivos criados, aplica modularidade estrita (máx 150 linhas), elimina dead code e otimiza para consumo mínimo de tokens de IA.
-4. **Git e Repositório GitHub (Passo 7):** Criação do repositório remoto e commit inicial limpo.
-5. **`security-expert.md` (Passo 8):** Audita o isolamento multi-tenant (RLS Supabase/PostgreSQL), configura headers HTTP de segurança e validação Zod.
-6. **`legal-counsel.md` (Passo 9):** Audita licenças do `package.json`, valida conformidade com a LGPD e gera `docs/legal/TERMS_OF_SERVICE.md` e `PRIVACY_POLICY.md`. Exerce **veto definitivo** se houver irregularidades.
-7. **`chronicler.md` (Passo 10):** Cria o `DEVLOG.md`, arquiva os prints das telas em `docs/prints/`, documenta a Entrada #001 com a história completa e entrega o Resumo Executivo das capacidades prontas diretamente no chat para o usuário.
+4. **`responsive.md` (Passo 7):** Audita a ergonomia em todos os breakpoints (320px a 4K), elimina overflow horizontal, calibra touch targets (44px+) e adapta tabelas/modais.
+5. **Git e Repositório GitHub (Passo 8):** Criação do repositório remoto e commit inicial limpo.
+6. **`security-expert.md` (Passo 9):** Audita o isolamento multi-tenant (RLS Supabase/PostgreSQL), configura headers HTTP de segurança e validação Zod.
+7. **`legal-counsel.md` (Passo 10):** Audita licenças do `package.json`, valida conformidade com a LGPD e gera `docs/legal/TERMS_OF_SERVICE.md` e `PRIVACY_POLICY.md`. Exerce **veto definitivo** se houver irregularidades.
+8. **`chronicler.md` (Passo 11):** Cria o `DEVLOG.md`, arquiva os prints das telas em `docs/prints/`, documenta a Entrada #001 com a história completa e entrega o Resumo Executivo das capacidades prontas diretamente no chat para o usuário.

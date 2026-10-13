@@ -284,6 +284,26 @@ export default function AdminCanalKaizenPage() {
           <Link
             href="/canal-kaizen/nova-ideia"
             target="_blank"
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.84375rem',
+              padding: '0.65rem 1.15rem',
+              borderRadius: '12px',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+              color: isDark ? '#ffffff' : '#0f172a',
+            }}
+          >
+            <ExternalLink size={16} />
+            <span>Abrir Formulário Web</span>
+          </Link>
+
+          <Link
+            href="/toten"
+            target="_blank"
             className="btn btn-primary"
             style={{
               display: 'flex',
@@ -292,12 +312,15 @@ export default function AdminCanalKaizenPage() {
               fontSize: '0.84375rem',
               padding: '0.65rem 1.15rem',
               borderRadius: '12px',
-              backgroundColor: isDark ? undefined : '#0284c7',
-              borderColor: isDark ? undefined : '#0284c7',
+              backgroundColor: isDark ? 'rgba(6, 182, 212, 0.25)' : '#0284c7',
+              borderColor: isDark ? 'rgba(6, 182, 212, 0.6)' : '#0284c7',
+              color: '#ffffff',
+              fontWeight: 800,
+              boxShadow: '0 0 20px rgba(6, 182, 212, 0.3)',
             }}
           >
-            <ExternalLink size={16} />
-            <span>Abrir Formulário de Ideias</span>
+            <Zap size={16} color={isDark ? '#22d3ee' : '#ffffff'} />
+            <span>Abrir Toten do Chão de Fábrica</span>
           </Link>
         </div>
       </div>
@@ -686,9 +709,42 @@ export default function AdminCanalKaizenPage() {
                               <span style={{ fontSize: '0.725rem', color: isDark ? '#22d3ee' : '#0284c7', fontWeight: 600 }}>
                                 {idea.authorRoleTitle}
                               </span>
-                              <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', display: 'block', fontFamily: 'var(--font-mono)' }}>
-                                {idea.protocol}
-                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.675rem', color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'var(--font-mono)' }}>
+                                  {idea.protocol}
+                                </span>
+                                {idea.origin === 'toten' ? (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      fontWeight: 800,
+                                      padding: '0.1rem 0.4rem',
+                                      borderRadius: '4px',
+                                      backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#e0f2fe',
+                                      color: isDark ? '#22d3ee' : '#0369a1',
+                                      border: isDark ? '1px solid rgba(6, 182, 212, 0.4)' : '1px solid #bae6fd',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                    }}
+                                  >
+                                    <Zap size={10} /> Toten Fábrica
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      fontWeight: 600,
+                                      padding: '0.1rem 0.4rem',
+                                      borderRadius: '4px',
+                                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                                      color: isDark ? '#94a3b8' : '#64748b',
+                                    }}
+                                  >
+                                    Web
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </td>
 
