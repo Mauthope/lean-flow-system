@@ -34,6 +34,8 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import './magnetic-dock.css';
@@ -231,10 +233,11 @@ function MagneticDockBase({
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const barRef = React.useRef<HTMLDivElement | null>(null);
   const tipRef = React.useRef<HTMLDivElement | null>(null);
-  const iconsRef = React.useRef<Array<HTMLButtonElement | null>>([]);
+  const iconsRef = React.useRef<Array<HTMLElement | null>>([]);
   const basesRef = React.useRef<Base[]>([]);
   const pointerRef = React.useRef<PointerState>({ x: -1e4, y: -1e4, inside: false });
   const focusRef = React.useRef(-1);
+  const router = useRouter();
 
   const systemReduced = useReducedMotion();
   const [hydrated, setHydrated] = React.useState(false);
@@ -483,36 +486,46 @@ function MagneticDockBase({
           {items.map((item, i) => {
             const [a, b] = item.tint ?? TINTS[i % TINTS.length];
             const isActive = item.active;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                ref={(el) => {
-                  iconsRef.current[i] = el;
-                  if (el) {
-                    el.style.setProperty('--dock-inf', isActive ? '1' : '0');
-                  }
-                }}
-                data-dock-item={item.id}
-                aria-label={item.label}
-                onClick={() => onSelect?.(item.id)}
-                onFocus={() => {
-                  focusRef.current = i;
-                }}
-                onBlur={() => {
-                  if (focusRef.current === i) focusRef.current = -1;
-                }}
-                className={cn('magnetic-dock-button', isActive && 'is-active')}
-                style={{
-                  willChange: 'transform',
-                  ...(isActive
-                    ? {
-                        borderColor: `${a}cc`,
-                        boxShadow: `0 0 16px ${a}99, inset 0 1px 1px rgba(255, 255, 255, 0.5)`,
-                      }
-                    : {}),
-                }}
-              >
+            const isRoute = item.id.startsWith('/');
+
+            const commonProps = {
+              ref: (el: HTMLElement | null) => {
+                iconsRef.current[i] = el;
+                if (el) {
+                  el.style.setProperty('--dock-inf', isActive ? '1' : '0');
+                }
+              },
+              'data-dock-item': item.id,
+              'aria-label': item.label,
+              onClick: () => onSelect?.(item.id),
+              onPointerEnter: () => {
+                if (isRoute) {
+                  router.prefetch(item.id);
+                }
+              },
+              onFocus: () => {
+                focusRef.current = i;
+                if (isRoute) {
+                  router.prefetch(item.id);
+                }
+              },
+              onBlur: () => {
+                if (focusRef.current === i) focusRef.current = -1;
+              },
+              className: cn('magnetic-dock-button', isActive && 'is-active'),
+              style: {
+                willChange: 'transform',
+                ...(isActive
+                  ? {
+                      borderColor: `${a}cc`,
+                      boxShadow: `0 0 16px ${a}99, inset 0 1px 1px rgba(255, 255, 255, 0.5)`,
+                    }
+                  : {}),
+              },
+            };
+
+            const content = (
+              <>
                 <span
                   className="dock-color-layer"
                   style={{
@@ -525,6 +538,29 @@ function MagneticDockBase({
                 <span className="dock-icon-layer">
                   {item.icon ?? <span aria-hidden="true">{item.label.slice(0, 1).toUpperCase()}</span>}
                 </span>
+              </>
+            );
+
+            if (isRoute) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.id}
+                  prefetch={true}
+                  {...commonProps}
+                >
+                  {content}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                {...commonProps}
+              >
+                {content}
               </button>
             );
           })}

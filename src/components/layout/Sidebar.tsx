@@ -446,9 +446,20 @@ export const Sidebar: React.FC = () => {
     ];
   }, [isViewer, isAdmin, isMaster, pathname, ROUTE_TINTS]);
 
+  // Pré-aquecimento automático em background do cache do Next.js (Instant Navigation)
+  React.useEffect(() => {
+    floatingDockItems.forEach((item) => {
+      if (item.id.startsWith('/')) {
+        router.prefetch(item.id);
+      }
+    });
+  }, [floatingDockItems, router]);
+
   const handleDockSelect = (href: string) => {
-    router.push(href);
     setIsMobileMenuOpen(false);
+    if (href.startsWith('/') && href !== pathname) {
+      router.push(href);
+    }
   };
 
   return (
