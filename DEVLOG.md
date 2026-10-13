@@ -215,3 +215,24 @@
   - First Load JS inalterado e transição instantânea de páginas validada.
 
 ---
+
+### 12. Implementação da Abordagem A: Lean Diagnostic Canvas (Seção 1.2 - Planejamento)
+- **Objetivo & Motivação:**
+  - Modernizar a seção 1.2 da etapa *1. PLAN* (`/admin/projetos/[id]` e `/agente/projetos/[id]`) sem onerar o sistema com bibliotecas pesadas de quadro branco livre (ex: Miro/React Flow) que prejudicariam a usabilidade em smartphones e tablets de chão de fábrica.
+  - Implementação da **Abordagem A (Canvas Estruturado Integrado)**, conectando visualmente toda a esteira causal em um único painel panorâmico.
+- **Componente Modular `LeanDiagnosticCanvas.tsx`:**
+  - Criado em `src/components/pdca/LeanDiagnosticCanvas.tsx`.
+  - **Coluna 1 (Efeito & Pareto 80/20):** Declaração do Problema, metas *Baseline vs Alvo* e priorização estatística das causas vitais (80/20 com suporte a upload de imagem).
+  - **Coluna 2 (Espinha de Peixe • Ishikawa 6M):** Matriz 2x3 cobrindo Método, Máquina, Material, Mão de Obra, Medição e Meio Ambiente, com destaque para a causa crítica do 6M e botão de atalho *"Enviar ao 1º Porquê &rarr;"*.
+  - **Coluna 3 (Funil dos 5 Porquês & Causa Raiz):** Investigação vertical em 5 etapas com destaque luminoso para o 5º Porquê, badge de Causa Raiz Final e botão de cópia com feedback tátil.
+  - **Transição Direta para a Execução:** Botão *"Gerar Ação 5W2H"* que cria instantaneamente uma atividade de contramedida na aba *2. DO*, pré-populada com setor, responsável e prazo.
+- **Seletor Dual de Visualização:**
+  - Implementado no cabeçalho da seção 1.2 em `src/app/admin/projetos/[id]/page.tsx`.
+  - Permite alternar com 1 clique entre `[ Matriz Canvas Integrada ]` (padrão) e `[ Formulário em Cards ]`.
+  - Ambos os modos compartilham o mesmo estado e persistem automaticamente via `dataService`.
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - `npm run build`: 100% de sucesso (43/43 páginas estáticas compiladas com zero warnings e sem aumento no First Load JS).
+  - Total conformidade com o Design System Obsidian Navy (zero emojis, ícones Lucide).
+
+---

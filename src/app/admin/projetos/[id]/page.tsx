@@ -12,6 +12,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
 import { ActivityAttachmentModal } from '@/components/kanban/ActivityAttachmentModal';
 import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
+import { LeanDiagnosticCanvas } from '@/components/pdca/LeanDiagnosticCanvas';
 import { evaluateActionQuality } from '@/services/geminiService';
 import {
   ArrowLeft,
@@ -27,6 +28,7 @@ import {
   AlertTriangle,
   Calendar,
   Layers,
+  ListFilter,
   FileCheck,
   FileCheck2,
   ShieldCheck,
@@ -148,6 +150,8 @@ export default function AdminProjectDetailPage() {
 
   // Seletor de Ferramentas Ativas no PLAN ('fiveWhys' | 'pareto' | 'ishikawa')
   const [selectedDiagnosticTools, setSelectedDiagnosticTools] = useState<string[]>(['fiveWhys']);
+  // Modo de Visualização da Seção 1.2: Canvas Panorâmico ou Formulário Clássico
+  const [diagnosticViewMode, setDiagnosticViewMode] = useState<'canvas' | 'form'>('canvas');
 
   // Costs (Investimento Capex/Opex) - Limpos sem '0' pré-estabelecido
   const [partsAndEquipment, setPartsAndEquipment] = useState<number | ''>('');
@@ -360,6 +364,61 @@ export default function AdminProjectDetailPage() {
     setSelectedDiagnosticTools((prev) =>
       prev.includes(toolKey) ? prev.filter((t) => t !== toolKey) : [...prev, toolKey]
     );
+  };
+
+  // Transferir causa mais crítica do Ishikawa para o 1º Porquê
+  const handleTransferIshikawaToFiveWhys = () => {
+    if (!ishikawaRootCause || !ishikawaRootCause.trim()) return;
+    const updated = [...fiveWhys];
+    updated[0] = ishikawaRootCause.trim();
+    setFiveWhys(updated);
+  };
+
+  // Gerar ação de contramedida 5W2H direta a partir da causa raiz identificada
+  const handleGenerateActionFromRootCause = (causeText: string) => {
+    const finalCause =
+      causeText.trim() ||
+      ishikawaRootCause.trim() ||
+      fiveWhys[4]?.trim() ||
+      'Causa raiz diagnosticada';
+    const newItem: ActionChecklistItem = {
+      id: `chk-${Date.now()}`,
+      label: `[Contramedida] Eliminar causa raiz: ${finalCause}`,
+      completed: false,
+      responsibleName: leaderName || currentUser?.name || 'Líder Kaizen',
+      responsibleSectorName: action?.originSectorName || 'Fábrica',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      observations: `Ação gerada automaticamente a partir do diagnóstico de Causa Raiz. Investigação: ${finalCause}`,
+    };
+    setChecklistItems((prev) => [...prev, newItem]);
+    setActiveTab('do');
+  };
+
+  const handleIshikawaFieldChange = (field: string, val: string) => {
+    switch (field) {
+      case 'method':
+        setIshikawaMethod(val);
+        break;
+      case 'machine':
+        setIshikawaMachine(val);
+        break;
+      case 'material':
+        setIshikawaMaterial(val);
+        break;
+      case 'manpower':
+        setIshikawaManpower(val);
+        break;
+      case 'measurement':
+        setIshikawaMeasurement(val);
+        break;
+      case 'environment':
+        setIshikawaEnvironment(val);
+        break;
+      case 'primaryRootCause':
+        setIshikawaRootCause(val);
+        break;
+    }
   };
 
   // Navegação por teclado no Modo Apresentação
@@ -2220,20 +2279,150 @@ export default function AdminProjectDetailPage() {
           </div>
 
           {/* ========================================================================= */}
-          {/* 1.2 HUB DE FERRAMENTAS DE DIAGNÓSTICO & ANÁLISE DE CAUSA RAIZ (EXPANSÍVEL) */}
+          {/* 1.2 HUB DE FERRAMENTAS DE DIAGNÓSTICO & ANÁLISE DE CAUSA RAIZ             */}
           {/* ========================================================================= */}
-          <div
-            className="card"
-            style={{
-              padding: '1.5rem',
-              borderRadius: '16px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-            }}
-          >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Seletor Superior: Matriz Canvas Integrada vs Formulário por Ferramenta */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                backgroundColor: isDark ? '#090e1a' : '#f1f5f9',
+                padding: '0.65rem 1rem',
+                borderRadius: '14px',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  style={{
+                    fontSize: '0.78125rem',
+                    fontWeight: 800,
+                    color: isDark ? '#ffffff' : '#0f172a',
+                    fontFamily: 'var(--font-heading)',
+                  }}
+                >
+                  1.2 Diagnóstico & Causa Raiz:
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    color: isDark ? '#94a3b8' : '#64748b',
+                  }}
+                >
+                  {diagnosticViewMode === 'canvas' ? 'Visão Panorâmica Conectada' : 'Visualização em Blocos Individuais'}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  backgroundColor: isDark ? '#060a13' : '#e2e8f0',
+                  padding: '3px',
+                  borderRadius: '10px',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.06)' : '1px solid #cbd5e1',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setDiagnosticViewMode('canvas')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: diagnosticViewMode === 'canvas' ? 800 : 600,
+                    cursor: 'pointer',
+                    backgroundColor: diagnosticViewMode === 'canvas' ? '#06b6d4' : 'transparent',
+                    color: diagnosticViewMode === 'canvas' ? '#060a13' : (isDark ? '#94a3b8' : '#475569'),
+                    boxShadow: diagnosticViewMode === 'canvas' ? '0 2px 8px rgba(6, 182, 212, 0.3)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <Workflow size={13} /> Matriz Canvas Integrada
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDiagnosticViewMode('form')}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.4rem 0.85rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '0.75rem',
+                    fontWeight: diagnosticViewMode === 'form' ? 800 : 600,
+                    cursor: 'pointer',
+                    backgroundColor: diagnosticViewMode === 'form' ? '#06b6d4' : 'transparent',
+                    color: diagnosticViewMode === 'form' ? '#060a13' : (isDark ? '#94a3b8' : '#475569'),
+                    boxShadow: diagnosticViewMode === 'form' ? '0 2px 8px rgba(6, 182, 212, 0.3)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <ListFilter size={13} /> Formulário em Cards
+                </button>
+              </div>
+            </div>
+
+            {/* MODO CANVAS INTEGRADO */}
+            {diagnosticViewMode === 'canvas' ? (
+              <LeanDiagnosticCanvas
+                problemStatement={problemStatement}
+                onProblemStatementChange={setProblemStatement}
+                baselineValue={baselineValue}
+                targetGoalValue={targetGoalValue}
+                targetMetricName={targetMetricName}
+                targetMetricUnit={targetMetricUnit}
+                currentProblemCostMonthly={currentProblemCostMonthly}
+                fiveWhys={fiveWhys}
+                onFiveWhysChange={setFiveWhys}
+                paretoImageUrl={paretoImageUrl}
+                paretoImageName={paretoImageName}
+                paretoVitalCauses={paretoVitalCauses}
+                onParetoVitalCausesChange={setParetoVitalCauses}
+                paretoCumulativePercent={paretoCumulativePercent}
+                onParetoCumulativePercentChange={setParetoCumulativePercent}
+                onParetoImageUpload={handleParetoImageUpload}
+                onRemoveParetoImage={handleRemoveParetoImage}
+                ishikawa={{
+                  method: ishikawaMethod,
+                  machine: ishikawaMachine,
+                  material: ishikawaMaterial,
+                  manpower: ishikawaManpower,
+                  measurement: ishikawaMeasurement,
+                  environment: ishikawaEnvironment,
+                  primaryRootCause: ishikawaRootCause,
+                }}
+                onIshikawaChange={handleIshikawaFieldChange}
+                onTransferIshikawaToFiveWhys={handleTransferIshikawaToFiveWhys}
+                onGenerateActionFromRootCause={handleGenerateActionFromRootCause}
+                onSwitchToFormMode={() => setDiagnosticViewMode('form')}
+                isViewer={isViewer}
+                isDark={isDark}
+              />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div
+                  className="card"
+                  style={{
+                    padding: '1.5rem',
+                    borderRadius: '16px',
+                    backgroundColor: '#0f172a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.25rem',
+                  }}
+                >
             {/* Header & Guia do Hub */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -2998,6 +3187,9 @@ export default function AdminProjectDetailPage() {
               </div>
             </div>
           )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
