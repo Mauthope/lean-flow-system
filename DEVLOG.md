@@ -5,6 +5,23 @@
 
 ---
 
+## [2026-10-13] Correção Crítica de Posicionamento de Modais e Resiliência no Cadastro de Agentes Lean
+**Agentes Responsáveis:** `cleancod`, `designer`, `security-expert`, `chronicler`  
+**Escopo:** Correção do componente `Modal.tsx`, eliminação de form aninhado em `AvatarSelector.tsx`, salvaguarda de tenant em `AgentModal.tsx` e renderização montada em `agentes/page.tsx`.
+
+### 1. Diagnóstico da Causa Raiz
+- **Posicionamento Quebrado em `Modal.tsx`:** O elemento overlay do modal dependia de classes Tailwind CSS (`fixed inset-0 z-[9999] flex items-center justify-center`) ausentes na folha de estilos global do projeto, fazendo com que o modal renderizasse com `position: static` no final do `document.body`, invisível ao usuário na viewport.
+- **Formulário Aninhado em `AvatarSelector.tsx`:** O modo URL utilizava uma tag `<form>` dentro de `<form>` (`AgentModal`), gerando quebra na propagação e submissão nativa de formulários do navegador.
+- **Silent Abort de Tenant em `AgentModal.tsx`:** O método `handleSubmit` abortava silenciosamente com `if (!currentTenant) return;` caso o contexto `useAuth()` demorasse para sincronizar ou estivesse nulo em sessões de Master.
+
+### 2. Ações Implementadas
+- **`Modal.tsx`:** Restauração de estilos inline robustos (`position: fixed`, `top: 0`, `left: 0`, `right: 0`, `bottom: 0`, `zIndex: 9999`, `display: flex`, `alignItems: center`, `justifyContent: center`), garantindo centralização imediata e visibilidade total sobreposta a qualquer página.
+- **`AvatarSelector.tsx`:** Substituição da tag `<form>` por container `<div>` com botão `type="button"` e atalho Enter no campo de URL.
+- **`AgentModal.tsx`:** Introdução de fallback seguro `currentTenant || dataService.getCurrentTenant()` com mensagem de erro explícita caso não haja unidade fabril ativa selecionada.
+- **`agentes/page.tsx`:** Montagem contínua do `<AgentModal isOpen={isModalOpen} />` eliminando atrasos no ciclo de vida de portais.
+
+---
+
 ## [2026-10-13] Criação do Agente Especialista: responsive.md (Engenharia de Responsividade & Ergonomia Multi-dispositivo)
 **Agentes Responsáveis:** `responsive`, `designer`, `cleancod`, `chronicler`  
 **Escopo:** Criação do agente `agents/responsive.md` e atualização da governança em `AGENTS.md` e `agents/README.md`.

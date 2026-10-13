@@ -1031,15 +1031,13 @@ export default function AdminAgentesPage() {
       )}
 
       {/* Member / Agent Modal */}
-      {isModalOpen && (
-        <AgentModal
-          agent={selectedAgent}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={refreshData}
-          initialRole={initialModalRole}
-        />
-      )}
+      <AgentModal
+        agent={selectedAgent}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={refreshData}
+        initialRole={initialModalRole}
+      />
     </div>
   );
 }

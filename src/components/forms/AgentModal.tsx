@@ -174,8 +174,13 @@ export const AgentModal: React.FC<AgentModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentTenant) return;
     setFormError(null);
+
+    const effectiveTenant = currentTenant || dataService.getCurrentTenant();
+    if (!effectiveTenant) {
+      setFormError('Nenhuma unidade fabril ativa selecionada para vincular o colaborador.');
+      return;
+    }
 
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -200,7 +205,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
           .from('authorized_users')
           .upsert(
             {
-              tenant_id: currentTenant.id,
+              tenant_id: effectiveTenant.id,
               email: cleanEmail,
               name: name.trim(),
               role,
@@ -252,7 +257,7 @@ export const AgentModal: React.FC<AgentModalProps> = ({
         });
       } else {
         dataService.createUser({
-          tenantId: currentTenant.id,
+          tenantId: effectiveTenant.id,
           name: name.trim(),
           email: cleanEmail,
           role,

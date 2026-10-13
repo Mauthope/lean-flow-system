@@ -45,8 +45,17 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalNode = (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 md:p-6"
       style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.5rem 1rem',
         backgroundColor: 'var(--bg-modal-overlay, rgba(2, 6, 23, 0.85))',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
@@ -85,8 +94,9 @@ export const Modal: React.FC<ModalProps> = ({
       >
         {/* Header */}
         <div
-          className="modal-header-surface px-4 py-3 sm:px-6 sm:py-4"
+          className="modal-header-surface"
           style={{
+            padding: '1.25rem 1.75rem',
             borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
             display: 'flex',
             alignItems: 'center',
@@ -109,18 +119,20 @@ export const Modal: React.FC<ModalProps> = ({
           <button
             onClick={onClose}
             aria-label="Fechar modal"
-            className="min-h-[44px] min-w-[44px]"
             style={{
               background: 'var(--bg-surface-elevated, rgba(255, 255, 255, 0.06))',
               border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
               cursor: 'pointer',
               color: 'var(--text-muted, #94a3b8)',
+              padding: '0.375rem',
               borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s ease',
               flexShrink: 0,
+              minWidth: '36px',
+              minHeight: '36px',
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--border-strong, rgba(255, 255, 255, 0.15))';
@@ -137,8 +149,8 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Content */}
         <div
-          className="p-3.5 sm:p-5 md:p-6"
           style={{
+            padding: '1.75rem',
             overflowY: 'auto',
             flex: 1,
             backgroundColor: 'var(--bg-modal, #0d1527)',

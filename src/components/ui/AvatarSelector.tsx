@@ -395,7 +395,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
 
       {/* Mode Body 3: Link / URL Direto */}
       {activeMode === 'url' && (
-        <form onSubmit={handleApplyUrl} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           <div style={{ display: 'flex', gap: '0.45rem' }}>
             <input
               type="url"
@@ -403,6 +403,12 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
               onChange={(e) => {
                 setUrlInput(e.target.value);
                 setUrlError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleApplyUrl();
+                }
               }}
               placeholder="https://exemplo.com/sua-foto.jpg"
               className="input"
@@ -414,7 +420,8 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
               }}
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleApplyUrl()}
               className="btn btn-primary"
               style={{
                 fontSize: '0.75rem',
@@ -436,7 +443,7 @@ export const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>
             Cole o link direto da sua foto do Teams, LinkedIn, intranet corporativa ou repositório.
           </span>
-        </form>
+        </div>
       )}
 
       {/* Reset to Default Button */}
