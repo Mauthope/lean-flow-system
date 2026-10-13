@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '@/components/toten/toten.css';
 
 export const metadata: Metadata = {
   title: 'Toten Chão de Fábrica — Sensei Kaizen',
@@ -11,7 +12,7 @@ export default function TotenLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden select-none">
+    <div className="toten-root">
       {children}
     </div>
   );

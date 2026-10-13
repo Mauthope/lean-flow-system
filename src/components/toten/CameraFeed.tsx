@@ -8,10 +8,8 @@ import {
   ChevronUp,
   SwitchCamera,
   RefreshCw,
-  Sparkles,
   Eye,
   Sliders,
-  Check,
 } from 'lucide-react';
 
 interface CameraFeedProps {
@@ -48,74 +46,106 @@ export const CameraFeed = React.memo(function CameraFeed({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-4 right-4 z-40">
+    <div style={{ position: 'fixed', bottom: '16px', right: '16px', zIndex: 40 }}>
       {/* Botão de Toggle Diagnóstico */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/90 border border-white/10 hover:border-cyan-500/50 text-slate-300 hover:text-white shadow-xl backdrop-blur-md text-xs font-medium transition cursor-pointer"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 12px',
+          borderRadius: '12px',
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          color: '#cbd5e1',
+          fontSize: '11px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        }}
         title="Diagnóstico de Sensor e Câmera"
       >
-        <Camera className="w-4 h-4 text-cyan-400" />
-        <span className="hidden sm:inline">Diagnóstico Óptico</span>
+        <Camera size={14} color="#22d3ee" />
+        <span>Diagnóstico Óptico</span>
         <span
-          className={`w-2 h-2 rounded-full ${
-            detection.hasPerson
-              ? 'bg-emerald-400'
-              : cameraActive
-              ? 'bg-cyan-400'
-              : 'bg-amber-400 animate-pulse'
-          }`}
+          style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: detection.hasPerson ? '#34d399' : cameraActive ? '#22d3ee' : '#fbbf24',
+          }}
         />
-        {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+        {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
       </button>
 
       {/* Gaveta de Controles Técnicos */}
       {isOpen && (
-        <div className="absolute bottom-12 right-0 w-80 bg-slate-900 border border-white/15 rounded-2xl p-4 shadow-2xl backdrop-blur-xl mb-2 text-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
-            <div className="flex items-center gap-1.5 font-bold text-white">
-              <Sliders className="w-4 h-4 text-cyan-400" />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '48px',
+            right: 0,
+            width: '300px',
+            backgroundColor: '#0f172a',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: '16px',
+            padding: '16px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(16px)',
+            fontSize: '11px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: '#ffffff' }}>
+              <Sliders size={14} color="#22d3ee" />
               <span>Painel de Visão Óptica</span>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-white"
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '11px' }}
             >
               Fechar
             </button>
           </div>
 
-          <div className="space-y-3">
-            {/* Status da Câmera */}
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-white/5">
-              <span className="text-slate-400">Sensor:</span>
-              <span className="font-mono text-cyan-300">
-                {cameraActive ? 'Ativo' : cameraError ? 'Falha / Bloqueado' : 'Aguardando'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '8px', background: '#090e1a' }}>
+              <span style={{ color: '#94a3b8' }}>Sensor de Vídeo:</span>
+              <span style={{ color: cameraActive ? '#34d399' : '#fbbf24', fontWeight: 700 }}>
+                {cameraActive ? 'Ativo' : cameraError ? 'Modo Touch' : 'Aguardando'}
               </span>
             </div>
 
-            {/* Presença Detectada */}
-            <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/60 border border-white/5">
-              <span className="text-slate-400">Presença Humana:</span>
-              <span
-                className={`font-semibold ${
-                  detection.hasPerson ? 'text-emerald-400' : 'text-slate-400'
-                }`}
-              >
-                {detection.hasPerson ? 'Detectada no Raio' : 'Ausente (Standby)'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '8px', background: '#090e1a' }}>
+              <span style={{ color: '#94a3b8' }}>Presença Humana:</span>
+              <span style={{ color: detection.hasPerson ? '#34d399' : '#64748b', fontWeight: 700 }}>
+                {detection.hasPerson ? 'Detectada' : 'Ausente (Standby)'}
               </span>
             </div>
 
-            {/* Modo Simulação Touch (para quiosques sem webcam) */}
-            <div className="pt-2 border-t border-white/10">
-              <label className="block text-slate-400 mb-1.5">Controle de Teste / Toten Touch:</label>
+            {/* Simulação Touch */}
+            <div style={{ paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               {isSimulated ? (
                 <button
                   type="button"
                   onClick={onDisableSimulation}
-                  className="w-full py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-medium transition cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    background: 'rgba(245, 158, 11, 0.2)',
+                    border: '1px solid rgba(245, 158, 11, 0.4)',
+                    color: '#fbbf24',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
                 >
                   Desativar Simulação
                 </button>
@@ -123,24 +153,45 @@ export const CameraFeed = React.memo(function CameraFeed({
                 <button
                   type="button"
                   onClick={onToggleSimulation}
-                  className="w-full py-2 px-3 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-medium transition cursor-pointer flex items-center justify-center gap-1.5"
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    background: 'rgba(6, 182, 212, 0.15)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                    color: '#22d3ee',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                  }}
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Simular Presença (Entrar)</span>
+                  <Eye size={14} />
+                  <span>Simular Presença (Toque)</span>
                 </button>
               )}
             </div>
 
-            {/* Alternar Câmeras Disponíveis */}
+            {/* Dispositivos de Vídeo */}
             {availableDevices.length > 1 && (
-              <div className="pt-2">
-                <label className="block text-slate-400 mb-1">Selecionar Entrada de Vídeo:</label>
+              <div>
+                <label style={{ display: 'block', color: '#94a3b8', marginBottom: '4px' }}>Entrada de Vídeo:</label>
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => onSelectDevice(e.target.value)}
-                  className="w-full py-1.5 px-2 rounded-lg bg-slate-950 border border-white/10 text-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                  style={{
+                    width: '100%',
+                    padding: '6px 8px',
+                    borderRadius: '8px',
+                    background: '#090e1a',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: '#f8fafc',
+                    fontSize: '11px',
+                  }}
                 >
-                  <option value="">Padrão do Sistema</option>
+                  <option value="">Padrão</option>
                   {availableDevices.map((dev) => (
                     <option key={dev.deviceId} value={dev.deviceId}>
                       {dev.label}
@@ -150,23 +201,41 @@ export const CameraFeed = React.memo(function CameraFeed({
               </div>
             )}
 
-            {/* Botões rápidos de reinício */}
-            <div className="flex gap-2 pt-2">
+            <div style={{ display: 'flex', gap: '8px', paddingTop: '4px' }}>
               <button
                 type="button"
                 onClick={onToggleFacingMode}
-                className="flex-1 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-1 text-[11px] transition"
+                style={{
+                  flex: 1,
+                  padding: '6px',
+                  borderRadius: '8px',
+                  background: '#1e293b',
+                  border: 'none',
+                  color: '#cbd5e1',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                }}
               >
-                <SwitchCamera className="w-3 h-3" />
-                <span>Girar Câmera</span>
+                <SwitchCamera size={13} />
+                <span>Girar</span>
               </button>
               <button
                 type="button"
                 onClick={onRestartCamera}
-                className="py-1.5 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-[11px] transition"
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  background: '#1e293b',
+                  border: 'none',
+                  color: '#cbd5e1',
+                  cursor: 'pointer',
+                }}
                 title="Reiniciar Câmera"
               >
-                <RefreshCw className="w-3 h-3" />
+                <RefreshCw size={13} />
               </button>
             </div>
           </div>

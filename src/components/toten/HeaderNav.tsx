@@ -9,8 +9,6 @@ import {
   ShieldCheck,
   SwitchCamera,
   Zap,
-  Sparkles,
-  Layers,
 } from 'lucide-react';
 
 interface HeaderNavProps {
@@ -45,15 +43,11 @@ export const HeaderNav = React.memo(function HeaderNav({
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.warn('Fullscreen request error:', err);
-      });
+      document.documentElement.requestFullscreen().catch(() => {});
       setIsFullscreen(true);
     } else {
       if (document.exitFullscreen) {
-        document.exitFullscreen().catch((err) => {
-          console.warn('Exit fullscreen error:', err);
-        });
+        document.exitFullscreen().catch(() => {});
         setIsFullscreen(false);
       }
     }
@@ -61,120 +55,132 @@ export const HeaderNav = React.memo(function HeaderNav({
 
   return (
     <>
-      <header className="relative z-30 w-full px-6 py-4 flex items-center justify-between border-b border-white/10 bg-slate-950/60 backdrop-blur-md">
+      <header className="toten-header">
         {/* Identidade do Toten e Status */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-cyan-400">
-              <Zap className="w-5 h-5 text-cyan-400" />
+        <div className="toten-brand">
+          <div className="toten-logo-box">
+            <div className="toten-logo-inner">
+              <Zap size={22} color="#22d3ee" />
             </div>
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                SENSEI KAIZEN
-              </h1>
-              <span
-                className={`inline-block w-2.5 h-2.5 rounded-full ${
-                  personDetected ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-cyan-400 animate-ping'
-                }`}
-              />
+            <div className="toten-title-row">
+              <h1 className="toten-title">SENSEI KAIZEN</h1>
+              <span className={`toten-status-dot ${personDetected ? 'active' : 'standby'}`} />
             </div>
-            {/* Destaque corporativo */}
-            <div className="inline-flex items-center gap-1.5 my-0.5">
-              <span className="text-[10px] sm:text-[11px] font-bold tracking-wider uppercase text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.9)] bg-cyan-950/60 border border-cyan-500/50 px-2 py-0.5 rounded shadow-[0_0_12px_rgba(6,182,212,0.3)] flex items-center gap-1">
-                <Zap className="w-3 h-3 text-cyan-400" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="toten-author-badge">
+                <Zap size={10} color="#22d3ee" />
                 <span>Feito por Mauricio Grigol</span>
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+            <p className="toten-subtitle">
               Toten do Chão de Fábrica • Canal Kaizen & Melhoria Contínua
             </p>
           </div>
         </div>
 
         {/* Controles e Relógio */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Relógio do Turno */}
-          {currentTime && (
-            <div className="hidden sm:flex items-center px-3 py-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-xs font-mono text-cyan-300">
-              {currentTime}
-            </div>
-          )}
+        <div className="toten-controls">
+          {currentTime && <div className="toten-clock">{currentTime}</div>}
 
-          {/* Trocar Câmera */}
           {onToggleFacingMode && (
             <button
               type="button"
               onClick={onToggleFacingMode}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-xs text-cyan-300 hover:text-white transition cursor-pointer"
+              className="toten-btn-icon"
               title={`Trocar Câmera (Atual: ${facingMode === 'user' ? 'Frontal' : 'Traseira'})`}
             >
-              <SwitchCamera className="w-4 h-4 text-cyan-400" />
-              <span className="hidden md:inline">
-                {facingMode === 'user' ? 'Frontal' : 'Traseira'}
-              </span>
+              <SwitchCamera size={15} color="#22d3ee" />
+              <span>{facingMode === 'user' ? 'Frontal' : 'Traseira'}</span>
             </button>
           )}
 
-          {/* Conformidade LGPD */}
           <button
             type="button"
             onClick={() => setShowPrivacyModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-xs text-slate-300 hover:text-white transition cursor-pointer"
+            className="toten-btn-icon"
             title="Conformidade LGPD"
           >
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="hidden lg:inline">LGPD On-Device</span>
+            <ShieldCheck size={15} color="#34d399" />
+            <span>LGPD On-Device</span>
           </button>
 
-          {/* Mudo / Voz */}
           <button
             type="button"
             onClick={onToggleMute}
-            className={`p-2 rounded-lg border transition cursor-pointer ${
-              isMuted
-                ? 'bg-slate-800/80 border-white/10 text-slate-400 hover:text-white'
-                : 'bg-cyan-500/15 border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/25'
-            }`}
+            className={`toten-btn-icon ${isMuted ? '' : 'active'}`}
             title={isMuted ? 'Ativar Voz' : 'Silenciar Voz'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
 
-          {/* Modo Tela Cheia Kiosk */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-2 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 text-slate-300 hover:text-white transition cursor-pointer"
+            className="toten-btn-icon"
             title={isFullscreen ? 'Sair da Tela Cheia' : 'Modo Toten (Tela Cheia)'}
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
           </button>
         </div>
       </header>
 
       {/* Modal de Transparência LGPD */}
       {showPrivacyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-slate-900 border border-white/15 rounded-2xl p-6 shadow-2xl relative">
-            <div className="flex items-center gap-2 text-emerald-400 mb-3">
-              <ShieldCheck className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-white">Privacidade e LGPD</h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '460px',
+              backgroundColor: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '20px',
+              padding: '24px',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.8)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', marginBottom: '12px' }}>
+              <ShieldCheck size={24} />
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                Privacidade e LGPD
+              </h3>
             </div>
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">
-              Este toten utiliza inteligência com <strong>processamento 100% local no navegador</strong>:
+            <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '14px' }}>
+              Este toten utiliza inteligência com <strong>processamento 100% local no dispositivo</strong>:
             </p>
-            <ul className="text-xs text-slate-400 space-y-2 mb-6 list-disc list-inside">
-              <li>Nenhuma imagem, foto ou gravação de vídeo é armazenada em disco.</li>
-              <li>A detecção de proximidade roda na memória do dispositivo.</li>
-              <li>Não realiza reconhecimento facial biométrico nem rastreia colaboradores.</li>
-              <li>A câmera opera estritamente como sensor óptico de presença e proximidade.</li>
+            <ul style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.6, paddingLeft: '18px', margin: '0 0 20px 0' }}>
+              <li>Nenhuma imagem, foto ou gravação é salva ou transmitida.</li>
+              <li>A detecção óptica roda exclusivamente na memória RAM local.</li>
+              <li>Não realiza reconhecimento facial biométrico nem identifica colaboradores.</li>
+              <li>A câmera opera estritamente como sensor de aproximação interativa.</li>
             </ul>
             <button
               type="button"
               onClick={() => setShowPrivacyModal(false)}
-              className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition cursor-pointer"
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                borderRadius: '12px',
+                backgroundColor: '#06b6d4',
+                color: '#060a13',
+                fontWeight: 800,
+                fontSize: '13px',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
               Entendido
             </button>

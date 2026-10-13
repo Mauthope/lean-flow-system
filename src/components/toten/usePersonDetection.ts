@@ -51,10 +51,10 @@ export function usePersonDetection({
   const animationFrameRef = useRef<number | null>(null);
   const previousFrameDataRef = useRef<Uint8ClampedArray | null>(null);
 
-  // Listar câmeras do dispositivo
+  // Listar câmeras com segurança
   const refreshDevices = useCallback(async () => {
     try {
-      if (!navigator.mediaDevices?.enumerateDevices) return;
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return;
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevs = devices
         .filter((d) => d.kind === 'videoinput')
@@ -63,27 +63,28 @@ export function usePersonDetection({
           label: d.label || `Câmera ${idx + 1}`,
         }));
       setAvailableDevices(videoDevs);
-    } catch (err) {
-      console.warn('[usePersonDetection] Falha ao enumerar dispositivos:', err);
-    }
+    } catch (_) {}
   }, []);
 
   const stopCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    } catch (_) {}
     setCameraActive(false);
   }, []);
 
-  // Iniciar câmera do usuário
+  // Iniciar câmera com salvaguarda total de erros
   const startCamera = useCallback(
     async (deviceId?: string, mode?: 'user' | 'environment') => {
-      if (typeof window === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        setCameraError('Câmera não suportada neste navegador.');
+      if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        setCameraError('Câmera não suportada neste dispositivo.');
+        setIsSimulated(true);
         return;
       }
 
@@ -105,98 +106,130 @@ export function usePersonDetection({
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play().catch((e) => console.warn('Erro ao dar play no vídeo:', e));
+            if (!videoRef.current) return;
+            videoRef.current.play().catch(() => {});
             setCameraActive(true);
             refreshDevices();
           };
         }
       } catch (err: any) {
-        console.warn('[usePersonDetection] Câmera não acessível:', err?.message || err);
+        // Falha normal de câmera (ex: sem webcam ou permissão negada) -> Entra em modo touch com elegância
         setCameraError(
           err.name === 'NotAllowedError'
-            ? 'Acesso à câmera não autorizado pelo usuário.'
-            : 'Câmera não disponível no momento.'
+            ? 'Acesso à câmera bloqueado. Modo Toque na Tela ativo.'
+            : 'Câmera não disponível. Modo Toque na Tela ativo.'
         );
         setCameraActive(false);
+        setIsSimulated(true);
       }
     },
     [facingMode, stopCamera, refreshDevices]
   );
 
-  // Loop de detecção visual ultra leve via Canvas Motion Diff (0% Overhead)
+  // Loop de detecção visual sem quebras de frame
   useEffect(() => {
     let isRunning = true;
-    const miniCanvas = document.createElement('canvas');
-    miniCanvas.width = 64;
-    miniCanvas.height = 48;
-    const miniCtx = miniCanvas.getContext('2d', { willReadFrequently: true });
+    let miniCanvas: HTMLCanvasElement | null = null;
+    let miniCtx: CanvasRenderingContext2D | null = null;
+
+    try {
+      miniCanvas = document.createElement('canvas');
+      miniCanvas.width = 64;
+      miniCanvas.height = 48;
+      miniCtx = miniCanvas.getContext('2d', { willReadFrequently: true });
+    } catch (_) {}
 
     const detectLoop = () => {
       if (!isRunning) return;
 
-      const video = videoRef.current;
-      const displayCanvas = canvasRef.current;
+      try {
+        const video = videoRef.current;
+        const displayCanvas = canvasRef.current;
 
-      // Desenhar no displayCanvas se existir para preview de scanner
-      if (video && displayCanvas && video.readyState >= 2) {
-        const displayCtx = displayCanvas.getContext('2d');
-        if (displayCtx) {
-          if (displayCanvas.width !== video.videoWidth || displayCanvas.height !== video.videoHeight) {
-            displayCanvas.width = video.videoWidth || 640;
-            displayCanvas.height = video.videoHeight || 480;
-          }
-          displayCtx.drawImage(video, 0, 0, displayCanvas.width, displayCanvas.height);
-        }
-      }
-
-      if (isSimulatedRef.current) {
-        // Modo simulação ativo
-        animationFrameRef.current = requestAnimationFrame(detectLoop);
-        return;
-      }
-
-      if (video && video.readyState >= 2 && miniCtx) {
-        miniCtx.drawImage(video, 0, 0, 64, 48);
-        const currentData = miniCtx.getImageData(0, 0, 64, 48).data;
-
-        if (previousFrameDataRef.current) {
-          const prev = previousFrameDataRef.current;
-          let diffSum = 0;
-          const totalPixels = 64 * 48;
-
-          for (let i = 0; i < currentData.length; i += 4) {
-            // Diferença simples de luminosidade
-            const d =
-              Math.abs(currentData[i] - prev[i]) +
-              Math.abs(currentData[i + 1] - prev[i + 1]) +
-              Math.abs(currentData[i + 2] - prev[i + 2]);
-            if (d > 45) {
-              diffSum++;
+        // Desenhar no displayCanvas de preview somente se o vídeo tiver dimensões reais
+        if (
+          video &&
+          displayCanvas &&
+          video.readyState >= 2 &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0
+        ) {
+          const displayCtx = displayCanvas.getContext('2d');
+          if (displayCtx) {
+            if (
+              displayCanvas.width !== video.videoWidth ||
+              displayCanvas.height !== video.videoHeight
+            ) {
+              displayCanvas.width = video.videoWidth;
+              displayCanvas.height = video.videoHeight;
             }
-          }
-
-          const motionRatio = diffSum / totalPixels;
-
-          // Se mais de 3.5% dos pixels sofrerem movimento, consideramos presença humana
-          if (motionRatio > 0.035) {
-            lastSeenRef.current = Date.now();
-
-            if (!isPersonPresentRef.current) {
-              isPersonPresentRef.current = true;
-              setDetection({ hasPerson: true, score: Math.min(0.95, motionRatio * 5), personCount: 1 });
-              if (onPersonEnter) onPersonEnter();
-            }
-          } else {
-            // Checar se o timeout de inatividade expirou
-            if (isPersonPresentRef.current && Date.now() - lastSeenRef.current > inactivityTimeoutMs) {
-              isPersonPresentRef.current = false;
-              setDetection({ hasPerson: false, score: 0, personCount: 0 });
-              if (onPersonLeave) onPersonLeave();
-            }
+            displayCtx.drawImage(video, 0, 0, displayCanvas.width, displayCanvas.height);
           }
         }
 
-        previousFrameDataRef.current = new Uint8ClampedArray(currentData);
+        // Se modo simulação touch estiver ativo, mantém o loop vivo sem processar pixels
+        if (isSimulatedRef.current) {
+          animationFrameRef.current = requestAnimationFrame(detectLoop);
+          return;
+        }
+
+        // Análise de movimento (Motion Diff) segura
+        if (
+          video &&
+          video.readyState >= 2 &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0 &&
+          miniCtx &&
+          miniCanvas
+        ) {
+          miniCtx.drawImage(video, 0, 0, 64, 48);
+          const currentData = miniCtx.getImageData(0, 0, 64, 48).data;
+
+          if (previousFrameDataRef.current) {
+            const prev = previousFrameDataRef.current;
+            let diffSum = 0;
+            const totalPixels = 64 * 48;
+
+            for (let i = 0; i < currentData.length; i += 4) {
+              const d =
+                Math.abs(currentData[i] - prev[i]) +
+                Math.abs(currentData[i + 1] - prev[i + 1]) +
+                Math.abs(currentData[i + 2] - prev[i + 2]);
+              if (d > 45) {
+                diffSum++;
+              }
+            }
+
+            const motionRatio = diffSum / totalPixels;
+
+            if (motionRatio > 0.035) {
+              lastSeenRef.current = Date.now();
+
+              if (!isPersonPresentRef.current) {
+                isPersonPresentRef.current = true;
+                setDetection({
+                  hasPerson: true,
+                  score: Math.min(0.95, motionRatio * 5),
+                  personCount: 1,
+                });
+                if (onPersonEnter) onPersonEnter();
+              }
+            } else {
+              if (
+                isPersonPresentRef.current &&
+                Date.now() - lastSeenRef.current > inactivityTimeoutMs
+              ) {
+                isPersonPresentRef.current = false;
+                setDetection({ hasPerson: false, score: 0, personCount: 0 });
+                if (onPersonLeave) onPersonLeave();
+              }
+            }
+          }
+
+          previousFrameDataRef.current = new Uint8ClampedArray(currentData);
+        }
+      } catch (_) {
+        // Silencia exceções para impedir que o React ou rAF travem
       }
 
       animationFrameRef.current = requestAnimationFrame(detectLoop);
@@ -249,20 +282,17 @@ export function usePersonDetection({
     if (onPersonLeave) onPersonLeave();
   }, [onPersonLeave]);
 
-  const resetPresence = useCallback(
-    (delayMs = 0) => {
-      if (delayMs > 0) {
-        setTimeout(() => {
-          isPersonPresentRef.current = false;
-          setDetection({ hasPerson: false, score: 0, personCount: 0 });
-        }, delayMs);
-      } else {
+  const resetPresence = useCallback((delayMs = 0) => {
+    if (delayMs > 0) {
+      setTimeout(() => {
         isPersonPresentRef.current = false;
         setDetection({ hasPerson: false, score: 0, personCount: 0 });
-      }
-    },
-    []
-  );
+      }, delayMs);
+    } else {
+      isPersonPresentRef.current = false;
+      setDetection({ hasPerson: false, score: 0, personCount: 0 });
+    }
+  }, []);
 
   return {
     videoRef,

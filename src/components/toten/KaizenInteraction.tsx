@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { SenseiState, KaizenIdea, Sector } from '@/lib/types';
-import { TOTEN_KAIZEN_PILLS, TotenPill } from '@/lib/totenData';
+import { TOTEN_KAIZEN_PILLS } from '@/lib/totenData';
 import { dataService } from '@/services/dataService';
 import {
   Lightbulb,
@@ -11,7 +11,6 @@ import {
   Send,
   Mic,
   MicOff,
-  X,
   ListFilter,
   Clock,
   User,
@@ -26,7 +25,6 @@ import {
   ArrowLeft,
   Flame,
   Check,
-  Compass,
   AlertCircle,
   Zap,
 } from 'lucide-react';
@@ -63,16 +61,12 @@ export function KaizenInteraction({
     [onViewChange]
   );
 
-  // Setores cadastrados no Lean Flow
   const [sectors, setSectors] = useState<Sector[]>([]);
-
-  // Estados do Canal Kaizen
   const [ideaPhase, setIdeaPhase] = useState<'input' | 'review' | 'success'>('input');
   const [rawIdeaInput, setRawIdeaInput] = useState('');
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [isStructuring, setIsStructuring] = useState(false);
 
-  // Campos da proposta Kaizen
   const [ideaTitle, setIdeaTitle] = useState('');
   const [ideaCategory, setIdeaCategory] = useState('5S & Organização');
   const [ideaProblem, setIdeaProblem] = useState('');
@@ -84,23 +78,17 @@ export function KaizenInteraction({
   const [lastSubmittedIdea, setLastSubmittedIdea] = useState<KaizenIdea | null>(null);
   const [registeredIdeas, setRegisteredIdeas] = useState<KaizenIdea[]>([]);
 
-  // Chat com Sensei IA
   const [chatInput, setChatInput] = useState('');
   const [aiResponse, setAiResponse] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isChatListening, setIsChatListening] = useState(false);
 
-  // Aula com Sensei (Pílulas)
   const [currentPillIndex, setCurrentPillIndex] = useState(0);
-
-  // Desafio do Turno
   const [hasAcceptedChallenge, setHasAcceptedChallenge] = useState(false);
 
-  // Referência do reconhecimento de voz nativo
   const recognitionRef = useRef<any>(null);
   const hasCelebratedRef = useRef(false);
 
-  // Carregar setores e ideias já cadastradas via dataService
   useEffect(() => {
     try {
       const secList = dataService.getSectors();
@@ -112,21 +100,20 @@ export function KaizenInteraction({
       const allIdeas = dataService.getKaizenIdeas();
       const totenIdeas = allIdeas.filter((i) => i.origin === 'toten');
       setRegisteredIdeas(totenIdeas);
-    } catch (err) {
-      console.warn('[KaizenInteraction] Falha ao carregar dados iniciais:', err);
-    }
+    } catch (_) {}
   }, []);
 
-  // Celebração inicial ao aproximar do Toten (1 vez por sessão)
   useEffect(() => {
     if (hasCelebratedRef.current) return;
     hasCelebratedRef.current = true;
 
-    confetti({
-      particleCount: 70,
-      spread: 75,
-      origin: { y: 0.4 },
-    });
+    try {
+      confetti({
+        particleCount: 70,
+        spread: 75,
+        origin: { y: 0.4 },
+      });
+    } catch (_) {}
 
     onStateChange('celebrating');
 
@@ -139,7 +126,6 @@ export function KaizenInteraction({
     }, 2000);
   }, [onSpeak, onStateChange]);
 
-  // Sincronizar sprite do Sensei com a tela ativa
   useEffect(() => {
     if (!hasCelebratedRef.current) return;
 
@@ -160,13 +146,12 @@ export function KaizenInteraction({
     }
   }, [activeView, ideaPhase, hasAcceptedChallenge, onStateChange]);
 
-  // Lapidação inteligente de ideia (IA + Fallback)
   const structureIdeaProposal = async (text: string) => {
     if (!text.trim()) return;
 
     setIsStructuring(true);
     setFormError(null);
-    onSpeak('O Sensei está analisando sua ideia para organizá-la no formato Kaizen.');
+    onSpeak('O Sensei está organizando sua ideia no formato Kaizen.');
 
     try {
       const res = await fetch('/api/toten/sensei', {
@@ -201,8 +186,7 @@ export function KaizenInteraction({
         setIdeaPhase('review');
         onSpeak('Ideia anotada! Você pode revisar e confirmar o envio.');
       }
-    } catch (err) {
-      console.warn('[KaizenInteraction] Erro ao estruturar proposta:', err);
+    } catch (_) {
       setIdeaTitle(`Melhoria: ${text.slice(0, 30)}...`);
       setIdeaProblem(text);
       setIdeaSolution('Implementar sugestão prática do operador.');
@@ -213,7 +197,6 @@ export function KaizenInteraction({
     }
   };
 
-  // Gravação por voz da ideia
   const toggleVoiceRecordingForIdea = useCallback(() => {
     if (typeof window === 'undefined') return;
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -249,12 +232,11 @@ export function KaizenInteraction({
     try {
       setIsVoiceRecording(true);
       recognition.start();
-    } catch (err) {
+    } catch (_) {
       setIsVoiceRecording(false);
     }
   }, [isVoiceRecording]);
 
-  // Submissão oficial no banco de dados do Lean Flow System
   const handleConfirmIdeaSubmission = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -271,11 +253,7 @@ export function KaizenInteraction({
 
     setFormError(null);
 
-    const sectorObj = sectors.find((s) => s.id === selectedSectorId);
-    const sectorName = sectorObj ? sectorObj.name : 'Geral';
-
     try {
-      // Cria a ideia Kaizen oficial no Lean Flow System
       const createdIdea = dataService.createKaizenIdea({
         authorName: ideaAuthor.trim(),
         authorRoleTitle: 'Colaborador do Chão de Fábrica',
@@ -293,22 +271,22 @@ export function KaizenInteraction({
       setRegisteredIdeas((prev) => [createdIdea, ...prev]);
       setIdeaPhase('success');
 
-      confetti({
-        particleCount: 120,
-        spread: 85,
-        origin: { y: 0.55 },
-      });
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 85,
+          origin: { y: 0.55 },
+        });
+      } catch (_) {}
 
       onSpeak(
         `Parabéns, ${ideaAuthor.trim()}! Sua ideia foi registrada no Canal Kaizen com o protocolo ${createdIdea.protocol}!`
       );
-    } catch (err: any) {
-      console.error('[KaizenInteraction] Erro ao cadastrar ideia no sistema:', err);
+    } catch (_) {
       setFormError('Erro ao registrar ideia no sistema. Tente novamente.');
     }
   };
 
-  // Chat com o Sensei IA
   const handleAskSensei = async (questionText?: string) => {
     const textToSend = questionText || chatInput;
     if (!textToSend.trim() || isAiLoading) return;
@@ -333,8 +311,7 @@ export function KaizenInteraction({
         'O Sensei ouviu sua pergunta! No chão de fábrica, a melhoria contínua começa com pequenos passos diários no 5S!';
       setAiResponse(answer);
       onSpeak(answer);
-    } catch (err) {
-      console.warn('[KaizenInteraction] Falha ao consultar Sensei:', err);
+    } catch (_) {
       const fallback =
         'O Sensei está atento! Lembre-se: organização e disciplina no posto evitam acidentes e poupam seu tempo!';
       setAiResponse(fallback);
@@ -344,7 +321,6 @@ export function KaizenInteraction({
     }
   };
 
-  // Gravação por voz no Chat
   const toggleVoiceRecordingForChat = useCallback(() => {
     if (typeof window === 'undefined') return;
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -386,173 +362,166 @@ export function KaizenInteraction({
   }, [isChatListening]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 select-none">
+    <div style={{ width: '100%', maxWidth: '900px', margin: '0 auto', userSelect: 'none' }}>
       {/* ============================================================== */}
       {/* 1. MENU PRINCIPAL (HUB DE OPÇÕES DO TOTEN)                    */}
       {/* ============================================================== */}
       {activeView === 'menu' && (
-        <div className="space-y-4 sm:space-y-6">
-          <div className="text-center space-y-1 sm:space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-semibold uppercase tracking-wider border border-cyan-500/20">
-              <Zap className="w-3.5 h-3.5" />
+        <div className="toten-menu-container">
+          <div className="toten-menu-header">
+            <div className="toten-menu-badge">
+              <Zap size={14} />
               <span>Painel Interativo do Colaborador</span>
             </div>
-            <h2 className="text-xl sm:text-3xl font-extrabold text-white">
-              Como o Sensei pode te ajudar hoje?
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">
+            <h2 className="toten-menu-title">Como o Sensei pode te ajudar hoje?</h2>
+            <p className="toten-menu-subtitle">
               Toque em uma das opções abaixo para registrar melhorias, aprender ou interagir.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-3xl mx-auto">
-            {/* Opção 1: Canal Kaizen (Destaque Principal) */}
-            <button
-              type="button"
+          <div className="toten-menu-grid">
+            {/* Opção 1: Canal Kaizen */}
+            <div
               onClick={() => {
                 setView('canal_kaizen');
                 setIdeaPhase('input');
                 onSpeak('Excelente! Você pode falar ou digitar sua ideia de melhoria para o chão de fábrica!');
               }}
-              className="group p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-cyan-950/80 via-slate-900 to-slate-950 border-2 border-cyan-500/50 hover:border-cyan-400 text-left transition-all duration-300 shadow-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+              className="toten-card primary"
             >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl group-hover:bg-cyan-500/20 transition" />
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/40 group-hover:scale-110 transition">
-                  <Lightbulb className="w-6 h-6" />
+              <div>
+                <div className="toten-card-top">
+                  <div className="toten-card-icon-box cyan">
+                    <Lightbulb size={26} />
+                  </div>
+                  <div>
+                    <span className="toten-card-tag" style={{ background: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee' }}>
+                      Chão de Fábrica
+                    </span>
+                    <h3 className="toten-card-title">Cadastrar Ideia Kaizen</h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    Chão de Fábrica
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-cyan-300 transition">
-                    Cadastrar Ideia Kaizen
-                  </h3>
-                </div>
+                <p className="toten-card-desc">
+                  Grave por voz ou digite uma sugestão de melhoria para seu posto ou máquina. Sua ideia vai direto para os gestores!
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Grave por voz ou digite uma sugestão de melhoria para seu posto ou máquina. Sua ideia vai direto para os gestores!
-              </p>
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-cyan-400">
+              <div className="toten-card-action" style={{ color: '#22d3ee' }}>
                 <span>Gravar por microfone ou tela</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                <ArrowRight size={16} />
               </div>
-            </button>
+            </div>
 
             {/* Opção 2: Aula com o Sensei */}
-            <button
-              type="button"
+            <div
               onClick={() => {
                 setView('aula');
                 setCurrentPillIndex(0);
                 onSpeak('Bem-vindo à Aula Rápida! Vamos explorar os segredos do 5S e da metodologia Lean!');
               }}
-              className="group p-5 sm:p-6 rounded-2xl bg-slate-900/80 hover:bg-slate-900 border border-white/10 hover:border-emerald-500/50 text-left transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+              className="toten-card emerald"
             >
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 group-hover:scale-110 transition">
-                  <BookOpen className="w-6 h-6" />
+              <div>
+                <div className="toten-card-top">
+                  <div className="toten-card-icon-box emerald">
+                    <BookOpen size={26} />
+                  </div>
+                  <div>
+                    <span className="toten-card-tag" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399' }}>
+                      Educação Lean
+                    </span>
+                    <h3 className="toten-card-title">Aula Rápida com o Sensei</h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Educação Lean
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-emerald-300 transition">
-                    Aula Rápida com o Sensei
-                  </h3>
-                </div>
+                <p className="toten-card-desc">
+                  Pílulas práticas de 1 minuto sobre 5S, eliminação dos 8 desperdícios industriais e qualidade na fonte.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Pílulas práticas de 1 minuto sobre 5S, eliminação dos 8 desperdícios industriais e qualidade na fonte.
-              </p>
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-emerald-400">
+              <div className="toten-card-action" style={{ color: '#34d399' }}>
                 <span>Ver pílulas de conhecimento</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                <ArrowRight size={16} />
               </div>
-            </button>
+            </div>
 
             {/* Opção 3: Desafio do Turno */}
-            <button
-              type="button"
+            <div
               onClick={() => {
                 setView('desafio');
                 setHasAcceptedChallenge(false);
                 onSpeak('Topa um desafio de 2 minutos para elevar o padrão do seu setor hoje?');
               }}
-              className="group p-5 sm:p-6 rounded-2xl bg-slate-900/80 hover:bg-slate-900 border border-white/10 hover:border-amber-500/50 text-left transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(245,158,11,0.2)] hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+              className="toten-card amber"
             >
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition">
-                  <Trophy className="w-6 h-6" />
+              <div>
+                <div className="toten-card-top">
+                  <div className="toten-card-icon-box amber">
+                    <Trophy size={26} />
+                  </div>
+                  <div>
+                    <span className="toten-card-tag" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
+                      Missão Rápida
+                    </span>
+                    <h3 className="toten-card-title">Desafio 5S do Turno</h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Missão Rápida
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-amber-300 transition">
-                    Desafio 5S do Turno
-                  </h3>
-                </div>
+                <p className="toten-card-desc">
+                  Aceite uma missão rápida de 2 minutos no posto: organizar gaveta, recolher itens desnecessários e ganhar o respeito da equipe.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Aceite uma missão rápida de 2 minutos no posto: organizar gaveta, recolher itens desnecessários e ganhar o respeito da equipe.
-              </p>
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-amber-400">
+              <div className="toten-card-action" style={{ color: '#fbbf24' }}>
                 <span>Aceitar desafio</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                <ArrowRight size={16} />
               </div>
-            </button>
+            </div>
 
             {/* Opção 4: Chat com o Sensei IA */}
-            <button
-              type="button"
+            <div
               onClick={() => {
                 setView('chat');
                 setAiResponse(null);
                 onSpeak('Pode perguntar qualquer coisa sobre melhoria contínua, 5S ou segurança no trabalho!');
               }}
-              className="group p-5 sm:p-6 rounded-2xl bg-slate-900/80 hover:bg-slate-900 border border-white/10 hover:border-blue-500/50 text-left transition-all duration-300 shadow-xl hover:shadow-[0_0_25px_rgba(59,130,246,0.2)] hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+              className="toten-card blue"
             >
-              <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30 group-hover:scale-110 transition">
-                  <Bot className="w-6 h-6" />
+              <div>
+                <div className="toten-card-top">
+                  <div className="toten-card-icon-box blue">
+                    <Bot size={26} />
+                  </div>
+                  <div>
+                    <span className="toten-card-tag" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
+                      IA Especialista
+                    </span>
+                    <h3 className="toten-card-title">Conversar com o Sensei</h3>
+                  </div>
                 </div>
-                <div>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    IA Especialista
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-white group-hover:text-blue-300 transition">
-                    Conversar com o Sensei
-                  </h3>
-                </div>
+                <p className="toten-card-desc">
+                  Tire dúvidas por voz sobre procedimentos, ferramentas corretas, ergonomia ou consulte dicas para seu setor.
+                </p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Tire dúvidas por voz sobre procedimentos, ferramentas corretas, ergonomia ou consulte dicas para seu setor.
-              </p>
-              <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-blue-400">
+              <div className="toten-card-action" style={{ color: '#60a5fa' }}>
                 <span>Fazer uma pergunta</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                <ArrowRight size={16} />
               </div>
-            </button>
+            </div>
           </div>
 
-          {/* Rodapé do Menu com Botão de Ideias Cadastradas e Voltar ao Descanso */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 max-w-3xl mx-auto">
+          {/* Rodapé do Menu */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', paddingTop: '8px' }}>
             <button
               type="button"
               onClick={() => setView('lista_ideias')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-white/10 text-xs font-medium text-slate-300 hover:text-white transition cursor-pointer"
+              className="toten-btn-icon"
             >
-              <ListFilter className="w-3.5 h-3.5 text-cyan-400" />
+              <ListFilter size={15} color="#22d3ee" />
               <span>Ver Ideias Cadastradas no Toten ({registeredIdeas.length})</span>
             </button>
 
             <button
               type="button"
               onClick={onReturnToIdle}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-white/10 text-xs font-medium text-slate-400 hover:text-slate-200 transition cursor-pointer"
+              className="toten-btn-icon"
             >
-              <Clock className="w-3.5 h-3.5" />
+              <Clock size={15} />
               <span>Encerrar e Voltar à Espera</span>
             </button>
           </div>
@@ -560,102 +529,83 @@ export function KaizenInteraction({
       )}
 
       {/* ============================================================== */}
-      {/* 2. CANAL KAIZEN (CADASTRO DE IDEIAS POR VOZ OU TELA)          */}
+      {/* 2. CANAL KAIZEN (CADASTRO DE IDEIAS)                          */}
       {/* ============================================================== */}
       {activeView === 'canal_kaizen' && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
-          {/* Cabeçalho do Fluxo */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-5">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setView('menu')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-                title="Voltar ao Menu"
-              >
-                <ArrowLeft className="w-5 h-5" />
+        <div className="toten-flow-box">
+          <div className="toten-flow-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button type="button" onClick={() => setView('menu')} className="toten-back-btn" title="Voltar ao Menu">
+                <ArrowLeft size={18} />
               </button>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-cyan-400" />
+                <h3 className="toten-flow-title">
+                  <Lightbulb size={22} color="#22d3ee" />
                   <span>Canal Kaizen • Chão de Fábrica</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                   {ideaPhase === 'input' && 'Fase 1 de 2: Registre sua ideia por voz ou texto'}
                   {ideaPhase === 'review' && 'Fase 2 de 2: Revise e confirme sua contribuição'}
                   {ideaPhase === 'success' && 'Sucesso: Sua ideia já está na esteira de triagem!'}
-                </p>
+                </span>
               </div>
             </div>
 
             {ideaPhase !== 'success' && (
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                {ideaPhase === 'input' ? 'Etapa de Captação' : 'Revisão'}
+              <span className="toten-card-tag" style={{ background: 'rgba(6, 182, 212, 0.2)', color: '#22d3ee' }}>
+                {ideaPhase === 'input' ? 'Captação' : 'Revisão'}
               </span>
             )}
           </div>
 
-          {/* FASE 1: ENTRADA DE DADOS (VOZ OU TEXTO) */}
+          {/* FASE 1: ENTRADA */}
           {ideaPhase === 'input' && (
-            <div className="space-y-6">
-              <div className="text-center py-2">
-                <p className="text-sm sm:text-base text-slate-200 font-medium">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '1.05rem', fontWeight: 600, color: '#f1f5f9', margin: '0 0 4px 0' }}>
                   Qual problema você enfrentou ou que ideia pode melhorar o seu turno?
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
                   Exemplo: &ldquo;A chave 17 sumiu de novo da bancada&rdquo; ou &ldquo;Podemos colocar uma calha para guiar o refugo&rdquo;.
                 </p>
               </div>
 
-              {/* Botão Gigante de Microfone com Feedback Visual */}
-              <div className="flex flex-col items-center justify-center gap-3 py-4">
+              {/* Botão de Microfone */}
+              <div className="toten-mic-container">
                 <button
                   type="button"
                   onClick={toggleVoiceRecordingForIdea}
                   disabled={isStructuring}
-                  className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center transition-all duration-300 cursor-pointer shadow-2xl relative ${
-                    isVoiceRecording
-                      ? 'bg-red-500 text-white animate-pulse scale-110 shadow-[0_0_40px_rgba(239,68,68,0.6)]'
-                      : 'bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 hover:scale-105 shadow-[0_0_30px_rgba(6,182,212,0.4)]'
-                  }`}
+                  className={`toten-big-mic ${isVoiceRecording ? 'recording' : 'idle'}`}
                 >
-                  {isVoiceRecording ? (
-                    <>
-                      <MicOff className="w-9 h-9" />
-                      <span className="text-[10px] font-bold mt-1 uppercase">Parar</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-9 h-9" />
-                      <span className="text-[10px] font-bold mt-1 uppercase">Falar Ideia</span>
-                    </>
-                  )}
+                  {isVoiceRecording ? <MicOff size={36} /> : <Mic size={36} />}
+                  <span style={{ fontSize: '10px', fontWeight: 800, marginTop: '4px', textTransform: 'uppercase' }}>
+                    {isVoiceRecording ? 'Parar' : 'Falar Ideia'}
+                  </span>
                 </button>
-                <span className="text-xs font-semibold text-cyan-300">
-                  {isVoiceRecording ? 'Gravando... Fale com clareza perto da tela!' : 'Toque no microfone para gravar por voz'}
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#22d3ee' }}>
+                  {isVoiceRecording ? 'Gravando... Fale perto da tela!' : 'Toque no microfone para falar sua ideia'}
                 </span>
               </div>
 
-              {/* Ou Digite no Teclado */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/10" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-slate-900 px-3 text-slate-400">Ou digite diretamente</span>
-                </div>
+              {/* Ou Digite */}
+              <div style={{ textAlign: 'center', position: 'relative' }}>
+                <hr style={{ borderColor: 'rgba(255, 255, 255, 0.1)', margin: '10px 0' }} />
+                <span style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: '#0f172a', padding: '0 12px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase' }}>
+                  Ou digite diretamente
+                </span>
               </div>
 
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <textarea
                   value={rawIdeaInput}
                   onChange={(e) => setRawIdeaInput(e.target.value)}
                   placeholder="Descreva aqui sua oportunidade de melhoria..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-sm text-slate-200 placeholder-slate-500 focus:outline-none transition resize-none"
+                  className="toten-textarea"
                 />
 
-                <div className="flex justify-end gap-3">
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -663,16 +613,16 @@ export function KaizenInteraction({
                       structureIdeaProposal(rawIdeaInput);
                     }}
                     disabled={!rawIdeaInput.trim() || isStructuring}
-                    className="px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer"
+                    className="toten-submit-btn"
                   >
                     {isStructuring ? (
                       <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Estruturando Ideia...</span>
+                        <RefreshCw size={16} className="animate-spin" />
+                        <span>Estruturando com o Sensei...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles size={16} />
                         <span>Avançar para Revisão</span>
                       </>
                     )}
@@ -682,57 +632,52 @@ export function KaizenInteraction({
             </div>
           )}
 
-          {/* FASE 2: REVISÃO E IDENTIFICAÇÃO DO COLABORADOR */}
+          {/* FASE 2: REVISÃO */}
           {ideaPhase === 'review' && (
-            <form onSubmit={handleConfirmIdeaSubmission} className="space-y-4">
+            <form onSubmit={handleConfirmIdeaSubmission} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {formError && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#fca5a5', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertCircle size={16} />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Título da Ideia */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Título da Oportunidade Kaizen:
-                  </label>
+              <div className="toten-form-grid">
+                <div className="toten-input-group full">
+                  <label className="toten-label">Título da Oportunidade Kaizen:</label>
                   <input
                     type="text"
                     value={ideaTitle}
                     onChange={(e) => setIdeaTitle(e.target.value)}
                     required
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-sm text-white focus:outline-none"
+                    className="toten-input"
                   />
                 </div>
 
-                {/* Nome do Colaborador (Obrigatório) */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="toten-input-group">
+                  <label className="toten-label">
+                    <User size={14} color="#22d3ee" />
                     <span>Seu Nome Completo:</span>
                   </label>
                   <input
                     type="text"
                     value={ideaAuthor}
                     onChange={(e) => setIdeaAuthor(e.target.value)}
-                    placeholder="Ex: João da Silva"
+                    placeholder="Ex: Carlos Silva"
                     required
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-sm text-white focus:outline-none"
+                    className="toten-input"
                   />
                 </div>
 
-                {/* Setor de Trabalho */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="toten-input-group">
+                  <label className="toten-label">
+                    <Building2 size={14} color="#22d3ee" />
                     <span>Setor da Fábrica:</span>
                   </label>
                   <select
                     value={selectedSectorId}
                     onChange={(e) => setSelectedSectorId(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-sm text-white focus:outline-none"
+                    className="toten-select"
                   >
                     {sectors.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -743,15 +688,12 @@ export function KaizenInteraction({
                   </select>
                 </div>
 
-                {/* Categoria */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Categoria da Melhoria:
-                  </label>
+                <div className="toten-input-group full">
+                  <label className="toten-label">Categoria da Melhoria:</label>
                   <select
                     value={ideaCategory}
                     onChange={(e) => setIdeaCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-sm text-white focus:outline-none"
+                    className="toten-select"
                   >
                     <option value="5S & Organização">5S & Organização</option>
                     <option value="Segurança no Trabalho">Segurança no Trabalho</option>
@@ -762,97 +704,105 @@ export function KaizenInteraction({
                   </select>
                 </div>
 
-                {/* Problema Observado */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Problema Observado no Posto:
-                  </label>
+                <div className="toten-input-group">
+                  <label className="toten-label">Problema Observado:</label>
                   <textarea
                     value={ideaProblem}
                     onChange={(e) => setIdeaProblem(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-xs text-slate-200 focus:outline-none resize-none"
+                    className="toten-textarea"
                   />
                 </div>
 
-                {/* Solução Proposta */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Solução Prática Sugerida:
-                  </label>
+                <div className="toten-input-group">
+                  <label className="toten-label">Solução Prática Sugerida:</label>
                   <textarea
                     value={ideaSolution}
                     onChange={(e) => setIdeaSolution(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-xs text-slate-200 focus:outline-none resize-none"
+                    className="toten-textarea"
                   />
                 </div>
 
-                {/* Benefícios */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Ganhos Esperados (Segurança, Tempo ou Ergonomia):
-                  </label>
+                <div className="toten-input-group full">
+                  <label className="toten-label">Ganhos Esperados (Segurança, Tempo ou Ergonomia):</label>
                   <input
                     type="text"
                     value={ideaBenefits}
                     onChange={(e) => setIdeaBenefits(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl bg-slate-950/80 border border-white/10 focus:border-cyan-400 text-xs text-slate-200 focus:outline-none"
+                    className="toten-input"
                   />
                 </div>
               </div>
 
-              {/* Ações */}
-              <div className="flex items-center justify-between pt-3 border-t border-white/10">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <button
                   type="button"
                   onClick={() => setIdeaPhase('input')}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition"
+                  className="toten-btn-icon"
                 >
                   Voltar e Ajustar
                 </button>
 
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition shadow-lg cursor-pointer"
-                >
-                  <Send className="w-4 h-4" />
+                <button type="submit" className="toten-submit-btn">
+                  <Send size={16} />
                   <span>Confirmar e Cadastrar Ideia</span>
                 </button>
               </div>
             </form>
           )}
 
-          {/* FASE 3: SUCESSO E PROTOCOLO OFICIAL */}
+          {/* FASE 3: SUCESSO */}
           {ideaPhase === 'success' && lastSubmittedIdea && (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center mx-auto animate-bounce">
-                <CheckCircle2 className="w-9 h-9" />
+            <div style={{ textAlign: 'center', padding: '24px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  border: '2px solid #34d399',
+                  color: '#34d399',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CheckCircle2 size={36} />
               </div>
 
-              <div className="space-y-1">
-                <h4 className="text-xl sm:text-2xl font-black text-white">
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 900, color: '#ffffff' }}>
                   Ideia Registrada com Sucesso!
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-300">
-                  Parabéns, <strong className="text-cyan-400">{lastSubmittedIdea.authorName}</strong>! Sua iniciativa foi integrada ao banco oficial de melhorias.
+                <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#cbd5e1' }}>
+                  Parabéns, <strong style={{ color: '#22d3ee' }}>{lastSubmittedIdea.authorName}</strong>! Sua iniciativa foi integrada à base do Canal Kaizen.
                 </p>
               </div>
 
-              {/* Protocolo em Destaque */}
-              <div className="inline-block p-4 rounded-2xl bg-slate-950 border border-cyan-500/40 shadow-xl max-w-md w-full">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              <div
+                style={{
+                  padding: '16px 24px',
+                  borderRadius: '16px',
+                  background: '#090e1a',
+                  border: '1px solid rgba(6, 182, 212, 0.45)',
+                  boxShadow: '0 0 25px rgba(6, 182, 212, 0.25)',
+                  width: '100%',
+                  maxWidth: '420px',
+                }}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
                   Protocolo Oficial de Acompanhamento
                 </span>
-                <span className="text-2xl sm:text-3xl font-mono font-black text-cyan-400 tracking-wider">
+                <span style={{ fontSize: '1.85rem', fontWeight: 900, fontFamily: 'var(--font-mono, monospace)', color: '#22d3ee' }}>
                   {lastSubmittedIdea.protocol}
                 </span>
-                <p className="text-xs text-slate-400 mt-2">
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '6px 0 0' }}>
                   Setor: {lastSubmittedIdea.sectorName} • Origem: Toten Chão de Fábrica
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button
                   type="button"
                   onClick={() => {
@@ -862,7 +812,7 @@ export function KaizenInteraction({
                     setIdeaProblem('');
                     setIdeaSolution('');
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm transition cursor-pointer"
+                  className="toten-submit-btn"
                 >
                   Cadastrar Outra Ideia
                 </button>
@@ -870,7 +820,8 @@ export function KaizenInteraction({
                 <button
                   type="button"
                   onClick={() => setView('menu')}
-                  className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm transition cursor-pointer"
+                  className="toten-btn-icon"
+                  style={{ padding: '12px 20px', fontSize: '13px' }}
                 >
                   Voltar ao Menu Principal
                 </button>
@@ -881,77 +832,95 @@ export function KaizenInteraction({
       )}
 
       {/* ============================================================== */}
-      {/* 3. AULA RÁPIDA COM O SENSEI (PÍLULAS LEAN & 5S)               */}
+      {/* 3. AULA RÁPIDA COM O SENSEI                                   */}
       {/* ============================================================== */}
       {activeView === 'aula' && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setView('menu')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-              >
-                <ArrowLeft className="w-5 h-5" />
+        <div className="toten-flow-box">
+          <div className="toten-flow-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button type="button" onClick={() => setView('menu')} className="toten-back-btn">
+                <ArrowLeft size={18} />
               </button>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-emerald-400" />
+                <h3 className="toten-flow-title">
+                  <BookOpen size={22} color="#34d399" />
                   <span>Aula Rápida com o Sensei</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                   Pílula {currentPillIndex + 1} de {TOTEN_KAIZEN_PILLS.length}
-                </p>
+                </span>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+            <span className="toten-card-tag" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399' }}>
               {TOTEN_KAIZEN_PILLS[currentPillIndex].tag}
             </span>
           </div>
 
-          {/* Conteúdo da Pílula */}
-          <div className="p-6 rounded-2xl bg-slate-950/80 border border-white/10 space-y-4">
-            <div className="space-y-1">
-              <h4 className="text-xl sm:text-2xl font-black text-white">
+          <div
+            style={{
+              padding: '24px',
+              borderRadius: '16px',
+              background: '#090e1a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#ffffff' }}>
                 {TOTEN_KAIZEN_PILLS[currentPillIndex].title}
               </h4>
-              <p className="text-xs sm:text-sm font-medium text-emerald-400">
+              <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 600, color: '#34d399' }}>
                 {TOTEN_KAIZEN_PILLS[currentPillIndex].subtitle}
               </p>
             </div>
 
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed">
+            <p style={{ fontSize: '14px', color: '#e2e8f0', lineHeight: 1.6, margin: 0 }}>
               {TOTEN_KAIZEN_PILLS[currentPillIndex].content}
             </p>
 
-            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 font-medium flex items-center gap-2">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span>Dica de Ouro: {TOTEN_KAIZEN_PILLS[currentPillIndex].tip}</span>
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                color: '#6ee7b7',
+                fontSize: '12px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <Sparkles size={16} color="#34d399" />
+              <span>Dica do Mestre: {TOTEN_KAIZEN_PILLS[currentPillIndex].tip}</span>
             </div>
           </div>
 
-          {/* Navegação entre pílulas e Botão Ouvir */}
-          <div className="flex items-center justify-between pt-2">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px' }}>
             <button
               type="button"
               onClick={() => {
                 const p = TOTEN_KAIZEN_PILLS[currentPillIndex];
                 onSpeak(`${p.title}. ${p.subtitle}. ${p.content}. ${p.tip}`);
               }}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-cyan-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="toten-btn-icon"
+              style={{ color: '#22d3ee' }}
             >
-              <Volume2 className="w-4 h-4" />
+              <Volume2 size={16} />
               <span>Ouvir Aula</span>
             </button>
 
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
                 onClick={() =>
                   setCurrentPillIndex((prev) => (prev > 0 ? prev - 1 : TOTEN_KAIZEN_PILLS.length - 1))
                 }
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition"
+                className="toten-btn-icon"
               >
                 Anterior
               </button>
@@ -960,7 +929,8 @@ export function KaizenInteraction({
                 onClick={() =>
                   setCurrentPillIndex((prev) => (prev + 1) % TOTEN_KAIZEN_PILLS.length)
                 }
-                className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition cursor-pointer"
+                className="toten-submit-btn"
+                style={{ background: '#10b981', color: '#ffffff' }}
               >
                 Próxima Pílula
               </button>
@@ -970,52 +940,85 @@ export function KaizenInteraction({
       )}
 
       {/* ============================================================== */}
-      {/* 4. DESAFIO DO TURNO (AÇÃO PRÁTICA 5S DE 2 MINUTOS)           */}
+      {/* 4. DESAFIO DO TURNO                                           */}
       {/* ============================================================== */}
       {activeView === 'desafio' && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setView('menu')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-              >
-                <ArrowLeft className="w-5 h-5" />
+        <div className="toten-flow-box">
+          <div className="toten-flow-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button type="button" onClick={() => setView('menu')} className="toten-back-btn">
+                <ArrowLeft size={18} />
               </button>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-amber-400" />
+                <h3 className="toten-flow-title">
+                  <Trophy size={22} color="#fbbf24" />
                   <span>Desafio do Turno • Ação 5S</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                   Pequenas ações imediatas geram grande transformação.
-                </p>
+                </span>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+            <span className="toten-card-tag" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' }}>
               Missão Gemba
             </span>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-950/80 border border-white/10 space-y-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mx-auto">
-              <Flame className="w-7 h-7" />
+          <div
+            style={{
+              padding: '28px',
+              borderRadius: '16px',
+              background: '#090e1a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '16px',
+            }}
+          >
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '16px',
+                background: 'rgba(245, 158, 11, 0.2)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                color: '#fbbf24',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Flame size={28} />
             </div>
 
-            <div className="space-y-1">
-              <h4 className="text-xl sm:text-2xl font-black text-white">
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#ffffff' }}>
                 Missão: Bancada 100% Padrão
               </h4>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
+              <p style={{ margin: '6px 0 0', fontSize: '13px', color: '#cbd5e1', maxWidth: '480px' }}>
                 Dedique 2 minutos antes de encerrar seu ciclo para guardar cada ferramenta na sua demarcação e retirar 3 itens inúteis da sua área.
               </p>
             </div>
 
             {hasAcceptedChallenge ? (
-              <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 animate-bounce">
-                <Check className="w-5 h-5" />
+              <div
+                style={{
+                  padding: '14px 24px',
+                  borderRadius: '14px',
+                  background: 'rgba(16, 185, 129, 0.18)',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  color: '#34d399',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Check size={18} />
                 <span>Desafio Aceito! O Sensei confia na sua dedicação no turno!</span>
               </div>
             ) : (
@@ -1023,10 +1026,13 @@ export function KaizenInteraction({
                 type="button"
                 onClick={() => {
                   setHasAcceptedChallenge(true);
-                  confetti({ particleCount: 80, spread: 70 });
+                  try {
+                    confetti({ particleCount: 80, spread: 70 });
+                  } catch (_) {}
                   onSpeak('Desafio aceito! Esse é o espírito Kaizen de autodisciplina! Bom trabalho!');
                 }}
-                className="px-8 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-sm transition shadow-xl hover:scale-105 cursor-pointer"
+                className="toten-submit-btn"
+                style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)', color: '#090e1a' }}
               >
                 Eu Aceito o Desafio!
               </button>
@@ -1036,76 +1042,81 @@ export function KaizenInteraction({
       )}
 
       {/* ============================================================== */}
-      {/* 5. CONVERSAR COM O SENSEI (CHAT POR VOZ OU TEXTO)             */}
+      {/* 5. CONVERSAR COM O SENSEI IA                                  */}
       {/* ============================================================== */}
       {activeView === 'chat' && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-blue-500/30 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setView('menu')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-              >
-                <ArrowLeft className="w-5 h-5" />
+        <div className="toten-flow-box">
+          <div className="toten-flow-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button type="button" onClick={() => setView('menu')} className="toten-back-btn">
+                <ArrowLeft size={18} />
               </button>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-blue-400" />
+                <h3 className="toten-flow-title">
+                  <Bot size={22} color="#60a5fa" />
                   <span>Pergunte ao Sensei Kaizen</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Respostas instantâneas sobre segurança, 5S, TPM e ergonomia.
-                </p>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  Respostas sobre segurança, 5S, TPM e ergonomia.
+                </span>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">
+            <span className="toten-card-tag" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
               Voz Ativa
             </span>
           </div>
 
-          {/* Resposta do Sensei */}
-          <div className="min-h-[140px] p-5 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-center">
+          <div
+            style={{
+              minHeight: '140px',
+              padding: '20px',
+              borderRadius: '16px',
+              background: '#090e1a',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             {isAiLoading ? (
-              <div className="flex items-center gap-2.5 text-cyan-400 text-sm font-semibold animate-pulse">
-                <RefreshCw className="w-5 h-5 animate-spin" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#22d3ee', fontWeight: 700 }}>
+                <RefreshCw size={20} className="animate-spin" />
                 <span>O Sensei está formulando o ensinamento...</span>
               </div>
             ) : aiResponse ? (
-              <div className="space-y-3 text-left w-full">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Ensinamento do Sensei:</span>
+              <div style={{ width: '100%', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: '#22d3ee' }}>
+                    Ensinamento do Sensei:
                   </span>
                   <button
                     type="button"
                     onClick={() => onSpeak(aiResponse)}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 transition"
-                    title="Repetir Áudio"
+                    className="toten-btn-icon"
+                    style={{ padding: '4px 8px' }}
                   >
-                    <Volume2 className="w-4 h-4" />
+                    <Volume2 size={14} color="#22d3ee" />
                   </button>
                 </div>
-                <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-medium">
+                <p style={{ margin: 0, fontSize: '14px', color: '#f1f5f9', lineHeight: 1.6, fontWeight: 500 }}>
                   &ldquo;{aiResponse}&rdquo;
                 </p>
               </div>
             ) : (
-              <p className="text-xs sm:text-sm text-slate-400 italic text-center">
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
                 Toque no microfone ou digite uma dúvida sobre ferramentas, 5S ou procedimentos do turno.
               </p>
             )}
           </div>
 
-          {/* Pergunta Rápida Pronta */}
-          <div className="flex flex-wrap gap-2">
+          {/* Dúvidas Rápidas Prontas */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {[
               'O que é 5S?',
               'Como evitar peças com defeito?',
               'Qual a importância do Poka-Yoke?',
-              'Como manter a bancada limpa na correria?',
+              'Como manter a bancada limpa?',
             ].map((q) => (
               <button
                 key={q}
@@ -1114,7 +1125,7 @@ export function KaizenInteraction({
                   setChatInput(q);
                   handleAskSensei(q);
                 }}
-                className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-white/10 text-xs text-slate-300 hover:text-white transition cursor-pointer"
+                className="toten-btn-icon"
               >
                 {q}
               </button>
@@ -1122,18 +1133,15 @@ export function KaizenInteraction({
           </div>
 
           {/* Input de Mensagem */}
-          <div className="flex items-center gap-2 pt-2">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '6px' }}>
             <button
               type="button"
               onClick={toggleVoiceRecordingForChat}
-              className={`p-3 rounded-xl transition cursor-pointer shrink-0 ${
-                isChatListening
-                  ? 'bg-red-500 text-white animate-pulse'
-                  : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
-              }`}
+              className={`toten-btn-icon ${isChatListening ? 'active' : ''}`}
+              style={{ padding: '12px', background: isChatListening ? '#ef4444' : undefined }}
               title={isChatListening ? 'Ouvindo...' : 'Falar Pergunta'}
             >
-              {isChatListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              {isChatListening ? <MicOff size={18} /> : <Mic size={18} color="#22d3ee" />}
             </button>
 
             <input
@@ -1142,16 +1150,18 @@ export function KaizenInteraction({
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAskSensei()}
               placeholder="Digite sua dúvida para o Sensei..."
-              className="flex-1 px-4 py-3 rounded-xl bg-slate-950 border border-white/10 focus:border-cyan-400 text-sm text-white focus:outline-none"
+              className="toten-input"
+              style={{ flex: 1 }}
             />
 
             <button
               type="button"
               onClick={() => handleAskSensei()}
               disabled={!chatInput.trim() || isAiLoading}
-              className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-cyan-400 font-bold transition cursor-pointer shrink-0"
+              className="toten-submit-btn"
+              style={{ padding: '12px 18px' }}
             >
-              <Send className="w-5 h-5" />
+              <Send size={16} />
             </button>
           </div>
         </div>
@@ -1161,24 +1171,20 @@ export function KaizenInteraction({
       {/* 6. LISTA DE IDEIAS DO TOTEN                                   */}
       {/* ============================================================== */}
       {activeView === 'lista_ideias' && (
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
-          <div className="flex items-center justify-between pb-4 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setView('menu')}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
-              >
-                <ArrowLeft className="w-5 h-5" />
+        <div className="toten-flow-box">
+          <div className="toten-flow-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button type="button" onClick={() => setView('menu')} className="toten-back-btn">
+                <ArrowLeft size={18} />
               </button>
               <div>
-                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-                  <ListFilter className="w-5 h-5 text-cyan-400" />
+                <h3 className="toten-flow-title">
+                  <ListFilter size={22} color="#22d3ee" />
                   <span>Ideias Cadastradas no Toten</span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                   Histórico de sugestões enviadas pelo chão de fábrica.
-                </p>
+                </span>
               </div>
             </div>
 
@@ -1188,50 +1194,71 @@ export function KaizenInteraction({
                 setView('canal_kaizen');
                 setIdeaPhase('input');
               }}
-              className="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition cursor-pointer"
+              className="toten-submit-btn"
+              style={{ padding: '8px 16px', fontSize: '12px' }}
             >
               + Nova Ideia
             </button>
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto space-y-3 pr-1">
+          <div style={{ maxHeight: '360px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
             {registeredIdeas.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', fontSize: '13px' }}>
                 Nenhuma ideia cadastrada pelo Toten ainda. Seja o primeiro a registrar!
               </div>
             ) : (
               registeredIdeas.map((idea) => (
                 <div
                   key={idea.id}
-                  className="p-4 rounded-2xl bg-slate-950/70 border border-white/5 hover:border-cyan-500/30 transition space-y-2"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    background: '#090e1a',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-cyan-400">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', color: '#22d3ee' }}>
                       {idea.protocol}
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        idea.status === 'aprovada'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : idea.status === 'rejeitada'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                      }`}
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background:
+                          idea.status === 'aprovada'
+                            ? 'rgba(16, 185, 129, 0.2)'
+                            : idea.status === 'rejeitada'
+                            ? 'rgba(239, 68, 68, 0.2)'
+                            : 'rgba(245, 158, 11, 0.2)',
+                        color:
+                          idea.status === 'aprovada'
+                            ? '#34d399'
+                            : idea.status === 'rejeitada'
+                            ? '#f87171'
+                            : '#fbbf24',
+                      }}
                     >
                       {idea.status}
                     </span>
                   </div>
 
-                  <h5 className="text-sm font-bold text-white">
+                  <h5 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#ffffff' }}>
                     {idea.title || idea.summary.split('|')[0]}
                   </h5>
 
-                  <p className="text-xs text-slate-300 line-clamp-2">
+                  <p style={{ margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5 }}>
                     {idea.problem || idea.summary}
                   </p>
 
-                  <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>Autor: <strong className="text-slate-200">{idea.authorName}</strong></span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <span>Autor: <strong style={{ color: '#e2e8f0' }}>{idea.authorName}</strong></span>
                     <span>Setor: {idea.sectorName}</span>
                   </div>
                 </div>

@@ -10,7 +10,7 @@ import { KaizenInteraction, InteractionView } from '@/components/toten/KaizenInt
 import { CameraFeed } from '@/components/toten/CameraFeed';
 import { HeaderNav } from '@/components/toten/HeaderNav';
 import { SenseiState } from '@/lib/types';
-import { SwitchCamera, Eye, Zap } from 'lucide-react';
+import { SwitchCamera, Eye } from 'lucide-react';
 
 export default function TotenPage() {
   const [senseiState, setSenseiState] = useState<SenseiState>('idle');
@@ -18,25 +18,25 @@ export default function TotenPage() {
 
   const { speak, isMuted, toggleMute, isSpeaking } = useSpeechSynthesis();
 
-  // Screen Wake Lock API para manter o quiosque sempre aceso no chão de fábrica
+  // Wake Lock API seguro contra rejeições
   useEffect(() => {
     let wakeLock: any = null;
     const requestWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator) {
+        if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
           wakeLock = await (navigator as any).wakeLock.request('screen');
         }
-      } catch (err) {
-        console.warn('[TotenPage] Wake Lock indisponível:', err);
-      }
+      } catch (_) {}
     };
 
     requestWakeLock();
 
     return () => {
-      if (wakeLock) {
-        wakeLock.release().catch(() => {});
-      }
+      try {
+        if (wakeLock) {
+          wakeLock.release().catch(() => {});
+        }
+      } catch (_) {}
     };
   }, []);
 
@@ -44,7 +44,6 @@ export default function TotenPage() {
     setSenseiState(st);
   }, []);
 
-  // Quando alguém se aproxima do totem
   const handlePersonEnter = useCallback(() => {
     setInteractionView('menu');
     setSenseiState((prev) => {
@@ -53,7 +52,6 @@ export default function TotenPage() {
     });
   }, []);
 
-  // Quando a pessoa sai do raio de visão e o timeout expira (15 segundos)
   const handlePersonLeave = useCallback(() => {
     setSenseiState('idle');
     setInteractionView('menu');
@@ -89,11 +87,11 @@ export default function TotenPage() {
   }, [resetPresence]);
 
   return (
-    <main className="relative min-h-screen flex flex-col justify-between overflow-hidden bg-slate-950 text-slate-100">
-      {/* Elemento de vídeo oculto persistentemente na DOM */}
-      <video ref={videoRef} playsInline autoPlay muted className="hidden" />
+    <main className="toten-root">
+      {/* Elemento de vídeo oculto na DOM para stream óptico */}
+      <video ref={videoRef} playsInline autoPlay muted style={{ display: 'none' }} />
 
-      {/* Grade de Radar de fundo */}
+      {/* Radar animado de fundo em CSS */}
       <RadarScanner isScanning={senseiState === 'idle'} />
 
       {/* Cabeçalho do Toten Kiosk */}
@@ -106,10 +104,10 @@ export default function TotenPage() {
       />
 
       {/* Arena Interativa Central */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-between px-3 sm:px-6 py-3 sm:py-5 w-full max-w-5xl mx-auto">
+      <div className="toten-arena">
         {/* Mascote Sensei */}
-        <div className="w-full flex flex-col items-center justify-center flex-1">
-          <div className="mb-2 sm:mb-3">
+        <div className="toten-mascot-wrapper">
+          <div style={{ marginBottom: '12px' }}>
             <SenseiAvatar
               state={senseiState}
               isSpeaking={isSpeaking}
@@ -118,71 +116,75 @@ export default function TotenPage() {
           </div>
 
           {senseiState === 'idle' && (
-            <div className="w-full flex justify-center mb-2">
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
               <IdleScreensaver />
             </div>
           )}
         </div>
 
-        {/* Área Dinâmica: Standby vs Ativo */}
+        {/* Modo Espera vs Modo Ativo */}
         {senseiState === 'idle' ? (
-          /* Modo Espera: Scanner de Presença com Tela de Toque */
-          <div className="w-full max-w-4xl px-2 sm:px-4 pb-2 sm:pb-4">
+          /* Modo Espera: Scanner de Presença com Toque na Tela */
+          <div className="toten-scanner-container">
             <div
               onClick={triggerSimulation}
-              className="relative aspect-video sm:aspect-[16/9] min-h-[280px] sm:min-h-[380px] max-h-[48vh] w-full rounded-3xl overflow-hidden border-2 border-cyan-500/50 bg-slate-950/90 shadow-[0_0_40px_rgba(6,182,212,0.3)] flex items-center justify-center cursor-pointer group"
+              className="toten-scanner-frame"
               title="Toque na tela para iniciar o atendimento do Sensei"
             >
               <canvas
                 ref={canvasRef}
-                className={`w-full h-full object-cover ${
-                  facingMode === 'user' ? 'transform -scale-x-100' : ''
-                }`}
+                className="toten-scanner-canvas"
+                style={{
+                  transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                }}
               />
 
-              {/* Laser de varredura visual */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent animate-pulse" />
+              {/* Laser de varredura */}
+              <div className="toten-scanner-laser" />
 
-              {/* Cantoneiras Futuristas */}
-              <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-cyan-400 pointer-events-none" />
-              <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-cyan-400 pointer-events-none" />
-              <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-cyan-400 pointer-events-none" />
-              <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-cyan-400 pointer-events-none" />
+              {/* Cantoneiras cibernéticas */}
+              <div className="toten-bracket-tl" />
+              <div className="toten-bracket-tr" />
+              <div className="toten-bracket-bl" />
+              <div className="toten-bracket-br" />
 
               {/* Tag de Topo */}
-              <div className="absolute top-3 left-3 ml-7 px-3.5 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-cyan-500/50 text-[11px] font-bold text-cyan-300 flex items-center gap-2 uppercase tracking-wider shadow-lg">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+              <div className="toten-scanner-badge">
+                <span className="toten-status-dot standby" style={{ width: '8px', height: '8px' }} />
                 <span>Sensor Óptico de Presença • Campo Aberto</span>
               </div>
 
-              {/* Botão de Troca de Câmera */}
+              {/* Botão de Trocar Câmera */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleFacingMode();
                 }}
-                className="absolute top-3 right-3 mr-7 px-3.5 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-white/10 hover:border-cyan-400 text-[11px] font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer shadow-lg"
+                className="toten-btn-icon"
+                style={{
+                  position: 'absolute',
+                  top: '14px',
+                  right: '14px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                }}
                 title="Trocar Câmera Frontal / Traseira"
               >
-                <SwitchCamera className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">
-                  {facingMode === 'user' ? 'Frontal' : 'Traseira'}
-                </span>
+                <SwitchCamera size={13} color="#22d3ee" />
+                <span>{facingMode === 'user' ? 'Frontal' : 'Traseira'}</span>
               </button>
 
-              {/* Guia de Ação */}
-              <div className="absolute bottom-4 inset-x-0 mx-auto text-center px-4 pointer-events-none">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 text-xs sm:text-sm font-medium text-cyan-200 shadow-xl group-hover:border-cyan-400 transition">
-                  <Eye className="w-4 h-4 text-cyan-400 animate-pulse shrink-0" />
-                  <span>Aproxime-se ou toque na tela para interagir com o Sensei</span>
-                </div>
+              {/* Instrução de Toque no Rodapé do Feed */}
+              <div className="toten-scanner-touch-hint">
+                <Eye size={16} color="#22d3ee" />
+                <span>Aproxime-se ou toque na tela para interagir com o Sensei</span>
               </div>
             </div>
           </div>
         ) : (
           /* Modo Interativo: Menus e Formulários Kaizen */
-          <div className="w-full flex justify-center flex-1 items-center py-2">
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', flex: 1, alignItems: 'center', padding: '8px 0' }}>
             <KaizenInteraction
               personDetected={detection.hasPerson}
               onSpeak={speak}
@@ -195,35 +197,33 @@ export default function TotenPage() {
         )}
       </div>
 
-      {/* Barra de Status do Quiosque */}
-      <footer className="relative z-20 w-full px-6 py-3 border-t border-white/5 bg-slate-950/60 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+      {/* Barra de Status Inferior */}
+      <footer className="toten-footer">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="toten-status-dot active" style={{ width: '7px', height: '7px' }} />
+          <span style={{ fontWeight: 600, color: '#94a3b8' }}>
             Toten Kiosk • Canal Kaizen & Sensei IA
           </span>
           <span>•</span>
-          <span className="text-slate-400">Desenvolvido para Chão de Fábrica & Melhoria Contínua</span>
+          <span>Chão de Fábrica & Melhoria Contínua</span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-slate-400">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span>
             {cameraActive
-              ? `Câmera: Ativa (${facingMode === 'user' ? 'Frontal' : 'Traseira'})`
+              ? `Câmera Ativa (${facingMode === 'user' ? 'Frontal' : 'Traseira'})`
               : isSimulated
-              ? 'Modo: Simulação / Touch'
-              : isLoadingModel
-              ? 'Carregando sensor...'
+              ? 'Modo: Simulação / Toque'
               : 'Sensor: Em espera'}
           </span>
           <span>•</span>
-          <span className="text-cyan-400 font-mono">
+          <span style={{ color: '#22d3ee', fontFamily: 'monospace', fontWeight: 700 }}>
             {detection.hasPerson ? `Presença Ativa (${detection.personCount})` : 'Standby'}
           </span>
         </div>
       </footer>
 
-      {/* Painel Retrátil de Diagnóstico */}
+      {/* Painel Retrátil de Diagnóstico Óptico */}
       <CameraFeed
         cameraActive={cameraActive}
         cameraError={cameraError}
