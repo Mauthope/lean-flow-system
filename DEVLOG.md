@@ -3,6 +3,26 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-13] Correção do Fluxo de Aprovação de Ideias do Canal Kaizen & Sincronização Não-Destrutiva
+**Agentes Responsáveis:** `cleancod`, `security-expert`, `designer`, `chronicler`  
+**Escopo:** Correção da sincronização de nuvem em `src/services/dataService.ts`, tratamento de Foreign Keys no Supabase, aprovação assíncrona com transição de abas e feedback em `src/app/admin/canal-kaizen/page.tsx`.
+
+### 1. Diagnóstico da Causa Raiz
+- **Sobrescrita Destrutiva no Sync da Nuvem (`syncKaizenIdeasFromCloud`):** Ao aprovar uma ideia, o método `approveKaizenIdea` persistia a alteração no LocalStorage e acionava a nuvem de forma desacoplada em background. Imediatamente a seguir, o método `refreshData()` executava um `select('*')` no Supabase antes que o update na nuvem estivesse concluído. O mapeador sobrescrevia a ideia local de volta para `status: 'pendente'` e eliminava todos os metadados enriquecidos locais (`responsibleName`, `estimatedCostAvoided`, `photoUrl`, `checklist`, etc.).
+- **Risco de Violação de Foreign Key (`persistKaizenIdeaToCloud`):** Caso o `sector_id` registrado no Toten (ou localmente) não existisse previamente na tabela `public.sectors` do Supabase, o banco retornava erro `23503`, impedindo a persistência da aprovação na nuvem.
+- **Ausência de Transição Ativa na UI:** Ao submeter a aprovação, o usuário permanecia na aba "Banco de Ideias", gerando a falsa impressão de inação caso a ideia continuasse visível como pendente.
+
+### 2. Ações Implementadas
+- **`dataService.ts`:**
+  - `persistKaizenIdeaToCloud`: Sanitização prévia de `sector_id` e mecanismo de retry automático com `sector_id: null` em caso de erro 23503.
+  - `syncKaizenIdeasFromCloud`: Fusão profunda não-destrutiva com o mapa local (`localMap`), garantindo que status `'aprovada'` ou `'rejeitada'` locais nunca sofram downgrade por dados desatualizados da nuvem, além de preservar 100% dos campos locais.
+  - `approveKaizenIdea` e `rejectKaizenIdea`: Convertidos para métodos assíncronos (`Promise<KaizenIdea>`), aguardando confirmação no banco Supabase antes de disparar atualizações em cascata.
+- **`admin/canal-kaizen/page.tsx`:**
+  - `handleConfirmApproval`: Fluxo assíncrono com feedback visual (`isSubmittingApproval`), transição imediata para a aba `setActiveTab('aprovadas')` e celebração visual com confetti.
+  - Botão de submissão com estado de carregamento desabilitado contra cliques repetidos.
+- **Validação de Build:**
+  - Compilação `npm run build` executada com sucesso com zero erros de tipagem TypeScript (43 páginas compiladas).
+
 ---
 
 ## [2026-10-13] Correção Crítica de Posicionamento de Modais e Resiliência no Cadastro de Agentes Lean

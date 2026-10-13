@@ -13,6 +13,7 @@ import {
   MonthlyResultEntry,
   QuarterlyFollowUp,
   KaizenIdea,
+  KaizenIdeaStatus,
   TpmMachine,
   TpmAudit,
   TpmTag,
@@ -2956,21 +2957,44 @@ export const dataService = {
   async persistKaizenIdeaToCloud(idea: KaizenIdea): Promise<void> {
     if (!isSupabaseConfigured()) return;
     try {
-      const { error } = await supabase.from('kaizen_ideas').upsert(
-        {
-          id: idea.id,
-          tenant_id: idea.tenantId,
-          protocol: idea.protocol,
-          title: idea.summary || 'Ideia Kaizen',
-          description: idea.summary || '',
-          sector_id: idea.sectorId || null,
-          author_name: idea.authorName,
-          status: idea.status || 'pendente',
-          triage_notes: idea.rejectionReason || null,
-          updated_at: new Date().toISOString(),
-        },
+      // 1. Validar e sanitizar sector_id para evitar violação de Foreign Key (23503)
+      let safeSectorId: string | null = null;
+      if (idea.sectorId && idea.sectorId !== 'geral' && idea.sectorId !== 'all') {
+        const { data: secData, error: secErr } = await supabase
+          .from('sectors')
+          .select('id')
+          .eq('id', idea.sectorId)
+          .maybeSingle();
+        if (!secErr && secData) {
+          safeSectorId = secData.id;
+        }
+      }
+
+      const payload: any = {
+        id: idea.id,
+        tenant_id: idea.tenantId,
+        protocol: idea.protocol,
+        title: idea.title || idea.summary || 'Ideia Kaizen',
+        description: idea.summary || idea.problem || '',
+        sector_id: safeSectorId,
+        author_name: idea.authorName,
+        status: idea.status || 'pendente',
+        triage_notes: idea.rejectionReason || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      let { error } = await supabase.from('kaizen_ideas').upsert(
+        payload,
         { onConflict: 'id' }
       );
+
+      // Se houver violação de chave estrangeira no sector_id, faz retry imediato com null
+      if (error && error.code === '23503' && payload.sector_id) {
+        payload.sector_id = null;
+        const retryResult = await supabase.from('kaizen_ideas').upsert(payload, { onConflict: 'id' });
+        error = retryResult.error;
+      }
+
       if (error) {
         console.warn('[dataService] Erro ao sincronizar ideia Kaizen no Supabase:', error.message);
       }
@@ -2996,38 +3020,112 @@ export const dataService = {
         return this.getKaizenIdeas(tenantId);
       }
 
-      const mappedCloudIdeas: KaizenIdea[] = cloudIdeas.map((row: any) => ({
-        id: row.id,
-        protocol: row.protocol,
-        tenantId: row.tenant_id,
-        authorName: row.author_name,
-        sectorId: row.sector_id || '',
-        sectorName: '',
-        authorRoleTitle: 'Colaborador',
-        summary: row.title || row.description || '',
-        createdAt: row.created_at || new Date().toISOString(),
-        updatedAt: row.updated_at || new Date().toISOString(),
-        status: row.status,
-        rejectionReason: row.triage_notes || undefined,
-      }));
-
       const localIdeas = getStoredData<KaizenIdea[]>(STORAGE_KEYS.KAIZEN_IDEAS, INITIAL_KAIZEN_IDEAS);
-      const cloudIdSet = new Set(mappedCloudIdeas.map((i) => i.id));
+      const localMap = new Map<string, KaizenIdea>(localIdeas.map((i) => [i.id, i]));
+      const cloudIdSet = new Set<string>();
 
-      const unsyncedLocals = localIdeas.filter((i) => !cloudIdSet.has(i.id));
-      if (unsyncedLocals.length > 0) {
-        for (const localIdea of unsyncedLocals) {
-          await this.persistKaizenIdeaToCloud(localIdea);
+      const mergedCloudIdeas: KaizenIdea[] = [];
+      const ideasToPushToCloud: KaizenIdea[] = [];
+
+      for (const row of cloudIdeas) {
+        cloudIdSet.add(row.id);
+        const local = localMap.get(row.id);
+
+        // Resolução do status: Se localmente já está aprovada ou rejeitada e a nuvem ainda está pendente,
+        // prevalece a decisão local e sincronizamos a nuvem para evitar retrocesso destrutivo.
+        let resolvedStatus: KaizenIdeaStatus = row.status || 'pendente';
+        if (local && (local.status === 'aprovada' || local.status === 'rejeitada') && row.status === 'pendente') {
+          resolvedStatus = local.status;
+        }
+
+        const mergedIdea: KaizenIdea = {
+          ...(local || {}),
+          id: row.id,
+          protocol: row.protocol || local?.protocol || '',
+          tenantId: row.tenant_id || local?.tenantId || '',
+          authorName: row.author_name || local?.authorName || '',
+          sectorId: row.sector_id || local?.sectorId || '',
+          sectorName: local?.sectorName || '',
+          authorRoleTitle: local?.authorRoleTitle || 'Colaborador',
+          summary: row.title || row.description || local?.summary || '',
+          title: local?.title || row.title || '',
+          problem: local?.problem || '',
+          solution: local?.solution || '',
+          benefits: local?.benefits || '',
+          category: local?.category || '',
+          photoUrl: local?.photoUrl,
+          photoName: local?.photoName,
+          createdAt: row.created_at || local?.createdAt || new Date().toISOString(),
+          updatedAt: (row.updated_at && local?.updatedAt && new Date(row.updated_at) > new Date(local.updatedAt))
+            ? row.updated_at
+            : (local?.updatedAt || row.updated_at || new Date().toISOString()),
+          status: resolvedStatus,
+          rejectionReason: row.triage_notes || local?.rejectionReason,
+          reviewedBy: local?.reviewedBy,
+          reviewedAt: local?.reviewedAt,
+          executionStatus: local?.executionStatus || (resolvedStatus === 'aprovada' ? 'planejamento' : undefined),
+          responsibleName: local?.responsibleName,
+          assignedAgentId: local?.assignedAgentId,
+          estimatedCostAvoided: local?.estimatedCostAvoided,
+          actualCostAvoided: local?.actualCostAvoided,
+          hoursSaved: local?.hoursSaved,
+          implementationDate: local?.implementationDate,
+          financialGainNotes: local?.financialGainNotes,
+          pdcaStage: local?.pdcaStage,
+          fiveWhys: local?.fiveWhys,
+          checklist: local?.checklist,
+          masterApproved: local?.masterApproved,
+          masterApprovedAt: local?.masterApprovedAt,
+          masterApprovedBy: local?.masterApprovedBy,
+          targetMetricName: local?.targetMetricName,
+          targetMetricUnit: local?.targetMetricUnit,
+          baselineValue: local?.baselineValue,
+          targetGoalValue: local?.targetGoalValue,
+          rootCauseAnalysis: local?.rootCauseAnalysis,
+          pilotArea: local?.pilotArea,
+          pilotTestObservations: local?.pilotTestObservations,
+          evidenceBeforeUrl: local?.evidenceBeforeUrl,
+          evidenceAfterUrl: local?.evidenceAfterUrl,
+          achievedValue: local?.achievedValue,
+          costBreakdown: local?.costBreakdown,
+          standardWorkUpdated: local?.standardWorkUpdated,
+          standardWorkDocRef: local?.standardWorkDocRef,
+          lessonsLearned: local?.lessonsLearned,
+          yokotenReplication: local?.yokotenReplication,
+          quarterlyFollowUp: local?.quarterlyFollowUp,
+          conclusionDate: local?.conclusionDate,
+          completedAt: local?.completedAt,
+        };
+
+        mergedCloudIdeas.push(mergedIdea);
+
+        // Se o status local é mais avançado que o da nuvem, agendamos atualização da nuvem
+        if (local && resolvedStatus !== row.status) {
+          ideasToPushToCloud.push(mergedIdea);
         }
       }
 
-      const merged = [...mappedCloudIdeas, ...unsyncedLocals];
+      // Ideias locais que ainda não estão na nuvem
+      const unsyncedLocals = localIdeas.filter((i) => !cloudIdSet.has(i.id));
+      for (const localIdea of unsyncedLocals) {
+        ideasToPushToCloud.push(localIdea);
+      }
+
+      // Sincroniza em background na nuvem as ideias que divergiam ou não existiam
+      if (ideasToPushToCloud.length > 0) {
+        for (const idea of ideasToPushToCloud) {
+          await this.persistKaizenIdeaToCloud(idea);
+        }
+      }
+
+      const merged = [...mergedCloudIdeas, ...unsyncedLocals];
       setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, merged);
 
       const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
       if (!effective) return merged;
       return merged.filter((i) => i.tenantId === effective);
     } catch (err) {
+      console.warn('[dataService] Erro ao sincronizar ideias Kaizen:', err);
       return this.getKaizenIdeas(tenantId);
     }
   },
@@ -3101,7 +3199,7 @@ export const dataService = {
     return this.saveAndSyncKaizenIdea(newIdea, ideas);
   },
 
-  approveKaizenIdea(
+  async approveKaizenIdea(
     id: string,
     reviewerName: string,
     options?: {
@@ -3114,7 +3212,7 @@ export const dataService = {
       implementationDate?: string;
       financialGainNotes?: string;
     }
-  ): KaizenIdea {
+  ): Promise<KaizenIdea> {
     const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === id);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
@@ -3145,10 +3243,14 @@ export const dataService = {
     };
 
     ideas[index] = updated;
-    return this.saveAndSyncKaizenIdea(updated, ideas);
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    if (isSupabaseConfigured()) {
+      await this.persistKaizenIdeaToCloud(updated);
+    }
+    return updated;
   },
 
-  rejectKaizenIdea(id: string, reviewerName: string, reason: string): KaizenIdea {
+  async rejectKaizenIdea(id: string, reviewerName: string, reason: string): Promise<KaizenIdea> {
     const ideas = this.getKaizenIdeas('all');
     const index = ideas.findIndex((k) => k.id === id);
     if (index === -1) throw new Error('Ideia Kaizen não encontrada');
@@ -3166,7 +3268,11 @@ export const dataService = {
     };
 
     ideas[index] = updated;
-    return this.saveAndSyncKaizenIdea(updated, ideas);
+    setStoredData(STORAGE_KEYS.KAIZEN_IDEAS, ideas);
+    if (isSupabaseConfigured()) {
+      await this.persistKaizenIdeaToCloud(updated);
+    }
+    return updated;
   },
 
   updateKaizenIdea(id: string, updates: Partial<KaizenIdea>): KaizenIdea {

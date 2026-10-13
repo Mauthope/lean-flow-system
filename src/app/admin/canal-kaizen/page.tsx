@@ -63,9 +63,11 @@ export default function AdminCanalKaizenPage() {
   const [approveResponsible, setApproveResponsible] = useState('');
   const [approveEstimatedGain, setApproveEstimatedGain] = useState<number | ''>('');
   const [approveTargetDate, setApproveTargetDate] = useState('');
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
   // Form states for reject modal
   const [rejectReason, setRejectReason] = useState('');
+  const [isSubmittingRejection, setIsSubmittingRejection] = useState(false);
 
   // Form states for manage gains modal
   const [gainExecutionStatus, setGainExecutionStatus] = useState<KaizenExecutionStatus>('planejamento');
@@ -125,20 +127,31 @@ export default function AdminCanalKaizenPage() {
     setApproveTargetDate(idea.implementationDate || '');
   };
 
-  const handleConfirmApproval = (e: React.FormEvent) => {
+  const handleConfirmApproval = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!approveIdeaModal || isViewer) return;
+    if (!approveIdeaModal || isViewer || isSubmittingApproval) return;
 
-    dataService.approveKaizenIdea(approveIdeaModal.id, currentUser?.name || 'Gestor Master', {
-      responsibleName: approveResponsible.trim(),
-      estimatedCostAvoided: approveEstimatedGain !== '' ? Number(approveEstimatedGain) : 0,
-      implementationDate: approveTargetDate || undefined,
-      executionStatus: 'planejamento',
-    });
+    setIsSubmittingApproval(true);
+    try {
+      await dataService.approveKaizenIdea(approveIdeaModal.id, currentUser?.name || 'Gestor Master', {
+        responsibleName: approveResponsible.trim(),
+        estimatedCostAvoided: approveEstimatedGain !== '' ? Number(approveEstimatedGain) : 0,
+        implementationDate: approveTargetDate || undefined,
+        executionStatus: 'planejamento',
+      });
 
-    setApproveIdeaModal(null);
-    refreshData();
-    confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+      setApproveIdeaModal(null);
+      setActiveTab('aprovadas');
+      refreshData();
+      try {
+        confetti({ particleCount: 75, spread: 70, origin: { y: 0.6 } });
+      } catch (_) {}
+    } catch (err) {
+      console.error('Erro ao aprovar ideia Kaizen:', err);
+      alert('Não foi possível aprovar a ideia Kaizen. Tente novamente.');
+    } finally {
+      setIsSubmittingApproval(false);
+    }
   };
 
   const handleOpenRejectModal = (idea: KaizenIdea) => {
@@ -147,18 +160,26 @@ export default function AdminCanalKaizenPage() {
     setRejectReason('');
   };
 
-  const handleConfirmRejection = (e: React.FormEvent) => {
+  const handleConfirmRejection = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rejectIdeaModal || !rejectReason.trim() || isViewer) return;
+    if (!rejectIdeaModal || !rejectReason.trim() || isViewer || isSubmittingRejection) return;
 
-    dataService.rejectKaizenIdea(
-      rejectIdeaModal.id,
-      currentUser?.name || 'Gestor Master',
-      rejectReason.trim()
-    );
+    setIsSubmittingRejection(true);
+    try {
+      await dataService.rejectKaizenIdea(
+        rejectIdeaModal.id,
+        currentUser?.name || 'Gestor Master',
+        rejectReason.trim()
+      );
 
-    setRejectIdeaModal(null);
-    refreshData();
+      setRejectIdeaModal(null);
+      refreshData();
+    } catch (err) {
+      console.error('Erro ao rejeitar ideia Kaizen:', err);
+      alert('Não foi possível registrar a rejeição da ideia. Tente novamente.');
+    } finally {
+      setIsSubmittingRejection(false);
+    }
   };
 
   const handleOpenManageGains = (idea: KaizenIdea) => {
@@ -1307,15 +1328,17 @@ export default function AdminCanalKaizenPage() {
                   type="button"
                   onClick={() => setApproveIdeaModal(null)}
                   className="btn btn-secondary"
+                  disabled={isSubmittingApproval}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmittingApproval}
                   className="btn btn-success"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: isSubmittingApproval ? 0.7 : 1 }}
                 >
-                  <Check size={16} /> Confirmar Aprovação
+                  <Check size={16} /> {isSubmittingApproval ? 'Aprovando...' : 'Confirmar Aprovação'}
                 </button>
               </div>
             </form>
@@ -1400,15 +1423,17 @@ export default function AdminCanalKaizenPage() {
                   type="button"
                   onClick={() => setRejectIdeaModal(null)}
                   className="btn btn-secondary"
+                  disabled={isSubmittingRejection}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
+                  disabled={isSubmittingRejection}
                   className="btn btn-danger"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', opacity: isSubmittingRejection ? 0.7 : 1 }}
                 >
-                  <XCircle size={16} /> Confirmar Rejeição
+                  <XCircle size={16} /> {isSubmittingRejection ? 'Rejeitando...' : 'Confirmar Rejeição'}
                 </button>
               </div>
             </form>
