@@ -54,41 +54,49 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const isMaster = isMasterUser(currentUser);
   const accentColor = isMaster ? '#06b6d4' : currentUser.role === 'admin' ? '#38bdf8' : currentUser.role === 'viewer' ? '#a855f7' : '#10b981';
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
+    const trimmedName = name.trim() || currentUser.name;
+    const trimmedJob = jobTitle.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedAvatar = avatarUrl.trim();
+
     dataService.updateUser(currentUser.id, {
-      name: name.trim() || currentUser.name,
-      jobTitle: jobTitle.trim(),
-      phone: phone.trim(),
-      avatarUrl: avatarUrl.trim(),
+      name: trimmedName,
+      jobTitle: trimmedJob,
+      phone: trimmedPhone,
+      avatarUrl: trimmedAvatar,
     });
 
     // Sincroniza dados e avatar com o Supabase
     if (isSupabaseConfigured() && currentUser.email) {
       const cleanEmail = currentUser.email.trim().toLowerCase();
-      supabase
-        .from('profiles')
-        .update({
-          name: name.trim() || currentUser.name,
-          job_title: jobTitle.trim(),
-          avatar_url: avatarUrl.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', cleanEmail)
-        .then(() => {});
-
-      supabase
-        .from('authorized_users')
-        .update({
-          name: name.trim() || currentUser.name,
-          job_title: jobTitle.trim(),
-          avatar_url: avatarUrl.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', cleanEmail)
-        .then(() => {});
+      try {
+        await Promise.allSettled([
+          supabase
+            .from('profiles')
+            .update({
+              name: trimmedName,
+              job_title: trimmedJob,
+              avatar_url: trimmedAvatar,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanEmail),
+          supabase
+            .from('authorized_users')
+            .update({
+              name: trimmedName,
+              job_title: trimmedJob,
+              avatar_url: trimmedAvatar,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('email', cleanEmail),
+        ]);
+      } catch (err) {
+        console.warn('Erro ao atualizar perfil na nuvem:', err);
+      }
     }
 
     // Atualiza usuario no localStorage

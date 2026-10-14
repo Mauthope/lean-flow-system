@@ -209,14 +209,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
 
-          // 2. Sincronização dos usuários autorizados (public.authorized_users)
-          const { data: dbUsers, error } = await supabase
-            .from('authorized_users')
-            .select('*');
+          // 2. Sincronização dos usuários autorizados (public.authorized_users e public.profiles)
+          const [authUsersRes, profilesRes] = await Promise.all([
+            supabase.from('authorized_users').select('*'),
+            supabase.from('profiles').select('email, name, job_title, avatar_url'),
+          ]);
 
-          if (!error && dbUsers && dbUsers.length > 0) {
+          const dbUsers = authUsersRes.data;
+          const dbProfiles = profilesRes.data;
+
+          if (!authUsersRes.error && dbUsers && dbUsers.length > 0) {
             const currentUsers = dataService.getUsers('all');
             let changed = false;
+
+            const profileMap = new Map<string, any>();
+            if (dbProfiles && Array.isArray(dbProfiles)) {
+              dbProfiles.forEach((p: any) => {
+                if (p.email) profileMap.set(p.email.trim().toLowerCase(), p);
+              });
+            }
 
             const authEmails = new Set(
               dbUsers.map((dbU: any) => (dbU.email || '').trim().toLowerCase())
@@ -235,6 +246,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const cleanDbEmail = (dbU.email || '').trim().toLowerCase();
               if (!cleanDbEmail) return;
 
+              const prof = profileMap.get(cleanDbEmail);
+              const effectiveAvatar = prof?.avatar_url || dbU.avatar_url;
+              const effectiveName = prof?.name || dbU.name || cleanDbEmail.split('@')[0];
+              const effectiveJobTitle = prof?.job_title || dbU.job_title;
+
               const existingIdx = filteredUsers.findIndex(
                 (u) => u.email.toLowerCase() === cleanDbEmail
               );
@@ -243,11 +259,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 filteredUsers.push({
                   id: dbU.id || `usr_supa_${cleanDbEmail.replace(/[^a-z0-9]/g, '_')}`,
                   tenantId: dbU.tenant_id || tenant.id,
-                  name: dbU.name || cleanDbEmail.split('@')[0],
+                  name: effectiveName,
                   email: cleanDbEmail,
                   role: dbU.role || 'agent',
-                  jobTitle: dbU.job_title || 'Agente de Melhoria Contínua',
-                  avatarUrl: dbU.avatar_url,
+                  jobTitle: effectiveJobTitle || 'Agente de Melhoria Contínua',
+                  avatarUrl: effectiveAvatar,
                   active: dbU.active !== false,
                   isMaster: dbU.role === 'admin' && cleanDbEmail === 'mauricio.grigol@rafitec.com.br',
                   createdAt: dbU.created_at || new Date().toISOString(),
@@ -255,20 +271,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 changed = true;
               } else {
                 const curr = filteredUsers[existingIdx];
+                const resolvedAvatar = effectiveAvatar || curr.avatarUrl;
                 if (
                   curr.active !== dbU.active ||
                   curr.role !== dbU.role ||
-                  (dbU.name && curr.name !== dbU.name) ||
-                  (dbU.job_title && curr.jobTitle !== dbU.job_title) ||
-                  (dbU.avatar_url && curr.avatarUrl !== dbU.avatar_url)
+                  (effectiveName && curr.name !== effectiveName) ||
+                  (effectiveJobTitle && curr.jobTitle !== effectiveJobTitle) ||
+                  (resolvedAvatar && curr.avatarUrl !== resolvedAvatar)
                 ) {
                   filteredUsers[existingIdx] = {
                     ...curr,
                     active: dbU.active,
                     role: dbU.role,
-                    name: dbU.name || curr.name,
-                    jobTitle: dbU.job_title || curr.jobTitle,
-                    avatarUrl: dbU.avatar_url || curr.avatarUrl,
+                    name: effectiveName || curr.name,
+                    jobTitle: effectiveJobTitle || curr.jobTitle,
+                    avatarUrl: resolvedAvatar,
                   };
                   changed = true;
                 }

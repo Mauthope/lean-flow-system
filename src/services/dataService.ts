@@ -15,6 +15,8 @@ import {
   KaizenIdea,
   KaizenIdeaStatus,
   TpmMachine,
+  TpmMachineCriticality,
+  TpmMachineStatus,
   TpmAudit,
   TpmTag,
   TpmMaintenanceMetrics,
@@ -42,6 +44,7 @@ import {
   ExternalSectorBottleneck,
   GainProofDetail,
   StrategicObjective,
+  StrategicPillar,
   MacroStrategicDashboardMetrics,
   SenseiStrategicAudit,
   PendingProjectFollowUp,
@@ -771,24 +774,30 @@ export const dataService = {
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      // 1. Atualiza ou insere em authorized_users
+      const { error: authError } = await supabase
         .from('authorized_users')
         .upsert(payload, { onConflict: 'email' });
 
-      if (error) {
-        console.warn('[dataService] Erro ao sincronizar usuário com Supabase:', error.message);
-      } else {
-        await supabase
-          .from('profiles')
-          .update({
-            role: user.role,
-            name: user.name.trim(),
-            job_title: user.jobTitle || payload.job_title,
-            avatar_url: user.avatarUrl || null,
-            status: user.active !== false ? 'ativo' : 'suspenso',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('email', cleanEmail);
+      if (authError) {
+        console.warn('[dataService] Aviso ao sincronizar authorized_users:', authError.message);
+      }
+
+      // 2. Sempre tenta atualizar também na tabela profiles (caso o usuário já tenha efetuado login no Auth)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          role: user.role,
+          name: user.name.trim(),
+          job_title: user.jobTitle || payload.job_title,
+          avatar_url: user.avatarUrl || null,
+          status: user.active !== false ? 'ativo' : 'suspenso',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', cleanEmail);
+
+      if (profileError) {
+        console.warn('[dataService] Aviso ao sincronizar profiles:', profileError.message);
       }
     } catch (err) {
       console.warn('[dataService] Exceção ao persistir usuário no Supabase:', err);
@@ -814,22 +823,43 @@ export const dataService = {
     if (!isSupabaseConfigured()) return this.getUsers(tenantId);
 
     try {
-      const { data: cloudUsers, error } = await supabase.from('authorized_users').select('*');
-      if (error || !cloudUsers) {
-        console.warn('[dataService] Sincronização de usuários da nuvem não pôde ser concluída:', error?.message);
+      // Busca authorized_users e profiles em paralelo para obter a versão mais recente dos dados e avatares
+      const [authUsersRes, profilesRes] = await Promise.all([
+        supabase.from('authorized_users').select('*'),
+        supabase.from('profiles').select('email, name, job_title, avatar_url'),
+      ]);
+
+      const cloudUsers = authUsersRes.data;
+      if (authUsersRes.error || !cloudUsers) {
+        console.warn('[dataService] Sincronização de usuários da nuvem não pôde ser concluída:', authUsersRes.error?.message);
         return this.getUsers(tenantId);
+      }
+
+      const profileMap = new Map<string, any>();
+      if (profilesRes.data && Array.isArray(profilesRes.data)) {
+        profilesRes.data.forEach((p: any) => {
+          if (p.email) {
+            profileMap.set(p.email.trim().toLowerCase(), p);
+          }
+        });
       }
 
       const mappedCloudUsers: User[] = cloudUsers.map((row: any) => {
         const cleanEmail = (row.email || '').trim().toLowerCase();
+        const prof = profileMap.get(cleanEmail);
+        // Prioriza o avatar mais recente e não-vazio vindo de profiles ou de authorized_users
+        const resolvedAvatar = prof?.avatar_url || row.avatar_url || undefined;
+        const resolvedName = prof?.name || row.name;
+        const resolvedJobTitle = prof?.job_title || row.job_title || undefined;
+
         return {
           id: row.id || `usr_supa_${cleanEmail.replace(/[^a-z0-9]/g, '_')}`,
           tenantId: row.tenant_id,
-          name: row.name,
+          name: resolvedName,
           email: cleanEmail,
           role: row.role as UserRole,
-          jobTitle: row.job_title || undefined,
-          avatarUrl: row.avatar_url || undefined,
+          jobTitle: resolvedJobTitle,
+          avatarUrl: resolvedAvatar,
           sectorId: Array.isArray(row.sector_ids) && row.sector_ids.length > 0 ? row.sector_ids[0] : undefined,
           sectorIds: Array.isArray(row.sector_ids) ? row.sector_ids : [],
           sectorName: row.sector_name || undefined,
@@ -3381,6 +3411,11 @@ export const dataService = {
         this.syncUsersFromCloud(tenantId),
         this.syncActionsFromCloud(tenantId),
         this.syncKaizenIdeasFromCloud(tenantId),
+        this.syncTpmMachinesFromCloud(tenantId),
+        this.syncTpmTagsFromCloud(tenantId),
+        this.syncTpmAuditsFromCloud(tenantId),
+        this.syncStrategicObjectivesFromCloud(tenantId),
+        this.syncSectorAssessmentsFromCloud(undefined, tenantId),
       ]);
     } catch (err) {
       console.warn('[dataService] Erro na sincronização consolidada da nuvem:', err);
@@ -3700,6 +3735,93 @@ export const dataService = {
 
   // ================= TPM (MANUTENÇÃO PRODUTIVA TOTAL) =================
 
+  async persistTpmMachineToCloud(machine: TpmMachine): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('tpm_machines').upsert(
+        {
+          id: machine.id,
+          tenant_id: machine.tenantId,
+          sector_id: machine.sectorId,
+          sector_name: machine.sectorName,
+          name: machine.name,
+          code: machine.code,
+          manufacturer: machine.brandModel || null,
+          criticality: machine.criticality,
+          status: machine.status,
+          current_audit_score: machine.currentAuditScore,
+          last_audit_date: machine.lastAuditDate || null,
+          tpm_phase: machine.tpmPhase,
+          tpm_phase_history: machine.tpmPhaseHistory || [],
+          description: machine.description || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) console.warn('[dataService] Erro ao persistir máquina TPM na nuvem:', error.message);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir máquina TPM no Supabase:', err);
+    }
+  },
+
+  async deleteTpmMachineFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await supabase.from('tpm_machines').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir máquina TPM no Supabase:', err);
+    }
+  },
+
+  async syncTpmMachinesFromCloud(tenantId?: string): Promise<TpmMachine[]> {
+    if (!isSupabaseConfigured()) return this.getTpmMachines(undefined, tenantId);
+    try {
+      const { data, error } = await supabase.from('tpm_machines').select('*');
+      if (error || !data) {
+        console.warn('[dataService] Erro ao buscar máquinas TPM da nuvem:', error?.message);
+        return this.getTpmMachines(undefined, tenantId);
+      }
+
+      const cloudMachines: TpmMachine[] = data.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        sectorId: row.sector_id,
+        sectorName: row.sector_name || this.getSectorById(row.sector_id)?.name || 'Setor Fabril',
+        name: row.name,
+        code: row.code,
+        brandModel: row.manufacturer || undefined,
+        criticality: row.criticality as TpmMachineCriticality,
+        status: (row.status || 'operacional') as TpmMachineStatus,
+        currentAuditScore: Number(row.current_audit_score || row.current_oee || 0),
+        lastAuditDate: row.last_audit_date || undefined,
+        tpmPhase: row.tpm_phase || 1,
+        tpmPhaseHistory: row.tpm_phase_history || [],
+        description: row.description || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+      }));
+
+      const localMachines = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
+      const cloudIds = new Set(cloudMachines.map((m) => m.id));
+      const unsyncedLocals = localMachines.filter((m) => !cloudIds.has(m.id));
+
+      if (unsyncedLocals.length > 0) {
+        for (const loc of unsyncedLocals) {
+          await this.persistTpmMachineToCloud(loc);
+        }
+      }
+
+      const merged = [...cloudMachines, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.TPM_MACHINES, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((m) => m.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de máquinas TPM:', err);
+      return this.getTpmMachines(undefined, tenantId);
+    }
+  },
+
   // --- Máquinas por Setor ---
   getTpmMachines(sectorId?: string, tenantId?: string): TpmMachine[] {
     const all = getStoredData<TpmMachine[]>(STORAGE_KEYS.TPM_MACHINES, INITIAL_TPM_MACHINES);
@@ -3749,6 +3871,11 @@ export const dataService = {
 
     machines.unshift(newMachine);
     setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+
+    if (isSupabaseConfigured()) {
+      this.persistTpmMachineToCloud(newMachine).catch((err) => console.warn(err));
+    }
+
     return newMachine;
   },
 
@@ -3760,6 +3887,11 @@ export const dataService = {
     const updated = { ...machines[index], ...updates };
     machines[index] = updated;
     setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+
+    if (isSupabaseConfigured()) {
+      this.persistTpmMachineToCloud(updated).catch((err) => console.warn(err));
+    }
+
     return updated;
   },
 
@@ -3794,6 +3926,182 @@ export const dataService = {
   deleteTpmMachine(id: string): void {
     const machines = this.getTpmMachines(undefined, 'all').filter((m) => m.id !== id);
     setStoredData(STORAGE_KEYS.TPM_MACHINES, machines);
+
+    if (isSupabaseConfigured()) {
+      this.deleteTpmMachineFromCloud(id).catch((err) => console.warn(err));
+    }
+  },
+
+  async persistTpmAuditToCloud(audit: TpmAudit): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('tpm_audits').upsert(
+        {
+          id: audit.id,
+          tenant_id: audit.tenantId,
+          machine_id: audit.machineId,
+          machine_name: audit.machineName,
+          machine_code: audit.machineCode,
+          sector_id: audit.sectorId,
+          sector_name: audit.sectorName,
+          auditor_name: audit.auditorName,
+          audit_date: audit.auditDate ? audit.auditDate.split('T')[0] : new Date().toISOString().split('T')[0],
+          score: audit.score,
+          status: audit.status,
+          items: audit.items || [],
+          observations: audit.observations || null,
+        },
+        { onConflict: 'id' }
+      );
+      if (error) console.warn('[dataService] Erro ao persistir auditoria TPM na nuvem:', error.message);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir auditoria TPM no Supabase:', err);
+    }
+  },
+
+  async syncTpmAuditsFromCloud(tenantId?: string): Promise<TpmAudit[]> {
+    if (!isSupabaseConfigured()) return this.getTpmAudits(undefined, tenantId);
+    try {
+      const { data, error } = await supabase.from('tpm_audits').select('*');
+      if (error || !data) {
+        console.warn('[dataService] Erro ao buscar auditorias TPM da nuvem:', error?.message);
+        return this.getTpmAudits(undefined, tenantId);
+      }
+
+      const cloudAudits: TpmAudit[] = data.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        machineId: row.machine_id,
+        machineName: row.machine_name || this.getTpmMachineById(row.machine_id)?.name || 'Máquina Fabril',
+        machineCode: row.machine_code || this.getTpmMachineById(row.machine_id)?.code || 'TPM',
+        sectorId: row.sector_id || '',
+        sectorName: row.sector_name || 'Setor Fabril',
+        auditorName: row.auditor_name,
+        auditDate: row.audit_date || row.created_at || new Date().toISOString(),
+        score: Number(row.score || 0),
+        status: (row.status || 'conforme') as 'conforme' | 'atencao' | 'critico',
+        items: Array.isArray(row.items) ? row.items : [],
+        observations: row.observations || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+      }));
+
+      const localAudits = getStoredData<TpmAudit[]>(STORAGE_KEYS.TPM_AUDITS, INITIAL_TPM_AUDITS);
+      const cloudIds = new Set(cloudAudits.map((a) => a.id));
+      const unsyncedLocals = localAudits.filter((a) => !cloudIds.has(a.id));
+
+      if (unsyncedLocals.length > 0) {
+        for (const loc of unsyncedLocals) {
+          await this.persistTpmAuditToCloud(loc);
+        }
+      }
+
+      const merged = [...cloudAudits, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.TPM_AUDITS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((a) => a.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de auditorias TPM:', err);
+      return this.getTpmAudits(undefined, tenantId);
+    }
+  },
+
+  async persistTpmTagToCloud(tag: TpmTag): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('tpm_tags').upsert(
+        {
+          id: tag.id,
+          tenant_id: tag.tenantId,
+          machine_id: tag.machineId,
+          machine_name: tag.machineName,
+          machine_code: tag.machineCode,
+          sector_id: tag.sectorId,
+          sector_name: tag.sectorName,
+          tag_number: tag.tagNumber,
+          type: tag.type,
+          category: tag.category,
+          priority: tag.priority,
+          description: tag.description,
+          opened_by: tag.openedBy,
+          opened_at: tag.openedAt,
+          due_date: tag.dueDate,
+          status: tag.status,
+          resolved_by: tag.resolvedBy || null,
+          solution_notes: tag.solutionNotes || null,
+          resolved_at: tag.resolvedAt || null,
+          notes: tag.solutionNotes || null,
+        },
+        { onConflict: 'id' }
+      );
+      if (error) console.warn('[dataService] Erro ao persistir etiqueta TPM na nuvem:', error.message);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir etiqueta TPM no Supabase:', err);
+    }
+  },
+
+  async deleteTpmTagFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await supabase.from('tpm_tags').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir etiqueta TPM no Supabase:', err);
+    }
+  },
+
+  async syncTpmTagsFromCloud(tenantId?: string): Promise<TpmTag[]> {
+    if (!isSupabaseConfigured()) return this.getTpmTags({ tenantId });
+    try {
+      const { data, error } = await supabase.from('tpm_tags').select('*');
+      if (error || !data) {
+        console.warn('[dataService] Erro ao buscar etiquetas TPM da nuvem:', error?.message);
+        return this.getTpmTags({ tenantId });
+      }
+
+      const cloudTags: TpmTag[] = data.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        tagNumber: row.tag_number,
+        machineId: row.machine_id,
+        machineName: row.machine_name || this.getTpmMachineById(row.machine_id)?.name || 'Máquina Fabril',
+        machineCode: row.machine_code || this.getTpmMachineById(row.machine_id)?.code || 'TAG',
+        sectorId: row.sector_id || '',
+        sectorName: row.sector_name || 'Setor Fabril',
+        type: row.type as TpmTag['type'],
+        category: (row.category || 'limpeza_lubrificacao') as TpmTag['category'],
+        priority: (row.priority || 'media') as TpmTag['priority'],
+        description: row.description,
+        openedBy: row.opened_by,
+        openedAt: row.opened_at || row.created_at || new Date().toISOString(),
+        dueDate: row.due_date || new Date().toISOString(),
+        status: row.status as TpmTag['status'],
+        resolvedBy: row.resolved_by || undefined,
+        solutionNotes: row.solution_notes || row.notes || undefined,
+        resolvedAt: row.resolved_at || undefined,
+        createdAt: row.created_at || row.opened_at || new Date().toISOString(),
+      }));
+
+      const localTags = getStoredData<TpmTag[]>(STORAGE_KEYS.TPM_TAGS, INITIAL_TPM_TAGS);
+      const cloudIds = new Set(cloudTags.map((t) => t.id));
+      const unsyncedLocals = localTags.filter((t) => !cloudIds.has(t.id));
+
+      if (unsyncedLocals.length > 0) {
+        for (const loc of unsyncedLocals) {
+          await this.persistTpmTagToCloud(loc);
+        }
+      }
+
+      const merged = [...cloudTags, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.TPM_TAGS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((t) => t.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de etiquetas TPM:', err);
+      return this.getTpmTags({ tenantId });
+    }
   },
 
   // --- Auditorias TPM & Notas de Avaliação ---
@@ -3843,6 +4151,10 @@ export const dataService = {
 
     audits.unshift(newAudit);
     setStoredData(STORAGE_KEYS.TPM_AUDITS, audits);
+
+    if (isSupabaseConfigured()) {
+      this.persistTpmAuditToCloud(newAudit).catch((err) => console.warn(err));
+    }
 
     let phaseAdvanced = false;
     let previousPhase = 1;
@@ -3974,6 +4286,11 @@ export const dataService = {
 
     tags.unshift(newTag);
     setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+
+    if (isSupabaseConfigured()) {
+      this.persistTpmTagToCloud(newTag).catch((err) => console.warn(err));
+    }
+
     return newTag;
   },
 
@@ -3995,12 +4312,21 @@ export const dataService = {
 
     tags[index] = tag;
     setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+
+    if (isSupabaseConfigured()) {
+      this.persistTpmTagToCloud(tag).catch((err) => console.warn(err));
+    }
+
     return tag;
   },
 
   deleteTpmTag(id: string): void {
     const tags = this.getTpmTags({ tenantId: 'all' }).filter((t) => t.id !== id);
     setStoredData(STORAGE_KEYS.TPM_TAGS, tags);
+
+    if (isSupabaseConfigured()) {
+      this.deleteTpmTagFromCloud(id).catch((err) => console.warn(err));
+    }
   },
 
   // --- Indicadores & KPIs da Manutenção ---
@@ -4613,6 +4939,97 @@ export const dataService = {
   // =========================================================================
   // MÓDULO LEAN ASSESSMENT DOS SETORES
   // =========================================================================
+
+  async persistSectorAssessmentToCloud(asm: SectorLeanAssessment): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('sector_assessments').upsert(
+        {
+          id: asm.id,
+          tenant_id: asm.tenantId,
+          sector_id: asm.sectorId,
+          sector_name: asm.sectorName,
+          evaluator_id: asm.evaluatorId || null,
+          evaluator_name: asm.evaluatorName,
+          evaluator_role: asm.evaluatorRole,
+          assessment_date: asm.assessmentDate,
+          overall_score: asm.overallScore,
+          overall_level: asm.overallLevel,
+          dimensions: asm.dimensions || {},
+          dimension_details: asm.dimensionDetails || [],
+          sensei_diagnosis: asm.senseiDiagnosis || {},
+          notes: asm.notes || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) console.warn('[dataService] Erro ao persistir avaliação de setor na nuvem:', error.message);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir avaliação de setor no Supabase:', err);
+    }
+  },
+
+  async deleteSectorAssessmentFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await supabase.from('sector_assessments').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir avaliação de setor no Supabase:', err);
+    }
+  },
+
+  async syncSectorAssessmentsFromCloud(sectorId?: string, tenantId?: string): Promise<SectorLeanAssessment[]> {
+    if (!isSupabaseConfigured()) return this.getSectorAssessments(sectorId, tenantId);
+    try {
+      const { data, error } = await supabase.from('sector_assessments').select('*');
+      if (error || !data) {
+        console.warn('[dataService] Erro ao buscar avaliações de setor da nuvem:', error?.message);
+        return this.getSectorAssessments(sectorId, tenantId);
+      }
+
+      const cloudAssessments: SectorLeanAssessment[] = data.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        sectorId: row.sector_id,
+        sectorName: row.sector_name,
+        evaluatorId: row.evaluator_id || '',
+        evaluatorName: row.evaluator_name,
+        evaluatorRole: row.evaluator_role as UserRole,
+        assessmentDate: row.assessment_date,
+        overallScore: Number(row.overall_score || 0),
+        overallLevel: row.overall_level as 1 | 2 | 3 | 4 | 5,
+        dimensions: row.dimensions || {},
+        dimensionDetails: row.dimension_details || [],
+        senseiDiagnosis: row.sensei_diagnosis,
+        notes: row.notes || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+      }));
+
+      const localAssessments = getStoredData<SectorLeanAssessment[]>(STORAGE_KEYS.SECTOR_ASSESSMENTS, INITIAL_SECTOR_ASSESSMENTS);
+      const cloudIds = new Set(cloudAssessments.map((a) => a.id));
+      const unsyncedLocals = localAssessments.filter((a) => !cloudIds.has(a.id));
+
+      if (unsyncedLocals.length > 0) {
+        for (const loc of unsyncedLocals) {
+          await this.persistSectorAssessmentToCloud(loc);
+        }
+      }
+
+      const merged = [...cloudAssessments, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      let list = effective ? merged.filter((a) => a.tenantId === effective) : merged;
+      if (sectorId) {
+        list = list.filter((a) => a.sectorId === sectorId);
+      }
+      return list.sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime());
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de avaliações de setor:', err);
+      return this.getSectorAssessments(sectorId, tenantId);
+    }
+  },
+
   getSectorAssessments(sectorId?: string, tenantId?: string): SectorLeanAssessment[] {
     const all = getStoredData<SectorLeanAssessment[]>(
       STORAGE_KEYS.SECTOR_ASSESSMENTS,
@@ -4720,6 +5137,11 @@ export const dataService = {
 
     list.unshift(newEntry);
     setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, list);
+
+    if (isSupabaseConfigured()) {
+      this.persistSectorAssessmentToCloud(newEntry).catch((err) => console.warn(err));
+    }
+
     return newEntry;
   },
 
@@ -4730,6 +5152,10 @@ export const dataService = {
     );
     const updated = list.filter((a) => a.id !== id);
     setStoredData(STORAGE_KEYS.SECTOR_ASSESSMENTS, updated);
+
+    if (isSupabaseConfigured()) {
+      this.deleteSectorAssessmentFromCloud(id).catch((err) => console.warn(err));
+    }
   },
 
   getDefaultLeanAssessmentDimensions(): LeanAssessmentDimension[] {
@@ -5637,6 +6063,96 @@ export const dataService = {
   },
 
   // ================= ALTA GERÊNCIA & OBJETIVOS ESTRATÉGICOS (HOSHIN KANRI) =================
+
+  async persistStrategicObjectiveToCloud(obj: StrategicObjective): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { error } = await supabase.from('strategic_objectives').upsert(
+        {
+          id: obj.id,
+          tenant_id: obj.tenantId,
+          code: obj.code,
+          pillar: obj.pillar,
+          title: obj.title,
+          target_description: obj.description,
+          sponsor: obj.sponsor || null,
+          year: obj.year,
+          target_value: obj.targetValue,
+          target_unit: obj.targetUnit || null,
+          unit_label: obj.unitLabel || null,
+          unit: obj.unitLabel || obj.targetUnit || 'R$',
+          baseline_value: obj.baselineValue ?? null,
+          status: obj.status,
+          deadline_date: obj.deadlineDate || null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+      if (error) console.warn('[dataService] Erro ao persistir objetivo estratégico na nuvem:', error.message);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao persistir objetivo estratégico no Supabase:', err);
+    }
+  },
+
+  async deleteStrategicObjectiveFromCloud(id: string): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    try {
+      await supabase.from('strategic_objectives').delete().eq('id', id);
+    } catch (err) {
+      console.warn('[dataService] Exceção ao excluir objetivo estratégico no Supabase:', err);
+    }
+  },
+
+  async syncStrategicObjectivesFromCloud(tenantId?: string): Promise<StrategicObjective[]> {
+    if (!isSupabaseConfigured()) return this.getStrategicObjectives(tenantId);
+    try {
+      const { data, error } = await supabase.from('strategic_objectives').select('*');
+      if (error || !data) {
+        console.warn('[dataService] Erro ao buscar objetivos estratégicos da nuvem:', error?.message);
+        return this.getStrategicObjectives(tenantId);
+      }
+
+      const cloudObjectives: StrategicObjective[] = data.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        code: row.code || `HOSHIN-${row.year || 2026}-01`,
+        title: row.title,
+        description: row.target_description || '',
+        pillar: row.pillar as StrategicPillar,
+        sponsor: row.sponsor || 'Alta Gerência & Diretoria',
+        year: row.year || new Date().getFullYear(),
+        targetValue: Number(row.target_value || 0),
+        targetUnit: row.target_unit || undefined,
+        unitLabel: row.unit_label || row.unit || undefined,
+        baselineValue: row.baseline_value !== null ? Number(row.baseline_value) : undefined,
+        status: (row.status || 'ativo') as StrategicObjective['status'],
+        deadlineDate: row.deadline_date || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+      }));
+
+      const localObjectives = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
+      const cloudIds = new Set(cloudObjectives.map((o) => o.id));
+      const unsyncedLocals = localObjectives.filter((o) => !cloudIds.has(o.id));
+
+      if (unsyncedLocals.length > 0) {
+        for (const loc of unsyncedLocals) {
+          await this.persistStrategicObjectiveToCloud(loc);
+        }
+      }
+
+      const merged = [...cloudObjectives, ...unsyncedLocals];
+      setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, merged);
+
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      if (!effective) return merged;
+      return merged.filter((o) => o.tenantId === effective);
+    } catch (err) {
+      console.warn('[dataService] Exceção na sincronização de objetivos estratégicos:', err);
+      return this.getStrategicObjectives(tenantId);
+    }
+  },
+
   getStrategicObjectives(tenantId?: string): StrategicObjective[] {
     const all = getStoredData<StrategicObjective[]>(STORAGE_KEYS.STRATEGIC_OBJECTIVES, INITIAL_STRATEGIC_OBJECTIVES);
     const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
@@ -5772,6 +6288,11 @@ export const dataService = {
         };
         all[index] = updated;
         setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, all);
+
+        if (isSupabaseConfigured()) {
+          this.persistStrategicObjectiveToCloud(updated).catch((err) => console.warn(err));
+        }
+
         return updated;
       }
     }
@@ -5801,6 +6322,11 @@ export const dataService = {
 
     all.push(newObj);
     setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, all);
+
+    if (isSupabaseConfigured()) {
+      this.persistStrategicObjectiveToCloud(newObj).catch((err) => console.warn(err));
+    }
+
     return newObj;
   },
 
@@ -5809,6 +6335,11 @@ export const dataService = {
     const filtered = all.filter((o) => o.id !== id);
     if (filtered.length !== all.length) {
       setStoredData(STORAGE_KEYS.STRATEGIC_OBJECTIVES, filtered);
+
+      if (isSupabaseConfigured()) {
+        this.deleteStrategicObjectiveFromCloud(id).catch((err) => console.warn(err));
+      }
+
       return true;
     }
     return false;

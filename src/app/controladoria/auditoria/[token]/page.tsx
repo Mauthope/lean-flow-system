@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
+import { isSupabaseConfigured } from '@/lib/supabaseClient';
 import { LeanAction, LeanCostBreakdown, ProjectInvestmentCosts, GainProofDetail, GainProofAttachment } from '@/lib/types';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import {
@@ -76,54 +77,70 @@ export default function ControladoriaAuditoriaPage() {
       return;
     }
 
-    const found = dataService.getActionByAuditToken(token);
-    if (!found) {
-      setError('Nenhum projeto encontrado para este link de auditoria. O link pode ter expirado ou o token é inválido.');
+    const loadAction = async () => {
+      let found = dataService.getActionByAuditToken(token);
+      if (!found && isSupabaseConfigured()) {
+        try {
+          await Promise.all([
+            dataService.syncActionsFromCloud(),
+            dataService.syncTenantsFromCloud(),
+          ]);
+          found = dataService.getActionByAuditToken(token);
+        } catch (err) {
+          console.warn('[Controladoria] Erro ao sincronizar acoes para auditoria:', err);
+        }
+      }
+
+      if (!found) {
+        setError('Nenhum projeto encontrado para este link de auditoria. O link pode ter expirado ou o token é inválido.');
+        setLoading(false);
+        return;
+      }
+
+      setAction(found);
+      const tenant = dataService.getCurrentTenant();
+      if (tenant?.aiSettings?.controladoriaName) {
+        setReviewerRole(tenant.aiSettings.controladoriaName);
+      }
+      if (tenant?.aiSettings?.controladoriaEmail) {
+        setReviewerEmail(tenant.aiSettings.controladoriaEmail);
+      }
+
+      // Inicializar valores com a proposta ou valores já aprovados
+      const bk = found.controllershipAudit?.approvedCostBreakdown || found.costBreakdown || {};
+      setLaborSavings(bk.laborSavings !== undefined ? bk.laborSavings : '');
+      setProductionIncrease(bk.productionIncrease !== undefined ? bk.productionIncrease : '');
+      setScrapReduction(bk.scrapReduction !== undefined ? bk.scrapReduction : '');
+      setMachineDowntime(bk.machineDowntime !== undefined ? bk.machineDowntime : '');
+      setToolingAndEnergy(bk.toolingAndEnergy !== undefined ? bk.toolingAndEnergy : '');
+      setLogisticsAndFreight(bk.logisticsAndFreight !== undefined ? bk.logisticsAndFreight : '');
+      setOtherSavings(bk.otherSavings !== undefined ? bk.otherSavings : '');
+      setOtherSavingsDescription(bk.otherSavingsDescription || '');
+
+      // Carregar memórias de cálculo e arquivos comprobatórios
+      const gDetails = found.controllershipAudit?.gainDetails || found.gainDetails || {};
+      setGainDetails(JSON.parse(JSON.stringify(gDetails)));
+
+      if (found.controllershipAudit?.reviewedBy) {
+        setReviewerName(found.controllershipAudit.reviewedBy);
+      }
+      if (found.controllershipAudit?.reviewerEmail) {
+        setReviewerEmail(found.controllershipAudit.reviewerEmail);
+      }
+      if (found.controllershipAudit?.reviewerRole) {
+        setReviewerRole(found.controllershipAudit.reviewerRole);
+      }
+      if (found.controllershipAudit?.auditNotes) {
+        setAuditNotes(found.controllershipAudit.auditNotes);
+      }
+      if (found.controllershipAudit?.rejectionReason) {
+        setRejectionReason(found.controllershipAudit.rejectionReason);
+      }
+
       setLoading(false);
-      return;
-    }
+    };
 
-    setAction(found);
-    const tenant = dataService.getCurrentTenant();
-    if (tenant?.aiSettings?.controladoriaName) {
-      setReviewerRole(tenant.aiSettings.controladoriaName);
-    }
-    if (tenant?.aiSettings?.controladoriaEmail) {
-      setReviewerEmail(tenant.aiSettings.controladoriaEmail);
-    }
-
-    // Inicializar valores com a proposta ou valores já aprovados
-    const bk = found.controllershipAudit?.approvedCostBreakdown || found.costBreakdown || {};
-    setLaborSavings(bk.laborSavings !== undefined ? bk.laborSavings : '');
-    setProductionIncrease(bk.productionIncrease !== undefined ? bk.productionIncrease : '');
-    setScrapReduction(bk.scrapReduction !== undefined ? bk.scrapReduction : '');
-    setMachineDowntime(bk.machineDowntime !== undefined ? bk.machineDowntime : '');
-    setToolingAndEnergy(bk.toolingAndEnergy !== undefined ? bk.toolingAndEnergy : '');
-    setLogisticsAndFreight(bk.logisticsAndFreight !== undefined ? bk.logisticsAndFreight : '');
-    setOtherSavings(bk.otherSavings !== undefined ? bk.otherSavings : '');
-    setOtherSavingsDescription(bk.otherSavingsDescription || '');
-
-    // Carregar memórias de cálculo e arquivos comprobatórios
-    const gDetails = found.controllershipAudit?.gainDetails || found.gainDetails || {};
-    setGainDetails(JSON.parse(JSON.stringify(gDetails)));
-
-    if (found.controllershipAudit?.reviewedBy) {
-      setReviewerName(found.controllershipAudit.reviewedBy);
-    }
-    if (found.controllershipAudit?.reviewerEmail) {
-      setReviewerEmail(found.controllershipAudit.reviewerEmail);
-    }
-    if (found.controllershipAudit?.reviewerRole) {
-      setReviewerRole(found.controllershipAudit.reviewerRole);
-    }
-    if (found.controllershipAudit?.auditNotes) {
-      setAuditNotes(found.controllershipAudit.auditNotes);
-    }
-    if (found.controllershipAudit?.rejectionReason) {
-      setRejectionReason(found.controllershipAudit.rejectionReason);
-    }
-
-    setLoading(false);
+    loadAction();
   }, [token]);
 
   // Handlers para o Auditor manipular a contra-memória e justificativa de cada ganho

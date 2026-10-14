@@ -3,6 +3,37 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Varredura Geral de Persistência Cloud (Supabase) e Correção da Propagação de Avatares
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `chronicler`  
+**Escopo:** Diagnóstico de não-propagação de fotos de perfil entre usuários, correção de RLS e triggers de sincronização em `authorized_users` e `profiles`, e ligação integral à nuvem Supabase das entidades de TPM (Máquinas, Auditorias, Etiquetas 5S), Hoshin Kanri (Objetivos Estratégicos) e Radar Lean dos Setores (`sector_assessments`).
+
+### 1. Diagnóstico e Causa Raiz
+- **Não-propagação de Fotos de Perfil:**
+  - Usuários sem privilégio de administrador do tenant (ex: agentes como Gustavo Maciel) ao alterarem o avatar em `UserProfileModal` gravavam com sucesso na tabela `public.profiles` (via política de auto-atualização por `auth.uid()`).
+  - No entanto, a gravação em `public.authorized_users` era sumariamente rejeitada pelo RLS do Supabase, que exigia privilégio de tenant admin (`private.is_tenant_admin(tenant_id)`).
+  - Como o `AuthContext` e o `syncUsersFromCloud()` consultavam exclusivamente a tabela `authorized_users`, os avatares retornavam os placeholders padrão legados (Unsplash). Ao sincronizar, o cache local era sobrescrito pelo valor antigo e nenhum outro usuário conseguia enxergar o avatar atualizado.
+- **Entidades Isoladas no LocalStorage:**
+  - A varredura identificou que TPM (Máquinas, Auditorias e Etiquetas), Hoshin Kanri (Objetivos Estratégicos Anuais) e Radar de Maturidade Lean dos Setores tinham estruturas parciais ou ausentes no banco de dados e gravavam exclusivamente no `localStorage`. Limpezas de navegador ou acessos em outros dispositivos causavam perda ou descompasso dos dados operacionais.
+
+### 2. Ações e Migrações Executadas
+- **Políticas RLS e Trigger de Sincronização no Supabase:**
+  - Criada política RLS `authorized_users_self_update` em `public.authorized_users`, permitindo que qualquer usuário autenticado atualize seu próprio registro (`lower(email) = lower(auth.jwt()->>'email')`).
+  - Implementada função `public.sync_profile_to_authorized_user()` com `SECURITY DEFINER` e trigger `trg_sync_profile_to_authorized_user` na tabela `public.profiles`. Toda atualização de avatar, nome ou cargo em `profiles` propaga instantaneamente para `authorized_users`.
+  - Executada migração de retrocompatibilidade sincronizando todos os avatares já salvos em `profiles` diretamente para `authorized_users` (incluindo o avatar Base64 do agente Gustavo).
+- **Adequação Estrutural de Tabelas no Supabase Cloud:**
+  - `public.tpm_machines`: adicionadas colunas `status`, `current_audit_score`, `last_audit_date`, `tpm_phase`, `tpm_phase_history`, `description`, `sector_name`.
+  - `public.tpm_tags`: adicionadas colunas `machine_name`, `machine_code`, `sector_id`, `sector_name`, `category`, `priority`, `due_date`, `resolved_by`, `solution_notes`, `created_at`.
+  - `public.tpm_audits`: adicionadas colunas `machine_name`, `machine_code`, `sector_id`, `sector_name`, `status`, `items`, `observations`.
+  - `public.strategic_objectives`: adicionadas colunas `target_metric`, `associated_action_ids`, `progress_percentage`, `code`, `sponsor`, `target_unit`, `unit_label`, `baseline_value`, `deadline_date`.
+  - `public.sector_assessments`: criada tabela completa para o Radar Lean dos Setores com índices e política RLS de isolamento por tenant.
+- **Integração no Código TypeScript (`src/services/dataService.ts` & `src/contexts/AuthContext.tsx`):**
+  - Implementadas rotinas bidirecionais (`persist...ToCloud`, `sync...FromCloud` e `delete...FromCloud`) para Máquinas TPM, Auditorias TPM, Etiquetas TPM, Objetivos Estratégicos e Avaliações de Setor.
+  - CRUDs dessas entidades em `dataService` agora sincronizam ativamente com o Supabase com fallback seguro no cache local.
+  - `syncUsersFromCloud()` e inicialização do `AuthContext`: agora consultam `authorized_users` e `profiles` em paralelo via `Promise.all`, combinando os dados e garantindo que o avatar mais recente de `profiles` seja visível para todos os usuários do sistema.
+  - `syncAllFromCloud()`: expandido para sincronizar em paralelo 10 entidades principais da plataforma.
+
+---
+
 ## [2026-10-14] Governança de E-mail da Controladoria e Visualização de Memórias de Cálculo no Check
 **Agentes Responsáveis:** `cleancod`, `designer`, `security-expert`, `chronicler`  
 **Escopo:** Persistência no Supabase Cloud das configurações de IA e e-mail da Controladoria (`tenants.ai_settings`), confirmação com edição dinâmica de e-mail de homologação, visualização corporativa de anexos de ganhos financeiros (imagens, PDFs e planilhas) no Check e no Portal do Auditor, e correção de persistência de `gainDetails`.
