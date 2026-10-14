@@ -13,18 +13,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Token de auditoria obrigatório.' }, { status: 400 });
     }
 
-    // Busca via função RPC privada protegida
-    const { data, error } = await supabase.rpc('get_audit_by_token', { p_token: token });
+    // Busca via função RPC SECURITY DEFINER que retorna { audit: ..., action: ... }
+    const { data, error } = await supabase.rpc('get_audit_action_by_token', { p_token: token });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ error: 'Auditoria não encontrada para este token.' }, { status: 404 });
+    if (!data || (!data.audit && !data.action)) {
+      return NextResponse.json({ error: 'Auditoria não encontrada para este token ou link expirado.' }, { status: 404 });
     }
 
-    return NextResponse.json({ audit: data[0] });
+    return NextResponse.json({ result: data, audit: data.audit, action: data.action });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Erro interno' }, { status: 500 });
   }
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       reviewerRole = 'Controladoria',
       auditNotes = '',
       rejectionReason = '',
+      gainDetails = null,
     } = body;
 
     if (!token || !status || !reviewerName || !reviewerEmail) {
@@ -53,8 +54,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Submete decisão via função RPC privada protegida
-    const { data, error } = await supabase.rpc('submit_audit_decision', {
+    // Submete decisão via função RPC privada protegida submit_audit_decision_v2
+    const { data, error } = await supabase.rpc('submit_audit_decision_v2', {
       p_token: token,
       p_status: status,
       p_approved_estimated: approvedEstimatedCostAvoided,
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
       p_reviewer_role: reviewerRole,
       p_audit_notes: auditNotes,
       p_rejection_reason: rejectionReason,
+      p_gain_details: gainDetails,
     });
 
     if (error) {

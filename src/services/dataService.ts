@@ -1161,6 +1161,110 @@ export const dataService = {
     return action;
   },
 
+  async syncActionByIdFromCloud(id: string): Promise<LeanAction | null> {
+    if (!isSupabaseConfigured()) return this.getActionById(id) || null;
+    try {
+      const clean = id.trim();
+      const { data: row, error } = await supabase
+        .from('lean_actions')
+        .select('*')
+        .or(`id.eq.${clean},protocol.eq.${clean}`)
+        .maybeSingle();
+
+      if (error || !row) return this.getActionById(id) || null;
+
+      const method = row.methodology_data || {};
+      const mapped: LeanAction = {
+        id: row.id,
+        protocol: row.protocol,
+        tenantId: row.tenant_id,
+        title: row.title,
+        description: row.description || '',
+        wasteCategory: row.waste_category,
+        originSectorId: row.origin_sector_id || method.originSectorId || '',
+        originSectorName: method.originSectorName || '',
+        targetSectorId: row.target_sector_id || method.targetSectorId,
+        targetSectorName: method.targetSectorName,
+        status: row.status,
+        priority: row.priority,
+        pdcaStage: row.pdca_stage,
+        estimatedCostAvoided: Number(row.estimated_cost_avoided) || 0,
+        actualCostAvoided: Number(row.actual_cost_avoided) || 0,
+        costBreakdown: row.cost_breakdown || method.costBreakdown || {},
+        projectCosts: row.investment_costs || method.projectCosts || {},
+        dueDate: row.due_date,
+        originalEndDate: row.original_end_date,
+        postponedCount: Number(row.postponed_count) || 0,
+        conclusionDate: row.conclusion_date,
+        pokaYokeStatus: row.poka_yoke_status,
+        pokaYokeRefinedText: row.poka_yoke_refined_text,
+        submittedForApproval: Boolean(row.submitted_for_approval),
+        submittedAt: row.submitted_at,
+        masterApproved: Boolean(row.master_approved),
+        masterApprovedAt: row.master_approved_at,
+        masterApproverName: row.master_approver_name,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+        notes: row.timeline_notes || method.notes || [],
+        checklist: method.checklist || [],
+        quarterlyFollowUp: method.quarterlyFollowUp,
+        problemStatement: method.problemStatement,
+        targetMetricName: method.targetMetricName,
+        targetMetricUnit: method.targetMetricUnit,
+        baselineValue: method.baselineValue,
+        targetGoalValue: method.targetGoalValue,
+        currentProblemCostMonthly: method.currentProblemCostMonthly,
+        fiveWhys: method.fiveWhys,
+        pareto: method.pareto,
+        ishikawa: method.ishikawa,
+        pilotArea: method.pilotArea,
+        pilotTestObservations: method.pilotTestObservations,
+        photoBeforeUrl: method.photoBeforeUrl,
+        photoAfterUrl: method.photoAfterUrl,
+        achievedValue: method.achievedValue,
+        netSavings: method.netSavings,
+        roiPercentage: method.roiPercentage,
+        paybackMonths: method.paybackMonths,
+        hoursSaved: method.hoursSaved || 0,
+        attachments: method.attachments,
+        gainDetails: method.gainDetails || method.controllershipAudit?.gainDetails || {},
+        assignedAgentId: method.assignedAgentId || row.assigned_agent_id,
+        assignedAgentName: method.assignedAgentName,
+        assignedAgentAvatar: method.assignedAgentAvatar,
+        strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
+        strategicObjectiveName: method.strategicObjectiveName,
+        senseiStrategicAudit: method.senseiStrategicAudit,
+        controllershipAudit: method.controllershipAudit,
+        auditToken: row.audit_token || method.controllershipAudit?.token || undefined,
+        isPublicDemand: Boolean(method.isPublicDemand),
+        isKaizenIdea: Boolean(method.isKaizenIdea),
+        kaizenOrigin: method.kaizenOrigin,
+        kaizenIdeaId: method.kaizenIdeaId,
+        kaizenIdeaProtocol: method.kaizenIdeaProtocol,
+        kaizenCategory: method.kaizenCategory,
+        kaizenPhotoUrl: method.kaizenPhotoUrl,
+        requesterName: method.requesterName,
+        requesterEmail: method.requesterEmail,
+        requesterDepartment: method.requesterDepartment,
+        leaderName: method.leaderName,
+        teamMembers: method.teamMembers,
+      };
+
+      const localActions = this.getActions('all');
+      const idx = localActions.findIndex((a) => a.id === mapped.id);
+      if (idx >= 0) {
+        localActions[idx] = mapped;
+      } else {
+        localActions.push(mapped);
+      }
+      setStoredData(STORAGE_KEYS.ACTIONS, localActions);
+      return mapped;
+    } catch (err) {
+      console.warn('[dataService] Erro ao sincronizar acao individual da nuvem:', err);
+      return this.getActionById(id) || null;
+    }
+  },
+
   getActionByProtocol(protocol: string): LeanAction | undefined {
     const cleanProto = protocol.trim().toUpperCase();
     return this.getActions('all').find((a) => a.protocol.toUpperCase() === cleanProto);
@@ -1209,6 +1313,7 @@ export const dataService = {
           master_approved: Boolean(action.masterApproved),
           master_approved_at: action.masterApprovedAt || null,
           master_approver_name: action.masterApprovedBy || (action as any).masterApproverName || null,
+          audit_token: action.auditToken || action.controllershipAudit?.token || null,
           methodology_data: {
             checklist: action.checklist || [],
             quarterlyFollowUp: action.quarterlyFollowUp,
@@ -1352,6 +1457,7 @@ export const dataService = {
           strategicObjectiveName: method.strategicObjectiveName,
           senseiStrategicAudit: method.senseiStrategicAudit,
           controllershipAudit: method.controllershipAudit,
+          auditToken: row.audit_token || method.controllershipAudit?.token || undefined,
           isPublicDemand: Boolean(method.isPublicDemand),
           isKaizenIdea: Boolean(method.isKaizenIdea),
           kaizenOrigin: method.kaizenOrigin,
@@ -1910,10 +2016,39 @@ export const dataService = {
       action.gainDetails = gainDetails;
     }
 
+    action.auditToken = token;
     action.controllershipAudit = auditData;
     action.updatedAt = new Date().toISOString();
     actions[index] = action;
-    const saved = await this.saveAndSyncAction(actions[index], actions);
+    const saved = this.saveAndSyncAction(actions[index], actions);
+
+    // Persistência direta e garantida no Supabase Cloud (ambas as tabelas)
+    if (isSupabaseConfigured()) {
+      try {
+        await Promise.all([
+          this.persistActionToCloud(action),
+          supabase.from('controllership_audits').upsert({
+            action_id: action.id,
+            tenant_id: action.tenantId || tenant?.id || 'tenant_rafitec_01',
+            token: token,
+            status: 'pendente',
+            submitted_at: new Date().toISOString(),
+            submitted_by: submittedBy,
+            submitted_by_role: 'Agente Lean',
+            original_breakdown: originalBreakdown,
+            original_estimated_cost_avoided: originalEstimated,
+            original_project_costs: originalCosts || {},
+            gain_details: gainDetails || action.gainDetails || {},
+            email_sent_to: controladoriaEmail,
+            email_sent_at: new Date().toISOString(),
+            email_status: emailResult.simulated ? 'simulado' : emailResult.success ? 'enviado' : 'falha',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'token' }),
+        ]);
+      } catch (cloudErr) {
+        console.warn('[dataService] Erro ao sincronizar submissão da Controladoria no Supabase:', cloudErr);
+      }
+    }
 
     return { action: saved, auditUrl, token, emailResult };
   },
@@ -2018,7 +2153,35 @@ export const dataService = {
 
     action.updatedAt = now;
     actions[index] = action;
-    return this.saveAndSyncAction(actions[index], actions);
+    const saved = this.saveAndSyncAction(actions[index], actions);
+
+    if (isSupabaseConfigured()) {
+      try {
+        Promise.all([
+          this.persistActionToCloud(action),
+          supabase.from('controllership_audits').update({
+            status: review.status,
+            approved_estimated_cost_avoided: action.controllershipAudit.approvedEstimatedCostAvoided || 0,
+            approved_breakdown: action.controllershipAudit.approvedCostBreakdown || {},
+            approved_project_costs: action.controllershipAudit.approvedProjectCosts || {},
+            gain_details: action.gainDetails || {},
+            reviewed_at: now,
+            reviewed_by: review.reviewerName,
+            reviewer_email: review.reviewerEmail,
+            reviewer_role: review.reviewerRole,
+            audit_notes: review.auditNotes,
+            rejection_reason: review.rejectionReason,
+            updated_at: now,
+          }).eq('token', token),
+        ]).catch((err) => {
+          console.warn('[dataService] Erro ao sincronizar parecer da Controladoria no Supabase:', err);
+        });
+      } catch (err) {
+        console.warn('[dataService] Exceção ao atualizar controllership_audits no Supabase:', err);
+      }
+    }
+
+    return saved;
   },
 
   createPublicDemand(demand: {

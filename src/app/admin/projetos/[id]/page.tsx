@@ -236,108 +236,135 @@ export default function AdminProjectDetailPage() {
   const [followUpDate, setFollowUpDate] = useState<string>('');
   const [followUpNotes, setFollowUpNotes] = useState<string>('');
 
+  const applyActionToForm = useCallback((found: LeanAction) => {
+    setAction(found);
+    setActiveTab(found.pdcaStage || 'plan');
+    
+    // P - PLAN
+    setTargetMetricName(found.targetMetricName || '');
+    setTargetMetricUnit(found.targetMetricUnit || '');
+    setBaselineValue(found.baselineValue !== undefined ? found.baselineValue : '');
+    setTargetGoalValue(found.targetGoalValue !== undefined ? found.targetGoalValue : '');
+    setAchievedValue(found.achievedValue !== undefined ? found.achievedValue : '');
+    setCurrentProblemCostMonthly(found.currentProblemCostMonthly !== undefined ? found.currentProblemCostMonthly : '');
+    setProblemStatement(found.problemStatement || found.description || '');
+    setFiveWhys(
+      found.fiveWhys && found.fiveWhys.length === 5
+        ? found.fiveWhys
+        : ['', '', '', '', '']
+    );
+    setLeaderName(found.leaderName || found.assignedAgentName || '');
+    setTeamMembersInput(found.teamMembers && found.teamMembers.length > 0 ? found.teamMembers.join(', ') : '');
+    setParetoImageUrl(found.pareto?.chartImageUrl || '');
+    setParetoImageName(found.pareto?.chartImageName || '');
+    setParetoVitalCauses(found.pareto?.vitalCausesSummary || '');
+    setParetoCumulativePercent(
+      found.pareto?.cumulativeImpactPercentage !== undefined ? found.pareto.cumulativeImpactPercentage : 80
+    );
+
+    // Ishikawa 6M
+    setIshikawaMethod(found.ishikawa?.method || '');
+    setIshikawaMachine(found.ishikawa?.machine || '');
+    setIshikawaMaterial(found.ishikawa?.material || '');
+    setIshikawaManpower(found.ishikawa?.manpower || '');
+    setIshikawaMeasurement(found.ishikawa?.measurement || '');
+    setIshikawaEnvironment(found.ishikawa?.environment || '');
+    setIshikawaRootCause(found.ishikawa?.primaryRootCause || '');
+
+    // Diagnóstico e Causa: selecionar ferramentas que possuem dados ou 5 Porquês por padrão
+    const activeTools: string[] = [];
+    const has5WhysData = Boolean(found.fiveWhys && found.fiveWhys.some((w) => w && w.trim()));
+    const hasParetoData = Boolean(found.pareto?.chartImageUrl || (found.pareto?.vitalCausesSummary && found.pareto.vitalCausesSummary.trim()));
+    const hasIshikawaData = Boolean(
+      found.ishikawa &&
+        (found.ishikawa.method ||
+          found.ishikawa.machine ||
+          found.ishikawa.material ||
+          found.ishikawa.manpower ||
+          found.ishikawa.measurement ||
+          found.ishikawa.environment ||
+          found.ishikawa.primaryRootCause)
+    );
+
+    if (has5WhysData) activeTools.push('fiveWhys');
+    if (hasParetoData) activeTools.push('pareto');
+    if (hasIshikawaData) activeTools.push('ishikawa');
+    if (activeTools.length === 0) activeTools.push('fiveWhys');
+
+    setSelectedDiagnosticTools(activeTools);
+
+    // D - DO
+    setChecklistItems(found.checklist || []);
+    setPilotArea(found.pilotArea || '');
+    setPilotTestObservations(found.pilotTestObservations || '');
+
+    // C - CHECK
+    setAttachments(found.attachments || []);
+    setPartsAndEquipment(found.projectCosts?.partsAndEquipment || '');
+    setThirdPartyServices(found.projectCosts?.thirdPartyServices || '');
+    setInternalLaborHours(found.projectCosts?.internalLaborHours || '');
+    setLaborHourlyRate(found.projectCosts?.laborHourlyRate || 45);
+    setOtherCosts(found.projectCosts?.otherCosts || '');
+
+    setMachineDowntime(found.costBreakdown?.machineDowntime || '');
+    setLaborSavings(found.costBreakdown?.laborSavings || '');
+    setScrapReduction(found.costBreakdown?.scrapReduction || '');
+    setToolingAndEnergy(found.costBreakdown?.toolingAndEnergy || '');
+    setLogisticsAndFreight(found.costBreakdown?.logisticsAndFreight || '');
+    setProductionIncrease(found.costBreakdown?.productionIncrease || '');
+    setOtherSavings(found.costBreakdown?.otherSavings || '');
+
+    const gDetails = found.gainDetails || found.controllershipAudit?.gainDetails || {};
+    setGainDetails(JSON.parse(JSON.stringify(gDetails)));
+
+    // A - ACT
+    setStandardWorkUpdated(!!found.standardWorkUpdated);
+    setStandardWorkDocRef(found.standardWorkDocRef || '');
+    setYokotenReplication(found.yokotenReplication || '');
+    setLessonsLearned(found.lessonsLearned || '');
+
+    // Evidências Fotográficas do Projeto
+    setPhotoBeforeUrl(found.photoBeforeUrl || '');
+    setPhotoAfterUrl(found.photoAfterUrl || '');
+  }, []);
+
   useEffect(() => {
-    if (projectId) {
-      let found = dataService.getActionById(projectId);
-      if (!found) {
-        found = dataService.getActionByProtocol(projectId);
+    let isMounted = true;
+    isInitialLoadRef.current = true;
+
+    const loadProject = async () => {
+      if (!projectId) return;
+
+      // 1. Carregamento imediato do cache local (sem latência visual)
+      let initialFound = dataService.getActionById(projectId) || dataService.getActionByProtocol(projectId);
+      if (initialFound && isMounted) {
+        applyActionToForm(initialFound);
       }
-      if (found) {
-        setAction(found);
-        setActiveTab(found.pdcaStage || 'plan');
-        
-        // P - PLAN
-        setTargetMetricName(found.targetMetricName || '');
-        setTargetMetricUnit(found.targetMetricUnit || '');
-        setBaselineValue(found.baselineValue !== undefined ? found.baselineValue : '');
-        setTargetGoalValue(found.targetGoalValue !== undefined ? found.targetGoalValue : '');
-        setAchievedValue(found.achievedValue !== undefined ? found.achievedValue : '');
-        setCurrentProblemCostMonthly(found.currentProblemCostMonthly !== undefined ? found.currentProblemCostMonthly : '');
-        setProblemStatement(found.problemStatement || found.description || '');
-        setFiveWhys(
-          found.fiveWhys && found.fiveWhys.length === 5
-            ? found.fiveWhys
-            : ['', '', '', '', '']
-        );
-        setLeaderName(found.leaderName || found.assignedAgentName || '');
-        setTeamMembersInput(found.teamMembers && found.teamMembers.length > 0 ? found.teamMembers.join(', ') : '');
-        setParetoImageUrl(found.pareto?.chartImageUrl || '');
-        setParetoImageName(found.pareto?.chartImageName || '');
-        setParetoVitalCauses(found.pareto?.vitalCausesSummary || '');
-        setParetoCumulativePercent(
-          found.pareto?.cumulativeImpactPercentage !== undefined ? found.pareto.cumulativeImpactPercentage : 80
-        );
 
-        // Ishikawa 6M
-        setIshikawaMethod(found.ishikawa?.method || '');
-        setIshikawaMachine(found.ishikawa?.machine || '');
-        setIshikawaMaterial(found.ishikawa?.material || '');
-        setIshikawaManpower(found.ishikawa?.manpower || '');
-        setIshikawaMeasurement(found.ishikawa?.measurement || '');
-        setIshikawaEnvironment(found.ishikawa?.environment || '');
-        setIshikawaRootCause(found.ishikawa?.primaryRootCause || '');
-
-        // Diagnóstico e Causa: selecionar ferramentas que possuem dados ou 5 Porquês por padrão
-        const activeTools: string[] = [];
-        const has5WhysData = Boolean(found.fiveWhys && found.fiveWhys.some((w) => w && w.trim()));
-        const hasParetoData = Boolean(found.pareto?.chartImageUrl || (found.pareto?.vitalCausesSummary && found.pareto.vitalCausesSummary.trim()));
-        const hasIshikawaData = Boolean(
-          found.ishikawa &&
-            (found.ishikawa.method ||
-              found.ishikawa.machine ||
-              found.ishikawa.material ||
-              found.ishikawa.manpower ||
-              found.ishikawa.measurement ||
-              found.ishikawa.environment ||
-              found.ishikawa.primaryRootCause)
-        );
-
-        if (has5WhysData) activeTools.push('fiveWhys');
-        if (hasParetoData) activeTools.push('pareto');
-        if (hasIshikawaData) activeTools.push('ishikawa');
-        if (activeTools.length === 0) activeTools.push('fiveWhys');
-
-        setSelectedDiagnosticTools(activeTools);
-
-        // D - DO
-        setChecklistItems(found.checklist || []);
-        setPilotArea(found.pilotArea || '');
-        setPilotTestObservations(found.pilotTestObservations || '');
-
-        // C - CHECK
-        setAttachments(found.attachments || []);
-        setPartsAndEquipment(found.projectCosts?.partsAndEquipment || '');
-        setThirdPartyServices(found.projectCosts?.thirdPartyServices || '');
-        setInternalLaborHours(found.projectCosts?.internalLaborHours || '');
-        setLaborHourlyRate(found.projectCosts?.laborHourlyRate || 45);
-        setOtherCosts(found.projectCosts?.otherCosts || '');
-
-        setMachineDowntime(found.costBreakdown?.machineDowntime || '');
-        setLaborSavings(found.costBreakdown?.laborSavings || '');
-        setScrapReduction(found.costBreakdown?.scrapReduction || '');
-        setToolingAndEnergy(found.costBreakdown?.toolingAndEnergy || '');
-        setLogisticsAndFreight(found.costBreakdown?.logisticsAndFreight || '');
-        setProductionIncrease(found.costBreakdown?.productionIncrease || '');
-        setOtherSavings(found.costBreakdown?.otherSavings || '');
-
-        setGainDetails(found.gainDetails || found.controllershipAudit?.gainDetails || {});
-
-        // A - ACT
-        setStandardWorkUpdated(!!found.standardWorkUpdated);
-        setStandardWorkDocRef(found.standardWorkDocRef || '');
-        setYokotenReplication(found.yokotenReplication || '');
-        setLessonsLearned(found.lessonsLearned || '');
-
-        // Evidências Fotográficas do Projeto
-        setPhotoBeforeUrl(found.photoBeforeUrl || '');
-        setPhotoAfterUrl(found.photoAfterUrl || '');
+      // 2. Sincronização cloud-first ativa (garante dados mais recentes salvos por qualquer usuário no Supabase)
+      try {
+        const cloudFound = await dataService.syncActionByIdFromCloud(projectId);
+        if (cloudFound && isMounted) {
+          applyActionToForm(cloudFound);
+        }
+      } catch (cloudErr) {
+        console.warn('[ProjectDetail] Erro ao sincronizar acao da nuvem:', cloudErr);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setTimeout(() => {
+            isInitialLoadRef.current = false;
+          }, 400);
+        }
       }
-      setLoading(false);
-      setTimeout(() => {
-        isInitialLoadRef.current = false;
-      }, 400);
-    }
-  }, [projectId]);
+    };
+
+    loadProject();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [projectId, applyActionToForm]);
 
   // Contadores auxiliares para badges e seletor
   const fiveWhysFilledCount = useMemo(() => {
@@ -795,7 +822,21 @@ export default function AdminProjectDetailPage() {
         productionIncrease: s.productionIncrease !== '' ? Number(s.productionIncrease) : undefined,
         otherSavings: s.otherSavings !== '' ? Number(s.otherSavings) : undefined,
       },
-      gainDetails: s.gainDetails,
+      // Poka-Yoke: Garantir preservação estrita de anexos de gainDetails já existentes
+      gainDetails: (() => {
+        const currentGainDetails = s.gainDetails || {};
+        const safeGainDetails: Record<string, GainProofDetail> = { ...(action?.gainDetails || {}), ...currentGainDetails };
+        Object.keys(action?.gainDetails || {}).forEach((cat) => {
+          if (action?.gainDetails?.[cat]?.attachment && !safeGainDetails[cat]?.attachment) {
+            safeGainDetails[cat] = {
+              ...safeGainDetails[cat],
+              attachment: action.gainDetails[cat].attachment,
+            };
+          }
+        });
+        return safeGainDetails;
+      })(),
+      controllershipAudit: action?.controllershipAudit,
       actualCostAvoided: s.totalGrossSavings,
       netSavings: s.netSavings,
       roiPercentage: s.roiPercentage,
@@ -1174,7 +1215,7 @@ export default function AdminProjectDetailPage() {
       : `${Math.round(file.size / 1024)} KB`;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
       const newAttachment: GainProofAttachment = {
         id: 'att_gain_' + Date.now(),
@@ -1202,10 +1243,14 @@ export default function AdminProjectDetailPage() {
         },
       };
       setGainDetails(updated);
+      stateRef.current.gainDetails = updated;
 
       try {
         const fresh = dataService.updateAction(action.id, { gainDetails: updated });
-        if (fresh) setAction(fresh);
+        if (fresh) {
+          setAction(fresh);
+          await dataService.persistActionToCloud(fresh);
+        }
       } catch (err) {
         console.warn('Erro ao atualizar anexo de ganho:', err);
       }
@@ -1214,16 +1259,20 @@ export default function AdminProjectDetailPage() {
     e.target.value = '';
   };
 
-  const handleRemoveGainFile = (category: string) => {
+  const handleRemoveGainFile = async (category: string) => {
     if (!action) return;
     const current = gainDetails[category];
     if (!current) return;
     const updated = { ...gainDetails };
     delete updated[category].attachment;
     setGainDetails(updated);
+    stateRef.current.gainDetails = updated;
     try {
       const fresh = dataService.updateAction(action.id, { gainDetails: updated });
-      if (fresh) setAction(fresh);
+      if (fresh) {
+        setAction(fresh);
+        await dataService.persistActionToCloud(fresh);
+      }
     } catch (err) {
       console.warn('Erro ao remover anexo de ganho:', err);
     }
@@ -1352,8 +1401,8 @@ export default function AdminProjectDetailPage() {
 
     setSubmittingControladoria(true);
     try {
-      // Atualizar o valor de cada gainDetails com o valor atual do input
-      const finalGainDetails: Record<string, GainProofDetail> = { ...gainDetails };
+      // Atualizar o valor de cada gainDetails com o valor atual do input preservando estritamente anexos existentes
+      const finalGainDetails: Record<string, GainProofDetail> = { ...(action?.gainDetails || {}), ...gainDetails };
       activeGainsList.forEach((g) => {
         if (!finalGainDetails[g.key]) {
           finalGainDetails[g.key] = {
@@ -1365,6 +1414,9 @@ export default function AdminProjectDetailPage() {
         } else {
           finalGainDetails[g.key].value = g.val;
           finalGainDetails[g.key].categoryLabel = g.label;
+          if (!finalGainDetails[g.key].attachment && action?.gainDetails?.[g.key]?.attachment) {
+            finalGainDetails[g.key].attachment = action.gainDetails[g.key].attachment;
+          }
         }
       });
 
@@ -1377,6 +1429,7 @@ export default function AdminProjectDetailPage() {
       );
       setAction(res.action);
       setGainDetails(finalGainDetails);
+      stateRef.current.gainDetails = finalGainDetails;
 
       const emailStatusText = res.emailResult?.simulated
         ? `Modo Simulado (EMAIL_ENABLED=false): o sistema gerou a mensagem internamente mas não realizou o envio externo.`

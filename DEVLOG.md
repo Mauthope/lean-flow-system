@@ -3,6 +3,37 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Correção de Persistência Cloud de Memória de Cálculo no Check e Resolução de Acesso Seguro por Token na Controladoria
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `chronicler`  
+**Escopo:** Diagnóstico e resolução do descompasso de persistência que impedia o salvamento e visualização de anexos de ganhos (Check) por outros usuários, e correção da rota de auditoria por token da Controladoria eliminando a falha de "link inválido ou expirado" para auditores externos.
+
+### 1. Diagnóstico e Causas Raízes
+- **Anexos nos Ganhos do Check não Salvos / Não Visíveis:**
+  - `src/app/admin/projetos/[id]/page.tsx` carregava o formulário no mount de forma exclusivamente síncrona a partir do `localStorage`, sem consultar a nuvem Supabase antes de liberar a edição.
+  - O temporizador de auto-save periódico (ativado 400ms após o mount) executava com o estado local defasado. Qualquer edição ou clique salvava esse estado obsoleto no Supabase, sobrescrevendo a nuvem e apagando os anexos recém-enviados por outros usuários (ou pelo próprio usuário em outra máquina).
+  - Anexos em Base64 dentro de `gainDetails` extrapolavam frequentemente a cota de 5MB do `localStorage`, falhando silenciosamente no `setItem` e regredindo o estado local.
+- **Link do E-mail da Controladoria com "Link Inválido ou Expirado":**
+  - A página `/controladoria/auditoria/[token]/page.tsx` chamava `dataService.getActionByAuditToken(token)`, que por sua vez executava `supabase.from('lean_actions').select('*')` no client-side.
+  - A tabela `lean_actions` possui RLS ativo exigindo sessão autenticada (`authenticated`). Quando o auditor abria o link diretamente do e-mail corporativo sem estar logado no sistema, a query retornava vazia, disparando a mensagem de erro de link inválido/expirado.
+  - Além disso, a submissão para a controladoria não gravava o token na tabela `controllership_audits`, e a página do auditor não consumia o endpoint de API server-side `/api/controladoria/audit`.
+
+### 2. Ações e Migrações Executadas
+- **Modelagem e Funções RPC no Supabase Cloud:**
+  - Adicionada a coluna `gain_details JSONB` na tabela `public.controllership_audits`.
+  - Adicionada a coluna `audit_token TEXT` e índice `idx_lean_actions_audit_token` na tabela `public.lean_actions`.
+  - Criada a RPC `public.get_audit_action_by_token(p_token text)` com `SECURITY DEFINER`: consulta `controllership_audits` e `lean_actions` com escopo estrito ao token informado, retornando os dados do projeto e as memórias de cálculo sem necessidade de login prévio do auditor, mantendo o RLS global protegido.
+  - Criada a RPC `public.submit_audit_decision_v2(...)` com `SECURITY DEFINER` para processar aprovações, revisões e rejeições de auditoria atomicamente.
+- **Hidratação Cloud-First e Proteção Poka-Yoke contra Sobrescrita:**
+  - Implementada a função `syncActionByIdFromCloud(id)` em `dataService.ts`, que busca o projeto no Supabase Cloud e atualiza o cache local.
+  - Em `/admin/projetos/[id]/page.tsx`, o mount agora executa hidratação cloud-first antes de habilitar o auto-save, garantindo que anexos e memórias de cálculo recém-gravados na nuvem sejam carregados imediatamente.
+  - O upload e exclusão de arquivos em `gainDetails` agora persistem instantaneamente no Supabase Cloud via `persistActionToCloud`.
+  - O auto-save periódico (`executeSave`) e o envio à Controladoria incorporam fusão defensiva (Poka-Yoke): caso o estado em memória não possua anexos mas a nuvem ou o cache local já possuam, os anexos são preservados e nunca apagados por acidente.
+- **Roteamento Seguro da Controladoria:**
+  - `/api/controladoria/audit/route.ts` atualizada para invocar `get_audit_action_by_token` (GET) e `submit_audit_decision_v2` (POST).
+  - `/controladoria/auditoria/[token]/page.tsx` consome exclusivamente a rota `/api/controladoria/audit?token=...`, garantindo que auditores acessem os detalhes do Kaizen, relatórios e aprovem/ajustem os valores sem atrito de login.
+
+---
+
 ## [2026-10-14] Varredura Geral de Persistência Cloud (Supabase) e Correção da Propagação de Avatares
 **Agentes Responsáveis:** `security-expert`, `cleancod`, `chronicler`  
 **Escopo:** Diagnóstico de não-propagação de fotos de perfil entre usuários, correção de RLS e triggers de sincronização em `authorized_users` e `profiles`, e ligação integral à nuvem Supabase das entidades de TPM (Máquinas, Auditorias, Etiquetas 5S), Hoshin Kanri (Objetivos Estratégicos) e Radar Lean dos Setores (`sector_assessments`).

@@ -468,9 +468,18 @@ export interface LeanAction {
   masterApproved?: boolean;              // Homologado pela Entidade Master?
   masterApprovedAt?: string;             // Data de homologação
   masterApprovedBy?: string;             // Responsável pela homologação Master
+  masterApproverName?: string;           // Nome do homologador Master
+  submittedAt?: string;                  // Data de submissão
+
+  // Poka-Yoke & Controle de Prazos
+  pokaYokeStatus?: string;
+  pokaYokeRefinedText?: string;
+  originalEndDate?: string;
+  postponedCount?: number;
 
   // Auditoria Prévia da Controladoria (Obrigatória se houver ganhos financeiros)
   controllershipAudit?: ControllershipAudit;
+  auditToken?: string;
   gainDetails?: Record<string, GainProofDetail>;
 
   // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)

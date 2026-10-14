@@ -69,6 +69,47 @@ export default function ControladoriaAuditoriaPage() {
   // Memórias de Cálculo & Anexos por Categoria
   const [gainDetails, setGainDetails] = useState<Record<string, GainProofDetail>>({});
 
+  const initializeAuditState = (found: LeanAction) => {
+    const tenant = dataService.getCurrentTenant();
+    if (tenant?.aiSettings?.controladoriaName) {
+      setReviewerRole(tenant.aiSettings.controladoriaName);
+    }
+    if (tenant?.aiSettings?.controladoriaEmail) {
+      setReviewerEmail(tenant.aiSettings.controladoriaEmail);
+    }
+
+    // Inicializar valores com a proposta ou valores já aprovados
+    const bk = found.controllershipAudit?.approvedCostBreakdown || found.costBreakdown || {};
+    setLaborSavings(bk.laborSavings !== undefined ? bk.laborSavings : '');
+    setProductionIncrease(bk.productionIncrease !== undefined ? bk.productionIncrease : '');
+    setScrapReduction(bk.scrapReduction !== undefined ? bk.scrapReduction : '');
+    setMachineDowntime(bk.machineDowntime !== undefined ? bk.machineDowntime : '');
+    setToolingAndEnergy(bk.toolingAndEnergy !== undefined ? bk.toolingAndEnergy : '');
+    setLogisticsAndFreight(bk.logisticsAndFreight !== undefined ? bk.logisticsAndFreight : '');
+    setOtherSavings(bk.otherSavings !== undefined ? bk.otherSavings : '');
+    setOtherSavingsDescription(bk.otherSavingsDescription || '');
+
+    // Carregar memórias de cálculo e arquivos comprobatórios
+    const gDetails = found.controllershipAudit?.gainDetails || found.gainDetails || {};
+    setGainDetails(JSON.parse(JSON.stringify(gDetails)));
+
+    if (found.controllershipAudit?.reviewedBy) {
+      setReviewerName(found.controllershipAudit.reviewedBy);
+    }
+    if (found.controllershipAudit?.reviewerEmail) {
+      setReviewerEmail(found.controllershipAudit.reviewerEmail);
+    }
+    if (found.controllershipAudit?.reviewerRole) {
+      setReviewerRole(found.controllershipAudit.reviewerRole);
+    }
+    if (found.controllershipAudit?.auditNotes) {
+      setAuditNotes(found.controllershipAudit.auditNotes);
+    }
+    if (found.controllershipAudit?.rejectionReason) {
+      setRejectionReason(found.controllershipAudit.rejectionReason);
+    }
+  };
+
   // Carregar Ação pelo Token
   useEffect(() => {
     if (!token) {
@@ -78,6 +119,85 @@ export default function ControladoriaAuditoriaPage() {
     }
 
     const loadAction = async () => {
+      // 1. Tentar carregar diretamente pela API protegida por Token (sem exigência de login prévio do auditor)
+      try {
+        const res = await fetch(`/api/controladoria/audit?token=${encodeURIComponent(token)}`);
+        if (res.ok) {
+          const json = await res.json();
+          const rawAct = json.action || json.result?.action;
+          const rawAud = json.audit || json.result?.audit;
+
+          if (rawAct) {
+            const method = rawAct.methodology_data || {};
+            const mapped: LeanAction = {
+              id: rawAct.id,
+              protocol: rawAct.protocol,
+              tenantId: rawAct.tenant_id,
+              title: rawAct.title,
+              description: rawAct.description || '',
+              wasteCategory: rawAct.waste_category,
+              originSectorId: rawAct.origin_sector_id || method.originSectorId || '',
+              originSectorName: method.originSectorName || '',
+              targetSectorId: rawAct.target_sector_id || method.targetSectorId,
+              targetSectorName: method.targetSectorName,
+              status: rawAct.status,
+              priority: rawAct.priority,
+              pdcaStage: rawAct.pdca_stage,
+              estimatedCostAvoided: Number(rawAct.estimated_cost_avoided) || 0,
+              actualCostAvoided: Number(rawAct.actual_cost_avoided) || 0,
+              costBreakdown: rawAct.cost_breakdown || method.costBreakdown || {},
+              projectCosts: rawAct.investment_costs || method.projectCosts || {},
+              dueDate: rawAct.due_date,
+              conclusionDate: rawAct.conclusion_date,
+              pokaYokeStatus: rawAct.poka_yoke_status,
+              submittedForApproval: Boolean(rawAct.submitted_for_approval),
+              masterApproved: Boolean(rawAct.master_approved),
+              createdAt: rawAct.created_at || new Date().toISOString(),
+              updatedAt: rawAct.updated_at || new Date().toISOString(),
+              notes: rawAct.timeline_notes || method.notes || [],
+              checklist: method.checklist || [],
+              attachments: method.attachments,
+              gainDetails: rawAud?.gain_details || method.gainDetails || rawAct.gainDetails || {},
+              leaderName: method.leaderName || 'Especialista Lean',
+              assignedAgentName: method.assignedAgentName,
+              isPublicDemand: Boolean(method.isPublicDemand),
+              hoursSaved: Number(method.hoursSaved) || 0,
+              controllershipAudit: rawAud ? {
+                id: rawAud.id,
+                token: rawAud.token,
+                status: rawAud.status || 'pendente',
+                submittedAt: rawAud.submitted_at,
+                submittedBy: rawAud.submitted_by || method.leaderName || 'Agente Lean',
+                originalCostBreakdown: rawAud.original_breakdown || rawAct.cost_breakdown || {},
+                originalEstimatedCostAvoided: Number(rawAud.original_estimated_cost_avoided) || Number(rawAct.actual_cost_avoided) || 0,
+                originalProjectCosts: rawAud.original_project_costs || rawAct.investment_costs,
+                approvedCostBreakdown: rawAud.approved_breakdown,
+                approvedEstimatedCostAvoided: rawAud.approved_estimated_cost_avoided,
+                approvedProjectCosts: rawAud.approved_project_costs,
+                gainDetails: rawAud.gain_details || method.gainDetails || {},
+                reviewedAt: rawAud.reviewed_at,
+                reviewedBy: rawAud.reviewed_by,
+                reviewerEmail: rawAud.reviewer_email,
+                reviewerRole: rawAud.reviewer_role,
+                auditNotes: rawAud.audit_notes,
+                rejectionReason: rawAud.rejection_reason,
+                emailSentTo: rawAud.email_sent_to,
+                emailSentAt: rawAud.email_sent_at,
+                emailStatus: rawAud.email_status,
+              } : method.controllershipAudit,
+            };
+
+            setAction(mapped);
+            initializeAuditState(mapped);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[Controladoria] Falha ao consultar endpoint de auditoria:', apiErr);
+      }
+
+      // 2. Fallback de cache local e sincronização
       let found = dataService.getActionByAuditToken(token);
       if (!found && isSupabaseConfigured()) {
         try {
@@ -98,45 +218,7 @@ export default function ControladoriaAuditoriaPage() {
       }
 
       setAction(found);
-      const tenant = dataService.getCurrentTenant();
-      if (tenant?.aiSettings?.controladoriaName) {
-        setReviewerRole(tenant.aiSettings.controladoriaName);
-      }
-      if (tenant?.aiSettings?.controladoriaEmail) {
-        setReviewerEmail(tenant.aiSettings.controladoriaEmail);
-      }
-
-      // Inicializar valores com a proposta ou valores já aprovados
-      const bk = found.controllershipAudit?.approvedCostBreakdown || found.costBreakdown || {};
-      setLaborSavings(bk.laborSavings !== undefined ? bk.laborSavings : '');
-      setProductionIncrease(bk.productionIncrease !== undefined ? bk.productionIncrease : '');
-      setScrapReduction(bk.scrapReduction !== undefined ? bk.scrapReduction : '');
-      setMachineDowntime(bk.machineDowntime !== undefined ? bk.machineDowntime : '');
-      setToolingAndEnergy(bk.toolingAndEnergy !== undefined ? bk.toolingAndEnergy : '');
-      setLogisticsAndFreight(bk.logisticsAndFreight !== undefined ? bk.logisticsAndFreight : '');
-      setOtherSavings(bk.otherSavings !== undefined ? bk.otherSavings : '');
-      setOtherSavingsDescription(bk.otherSavingsDescription || '');
-
-      // Carregar memórias de cálculo e arquivos comprobatórios
-      const gDetails = found.controllershipAudit?.gainDetails || found.gainDetails || {};
-      setGainDetails(JSON.parse(JSON.stringify(gDetails)));
-
-      if (found.controllershipAudit?.reviewedBy) {
-        setReviewerName(found.controllershipAudit.reviewedBy);
-      }
-      if (found.controllershipAudit?.reviewerEmail) {
-        setReviewerEmail(found.controllershipAudit.reviewerEmail);
-      }
-      if (found.controllershipAudit?.reviewerRole) {
-        setReviewerRole(found.controllershipAudit.reviewerRole);
-      }
-      if (found.controllershipAudit?.auditNotes) {
-        setAuditNotes(found.controllershipAudit.auditNotes);
-      }
-      if (found.controllershipAudit?.rejectionReason) {
-        setRejectionReason(found.controllershipAudit.rejectionReason);
-      }
-
+      initializeAuditState(found);
       setLoading(false);
     };
 
@@ -312,6 +394,25 @@ export default function ControladoriaAuditoriaPage() {
       });
       setAction(updated);
       setSuccessStatus('aprovado');
+
+      // Sincronização Server-Side no Supabase
+      fetch('/api/controladoria/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          status: 'aprovado',
+          approvedEstimatedCostAvoided: originalTotal,
+          approvedBreakdown: action?.costBreakdown || {},
+          approvedProjectCosts: action?.projectCosts || {},
+          reviewerName: reviewerName.trim(),
+          reviewerEmail: reviewerEmail.trim(),
+          reviewerRole: reviewerRole.trim(),
+          auditNotes: auditNotes.trim() || 'Ganhos financeiros auditados e certificados integralmente pela Controladoria.',
+          gainDetails: finalGainDetails,
+        }),
+      }).catch((err) => console.warn('[Controladoria] Falha na chamada da API:', err));
+
       confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
     } catch (err: any) {
       alert(err.message || 'Erro ao processar auditoria');
@@ -379,6 +480,25 @@ export default function ControladoriaAuditoriaPage() {
       });
       setAction(updated);
       setSuccessStatus('ajustado_e_aprovado');
+
+      // Sincronização Server-Side no Supabase
+      fetch('/api/controladoria/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          status: 'ajustado_e_aprovado',
+          approvedEstimatedCostAvoided: auditedTotal,
+          approvedBreakdown,
+          approvedProjectCosts: action?.projectCosts || {},
+          reviewerName: reviewerName.trim(),
+          reviewerEmail: reviewerEmail.trim(),
+          reviewerRole: reviewerRole.trim(),
+          auditNotes: auditNotes.trim(),
+          gainDetails: finalGainDetails,
+        }),
+      }).catch((err) => console.warn('[Controladoria] Falha na chamada da API:', err));
+
       confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
     } catch (err: any) {
       alert(err.message || 'Erro ao processar auditoria');
@@ -409,6 +529,21 @@ export default function ControladoriaAuditoriaPage() {
       setAction(updated);
       setShowRejectModal(false);
       setSuccessStatus('rejeitado');
+
+      // Sincronização Server-Side no Supabase
+      fetch('/api/controladoria/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          status: 'rejeitado',
+          reviewerName: reviewerName.trim(),
+          reviewerEmail: reviewerEmail.trim(),
+          reviewerRole: reviewerRole.trim(),
+          auditNotes: auditNotes.trim() || 'Projeto reprovado pela Controladoria para reavaliação de premissas no Gemba.',
+          rejectionReason: rejectionReason.trim(),
+        }),
+      }).catch((err) => console.warn('[Controladoria] Falha na chamada da API:', err));
     } catch (err: any) {
       alert(err.message || 'Erro ao processar auditoria');
     } finally {
