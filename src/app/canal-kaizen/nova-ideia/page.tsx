@@ -20,6 +20,8 @@ import {
   Check,
   Calendar,
   X,
+  AlertCircle,
+  Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -31,7 +33,11 @@ export default function NovaIdeiaKaizenPage() {
   const [authorName, setAuthorName] = useState('');
   const [sectorId, setSectorId] = useState('');
   const [authorRoleTitle, setAuthorRoleTitle] = useState('');
-  const [summary, setSummary] = useState('');
+  const [category, setCategory] = useState('5S & Organização');
+  const [title, setTitle] = useState('');
+  const [problem, setProblem] = useState('');
+  const [solution, setSolution] = useState('');
+  const [benefits, setBenefits] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [photoName, setPhotoName] = useState<string>('');
 
@@ -62,7 +68,8 @@ export default function NovaIdeiaKaizenPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!authorName.trim() || !sectorId || !authorRoleTitle.trim() || !summary.trim()) {
+    if (!authorName.trim() || !sectorId || !title.trim() || !problem.trim() || !solution.trim()) {
+      alert('Por favor, preencha o Nome, Setor, Título, Problema e a Solução sugerida.');
       return;
     }
 
@@ -72,8 +79,13 @@ export default function NovaIdeiaKaizenPage() {
       const created = dataService.createKaizenIdea({
         authorName: authorName.trim(),
         sectorId,
-        authorRoleTitle: authorRoleTitle.trim(),
-        summary: summary.trim(),
+        authorRoleTitle: authorRoleTitle.trim() || 'Colaborador do Chão de Fábrica',
+        origin: 'web',
+        title: title.trim(),
+        problem: problem.trim(),
+        solution: solution.trim(),
+        benefits: benefits.trim(),
+        category,
         photoUrl: photoUrl || undefined,
         photoName: photoName || undefined,
       });
@@ -91,7 +103,11 @@ export default function NovaIdeiaKaizenPage() {
   const handleReset = () => {
     setAuthorName('');
     setAuthorRoleTitle('');
-    setSummary('');
+    setTitle('');
+    setProblem('');
+    setSolution('');
+    setBenefits('');
+    setCategory('5S & Organização');
     setPhotoUrl('');
     setPhotoName('');
     setSubmittedProtocol(null);
@@ -256,7 +272,7 @@ export default function NovaIdeiaKaizenPage() {
                 Envie sua Sugestão de Melhoria Kaizen
               </h1>
               <p style={{ fontSize: '0.84375rem', color: '#94a3b8', marginTop: '0.35rem', lineHeight: 1.5 }}>
-                Viu um problema no posto de trabalho ou tem uma ideia para economizar tempo, material ou evitar acidentes? Registre abaixo!
+                Identificou uma oportunidade no posto ou na máquina? Preencha os campos abaixo para que sua ideia vá direto para a triagem do supervisor!
               </p>
             </div>
 
@@ -281,7 +297,7 @@ export default function NovaIdeiaKaizenPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Building2 size={15} color="#22d3ee" /> Setor da Melhoria *
+                    <Building2 size={15} color="#22d3ee" /> Setor da Fábrica *
                   </label>
                   <select
                     required
@@ -300,11 +316,10 @@ export default function NovaIdeiaKaizenPage() {
 
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Briefcase size={15} color="#22d3ee" /> Seu Cargo na Fábrica *
+                    <Briefcase size={15} color="#22d3ee" /> Seu Cargo na Fábrica
                   </label>
                   <input
                     type="text"
-                    required
                     placeholder="Ex: Operador de Máquina / Auxiliar"
                     className="form-control"
                     value={authorRoleTitle}
@@ -314,27 +329,100 @@ export default function NovaIdeiaKaizenPage() {
                 </div>
               </div>
 
-              {/* Resumo da Ideia */}
+              {/* Categoria da Melhoria & Título em Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Sparkles size={15} color="#22d3ee" /> Categoria da Melhoria
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="form-control"
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.75rem 1rem' }}
+                  >
+                    <option value="5S & Organização">5S & Organização</option>
+                    <option value="Segurança no Trabalho">Segurança no Trabalho</option>
+                    <option value="Eliminação de Desperdício">Eliminação de Desperdício</option>
+                    <option value="Manutenção Autônoma">Manutenção Autônoma</option>
+                    <option value="Qualidade & Poka-Yoke">Qualidade & Poka-Yoke</option>
+                    <option value="Produtividade & Agilidade">Produtividade & Agilidade</option>
+                  </select>
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Lightbulb size={15} color="#fbbf24" /> Título da Oportunidade Kaizen *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Instalação de calha coletora na Linha 2"
+                    className="form-control"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.75rem 1rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* Problema Observado */}
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Lightbulb size={15} color="#fbbf24" /> Resumo da Ideia / Proposta de Melhoria *
+                  <AlertCircle size={15} color="#f87171" /> Problema Observado no Posto *
                 </label>
                 <textarea
                   required
-                  rows={4}
-                  placeholder="Descreva o que está acontecendo hoje e como a sua sugestão resolve ou melhora a operação..."
+                  rows={3}
+                  placeholder="Descreva o problema que acontece hoje (atrasos, quedas, desperdício, risco de acidente)..."
                   className="form-control"
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
+                  value={problem}
+                  onChange={(e) => setProblem(e.target.value)}
                   style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.75rem 1rem', fontSize: '0.9rem', lineHeight: 1.5 }}
                 />
               </div>
 
-              {/* Foto da Ideia / Posto de Trabalho */}
+              {/* Solução Prática Sugerida */}
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Camera size={15} color="#34d399" /> Foto do Problema ou da Ideia (Opcional)
+                  <CheckCircle2 size={15} color="#34d399" /> Solução Prática Sugerida *
                 </label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Qual a sua sugestão prática para resolver ou melhorar este ponto?"
+                  className="form-control"
+                  value={solution}
+                  onChange={(e) => setSolution(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.75rem 1rem', fontSize: '0.9rem', lineHeight: 1.5 }}
+                />
+              </div>
+
+              {/* Ganhos Esperados */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Zap size={15} color="#22d3ee" /> Ganhos Esperados (Tempo, Refugo, Ergonomia ou Segurança)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Economia de 15 min no setup, elimina risco de tropeço..."
+                  className="form-control"
+                  value={benefits}
+                  onChange={(e) => setBenefits(e.target.value)}
+                  style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', padding: '0.75rem 1rem' }}
+                />
+              </div>
+
+              {/* Foto da Ideia / Posto de Trabalho (OPCIONAL) */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <label className="form-label" style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+                    <Camera size={15} color="#34d399" /> Foto do Posto ou Problema
+                  </label>
+                  <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 800, backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                    Foto Opcional (não obrigatória)
+                  </span>
+                </div>
 
                 {photoUrl ? (
                   <div
@@ -385,7 +473,7 @@ export default function NovaIdeiaKaizenPage() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '1.75rem',
+                      padding: '1.5rem',
                       borderRadius: '12px',
                       backgroundColor: '#090e1a',
                       border: '2px dashed rgba(255, 255, 255, 0.15)',
@@ -395,12 +483,12 @@ export default function NovaIdeiaKaizenPage() {
                     onMouseOver={(e) => (e.currentTarget.style.borderColor = '#22d3ee')}
                     onMouseOut={(e) => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)')}
                   >
-                    <UploadCloud size={28} color="#22d3ee" style={{ marginBottom: '0.5rem' }} />
+                    <UploadCloud size={26} color="#22d3ee" style={{ marginBottom: '0.4rem' }} />
                     <span style={{ fontSize: '0.84375rem', fontWeight: 700, color: '#f8fafc' }}>
-                      Toque para tirar foto ou selecionar da galeria
+                      Toque para anexar foto (opcional)
                     </span>
                     <span style={{ fontSize: '0.725rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-                      PNG, JPG ou JPEG (máx. 5MB)
+                      PNG, JPG ou JPEG (máx. 5MB) • Caso não tenha foto, pode enviar direto
                     </span>
                     <input
                       type="file"
@@ -426,7 +514,7 @@ export default function NovaIdeiaKaizenPage() {
                   justifyContent: 'space-between',
                 }}
               >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={13} /> Data do cadastro: <strong>gravada automaticamente</strong> no envio.</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}><Calendar size={13} /> Encaminhamento direto: <strong>Triagem do Supervisor</strong></span>
                 <span style={{ color: '#34d399', fontWeight: 700 }}>● Sistema Online</span>
               </div>
 
@@ -447,7 +535,7 @@ export default function NovaIdeiaKaizenPage() {
                 }}
               >
                 <Send size={18} />
-                <span>{submitting ? 'Enviando...' : 'Enviar Ideia para Triagem'}</span>
+                <span>{submitting ? 'Enviando...' : 'Enviar Ideia para Triagem do Supervisor'}</span>
               </button>
             </form>
           </div>

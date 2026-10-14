@@ -19,7 +19,6 @@ import {
   Search,
   ArrowRight,
   ExternalLink,
-  Copy,
   Check,
   Building2,
   User,
@@ -46,7 +45,6 @@ export default function AdminCanalKaizenPage() {
 
   const [activeTab, setActiveTab] = useState<'ideias' | 'aprovadas'>('ideias');
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,13 +110,6 @@ export default function AdminCanalKaizenPage() {
   }, [allIdeas]);
 
   // Actions
-  const handleCopyPublicLink = () => {
-    const publicUrl = `${window.location.origin}/canal-kaizen`;
-    navigator.clipboard.writeText(publicUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
   const handleOpenApproveModal = (idea: KaizenIdea) => {
     if (isViewer) return;
     setApproveIdeaModal(idea);
@@ -277,31 +268,6 @@ export default function AdminCanalKaizenPage() {
 
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={handleCopyPublicLink}
-            className="btn btn-secondary"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              backgroundColor: copiedLink
-                ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#10b981')
-                : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.18)'),
-              borderColor: copiedLink
-                ? '#10b981'
-                : (isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.35)'),
-              color: copiedLink ? (isDark ? '#34d399' : '#ffffff') : '#ffffff',
-              fontSize: '0.84375rem',
-              padding: '0.65rem 1.15rem',
-              borderRadius: '12px',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            {copiedLink ? <Check size={16} /> : <Copy size={16} />}
-            <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link Exclusivo Chão de Fábrica'}</span>
-          </button>
-
           <Link
             href="/canal-kaizen/nova-ideia"
             target="_blank"

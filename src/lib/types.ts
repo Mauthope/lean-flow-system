@@ -405,6 +405,14 @@ export interface LeanAction {
   requesterEmail?: string;
   requesterDepartment?: string;
 
+  // Carimbo do Canal Kaizen (integração Chão de Fábrica / Toten & Web)
+  isKaizenIdea?: boolean;                     // Carimbo: Demanda originada do Canal Kaizen
+  kaizenOrigin?: 'toten' | 'web';             // Sub-origem: Toten Fábrica ou Formulário Web
+  kaizenIdeaId?: string;                      // ID da ideia Kaizen original vinculada
+  kaizenIdeaProtocol?: string;                // Protocolo Kaizen vinculado (ex: KZN-2026-0001)
+  kaizenCategory?: string;                    // Categoria Kaizen (5S, Segurança, etc.)
+  kaizenPhotoUrl?: string;                    // Foto da ideia (opcional)
+
   // Assignment & Liderança do Kaizen
   assignedAgentId?: string;
   assignedAgentName?: string;
@@ -632,6 +640,7 @@ export interface KaizenIdea {
   photoName?: string;
   createdAt: string;                    // Salva automaticamente a data do cadastro
   updatedAt: string;
+  convertedActionId?: string;           // ID da ação Lean criada no fluxo de demandas
 
   // Triagem do Gestor
   status: KaizenIdeaStatus;

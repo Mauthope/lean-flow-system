@@ -22,7 +22,7 @@ interface UsePersonDetectionOptions {
 export function usePersonDetection({
   onPersonEnter,
   onPersonLeave,
-  inactivityTimeoutMs = 15000,
+  inactivityTimeoutMs = 90000,
 }: UsePersonDetectionOptions = {}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -195,21 +195,21 @@ export function usePersonDetection({
                 Math.abs(currentData[i] - prev[i]) +
                 Math.abs(currentData[i + 1] - prev[i + 1]) +
                 Math.abs(currentData[i + 2] - prev[i + 2]);
-              if (d > 45) {
+              if (d > 35) {
                 diffSum++;
               }
             }
 
             const motionRatio = diffSum / totalPixels;
 
-            if (motionRatio > 0.035) {
+            if (motionRatio > 0.018) {
               lastSeenRef.current = Date.now();
 
               if (!isPersonPresentRef.current) {
                 isPersonPresentRef.current = true;
                 setDetection({
                   hasPerson: true,
-                  score: Math.min(0.95, motionRatio * 5),
+                  score: Math.min(0.95, motionRatio * 8),
                   personCount: 1,
                 });
                 if (onPersonEnter) onPersonEnter();
@@ -294,6 +294,32 @@ export function usePersonDetection({
     }
   }, []);
 
+  const reportUserActivity = useCallback(() => {
+    lastSeenRef.current = Date.now();
+    if (!isPersonPresentRef.current) {
+      isPersonPresentRef.current = true;
+      setDetection({ hasPerson: true, score: 0.99, personCount: 1 });
+      if (onPersonEnter) onPersonEnter();
+    }
+  }, [onPersonEnter]);
+
+  // Escutar interações no Toten (toque, clique, teclado) para manter o Sensei ativo sem cair no radar
+  useEffect(() => {
+    const handleActivity = () => {
+      reportUserActivity();
+    };
+
+    window.addEventListener('pointerdown', handleActivity, { passive: true });
+    window.addEventListener('touchstart', handleActivity, { passive: true });
+    window.addEventListener('keydown', handleActivity, { passive: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, [reportUserActivity]);
+
   return {
     videoRef,
     canvasRef,
@@ -310,6 +336,7 @@ export function usePersonDetection({
     triggerSimulation,
     disableSimulation,
     resetPresence,
+    reportUserActivity,
     restartCamera: () => startCamera(selectedDeviceId),
   };
 }

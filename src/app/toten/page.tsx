@@ -74,10 +74,11 @@ export default function TotenPage() {
     disableSimulation,
     resetPresence,
     restartCamera,
+    reportUserActivity,
   } = usePersonDetection({
     onPersonEnter: handlePersonEnter,
     onPersonLeave: handlePersonLeave,
-    inactivityTimeoutMs: 15000,
+    inactivityTimeoutMs: interactionView === 'menu' ? 90000 : 180000,
   });
 
   const handleReturnToIdle = useCallback(() => {

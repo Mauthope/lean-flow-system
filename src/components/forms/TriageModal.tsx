@@ -23,6 +23,9 @@ import {
   Edit3,
   Layers,
   Sparkles,
+  Lightbulb,
+  Camera,
+  ExternalLink,
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -140,6 +143,48 @@ export const TriageModal: React.FC<TriageModalProps> = ({
             padding: '1rem',
           }}
         >
+          {/* Se originada pelo Canal Kaizen, exibe Carimbo de Autenticidade & Origem */}
+          {action.isKaizenIdea && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: isDark ? 'rgba(34, 211, 238, 0.15)' : '#e0f2fe',
+                border: isDark ? '1px solid rgba(34, 211, 238, 0.35)' : '1px solid #7dd3fc',
+                color: isDark ? '#22d3ee' : '#0369a1',
+                padding: '0.3rem 0.65rem',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                marginBottom: '0.75rem',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              <Lightbulb size={14} />
+              <span>
+                CANAL KAIZEN • {action.kaizenOrigin === 'toten' ? 'TOTEN FÁBRICA' : 'FORMULÁRIO WEB'}
+              </span>
+              {action.kaizenIdeaProtocol && (
+                <span style={{ opacity: 0.85 }}>({action.kaizenIdeaProtocol})</span>
+              )}
+              {action.kaizenCategory && (
+                <span
+                  style={{
+                    marginLeft: '0.35rem',
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '4px',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(3, 105, 161, 0.12)',
+                    fontSize: '0.7rem',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {action.kaizenCategory}
+                </span>
+              )}
+            </div>
+          )}
+
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: isDark ? '#94a3b8' : '#64748b', textTransform: 'uppercase' }}>
               Relato Original do Gemba (Chão de Fábrica)
@@ -168,6 +213,42 @@ export const TriageModal: React.FC<TriageModalProps> = ({
               {action.description}
             </p>
           </div>
+
+          {/* Foto Anexada Kaizen se houver */}
+          {action.kaizenPhotoUrl && (
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: isDark ? '1px dashed rgba(255, 255, 255, 0.08)' : '1px dashed #cbd5e1' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: isDark ? '#94a3b8' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Camera size={13} /> Foto Anexada do Ponto de Melhoria (Opcional)
+                </span>
+                <a
+                  href={action.kaizenPhotoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '0.7rem', color: isDark ? '#22d3ee' : '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', fontWeight: 700 }}
+                >
+                  <ExternalLink size={12} /> Abrir em tamanho real
+                </a>
+              </div>
+              <div
+                style={{
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  maxHeight: '160px',
+                  maxWidth: '240px',
+                  border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+                  backgroundColor: '#000000',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={action.kaizenPhotoUrl}
+                  alt="Evidência Kaizen"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Alternância de Decisão */}

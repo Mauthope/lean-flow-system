@@ -1090,6 +1090,12 @@ export const dataService = {
             senseiStrategicAudit: action.senseiStrategicAudit,
             controllershipAudit: action.controllershipAudit,
             isPublicDemand: action.isPublicDemand,
+            isKaizenIdea: action.isKaizenIdea,
+            kaizenOrigin: action.kaizenOrigin,
+            kaizenIdeaId: action.kaizenIdeaId,
+            kaizenIdeaProtocol: action.kaizenIdeaProtocol,
+            kaizenCategory: action.kaizenCategory,
+            kaizenPhotoUrl: action.kaizenPhotoUrl,
             requesterName: action.requesterName,
             requesterEmail: action.requesterEmail,
             requesterDepartment: action.requesterDepartment,
@@ -1195,6 +1201,12 @@ export const dataService = {
           senseiStrategicAudit: method.senseiStrategicAudit,
           controllershipAudit: method.controllershipAudit,
           isPublicDemand: Boolean(method.isPublicDemand),
+          isKaizenIdea: Boolean(method.isKaizenIdea),
+          kaizenOrigin: method.kaizenOrigin,
+          kaizenIdeaId: method.kaizenIdeaId,
+          kaizenIdeaProtocol: method.kaizenIdeaProtocol,
+          kaizenCategory: method.kaizenCategory,
+          kaizenPhotoUrl: method.kaizenPhotoUrl,
           requesterName: method.requesterName,
           requesterEmail: method.requesterEmail,
           requesterDepartment: method.requesterDepartment,
@@ -2008,6 +2020,26 @@ export const dataService = {
         triagedBy: decision.adminName,
         updatedAt: now,
       };
+    }
+    // Sincroniza com a Ideia Kaizen vinculada se originada pelo Canal Kaizen
+    if (item.kaizenIdeaId) {
+      try {
+        if (decision.action === 'approve') {
+          this.approveKaizenIdea(item.kaizenIdeaId, decision.adminName, {
+            responsibleName: actions[index].assignedAgentName,
+            assignedAgentId: actions[index].assignedAgentId,
+            estimatedCostAvoided: actions[index].estimatedCostAvoided,
+          }).catch((err) => console.error('Erro ao sincronizar aprovação Kaizen:', err));
+        } else {
+          this.rejectKaizenIdea(
+            item.kaizenIdeaId,
+            decision.adminName,
+            decision.rejectionReason || 'Demanda não aprovada na triagem da supervisão.'
+          ).catch((err) => console.error('Erro ao sincronizar rejeição Kaizen:', err));
+        }
+      } catch (err) {
+        console.error('Erro ao acionar sincronização da ideia Kaizen na triagem:', err);
+      }
     }
 
     return this.saveAndSyncAction(actions[index], actions);
@@ -3158,8 +3190,8 @@ export const dataService = {
     tenantId?: string;
     authorName: string;
     sectorId: string;
-    authorRoleTitle: string;
-    summary: string;
+    authorRoleTitle?: string;
+    summary?: string;
     origin?: 'web' | 'toten';
     title?: string;
     problem?: string;
@@ -3172,22 +3204,35 @@ export const dataService = {
     const ideas = this.getKaizenIdeas('all');
     const sector = this.getSectorById(data.sectorId);
     const now = new Date().toISOString();
+    const effectiveTenantId = data.tenantId || this.getCurrentTenant().id;
+
+    // Constrói resumo legível caso venha dos campos estruturados
+    const resolvedSummary =
+      data.summary?.trim() ||
+      [
+        data.title?.trim(),
+        data.problem?.trim() ? `Problema: ${data.problem.trim()}` : null,
+        data.solution?.trim() ? `Solução: ${data.solution.trim()}` : null,
+        data.benefits?.trim() ? `Ganhos: ${data.benefits.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | ');
 
     const newIdea: KaizenIdea = {
       id: 'kzn_' + Date.now(),
-      protocol: this.getNextKaizenIdeaProtocol(data.tenantId || this.getCurrentTenant().id),
-      tenantId: data.tenantId || this.getCurrentTenant().id,
+      protocol: this.getNextKaizenIdeaProtocol(effectiveTenantId),
+      tenantId: effectiveTenantId,
       authorName: data.authorName.trim(),
       sectorId: data.sectorId,
       sectorName: sector?.name || 'Geral',
-      authorRoleTitle: data.authorRoleTitle.trim(),
-      summary: data.summary.trim(),
+      authorRoleTitle: data.authorRoleTitle?.trim() || 'Colaborador do Chão de Fábrica',
+      summary: resolvedSummary,
       origin: data.origin || 'web',
-      title: data.title?.trim(),
+      title: data.title?.trim() || 'Melhoria Kaizen',
       problem: data.problem?.trim(),
       solution: data.solution?.trim(),
       benefits: data.benefits?.trim(),
-      category: data.category?.trim(),
+      category: data.category?.trim() || '5S & Organização',
       photoUrl: data.photoUrl,
       photoName: data.photoName,
       createdAt: now,
@@ -3195,6 +3240,70 @@ export const dataService = {
       status: 'pendente',
     };
 
+    // =========================================================================
+    // INTEGRAÇÃO AUTOMÁTICA COM A ESTEIRA DE DEMANDAS / TRIAGEM DO SUPERVISOR
+    // =========================================================================
+    let wasteCategory: LeanWasteCategory = 'espera';
+    if (data.category === '5S & Organização') wasteCategory = 'movimentacao';
+    else if (data.category === 'Segurança no Trabalho') wasteCategory = 'defeitos';
+    else if (data.category === 'Eliminação de Desperdício') wasteCategory = 'superproducao';
+    else if (data.category === 'Manutenção Autônoma') wasteCategory = 'espera';
+    else if (data.category === 'Qualidade & Poka-Yoke') wasteCategory = 'defeitos';
+    else if (data.category === 'Produtividade & Agilidade') wasteCategory = 'processamento_excessivo';
+
+    const originTag = data.origin === 'toten' ? 'Toten Fábrica' : 'Formulário Web';
+    const descParts = [
+      `[CANAL KAIZEN • ${originTag.toUpperCase()}]`,
+      data.category ? `Categoria: ${data.category}` : null,
+      data.problem ? `Problema Observado:\n${data.problem.trim()}` : null,
+      data.solution ? `Solução Prática Sugerida:\n${data.solution.trim()}` : null,
+      data.benefits ? `Ganhos Esperados:\n${data.benefits.trim()}` : null,
+      (!data.problem && !data.solution && resolvedSummary) ? `Resumo da Proposta:\n${resolvedSummary}` : null,
+    ].filter(Boolean);
+
+    const newAction: LeanAction = {
+      id: generateId('act'),
+      protocol: this.getNextActionProtocol(effectiveTenantId),
+      tenantId: effectiveTenantId,
+      title: data.title?.trim() || `Melhoria Kaizen - ${sector?.name || 'Chão de Fábrica'}`,
+      description: descParts.join('\n\n'),
+      wasteCategory,
+      originSectorId: data.sectorId,
+      originSectorName: sector?.name || 'Geral',
+      isPublicDemand: true,
+      isKaizenIdea: true,
+      kaizenOrigin: data.origin || 'web',
+      kaizenIdeaId: newIdea.id,
+      kaizenIdeaProtocol: newIdea.protocol,
+      kaizenCategory: data.category || '5S & Organização',
+      kaizenPhotoUrl: data.photoUrl,
+      photoBeforeUrl: data.photoUrl,
+      requesterName: data.authorName.trim(),
+      requesterDepartment: data.authorRoleTitle?.trim() || 'Chão de Fábrica',
+      status: 'aberta',
+      priority: 'media',
+      estimatedCostAvoided: 0,
+      actualCostAvoided: 0,
+      hoursSaved: 0,
+      createdAt: now,
+      updatedAt: now,
+      notes: [],
+      checklist: [],
+    };
+
+    const matchedObj = this.autoMatchStrategicObjective(newAction);
+    if (matchedObj) {
+      newAction.strategicObjectiveId = matchedObj.id;
+      newAction.strategicObjectiveName = `${matchedObj.code} - ${matchedObj.title}`;
+      newAction.senseiStrategicAudit = this.calculateActionStrategicAdherence(newAction, matchedObj);
+      newAction.senseiStrategicAudit.initialScore = newAction.senseiStrategicAudit.alignmentScore;
+    }
+
+    const actions = this.getActions('all');
+    actions.unshift(newAction);
+    this.saveAndSyncAction(newAction, actions);
+
+    newIdea.convertedActionId = newAction.id;
     ideas.unshift(newIdea);
     return this.saveAndSyncKaizenIdea(newIdea, ideas);
   },

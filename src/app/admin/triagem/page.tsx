@@ -22,14 +22,17 @@ import {
   ShieldAlert,
   Mail,
   Calendar,
+  Lightbulb,
+  Camera,
 } from 'lucide-react';
 import Link from 'next/link';
+import { StatsCard } from '@/components/ui/StatsCard';
 
 export default function AdminTriagemPage() {
   const { currentUser, dataVersion, refreshData, currentTenant } = useAuth();
   const { isDark } = useTheme();
   const [selectedDemand, setSelectedDemand] = useState<LeanAction | null>(null);
-  const [filterType, setFilterType] = useState<'pending' | 'all' | 'rejected'>('pending');
+  const [filterType, setFilterType] = useState<'pending' | 'kaizen' | 'all' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
 
   if (currentUser?.role === 'viewer') {
@@ -85,10 +88,40 @@ export default function AdminTriagemPage() {
     return allActions.filter((a) => a.isPublicDemand);
   }, [allActions]);
 
+  const kaizenDemands = useMemo(() => {
+    return publicDemands.filter((a) => a.isKaizenIdea);
+  }, [publicDemands]);
+
+  const totenCount = useMemo(() => {
+    return kaizenDemands.filter((a) => a.kaizenOrigin === 'toten').length;
+  }, [kaizenDemands]);
+
+  const webCount = useMemo(() => {
+    return kaizenDemands.filter((a) => a.kaizenOrigin === 'web' || !a.kaizenOrigin).length;
+  }, [kaizenDemands]);
+
+  const pendingCount = useMemo(() => {
+    return publicDemands.filter((a) => a.status === 'aberta' && !a.assignedAgentId).length;
+  }, [publicDemands]);
+
+  const assignedCount = useMemo(() => {
+    return publicDemands.filter((a) => Boolean(a.assignedAgentId) || a.status === 'em_andamento' || a.status === 'concluida').length;
+  }, [publicDemands]);
+
+  const rejectedCount = useMemo(() => {
+    return publicDemands.filter((a) => a.status === 'nao_aprovada').length;
+  }, [publicDemands]);
+
+  const kaizenPercentage = publicDemands.length > 0
+    ? Math.round((kaizenDemands.length / publicDemands.length) * 100)
+    : 0;
+
   const filteredDemands = useMemo(() => {
     return publicDemands.filter((item) => {
       if (filterType === 'pending') {
         if (item.status !== 'aberta' || item.assignedAgentId) return false;
+      } else if (filterType === 'kaizen') {
+        if (!item.isKaizenIdea) return false;
       } else if (filterType === 'rejected') {
         if (item.status !== 'nao_aprovada') return false;
       }
@@ -98,14 +131,13 @@ export default function AdminTriagemPage() {
         const matchesTitle = item.title.toLowerCase().includes(q);
         const matchesName = item.requesterName?.toLowerCase().includes(q);
         const matchesProtocol = item.protocol.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesName && !matchesProtocol) return false;
+        const matchesCategory = item.kaizenCategory?.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesName && !matchesProtocol && !matchesCategory) return false;
       }
 
       return true;
     });
   }, [publicDemands, filterType, search]);
-
-  const pendingCount = publicDemands.filter((a) => a.status === 'aberta' && !a.assignedAgentId).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -128,6 +160,47 @@ export default function AdminTriagemPage() {
         >
           <ExternalLink size={14} color={isDark ? '#22d3ee' : '#0284c7'} /> Abrir Link Público
         </Link>
+      </div>
+
+      {/* KPI Cards / Mensuração do Canal Kaizen e Demandas Gerais */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: '1rem',
+        }}
+      >
+        <StatsCard
+          title="Total Demandas Chão de Fábrica"
+          value={publicDemands.length}
+          subtitle="Captação pública e autônoma"
+          icon={<Inbox size={22} color="#38bdf8" />}
+          accentColor="#38bdf8"
+        />
+
+        <StatsCard
+          title="Aguardando Triagem"
+          value={pendingCount}
+          subtitle="Pendentes de avaliação da liderança"
+          icon={<Clock size={22} color="#f59e0b" />}
+          accentColor="#f59e0b"
+        />
+
+        <StatsCard
+          title="Origem Canal Kaizen"
+          value={`${kaizenDemands.length} (${kaizenPercentage}%)`}
+          subtitle={`Toten: ${totenCount} • Formulário Web: ${webCount}`}
+          icon={<Lightbulb size={22} color="#22d3ee" />}
+          accentColor="#22d3ee"
+        />
+
+        <StatsCard
+          title="Convertidas em Projeto"
+          value={assignedCount}
+          subtitle={`${rejectedCount} descartadas na triagem`}
+          icon={<CheckCircle2 size={22} color="#10b981" />}
+          accentColor="#10b981"
+        />
       </div>
 
       {/* Filter and Tabs */}
@@ -172,6 +245,31 @@ export default function AdminTriagemPage() {
           </button>
 
           <button
+            onClick={() => setFilterType('kaizen')}
+            style={{
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              border: filterType === 'kaizen'
+                ? (isDark ? '1px solid #22d3ee' : '1px solid #0284c7')
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1'),
+              backgroundColor: filterType === 'kaizen'
+                ? (isDark ? 'rgba(34, 211, 238, 0.18)' : '#e0f2fe')
+                : (isDark ? '#090e1a' : '#f8fafc'),
+              color: filterType === 'kaizen'
+                ? (isDark ? '#22d3ee' : '#0369a1')
+                : (isDark ? '#94a3b8' : '#475569'),
+              fontSize: '0.8125rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+            }}
+          >
+            <Lightbulb size={14} /> Canal Kaizen ({kaizenDemands.length})
+          </button>
+
+          <button
             onClick={() => setFilterType('all')}
             style={{
               padding: '0.45rem 0.85rem',
@@ -212,7 +310,7 @@ export default function AdminTriagemPage() {
               cursor: 'pointer',
             }}
           >
-            Não Aprovadas ({publicDemands.filter((a) => a.status === 'nao_aprovada').length})
+            Não Aprovadas ({rejectedCount})
           </button>
         </div>
 
@@ -272,7 +370,7 @@ export default function AdminTriagemPage() {
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                       <span
                         style={{
                           fontFamily: 'var(--font-mono)',
@@ -283,6 +381,52 @@ export default function AdminTriagemPage() {
                       >
                         {demand.protocol}
                       </span>
+
+                      {/* Carimbo Visual Canal Kaizen */}
+                      {demand.isKaizenIdea && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            backgroundColor: isDark ? 'rgba(34, 211, 238, 0.15)' : '#e0f2fe',
+                            border: isDark ? '1px solid rgba(34, 211, 238, 0.4)' : '1px solid #7dd3fc',
+                            color: isDark ? '#22d3ee' : '#0369a1',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '6px',
+                            letterSpacing: '0.03em',
+                            fontFamily: 'var(--font-mono)',
+                          }}
+                        >
+                          <Lightbulb size={12} />
+                          CANAL KAIZEN • {demand.kaizenOrigin === 'toten' ? 'TOTEN FÁBRICA' : 'WEB'}
+                          {demand.kaizenCategory && ` • ${demand.kaizenCategory.toUpperCase()}`}
+                        </span>
+                      )}
+
+                      {/* Indicador de Foto Anexa */}
+                      {demand.kaizenPhotoUrl && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : '#f1f5f9',
+                            border: isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid #cbd5e1',
+                            color: isDark ? '#cbd5e1' : '#475569',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '0.2rem 0.5rem',
+                            borderRadius: '6px',
+                          }}
+                          title="Possui foto anexada do chão de fábrica"
+                        >
+                          <Camera size={12} /> Foto Anexa
+                        </span>
+                      )}
+
                       <StatusBadge status={demand.status} />
                       <PriorityBadge priority={demand.priority} />
                       <WasteCategoryBadge category={demand.wasteCategory} />

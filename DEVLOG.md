@@ -3,6 +3,42 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Alinhamento Canal Kaizen (Toten & Web), Triagem com Carimbo, Mensuração e Estabilidade do Toten
+**Agentes Responsáveis:** `cleancod`, `designer`, `security-expert`, `responsive`, `chronicler`  
+**Escopo:** Unificação dos formulários Toten e Web (foto opcional em ambos), envio automático para Triagem do Supervisor com carimbo Kaizen e sincronização bidirecional, mensuração por KPIs/filtros, remoção do botão de cópia de link no Canal Kaizen e correção do timeout/radar do Toten.
+
+### 1. Diagnóstico e Solicitações do Chão de Fábrica
+- **Divergência entre Formulários (Web vs Toten):** O formulário Web (`nova-ideia/page.tsx`) e o Toten (`KaizenInteraction.tsx`) possuíam estruturas diferentes. No formulário web antigo a foto era tratada como obrigatória e faltavam campos essenciais do Kaizen estruturado.
+- **Isolamento de Fluxo da Ideia:** Ao cadastrar uma ideia Kaizen, ela ficava restrita ao banco de ideias do Canal Kaizen e não fluía para a fila de triagem de demandas da supervisão operacional (`admin/triagem`).
+- **Necessidade de Rastreabilidade e Mensuração:** A supervisão precisava distinguir visualmente ideias originadas pelo Canal Kaizen (Toten vs Web) e mensurar o volume e a representatividade dessas sugestões perante as demandas gerais da fábrica.
+- **Instabilidade e Timeout Agressivo do Toten:** O totem entrava em modo de procura (screensaver/radar) sozinho após meros 15 segundos (`15000ms`), pois o algoritmo de detecção de movimento (`motionRatio > 0.035`) não considerava o operador estático lendo a tela ou digitando no teclado virtual sem agitar os braços.
+
+### 2. Ações Implementadas
+- **`src/lib/types.ts` & `src/services/dataService.ts`:**
+  - Adicionados campos `isKaizenIdea`, `kaizenOrigin` ('toten' | 'web'), `kaizenIdeaId`, `kaizenIdeaProtocol`, `kaizenCategory`, `kaizenPhotoUrl` ao modelo `LeanAction` e `convertedActionId` em `KaizenIdea`.
+  - Serialização e desserialização seguras no Supabase através do campo JSONB `methodology_data`.
+  - No método `createKaizenIdea`, criação automática e simultânea de uma `LeanAction` correspondente com `isPublicDemand: true` e `isKaizenIdea: true`, garantindo presença instantânea na triagem.
+  - No método `triageDemand`, sincronização bidirecional automática: a aprovação da demanda na triagem aprova a `KaizenIdea` correspondente; a rejeição na triagem atualiza o status para rejeitada com a justificativa técnica.
+- **`src/app/canal-kaizen/nova-ideia/page.tsx` & `src/components/toten/KaizenInteraction.tsx`:**
+  - Formulários Web e Toten 100% alinhados nos mesmos campos estruturados: Nome do Colaborador, Setor da Fábrica, Cargo/Função, Categoria Kaizen, Título da Ideia, Problema Observado no Posto, Solução Prática Sugerida, Ganhos Esperados.
+  - **Campo de Foto Totalmente Opcional** em ambos os formulários, com aviso claro ao operador.
+  - Atalho no Toten para acesso direto ao formulário sem necessidade de diálogo por voz.
+- **`src/app/admin/canal-kaizen/page.tsx`:**
+  - Removido o botão "Copiar link exclusivo chão de fábrica" e mantidos apenas os atalhos de abertura direta ("Abrir Formulário Web" e "Abrir Toten").
+- **`src/app/admin/triagem/page.tsx` & `src/components/forms/TriageModal.tsx`:**
+  - Inserção de 4 `StatsCard` no topo para mensuração executiva: Total Demandas, Aguardando Triagem, Origem Canal Kaizen (com % e contagem discriminada Toten vs Web), e Convertidas em Projeto.
+  - Adicionada aba de filtro rápido exclusivo "Canal Kaizen".
+  - Carimbo visual de autenticidade no card de demandas: `CANAL KAIZEN • TOTEN FÁBRICA` ou `CANAL KAIZEN • WEB` com ícone `Lightbulb` e tag de foto anexa.
+  - No `TriageModal`, exibição do carimbo Kaizen, protocolo de chão de fábrica, categoria e miniatura da foto com link para ampliação.
+- **`src/components/toten/usePersonDetection.ts` & `src/app/toten/page.tsx`:**
+  - Timeout de inatividade estendido para **90 segundos** no menu e **180 segundos (3 minutos)** durante telas ativas (Kaizen, aula, gamificação, chat).
+  - Implementação de `reportUserActivity()` conectada a listeners globais (`pointerdown`, `touchstart`, `keydown`) no totem, renovando a presença a cada toque ou digitação.
+  - Calibração do limiar óptico (`motionRatio > 0.018` e `d > 35`), detectando operadores em repouso lendo ou pensando em frente ao totem.
+- **Validação de Build:**
+  - Compilação `npm run build` executada com sucesso total (43 páginas compiladas, zero erros de lint e TypeScript).
+
+---
+
 ## [2026-10-13] Correção do Fluxo de Aprovação de Ideias do Canal Kaizen & Sincronização Não-Destrutiva
 **Agentes Responsáveis:** `cleancod`, `security-expert`, `designer`, `chronicler`  
 **Escopo:** Correção da sincronização de nuvem em `src/services/dataService.ts`, tratamento de Foreign Keys no Supabase, aprovação assíncrona com transição de abas e feedback em `src/app/admin/canal-kaizen/page.tsx`.

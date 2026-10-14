@@ -27,6 +27,10 @@ import {
   Check,
   AlertCircle,
   Zap,
+  Camera,
+  UploadCloud,
+  Briefcase,
+  X,
 } from 'lucide-react';
 
 export type InteractionView = 'menu' | 'canal_kaizen' | 'aula' | 'desafio' | 'chat' | 'lista_ideias';
@@ -73,7 +77,10 @@ export function KaizenInteraction({
   const [ideaSolution, setIdeaSolution] = useState('');
   const [ideaBenefits, setIdeaBenefits] = useState('');
   const [ideaAuthor, setIdeaAuthor] = useState('');
+  const [ideaRoleTitle, setIdeaRoleTitle] = useState('Operador de Produção');
   const [selectedSectorId, setSelectedSectorId] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [photoName, setPhotoName] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
   const [lastSubmittedIdea, setLastSubmittedIdea] = useState<KaizenIdea | null>(null);
   const [registeredIdeas, setRegisteredIdeas] = useState<KaizenIdea[]>([]);
@@ -237,11 +244,23 @@ export function KaizenInteraction({
     }
   }, [isVoiceRecording]);
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPhotoUrl(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleConfirmIdeaSubmission = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!ideaTitle.trim() || !ideaProblem.trim()) {
-      setFormError('Por favor, preencha o título e o problema observado.');
+    if (!ideaTitle.trim() || !ideaProblem.trim() || !ideaSolution.trim()) {
+      setFormError('Por favor, preencha o título, o problema e a solução observada.');
       return;
     }
 
@@ -256,8 +275,8 @@ export function KaizenInteraction({
     try {
       const createdIdea = dataService.createKaizenIdea({
         authorName: ideaAuthor.trim(),
-        authorRoleTitle: 'Colaborador do Chão de Fábrica',
-        sectorId: selectedSectorId || 'geral',
+        authorRoleTitle: ideaRoleTitle.trim() || 'Colaborador do Chão de Fábrica',
+        sectorId: selectedSectorId || (sectors[0]?.id || ''),
         summary: `${ideaTitle.trim()} | Problema: ${ideaProblem.trim()} | Solução: ${ideaSolution.trim()} | Benefícios: ${ideaBenefits.trim()}`,
         origin: 'toten',
         title: ideaTitle.trim(),
@@ -265,6 +284,8 @@ export function KaizenInteraction({
         solution: ideaSolution.trim(),
         benefits: ideaBenefits.trim(),
         category: ideaCategory,
+        photoUrl: photoUrl || undefined,
+        photoName: photoName || undefined,
       });
 
       setLastSubmittedIdea(createdIdea);
@@ -280,7 +301,7 @@ export function KaizenInteraction({
       } catch (_) {}
 
       onSpeak(
-        `Parabéns, ${ideaAuthor.trim()}! Sua ideia foi registrada no Canal Kaizen com o protocolo ${createdIdea.protocol}!`
+        `Parabéns, ${ideaAuthor.trim()}! Sua ideia foi registrada no Canal Kaizen com o protocolo ${createdIdea.protocol} e já está na triagem do supervisor!`
       );
     } catch (_) {
       setFormError('Erro ao registrar ideia no sistema. Tente novamente.');
@@ -605,7 +626,18 @@ export function KaizenInteraction({
                   className="toten-textarea"
                 />
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!ideaTitle) setIdeaTitle('Sugestão de Melhoria');
+                      setIdeaPhase('review');
+                    }}
+                    className="toten-btn-icon"
+                  >
+                    <span>Preencher Formulário Direto</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -644,11 +676,12 @@ export function KaizenInteraction({
 
               <div className="toten-form-grid">
                 <div className="toten-input-group full">
-                  <label className="toten-label">Título da Oportunidade Kaizen:</label>
+                  <label className="toten-label">Título da Oportunidade Kaizen *:</label>
                   <input
                     type="text"
                     value={ideaTitle}
                     onChange={(e) => setIdeaTitle(e.target.value)}
+                    placeholder="Ex: Calha para descarte de refugo"
                     required
                     className="toten-input"
                   />
@@ -657,7 +690,7 @@ export function KaizenInteraction({
                 <div className="toten-input-group">
                   <label className="toten-label">
                     <User size={14} color="#22d3ee" />
-                    <span>Seu Nome Completo:</span>
+                    <span>Seu Nome Completo *:</span>
                   </label>
                   <input
                     type="text"
@@ -671,8 +704,22 @@ export function KaizenInteraction({
 
                 <div className="toten-input-group">
                   <label className="toten-label">
+                    <Briefcase size={14} color="#22d3ee" />
+                    <span>Seu Cargo na Fábrica:</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={ideaRoleTitle}
+                    onChange={(e) => setIdeaRoleTitle(e.target.value)}
+                    placeholder="Ex: Operador de Máquina / Auxiliar"
+                    className="toten-input"
+                  />
+                </div>
+
+                <div className="toten-input-group">
+                  <label className="toten-label">
                     <Building2 size={14} color="#22d3ee" />
-                    <span>Setor da Fábrica:</span>
+                    <span>Setor da Fábrica *:</span>
                   </label>
                   <select
                     value={selectedSectorId}
@@ -688,7 +735,7 @@ export function KaizenInteraction({
                   </select>
                 </div>
 
-                <div className="toten-input-group full">
+                <div className="toten-input-group">
                   <label className="toten-label">Categoria da Melhoria:</label>
                   <select
                     value={ideaCategory}
@@ -700,25 +747,29 @@ export function KaizenInteraction({
                     <option value="Eliminação de Desperdício">Eliminação de Desperdício</option>
                     <option value="Manutenção Autônoma">Manutenção Autônoma</option>
                     <option value="Qualidade & Poka-Yoke">Qualidade & Poka-Yoke</option>
-                    <option value="Agilidade & Produtividade">Agilidade & Produtividade</option>
+                    <option value="Produtividade & Agilidade">Produtividade & Agilidade</option>
                   </select>
                 </div>
 
-                <div className="toten-input-group">
-                  <label className="toten-label">Problema Observado:</label>
+                <div className="toten-input-group full">
+                  <label className="toten-label">Problema Observado no Posto *:</label>
                   <textarea
                     value={ideaProblem}
                     onChange={(e) => setIdeaProblem(e.target.value)}
+                    placeholder="O que está acontecendo hoje que atrasa ou gera desperdício?"
+                    required
                     rows={2}
                     className="toten-textarea"
                   />
                 </div>
 
-                <div className="toten-input-group">
-                  <label className="toten-label">Solução Prática Sugerida:</label>
+                <div className="toten-input-group full">
+                  <label className="toten-label">Solução Prática Sugerida *:</label>
                   <textarea
                     value={ideaSolution}
                     onChange={(e) => setIdeaSolution(e.target.value)}
+                    placeholder="Qual a sua ideia prática para resolver esse problema?"
+                    required
                     rows={2}
                     className="toten-textarea"
                   />
@@ -730,8 +781,62 @@ export function KaizenInteraction({
                     type="text"
                     value={ideaBenefits}
                     onChange={(e) => setIdeaBenefits(e.target.value)}
+                    placeholder="Ex: Reduz 15 min de parada, melhora ergonomia..."
                     className="toten-input"
                   />
+                </div>
+
+                {/* Foto Opcional */}
+                <div className="toten-input-group full">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <label className="toten-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Camera size={14} color="#34d399" />
+                      <span>Foto do Posto ou Problema:</span>
+                    </label>
+                    <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 800, background: 'rgba(16, 185, 129, 0.15)', padding: '2px 6px', borderRadius: '4px' }}>
+                      Foto Opcional (não obrigatória)
+                    </span>
+                  </div>
+
+                  {photoUrl ? (
+                    <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(6, 182, 212, 0.4)', background: '#090e1a', padding: '8px' }}>
+                      <img src={photoUrl} alt="Foto da Ideia" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '6px', display: 'block' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>{photoName || 'Foto anexada'}</span>
+                        <button
+                          type="button"
+                          onClick={() => { setPhotoUrl(''); setPhotoName(''); }}
+                          style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <X size={12} /> Remover Foto
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px',
+                        borderRadius: '8px',
+                        background: '#090e1a',
+                        border: '1.5px dashed rgba(255, 255, 255, 0.15)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <UploadCloud size={22} color="#22d3ee" style={{ marginBottom: '4px' }} />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#f1f5f9' }}>
+                        Toque para anexar foto (opcional)
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                        Caso não tenha foto, você pode confirmar e cadastrar direto!
+                      </span>
+                      <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                    </label>
+                  )}
                 </div>
               </div>
 
