@@ -367,3 +367,25 @@
   - Sincronização em tempo real entre Cloud e LocalStorage validada.
 
 ---
+
+### 14. Correção na Persistência de Anexos no Check, Notificação da Controladoria e Algoritmo de Acompanhamento Mensal
+- **Persistência de Memórias de Cálculo & Anexos no Check (`gainDetails`):**
+  - **Causa Raiz:** O campo `gainDetails` não estava mapeado no payload `methodology_data` de `persistActionToCloud`, nem desserializado em `syncActionsFromCloud`. Além disso, chamadas concorrentes a `refreshData()` sobrescreviam o armazenamento local com dados em nuvem desprovidos de anexos.
+  - **Correção:** Inclusão de `gainDetails: action.gainDetails || {}` no `methodology_data` e no mapeamento de nuvem em `dataService.ts`. Atualização imediata do estado local e persistência assíncrona sem disparar re-sync global destrutivo em `handleGainFileUpload` e `handleRemoveGainFile`.
+  - **Validação:** Limite de 15 MB por arquivo com feedback ao usuário.
+- **Submissão à Controladoria & Despacho Microsoft Graph API:**
+  - **Causa Raiz:** `submitActionToControladoria` e `processControllershipAudit` salvavam apenas em `setStoredData(localStorage)`, sem invocar `saveAndSyncAction()`. Como consequência, o token de auditoria e status pendente nunca eram gravados na tabela `lean_actions` do Supabase Cloud, sumindo após qualquer atualização. Ademais, o valor anual de retorno era passado como 0 no e-mail caso `estimatedCostAvoided` estivesse zerado, ignorando `actualCostAvoided`.
+  - **Correção:** Persistência imediata via `saveAndSyncAction()` no Supabase Cloud; correção no valor de retorno repassado ao template de e-mail (`action.actualCostAvoided || action.estimatedCostAvoided`); inclusão de modal de confirmação com visualização do e-mail de destino e remetente oficial (`fluxolean@rafitec.com.br`); retorno claro do status do despacho (M365 Real vs Simulado vs Falha).
+- **Estabilização do Algoritmo de Acompanhamento Mensal (Ciclo 12 Meses):**
+  - **Causa Raiz:** O método `saveQuarterlyMonthResult` executava `action.actualCostAvoided = totalRealized` e `action.netSavings = totalRealized - totalCost`. Ao registrar o 1º mês (ex: R$ 2.055,77), o retorno anual do projeto (R$ 24.669,23) era sobrescrito pelo valor parcial, negativando o lucro líquido e distorcendo drasticamente o ROI e o Payback. O auto-save então revertia o valor, gerando oscilações contínuas. No pipeline, a divisão do valor anual era feita por `monthsFilledCount` em vez de 12.
+  - **Correção:**
+    - O baseline anual homologado (`actualCostAvoided` e `netSavings`) é rigorosamente preservado durante a apuração mensal contínua (meses 1 a 11).
+    - O caixa real apurado no Gemba é acumulado estritamente em `quarterlyFollowUp.totalRealizedCostAvoided`.
+    - A projeção a 12 meses (`totalProjectedCostAvoided`) e a média mensal apurada (`averageCostAvoided`) atualizam em tempo real sem contaminar o baseline do projeto.
+    - Correção na estimativa mensal do pipeline (dividindo o retorno anual por 12).
+    - Correção dos cards visuais da Seção 4.3 (cálculo de `/mês` dividido por 12 e Realizado em Caixa iniciado em zero para projetos recém-homologados).
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - `npm run build`: 100% de sucesso (43/43 páginas estáticas compiladas com zero warnings).
+
+---

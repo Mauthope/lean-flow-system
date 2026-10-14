@@ -48,7 +48,7 @@ import {
   MonthlyFollowUpPipeline,
 } from '../lib/types';
 import { getProjectMonthLabel } from '../lib/utils';
-import { sendControladoriaAuditInvite } from './emailService';
+import { sendControladoriaAuditInvite, SendEmailResult } from './emailService';
 import { getLocalFallbackStrategicAudit } from './geminiService';
 import {
   STORAGE_KEYS,
@@ -1177,6 +1177,7 @@ export const dataService = {
             paybackMonths: action.paybackMonths,
             hoursSaved: action.hoursSaved,
             attachments: action.attachments,
+            gainDetails: action.gainDetails || {},
             assignedAgentId: action.assignedAgentId,
             assignedAgentName: action.assignedAgentName,
             assignedAgentAvatar: action.assignedAgentAvatar,
@@ -1289,6 +1290,7 @@ export const dataService = {
           paybackMonths: method.paybackMonths,
           hoursSaved: method.hoursSaved || 0,
           attachments: method.attachments,
+          gainDetails: method.gainDetails || method.controllershipAudit?.gainDetails || {},
           assignedAgentId: method.assignedAgentId || row.assigned_agent_id,
           assignedAgentName: method.assignedAgentName,
           assignedAgentAvatar: method.assignedAgentAvatar,
@@ -1473,7 +1475,7 @@ export const dataService = {
     const allFilledValues: number[] = [];
     for (let m = 1; m <= 12; m++) {
       const entry = (action.quarterlyFollowUp as any)[`month${m}`];
-      if (entry && entry.value !== undefined) {
+      if (entry && typeof entry.value === 'number' && !isNaN(entry.value)) {
         allFilledValues.push(entry.value);
       }
     }
@@ -1497,7 +1499,10 @@ export const dataService = {
     const m1 = action.quarterlyFollowUp.month1?.value;
     const m2 = action.quarterlyFollowUp.month2?.value;
     const m3 = action.quarterlyFollowUp.month3?.value;
-    const isQuarterCompleted = m1 !== undefined && m2 !== undefined && m3 !== undefined;
+    const isQuarterCompleted =
+      typeof m1 === 'number' && !isNaN(m1) &&
+      typeof m2 === 'number' && !isNaN(m2) &&
+      typeof m3 === 'number' && !isNaN(m3);
 
     if (isQuarterCompleted) {
       action.quarterlyFollowUp.isCompleted = true;
@@ -1510,18 +1515,23 @@ export const dataService = {
       } else {
         action.quarterlyFollowUp.status = 'homologado_em_acompanhamento';
       }
-    } else if (m1 !== undefined && m2 !== undefined) {
+    } else if (typeof m1 === 'number' && !isNaN(m1) && typeof m2 === 'number' && !isNaN(m2)) {
       action.quarterlyFollowUp.status = 'aguardando_mes_3';
-    } else if (m1 !== undefined) {
+    } else if (typeof m1 === 'number' && !isNaN(m1)) {
       action.quarterlyFollowUp.status = 'aguardando_mes_2';
     } else {
       action.quarterlyFollowUp.status = 'aguardando_mes_1';
     }
 
-    // O valor real acumulado do projeto reflete o montante real já apurado
-    action.actualCostAvoided = totalRealized;
-    if (action.projectCosts?.totalCost) {
-      action.netSavings = totalRealized - action.projectCosts.totalCost;
+    // REGRA DE GOVERNANÇA FINANCEIRA LEAN:
+    // O baseline anual auditado do projeto (actualCostAvoided) é preservado e reflete o retorno anual homologado.
+    // O montante físico acumulado mês a mês no Gemba é retido com precisão em quarterlyFollowUp.totalRealizedCostAvoided.
+    // Evita-se sobrescrever actualCostAvoided com meses parciais, o que distorcia o ROI e gerava economia líquida negativa.
+    if (countFilled >= 12) {
+      action.actualCostAvoided = totalRealized;
+      if (action.projectCosts?.totalCost) {
+        action.netSavings = Math.max(0, totalRealized - action.projectCosts.totalCost);
+      }
     }
 
     action.updatedAt = new Date().toISOString();
@@ -1556,14 +1566,14 @@ export const dataService = {
         reportedCount++;
         confirmedValue += entry.value;
       } else {
-        // Estima o valor mensal proporcional esperado para este projeto
+        // Estima o valor mensal proporcional esperado para este projeto (base anual / 12)
         let estimatedMonthly = 0;
         if (fu?.averageCostAvoided && fu.averageCostAvoided > 0) {
           estimatedMonthly = fu.averageCostAvoided;
+        } else if (action.actualCostAvoided && action.actualCostAvoided > 0) {
+          estimatedMonthly = Math.round(action.actualCostAvoided / 12);
         } else if (action.estimatedCostAvoided && action.estimatedCostAvoided > 0) {
           estimatedMonthly = Math.round(action.estimatedCostAvoided / 12);
-        } else if (action.actualCostAvoided && action.actualCostAvoided > 0) {
-          estimatedMonthly = Math.round(action.actualCostAvoided / Math.max(1, fu?.monthsFilledCount || 1));
         } else {
           estimatedMonthly = 4500;
         }
@@ -1638,7 +1648,9 @@ export const dataService = {
           let estimatedMonthly = 0;
           if (fu?.averageCostAvoided && fu.averageCostAvoided > 0) {
             estimatedMonthly = fu.averageCostAvoided;
-          } else if (action.estimatedCostAvoided) {
+          } else if (action.actualCostAvoided && action.actualCostAvoided > 0) {
+            estimatedMonthly = Math.round(action.actualCostAvoided / 12);
+          } else if (action.estimatedCostAvoided && action.estimatedCostAvoided > 0) {
             estimatedMonthly = Math.round(action.estimatedCostAvoided / 12);
           } else {
             estimatedMonthly = 5000;
@@ -1765,8 +1777,9 @@ export const dataService = {
     actionId: string,
     submittedBy: string,
     originUrl?: string,
-    gainDetails?: Record<string, GainProofDetail>
-  ): Promise<{ action: LeanAction; auditUrl: string; token: string }> {
+    gainDetails?: Record<string, GainProofDetail>,
+    customRecipientEmail?: string
+  ): Promise<{ action: LeanAction; auditUrl: string; token: string; emailResult: SendEmailResult }> {
     const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === actionId);
     if (index === -1) throw new Error('Ação não encontrada');
@@ -1796,15 +1809,18 @@ export const dataService = {
     const auditUrl = `${baseUrl}/controladoria/auditoria/${token}`;
 
     const originalBreakdown: LeanCostBreakdown = action.costBreakdown ? { ...action.costBreakdown } : {};
-    const originalEstimated = action.estimatedCostAvoided || 0;
+    const originalEstimated = Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
     const originalCosts = action.projectCosts ? { ...action.projectCosts } : undefined;
 
     const controladoriaEmail =
-      tenant?.aiSettings?.controladoriaEmail || 'controladoria@empresa.com.br';
+      customRecipientEmail?.trim() ||
+      tenant?.aiSettings?.controladoriaEmail?.trim() ||
+      'controladoria@rafitec.com.br';
     const controladoriaName =
-      tenant?.aiSettings?.controladoriaName || 'Controladoria & Finanças Corporativas';
+      tenant?.aiSettings?.controladoriaName?.trim() ||
+      'Gerência de Controladoria & Custos';
 
-    // Disparar notificação por e-mail (Resend / Supabase Edge / Simulado)
+    // Disparar notificação por e-mail (Resend / Microsoft Graph / Supabase Edge)
     const emailResult = await sendControladoriaAuditInvite({
       recipientEmail: controladoriaEmail,
       recipientName: controladoriaName,
@@ -1817,6 +1833,8 @@ export const dataService = {
       paybackMonths: action.paybackMonths,
       auditUrl,
       token,
+      tenantName: tenant?.name || 'Rafitec S.A.',
+      tenantId: tenant?.id,
     });
 
     const auditData: ControllershipAudit = {
@@ -1841,9 +1859,9 @@ export const dataService = {
     action.controllershipAudit = auditData;
     action.updatedAt = new Date().toISOString();
     actions[index] = action;
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
+    const saved = await this.saveAndSyncAction(actions[index], actions);
 
-    return { action, auditUrl, token };
+    return { action: saved, auditUrl, token, emailResult };
   },
 
   // Buscar projeto pelo token de auditoria escopado da Controladoria
@@ -1946,8 +1964,7 @@ export const dataService = {
 
     action.updatedAt = now;
     actions[index] = action;
-    setStoredData(STORAGE_KEYS.ACTIONS, actions);
-    return action;
+    return this.saveAndSyncAction(actions[index], actions);
   },
 
   createPublicDemand(demand: {

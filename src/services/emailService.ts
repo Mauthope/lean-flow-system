@@ -101,7 +101,14 @@ export async function sendControladoriaAuditInvite(
         };
       }
     } catch (apiErr: any) {
-      console.warn('[EmailService] Falha de comunicação com /api/email/send, ativando fallback simulado:', apiErr);
+      console.warn('[EmailService] Falha de comunicação com /api/email/send:', apiErr);
+      return {
+        success: false,
+        simulated: false,
+        auditUrl: params.auditUrl,
+        error: apiErr?.message || 'Falha de comunicação ao despachar e-mail via API.',
+        message: 'Não foi possível contatar o serviço interno de despacho de e-mails.',
+      };
     }
   }
 

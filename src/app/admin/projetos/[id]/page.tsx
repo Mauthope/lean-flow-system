@@ -1160,6 +1160,12 @@ export default function AdminProjectDetailPage() {
     const file = e.target.files?.[0];
     if (!file || !action) return;
 
+    if (file.size > 15 * 1024 * 1024) {
+      alert('O arquivo selecionado excede o limite máximo permitido de 15 MB.');
+      e.target.value = '';
+      return;
+    }
+
     const sizeFormatted = file.size > 1024 * 1024
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(file.size / 1024)} KB`;
@@ -1178,25 +1184,28 @@ export default function AdminProjectDetailPage() {
         uploadedBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
       };
 
-      setGainDetails((prev) => {
-        const current = prev[category] || {
-          category,
+      const current = gainDetails[category] || {
+        category,
+        categoryLabel,
+        value: 0,
+        explanation: '',
+      };
+      const updated = {
+        ...gainDetails,
+        [category]: {
+          ...current,
           categoryLabel,
-          value: 0,
-          explanation: '',
-        };
-        const updated = {
-          ...prev,
-          [category]: {
-            ...current,
-            categoryLabel,
-            attachment: newAttachment,
-          },
-        };
-        dataService.updateAction(action.id, { gainDetails: updated });
-        return updated;
-      });
-      refreshData();
+          attachment: newAttachment,
+        },
+      };
+      setGainDetails(updated);
+
+      try {
+        const fresh = dataService.updateAction(action.id, { gainDetails: updated });
+        if (fresh) setAction(fresh);
+      } catch (err) {
+        console.warn('Erro ao atualizar anexo de ganho:', err);
+      }
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -1204,15 +1213,17 @@ export default function AdminProjectDetailPage() {
 
   const handleRemoveGainFile = (category: string) => {
     if (!action) return;
-    setGainDetails((prev) => {
-      const current = prev[category];
-      if (!current) return prev;
-      const updated = { ...prev };
-      delete updated[category].attachment;
-      dataService.updateAction(action.id, { gainDetails: updated });
-      return updated;
-    });
-    refreshData();
+    const current = gainDetails[category];
+    if (!current) return;
+    const updated = { ...gainDetails };
+    delete updated[category].attachment;
+    setGainDetails(updated);
+    try {
+      const fresh = dataService.updateAction(action.id, { gainDetails: updated });
+      if (fresh) setAction(fresh);
+    } catch (err) {
+      console.warn('Erro ao remover anexo de ganho:', err);
+    }
   };
 
   const handleGainExplanationChange = (category: string, categoryLabel: string, text?: string) => {
@@ -1291,6 +1302,19 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
+    const currentControladoriaEmail =
+      dataService.getCurrentTenant()?.aiSettings?.controladoriaEmail?.trim() ||
+      'controladoria@rafitec.com.br';
+
+    const confirmed = window.confirm(
+      `CONFIRMAÇÃO DE SUBMISSÃO À CONTROLADORIA\n\n` +
+      `Ganhos Declarados: ${formatCurrency(identifiedGainValue)}\n` +
+      `Destinatário: ${currentControladoriaEmail}\n` +
+      `Remetente: fluxolean@rafitec.com.br (Microsoft Graph API)\n\n` +
+      `Deseja enviar a notificação oficial por e-mail e liberar o portal de auditoria?`
+    );
+    if (!confirmed) return;
+
     setSubmittingControladoria(true);
     try {
       // Atualizar o valor de cada gainDetails com o valor atual do input
@@ -1313,12 +1337,24 @@ export default function AdminProjectDetailPage() {
         action.id,
         currentUser?.name || action.assignedAgentName || 'Agente Lean',
         undefined,
-        finalGainDetails
+        finalGainDetails,
+        currentControladoriaEmail
       );
       setAction(res.action);
       setGainDetails(finalGainDetails);
-      refreshData();
-      alert(`Projeto submetido com sucesso à Controladoria!\n\nLink seguro gerado para o auditor:\n${res.auditUrl}`);
+
+      const emailStatusText = res.emailResult?.simulated
+        ? `Modo Simulado (EMAIL_ENABLED=false): o sistema gerou a mensagem internamente mas não realizou o envio externo.`
+        : res.emailResult?.success
+        ? `E-mail corporativo enviado com sucesso para "${currentControladoriaEmail}" via Microsoft Graph API.`
+        : `Aviso no envio de e-mail: ${res.emailResult?.error || res.emailResult?.message || 'Falha de entrega'}.`;
+
+      alert(
+        `PROJETO SUBMETIDO À CONTROLADORIA COM SUCESSO!\n\n` +
+        `Status da Notificação: ${emailStatusText}\n\n` +
+        `Link seguro de auditoria:\n${res.auditUrl}\n\n` +
+        `O auditor contábil já pode acessar e validar os números declarados.`
+      );
     } catch (err: any) {
       alert(err.message || 'Erro ao submeter à Controladoria');
     } finally {
@@ -5285,7 +5321,7 @@ export default function AdminProjectDetailPage() {
                   <h3 style={{ fontSize: '1.65rem', fontWeight: 900, color: '#34d399', margin: 0, fontFamily: 'var(--font-mono)' }}>
                     {action.quarterlyFollowUp?.averageCostAvoided
                       ? formatCurrency(action.quarterlyFollowUp.averageCostAvoided)
-                      : formatCurrency(action.actualCostAvoided || 0)}
+                      : formatCurrency(Math.round((action.actualCostAvoided || totalGrossSavings || 0) / 12))}
                     <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
                   </h3>
                 </div>
@@ -5454,7 +5490,7 @@ export default function AdminProjectDetailPage() {
                   Realizado em Caixa (Soma dos Meses Apurados)
                 </span>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#34d399', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
-                  {formatCurrency(action.quarterlyFollowUp?.totalRealizedCostAvoided || (action.actualCostAvoided || 0))}
+                  {formatCurrency(action.quarterlyFollowUp?.totalRealizedCostAvoided ?? 0)}
                 </h3>
                 <span style={{ fontSize: '0.725rem', color: '#cbd5e1', marginTop: '0.2rem', display: 'block' }}>
                   Total apurado fisicamente no chão de fábrica
@@ -5468,7 +5504,8 @@ export default function AdminProjectDetailPage() {
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#22d3ee', margin: '0.25rem 0 0', fontFamily: 'var(--font-mono)' }}>
                   {formatCurrency(
                     action.quarterlyFollowUp?.totalProjectedCostAvoided ||
-                    ((action.quarterlyFollowUp?.averageCostAvoided || 0) * 12)
+                    ((action.quarterlyFollowUp?.averageCostAvoided || 0) * 12) ||
+                    (action.actualCostAvoided || totalGrossSavings || 0)
                   )}
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/ano</span>
                 </h3>
