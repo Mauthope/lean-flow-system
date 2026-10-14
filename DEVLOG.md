@@ -3,6 +3,34 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Governança de E-mail da Controladoria e Visualização de Memórias de Cálculo no Check
+**Agentes Responsáveis:** `cleancod`, `designer`, `security-expert`, `chronicler`  
+**Escopo:** Persistência no Supabase Cloud das configurações de IA e e-mail da Controladoria (`tenants.ai_settings`), confirmação com edição dinâmica de e-mail de homologação, visualização corporativa de anexos de ganhos financeiros (imagens, PDFs e planilhas) no Check e no Portal do Auditor, e correção de persistência de `gainDetails`.
+
+### 1. Diagnóstico e Necessidade Operacional
+- **Divergência de E-mail de Homologação da Controladoria:** O sistema enviava notificações para o e-mail padrão legado (`controladoria@rafitec.com.br`) em vez do e-mail configurado em Governança & Homologação (`mauricio.grigol@rafitec.com.br`). A causa raiz foi que `dataService.saveTenantAiSettings` gravava apenas no `localStorage`, e o `AuthContext` sincronizava o tenant a partir da tabela `tenants` do Supabase Cloud, sobrescrevendo a alteração local.
+- **Invisibilidade e Impossibilidade de Pré-visualizar Arquivos de Ganhos no Check:**
+  - O bloco de evidência de memória de cálculo no Check estava condicionado a `numVal > 0`. Se o ganho estivesse zerado ou em ajuste, o anexo desaparecia da visualização.
+  - Havia apenas a opção de "Baixar", sem visualização na tela (modal de pré-visualização rápida de planilhas, PDFs e relatórios).
+  - O upload do agente Gustavo não estava persistindo adequadamente na nuvem porque `gainDetails` não estava incluído nas rotinas de serialização `persistActionToCloud` e `syncActionsFromCloud`.
+
+### 2. Ações Implementadas
+- **Nuvem Supabase e Sincronização de Tenant (`src/services/dataService.ts` & `src/contexts/AuthContext.tsx`):**
+  - Atualizado registro da tabela `tenants` no Supabase Cloud definindo `controladoriaEmail: "mauricio.grigol@rafitec.com.br"`.
+  - `dataService.saveTenantAiSettings`: Atualizado para gravar diretamente no Supabase (`supabase.from('tenants').update(...)`) além do cache local.
+  - Implementado `syncTenantsFromCloud()` integrado a `syncAllFromCloud()` para garantir coerência entre múltiplos dispositivos.
+  - `AuthContext`: Aprimorada a detecção de divergência profunda de `ai_settings` no carregamento da aplicação para manter o `currentTenant` sempre atualizado.
+- **Submissão com Confirmação e Edição Dinâmica (`src/app/admin/projetos/[id]/page.tsx`):**
+  - O fluxo de submissão à Controladoria agora exibe uma caixa interativa (`window.prompt`) pré-preenchida com o e-mail auditado da entidade, permitindo que o usuário confira ou altere o destinatário no momento do envio, persistindo automaticamente a escolha.
+- **Visualização de Arquivos e Memória de Cálculo no Check (`src/app/admin/projetos/[id]/page.tsx` & `src/app/controladoria/auditoria/[token]/page.tsx`):**
+  - Removida a restrição `numVal > 0`: agora o card exibe o anexo e memória sempre que `(numVal > 0 || hasFile)`.
+  - Implementado botão **"Visualizar"** (`<Eye />`) com Modal Corporativo Obsidian Navy em tela cheia (`maxWidth="4xl"`).
+  - Suporte a visualização direta de imagens (`<img>`), PDFs interativos (`<iframe>`) e cartão executivo para arquivos XLSX/DOCX/CSV com download e abertura rápida.
+  - Implementado helper `handleOpenAttachmentInNewTab` com conversão de Base64 em `Blob` seguro (`URL.createObjectURL`).
+  - Adicionado botão de visualização também para a contra-memória do auditor e espelhamento no Portal do Auditor.
+
+---
+
 ## [2026-10-14] Automação Integral de Status Kanban e Avanço de Etapas PDCA (Plan -> Do -> Check -> Act)
 **Agentes Responsáveis:** `cleancod`, `designer`, `responsive`, `chronicler`  
 **Escopo:** Implementação da Opção A de automação total: transição automática de projetos para status 'em_andamento' no Kanban ao iniciar diagnóstico/planejamento, avanço automático da etapa Do para Check ao concluir o checklist 5W2H (com confetti), banners de avanço e navegação fluida entre todas as etapas PDCA (Plan -> Do -> Check -> Act), exibição de badge de etapa PDCA (`P • PLAN`, `D • DO`, `C • CHECK`, `A • ACT`), carimbo de Canal Kaizen e progresso 5W2H nos cards do Kanban.

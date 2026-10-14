@@ -29,8 +29,11 @@ import {
   Trash2,
   FileText,
   UploadCloud,
+  Eye,
+  Image as ImageIcon,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { Modal } from '@/components/ui/Modal';
 
 export default function ControladoriaAuditoriaPage() {
   const params = useParams();
@@ -40,6 +43,7 @@ export default function ControladoriaAuditoriaPage() {
   const [action, setAction] = useState<LeanAction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewAttachment, setPreviewAttachment] = useState<GainProofAttachment | null>(null);
 
   // Form State do Auditor
   const [reviewerName, setReviewerName] = useState('');
@@ -198,6 +202,29 @@ export default function ControladoriaAuditoriaPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleOpenAttachmentInNewTab = (att: GainProofAttachment) => {
+    if (!att?.url) return;
+    try {
+      if (att.url.startsWith('data:')) {
+        const parts = att.url.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType || att.fileType || 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } else {
+        window.open(att.url, '_blank');
+      }
+    } catch {
+      window.open(att.url, '_blank');
+    }
   };
 
   // Soma Total Original (Proposta)
@@ -746,25 +773,48 @@ export default function ControladoriaAuditoriaPage() {
                                       </span>
                                       <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({proof.attachment.sizeFormatted})</span>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDownloadAttachment(proof.attachment!)}
-                                      style={{
-                                        padding: '0.25rem 0.55rem',
-                                        fontSize: '0.7rem',
-                                        borderRadius: '4px',
-                                        backgroundColor: '#0284c7',
-                                        color: '#ffffff',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.25rem',
-                                        fontWeight: 700,
-                                      }}
-                                    >
-                                      <Download size={12} /> Baixar Planilha do Agente
-                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewAttachment(proof.attachment!)}
+                                        style={{
+                                          padding: '0.25rem 0.55rem',
+                                          fontSize: '0.7rem',
+                                          borderRadius: '4px',
+                                          backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                                          color: '#38bdf8',
+                                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          fontWeight: 700,
+                                        }}
+                                        title="Visualizar documento na tela"
+                                      >
+                                        <Eye size={12} /> Visualizar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadAttachment(proof.attachment!)}
+                                        style={{
+                                          padding: '0.25rem 0.55rem',
+                                          fontSize: '0.7rem',
+                                          borderRadius: '4px',
+                                          backgroundColor: '#0284c7',
+                                          color: '#ffffff',
+                                          border: 'none',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          fontWeight: 700,
+                                        }}
+                                        title="Baixar planilha original"
+                                      >
+                                        <Download size={12} /> Baixar
+                                      </button>
+                                    </div>
                                   </div>
                                 ) : (
                                   <span style={{ fontSize: '0.72rem', color: '#f87171', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -812,6 +862,26 @@ export default function ControladoriaAuditoriaPage() {
                                       <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>({proof.auditorAttachment.sizeFormatted})</span>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                      <button
+                                        type="button"
+                                        onClick={() => setPreviewAttachment(proof.auditorAttachment!)}
+                                        style={{
+                                          padding: '0.25rem 0.55rem',
+                                          fontSize: '0.7rem',
+                                          borderRadius: '4px',
+                                          backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                                          color: '#38bdf8',
+                                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '0.25rem',
+                                          fontWeight: 700,
+                                        }}
+                                        title="Visualizar documento revisado"
+                                      >
+                                        <Eye size={12} /> Visualizar
+                                      </button>
                                       <button
                                         type="button"
                                         onClick={() => handleDownloadAttachment(proof.auditorAttachment!)}
@@ -1074,6 +1144,114 @@ export default function ControladoriaAuditoriaPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal de Visualização de Arquivo de Memória de Cálculo / Auditoria */}
+        {previewAttachment && (
+          <Modal
+            isOpen={Boolean(previewAttachment)}
+            onClose={() => setPreviewAttachment(null)}
+            title={`Memória de Cálculo: ${previewAttachment.name}`}
+            subtitle={`Tamanho: ${previewAttachment.sizeFormatted} • Anexado por ${previewAttachment.uploadedBy || 'Agente / Auditor'} em ${formatDateTime(previewAttachment.uploadedAt)}`}
+            maxWidth="4xl"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '320px' }}>
+              {previewAttachment.fileType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(previewAttachment.name) ? (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#050811', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <img
+                    src={previewAttachment.url}
+                    alt={previewAttachment.name}
+                    style={{ maxWidth: '100%', maxHeight: '68vh', objectFit: 'contain', borderRadius: '6px' }}
+                  />
+                </div>
+              ) : previewAttachment.fileType === 'application/pdf' || /\.pdf$/i.test(previewAttachment.name) ? (
+                <div style={{ width: '100%', height: '70vh', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <iframe
+                    src={previewAttachment.url}
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    title={previewAttachment.name}
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '3.5rem 1.5rem',
+                    backgroundColor: '#050811',
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    textAlign: 'center',
+                    gap: '1rem',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '68px',
+                      height: '68px',
+                      borderRadius: '14px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                    }}
+                  >
+                    <FileSpreadsheet size={34} color="#38bdf8" />
+                  </div>
+                  <div>
+                    <h4 style={{ color: '#ffffff', fontSize: '1.15rem', margin: '0 0 0.4rem 0', fontWeight: 800 }}>
+                      {previewAttachment.name}
+                    </h4>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                      Planilha de Cálculo / Documento Contábil ({previewAttachment.sizeFormatted})
+                    </p>
+                    <p style={{ color: '#64748b', fontSize: '0.78rem', margin: '0.35rem 0 0 0' }}>
+                      Para inspecionar fórmulas e células completas, baixe o arquivo original ou abra em nova janela.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '0.65rem',
+                  paddingTop: '0.85rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleOpenAttachmentInNewTab(previewAttachment)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <ExternalLink size={14} /> Abrir em Nova Janela
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDownloadAttachment(previewAttachment)}
+                  className="btn btn-primary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                >
+                  <Download size={14} /> Baixar Arquivo Completo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewAttachment(null)}
+                  className="btn btn-outline btn-sm"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </Modal>
         )}
       </main>
     </div>

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { dataService } from '@/services/dataService';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import {
   validateGeminiApiKey,
   synthesizeSpeechGoogleCloud,
@@ -199,14 +200,34 @@ export default function IntegracoesIaPage() {
   // ===================================================================
   // SALVAR CONFIGURAÇÃO DA CONTROLADORIA
   // ===================================================================
-  const handleSaveControladoria = (e: React.FormEvent) => {
+  const handleSaveControladoria = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingControladoria(true);
-    dataService.saveTenantAiSettings({
+    const updatedAiSettings = {
       controladoriaEmail: controladoriaEmail.trim(),
       controladoriaName: controladoriaName.trim(),
       autoNotifyControladoria,
-    });
+    };
+    dataService.saveTenantAiSettings(updatedAiSettings);
+
+    if (isSupabaseConfigured() && currentTenant) {
+      try {
+        await supabase
+          .from('tenants')
+          .update({
+            ai_settings: {
+              ...(currentTenant.aiSettings || {}),
+              ...updatedAiSettings,
+              updatedAt: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', currentTenant.id);
+      } catch (cloudErr) {
+        console.warn('[IntegracoesIaPage] Erro ao atualizar Supabase:', cloudErr);
+      }
+    }
+
     setTimeout(() => {
       setIsSavingControladoria(false);
       setControladoriaSaved(true);

@@ -118,6 +118,30 @@ export const dataService = {
       t.id === updatedTenant.id ? updatedTenant : t
     );
     setStoredData(STORAGE_KEYS.TENANTS, tenants);
+
+    // Sincronização em tempo real com o banco de dados Supabase Cloud
+    if (isSupabaseConfigured()) {
+      Promise.resolve(
+        supabase
+          .from('tenants')
+          .update({
+            ai_settings: updatedTenant.aiSettings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', updatedTenant.id)
+      )
+        .then(({ error }: any) => {
+          if (error) {
+            console.error('[dataService] Erro ao sincronizar aiSettings no Supabase:', error.message);
+          } else {
+            console.log('[dataService] aiSettings sincronizado com sucesso no Supabase para tenant:', updatedTenant.id);
+          }
+        })
+        .catch((err: any) => {
+          console.warn('[dataService] Exceção ao atualizar aiSettings no Supabase:', err);
+        });
+    }
+
     return updatedTenant;
   },
 
@@ -3296,10 +3320,63 @@ export const dataService = {
     return idea;
   },
 
+  async syncTenantsFromCloud(): Promise<Tenant[]> {
+    if (!isSupabaseConfigured()) return this.getTenants();
+    try {
+      const { data: cloudTenants, error } = await supabase.from('tenants').select('*');
+      if (error || !cloudTenants) return this.getTenants();
+
+      const currentTenants = this.getTenants();
+      const tenantMap = new Map(currentTenants.map((t) => [t.id, t]));
+      let changed = false;
+
+      cloudTenants.forEach((row: any) => {
+        const existing = tenantMap.get(row.id);
+        const aiSettings = row.ai_settings || {};
+        if (!existing) {
+          currentTenants.push({
+            id: row.id,
+            name: row.name,
+            slug: row.slug,
+            cnpjOrCode: row.cnpj_or_code,
+            plan: row.plan || 'enterprise',
+            aiSettings,
+            createdAt: row.created_at || new Date().toISOString(),
+          });
+          changed = true;
+        } else {
+          const settingsChanged = JSON.stringify(existing.aiSettings || {}) !== JSON.stringify(aiSettings);
+          if (existing.name !== row.name || existing.slug !== row.slug || settingsChanged) {
+            existing.name = row.name;
+            existing.slug = row.slug;
+            existing.cnpjOrCode = row.cnpj_or_code;
+            existing.plan = row.plan || existing.plan;
+            existing.aiSettings = aiSettings;
+            changed = true;
+          }
+        }
+      });
+
+      if (changed) {
+        setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
+        const currentTenant = this.getCurrentTenant();
+        const updatedCurrent = currentTenants.find((t) => t.id === currentTenant.id);
+        if (updatedCurrent) {
+          this.setCurrentTenant(updatedCurrent);
+        }
+      }
+      return currentTenants;
+    } catch (err) {
+      console.warn('[dataService] Erro ao sincronizar tenants da nuvem:', err);
+      return this.getTenants();
+    }
+  },
+
   async syncAllFromCloud(tenantId?: string): Promise<void> {
     if (!isSupabaseConfigured()) return;
     try {
       await Promise.all([
+        this.syncTenantsFromCloud(),
         this.syncSectorsFromCloud(tenantId),
         this.syncUsersFromCloud(tenantId),
         this.syncActionsFromCloud(tenantId),

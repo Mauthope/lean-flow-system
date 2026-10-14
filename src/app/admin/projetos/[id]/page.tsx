@@ -12,6 +12,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { PostponeDeadlineModal } from '@/components/kanban/PostponeDeadlineModal';
 import { ActivityAttachmentModal } from '@/components/kanban/ActivityAttachmentModal';
 import { SenseiActionPokaYokeModal } from '@/components/kanban/SenseiActionPokaYokeModal';
+import { Modal } from '@/components/ui/Modal';
 import { LeanDiagnosticCanvas } from '@/components/pdca/LeanDiagnosticCanvas';
 import { evaluateActionQuality } from '@/services/geminiService';
 import {
@@ -201,6 +202,7 @@ export default function AdminProjectDetailPage() {
   // Modais de Prazos, Anexos e Poka-Yoke do Sensei
   const [postponeModalActivity, setPostponeModalActivity] = useState<ActionChecklistItem | null>(null);
   const [attachmentModalActivity, setAttachmentModalActivity] = useState<ActionChecklistItem | null>(null);
+  const [previewGainAttachment, setPreviewGainAttachment] = useState<GainProofAttachment | null>(null);
   const [pokaYokeModalOpen, setPokaYokeModalOpen] = useState(false);
   const [qualityEvaluation, setQualityEvaluation] = useState<ActionQualityEvaluation | null>(null);
   const [pendingActivityPayload, setPendingActivityPayload] = useState<{
@@ -869,6 +871,7 @@ export default function AdminProjectDetailPage() {
     productionIncrease,
     otherSavings,
     attachments,
+    gainDetails,
     standardWorkUpdated,
     standardWorkDocRef,
     yokotenReplication,
@@ -1257,6 +1260,29 @@ export default function AdminProjectDetailPage() {
     document.body.removeChild(a);
   };
 
+  const handleOpenAttachmentInNewTab = (att: GainProofAttachment) => {
+    if (!att?.url) return;
+    try {
+      if (att.url.startsWith('data:')) {
+        const parts = att.url.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType || att.fileType || 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } else {
+        window.open(att.url, '_blank');
+      }
+    } catch {
+      window.open(att.url, '_blank');
+    }
+  };
+
   // Submissão & Governança da Controladoria
   const [submittingControladoria, setSubmittingControladoria] = useState(false);
   const [copiedAuditLink, setCopiedAuditLink] = useState(false);
@@ -1302,18 +1328,27 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
-    const currentControladoriaEmail =
-      dataService.getCurrentTenant()?.aiSettings?.controladoriaEmail?.trim() ||
-      'controladoria@rafitec.com.br';
+    const tenantSettings = dataService.getCurrentTenant()?.aiSettings;
+    const configuredControladoriaEmail =
+      tenantSettings?.controladoriaEmail?.trim() ||
+      'mauricio.grigol@rafitec.com.br';
 
-    const confirmed = window.confirm(
+    const promptResponse = window.prompt(
       `CONFIRMAÇÃO DE SUBMISSÃO À CONTROLADORIA\n\n` +
-      `Ganhos Declarados: ${formatCurrency(identifiedGainValue)}\n` +
-      `Destinatário: ${currentControladoriaEmail}\n` +
-      `Remetente: fluxolean@rafitec.com.br (Microsoft Graph API)\n\n` +
-      `Deseja enviar a notificação oficial por e-mail e liberar o portal de auditoria?`
+      `Ganhos Declarados: ${formatCurrency(identifiedGainValue)}\n\n` +
+      `Confirme ou informe o e-mail da Controladoria para receber o link seguro de auditoria contábil:\n(Configurado na Entidade: ${configuredControladoriaEmail})`,
+      configuredControladoriaEmail
     );
-    if (!confirmed) return;
+    if (!promptResponse || !promptResponse.trim()) return;
+
+    const currentControladoriaEmail = promptResponse.trim().toLowerCase();
+
+    // Se o usuário especificou um e-mail diferente, salva nas preferências da Entidade
+    if (currentControladoriaEmail !== configuredControladoriaEmail.toLowerCase()) {
+      dataService.saveTenantAiSettings({
+        controladoriaEmail: currentControladoriaEmail,
+      });
+    }
 
     setSubmittingControladoria(true);
     try {
@@ -1351,6 +1386,7 @@ export default function AdminProjectDetailPage() {
 
       alert(
         `PROJETO SUBMETIDO À CONTROLADORIA COM SUCESSO!\n\n` +
+        `Destinatário: ${currentControladoriaEmail}\n` +
         `Status da Notificação: ${emailStatusText}\n\n` +
         `Link seguro de auditoria:\n${res.auditUrl}\n\n` +
         `O auditor contábil já pode acessar e validar os números declarados.`
@@ -4107,8 +4143,8 @@ export default function AdminProjectDetailPage() {
                         </div>
                       </div>
 
-                      {/* Bloco de Memória de Cálculo & Anexo (Obrigatório se ganho > 0) */}
-                      {numVal > 0 && (
+                      {/* Bloco de Memória de Cálculo & Anexo (Obrigatório se ganho > 0 ou se já houver anexo) */}
+                      {(numVal > 0 || hasFile) && (
                         <div
                           style={{
                             backgroundColor: '#050811',
@@ -4126,7 +4162,7 @@ export default function AdminProjectDetailPage() {
                             </span>
                             {hasFile ? (
                               <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#34d399', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <CheckCircle2 size={11} /> Planilha Anexada
+                                <CheckCircle2 size={11} /> Planilha / Comprovante Anexado
                               </span>
                             ) : (
                               <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fbbf24', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '0.15rem 0.45rem', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -4151,7 +4187,7 @@ export default function AdminProjectDetailPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                padding: '0.45rem 0.75rem',
+                                padding: '0.55rem 0.75rem',
                                 borderRadius: '6px',
                                 backgroundColor: 'rgba(16, 185, 129, 0.08)',
                                 border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -4159,23 +4195,53 @@ export default function AdminProjectDetailPage() {
                                 flexWrap: 'wrap',
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', overflow: 'hidden' }}>
-                                <FileSpreadsheet size={16} color="#34d399" />
-                                <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '200px' }}>
-                                  {proof.attachment.name}
-                                </span>
-                                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({proof.attachment.sizeFormatted})</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                                {proof.attachment.fileType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(proof.attachment.name) ? (
+                                  <ImageIcon size={16} color="#34d399" />
+                                ) : proof.attachment.fileType === 'application/pdf' || /\.pdf$/i.test(proof.attachment.name) ? (
+                                  <FileText size={16} color="#34d399" />
+                                ) : (
+                                  <FileSpreadsheet size={16} color="#34d399" />
+                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#ffffff', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '220px' }}>
+                                    {proof.attachment.name}
+                                  </span>
+                                  <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                                    {proof.attachment.sizeFormatted} • {proof.attachment.uploadedBy || 'Agente Lean'}
+                                  </span>
+                                </div>
                               </div>
 
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                 <button
                                   type="button"
-                                  onClick={() => handleDownloadGainAttachment(proof.attachment!)}
+                                  onClick={() => setPreviewGainAttachment(proof.attachment!)}
                                   style={{
-                                    padding: '0.2rem 0.5rem',
+                                    padding: '0.25rem 0.55rem',
                                     fontSize: '0.7rem',
                                     borderRadius: '4px',
-                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    backgroundColor: 'rgba(56, 189, 248, 0.18)',
+                                    color: '#38bdf8',
+                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    fontWeight: 700,
+                                  }}
+                                  title="Visualizar documento ou imagem na tela"
+                                >
+                                  <Eye size={12} /> Visualizar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadGainAttachment(proof.attachment!)}
+                                  style={{
+                                    padding: '0.25rem 0.55rem',
+                                    fontSize: '0.7rem',
+                                    borderRadius: '4px',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.18)',
                                     color: '#34d399',
                                     border: '1px solid rgba(16, 185, 129, 0.4)',
                                     cursor: 'pointer',
@@ -4184,6 +4250,7 @@ export default function AdminProjectDetailPage() {
                                     gap: '0.25rem',
                                     fontWeight: 700,
                                   }}
+                                  title="Baixar arquivo original"
                                 >
                                   <Download size={12} /> Baixar
                                 </button>
@@ -4191,7 +4258,7 @@ export default function AdminProjectDetailPage() {
                                   type="button"
                                   onClick={() => handleRemoveGainFile(key)}
                                   style={{
-                                    padding: '0.2rem 0.5rem',
+                                    padding: '0.25rem 0.55rem',
                                     fontSize: '0.7rem',
                                     borderRadius: '4px',
                                     backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -4200,6 +4267,7 @@ export default function AdminProjectDetailPage() {
                                     cursor: 'pointer',
                                     fontWeight: 700,
                                   }}
+                                  title="Excluir este anexo"
                                 >
                                   Remover
                                 </button>
@@ -4224,7 +4292,7 @@ export default function AdminProjectDetailPage() {
                               }}
                             >
                               <Paperclip size={14} />
-                              <span>Anexar Memória de Cálculo (.xlsx, .pdf, .csv)</span>
+                              <span>Anexar Memória de Cálculo (.xlsx, .pdf, .csv, imagem)</span>
                               <input
                                 type="file"
                                 accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,image/*"
@@ -4264,26 +4332,46 @@ export default function AdminProjectDetailPage() {
                                 </p>
                               )}
                               {auditProof.auditorAttachment && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownloadGainAttachment(auditProof.auditorAttachment!)}
-                                  style={{
-                                    alignSelf: 'flex-start',
-                                    padding: '0.2rem 0.5rem',
-                                    fontSize: '0.68rem',
-                                    borderRadius: '4px',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                                    color: '#60a5fa',
-                                    border: '1px solid rgba(59, 130, 246, 0.4)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.25rem',
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  <Download size={11} /> Baixar Planilha Revisada ({auditProof.auditorAttachment.name})
-                                </button>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewGainAttachment(auditProof.auditorAttachment!)}
+                                    style={{
+                                      padding: '0.2rem 0.5rem',
+                                      fontSize: '0.68rem',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                                      color: '#38bdf8',
+                                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    <Eye size={11} /> Visualizar Revisão
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadGainAttachment(auditProof.auditorAttachment!)}
+                                    style={{
+                                      padding: '0.2rem 0.5rem',
+                                      fontSize: '0.68rem',
+                                      borderRadius: '4px',
+                                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                      color: '#60a5fa',
+                                      border: '1px solid rgba(59, 130, 246, 0.4)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '0.25rem',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    <Download size={11} /> Baixar Planilha Revisada ({auditProof.auditorAttachment.name})
+                                  </button>
+                                </div>
                               )}
                             </div>
                           )}
@@ -7522,6 +7610,114 @@ export default function AdminProjectDetailPage() {
             projectName: action?.title,
           }}
         />
+      )}
+
+      {/* Modal de Visualização de Arquivo de Memória de Cálculo / Ganhos */}
+      {previewGainAttachment && (
+        <Modal
+          isOpen={Boolean(previewGainAttachment)}
+          onClose={() => setPreviewGainAttachment(null)}
+          title={`Memória de Cálculo: ${previewGainAttachment.name}`}
+          subtitle={`Tamanho: ${previewGainAttachment.sizeFormatted} • Anexado por ${previewGainAttachment.uploadedBy || 'Agente Lean'} em ${formatDateTime(previewGainAttachment.uploadedAt)}`}
+          maxWidth="4xl"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '320px' }}>
+            {previewGainAttachment.fileType?.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(previewGainAttachment.name) ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#050811', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <img
+                  src={previewGainAttachment.url}
+                  alt={previewGainAttachment.name}
+                  style={{ maxWidth: '100%', maxHeight: '68vh', objectFit: 'contain', borderRadius: '6px' }}
+                />
+              </div>
+            ) : previewGainAttachment.fileType === 'application/pdf' || /\.pdf$/i.test(previewGainAttachment.name) ? (
+              <div style={{ width: '100%', height: '70vh', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <iframe
+                  src={previewGainAttachment.url}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title={previewGainAttachment.name}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '3.5rem 1.5rem',
+                  backgroundColor: '#050811',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  textAlign: 'center',
+                  gap: '1rem',
+                }}
+              >
+                <div
+                  style={{
+                    width: '68px',
+                    height: '68px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                  }}
+                >
+                  <FileSpreadsheet size={34} color="#34d399" />
+                </div>
+                <div>
+                  <h4 style={{ color: '#ffffff', fontSize: '1.15rem', margin: '0 0 0.4rem 0', fontWeight: 800 }}>
+                    {previewGainAttachment.name}
+                  </h4>
+                  <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                    Planilha de Cálculo / Documento Corporativo ({previewGainAttachment.sizeFormatted})
+                  </p>
+                  <p style={{ color: '#64748b', fontSize: '0.78rem', margin: '0.35rem 0 0 0' }}>
+                    Para inspecionar fórmulas, macros e tabelas dinâmicas, baixe o arquivo original ou abra em nova aba.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: '0.65rem',
+                paddingTop: '0.85rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => handleOpenAttachmentInNewTab(previewGainAttachment)}
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <ExternalLink size={14} /> Abrir em Nova Janela
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDownloadGainAttachment(previewGainAttachment)}
+                className="btn btn-primary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <Download size={14} /> Baixar Arquivo Completo
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewGainAttachment(null)}
+                className="btn btn-outline btn-sm"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Printable / Report Footer */}

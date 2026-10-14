@@ -178,23 +178,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   createdAt: dbT.created_at || new Date().toISOString(),
                 });
                 tenantsChanged = true;
-              } else if (
-                existing.name !== dbT.name ||
-                existing.slug !== dbT.slug ||
-                existing.cnpjOrCode !== dbT.cnpj_or_code
-              ) {
-                existing.name = dbT.name;
-                existing.slug = dbT.slug;
-                existing.cnpjOrCode = dbT.cnpj_or_code;
-                existing.plan = dbT.plan || existing.plan;
-                existing.aiSettings = dbT.ai_settings || existing.aiSettings;
-                tenantsChanged = true;
+              } else {
+                const aiSettings = dbT.ai_settings || {};
+                const settingsChanged = JSON.stringify(existing.aiSettings || {}) !== JSON.stringify(aiSettings);
+                if (
+                  existing.name !== dbT.name ||
+                  existing.slug !== dbT.slug ||
+                  existing.cnpjOrCode !== dbT.cnpj_or_code ||
+                  settingsChanged
+                ) {
+                  existing.name = dbT.name;
+                  existing.slug = dbT.slug;
+                  existing.cnpjOrCode = dbT.cnpj_or_code;
+                  existing.plan = dbT.plan || existing.plan;
+                  existing.aiSettings = aiSettings;
+                  tenantsChanged = true;
+                }
               }
             });
 
             if (tenantsChanged) {
               setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
               setAllTenants([...currentTenants]);
+              const cur = dataService.getCurrentTenant();
+              const refreshed = currentTenants.find((t) => t.id === cur?.id);
+              if (refreshed) {
+                dataService.setCurrentTenant(refreshed);
+                setCurrentTenant(refreshed);
+              }
             }
           }
 
