@@ -1314,6 +1314,41 @@ export const dataService = {
       };
     }
 
+    // Transição automática para 'em_andamento':
+    // Se o projeto estiver 'aberta', qualquer trabalho ativo de diagnóstico, planejamento ou execução
+    // altera automaticamente o status para 'em_andamento' e registra o carimbo de início startedAt
+    if (merged.status === 'aberta') {
+      const hasWorkStarted =
+        merged.pdcaStage === 'do' ||
+        merged.pdcaStage === 'check' ||
+        merged.pdcaStage === 'act' ||
+        Boolean(merged.problemStatement?.trim()) ||
+        Boolean(merged.baselineValue !== undefined) ||
+        Boolean(merged.targetGoalValue !== undefined) ||
+        Boolean(merged.ishikawa?.primaryRootCause?.trim()) ||
+        Boolean(merged.ishikawa?.method?.trim()) ||
+        (merged.fiveWhys && merged.fiveWhys.some((w) => Boolean(w?.trim()))) ||
+        (merged.checklist && merged.checklist.some((c) => c.completed || c.status === 'em_andamento'));
+
+      if (hasWorkStarted) {
+        merged.status = 'em_andamento';
+        if (!merged.startedAt) {
+          merged.startedAt = new Date().toISOString();
+        }
+      }
+    }
+
+    // Transição automática de etapa PDCA: Se todas as ações do plano 5W2H (Do) estiverem concluídas,
+    // avança automaticamente a metodologia para a etapa Check (Verificação de Resultados)
+    if (
+      merged.pdcaStage === 'do' &&
+      merged.checklist &&
+      merged.checklist.length > 0 &&
+      merged.checklist.every((c) => c.completed)
+    ) {
+      merged.pdcaStage = 'check';
+    }
+
     // Garantir data de conclusão quando a ação for finalizada
     if (merged.status === 'concluida') {
       if (!merged.completedAt) merged.completedAt = new Date().toISOString();
@@ -2143,6 +2178,20 @@ export const dataService = {
     }
 
     actions[index].checklist = checklist;
+
+    // Transição automática de status e etapa
+    if (actions[index].status === 'aberta') {
+      actions[index].status = 'em_andamento';
+      if (!actions[index].startedAt) actions[index].startedAt = new Date().toISOString();
+    }
+    if (
+      actions[index].pdcaStage === 'do' &&
+      checklist.length > 0 &&
+      checklist.every((c) => c.completed)
+    ) {
+      actions[index].pdcaStage = 'check';
+    }
+
     actions[index].updatedAt = new Date().toISOString();
     return this.saveAndSyncAction(actions[index], actions);
   },
@@ -2299,6 +2348,20 @@ export const dataService = {
     }
 
     actions[index].checklist = checklist;
+
+    // Transição automática de status e etapa
+    if (actions[index].status === 'aberta') {
+      actions[index].status = 'em_andamento';
+      if (!actions[index].startedAt) actions[index].startedAt = new Date().toISOString();
+    }
+    if (
+      actions[index].pdcaStage === 'do' &&
+      checklist.length > 0 &&
+      checklist.every((c) => c.completed)
+    ) {
+      actions[index].pdcaStage = 'check';
+    }
+
     actions[index].updatedAt = new Date().toISOString();
     return this.saveAndSyncAction(actions[index], actions);
   },

@@ -4,7 +4,7 @@ import React from 'react';
 import { LeanAction } from '@/lib/types';
 import { formatDate, formatCurrency, getFollowUpMonthsFilledCount } from '@/lib/utils';
 import { PriorityBadge } from '@/components/ui/Badge';
-import { Calendar, DollarSign, Clock, Check } from 'lucide-react';
+import { Calendar, DollarSign, Clock, Check, CheckSquare } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface KanbanCardProps {
@@ -182,24 +182,130 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         e.currentTarget.style.backgroundColor = isDark ? '#0c1424' : '#ffffff';
       }}
     >
-      {/* Top Row: Protocol + Sector + Priority */}
+      {/* Top Row: Protocol + PDCA Stage + Sector + Priority */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.35rem' }}>
-        <span
-          style={{
-            fontFamily: 'var(--font-mono, monospace)',
-            fontSize: '0.675rem',
-            fontWeight: 800,
-            color: currentTheme.textBadge,
-            backgroundColor: currentTheme.bgBadge,
-            padding: '0.12rem 0.45rem',
-            borderRadius: '5px',
-            border: `1px solid ${currentTheme.borderBadge}`,
-            letterSpacing: '0.02em',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {action.protocol}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, monospace)',
+              fontSize: '0.675rem',
+              fontWeight: 800,
+              color: currentTheme.textBadge,
+              backgroundColor: currentTheme.bgBadge,
+              padding: '0.12rem 0.45rem',
+              borderRadius: '5px',
+              border: `1px solid ${currentTheme.borderBadge}`,
+              letterSpacing: '0.02em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {action.protocol}
+          </span>
+
+          {/* Badge da Etapa PDCA para projetos em andamento ou com metodologia definida */}
+          {(isInProgress || action.pdcaStage) && !isCompleted && !isRejected && (() => {
+            const stage = action.pdcaStage || 'plan';
+            const stageConfig: Record<
+              'plan' | 'do' | 'check' | 'act',
+              { label: string; bg: string; text: string; border: string }
+            > = isDark ? {
+              plan: {
+                label: 'P • PLAN',
+                bg: 'rgba(6, 182, 212, 0.16)',
+                text: '#22d3ee',
+                border: 'rgba(6, 182, 212, 0.45)',
+              },
+              do: {
+                label: 'D • DO',
+                bg: 'rgba(245, 158, 11, 0.16)',
+                text: '#fbbf24',
+                border: 'rgba(245, 158, 11, 0.45)',
+              },
+              check: {
+                label: 'C • CHECK',
+                bg: 'rgba(168, 85, 247, 0.16)',
+                text: '#c084fc',
+                border: 'rgba(168, 85, 247, 0.45)',
+              },
+              act: {
+                label: 'A • ACT',
+                bg: 'rgba(16, 185, 129, 0.16)',
+                text: '#34d399',
+                border: 'rgba(16, 185, 129, 0.45)',
+              },
+            } : {
+              plan: {
+                label: 'P • PLAN',
+                bg: '#e0f2fe',
+                text: '#0369a1',
+                border: '#7dd3fc',
+              },
+              do: {
+                label: 'D • DO',
+                bg: '#fef3c7',
+                text: '#b45309',
+                border: '#fcd34d',
+              },
+              check: {
+                label: 'C • CHECK',
+                bg: '#f3e8ff',
+                text: '#7e22ce',
+                border: '#d8b4fe',
+              },
+              act: {
+                label: 'A • ACT',
+                bg: '#dcfce7',
+                text: '#15803d',
+                border: '#86efac',
+              },
+            };
+
+            const cfg = stageConfig[stage] || stageConfig.plan;
+
+            return (
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '0.625rem',
+                  fontWeight: 900,
+                  color: cfg.text,
+                  backgroundColor: cfg.bg,
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '5px',
+                  border: `1px solid ${cfg.border}`,
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+                title={`Etapa do Ciclo PDCA: ${stage.toUpperCase()}`}
+              >
+                {cfg.label}
+              </span>
+            );
+          })()}
+
+          {/* Carimbo Canal Kaizen */}
+          {action.isKaizenIdea && (
+            <span
+              style={{
+                fontSize: '0.6rem',
+                fontWeight: 900,
+                color: isDark ? '#38bdf8' : '#0284c7',
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#e0f2fe',
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid #7dd3fc',
+                padding: '0.08rem 0.35rem',
+                borderRadius: '4px',
+                letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
+                textTransform: 'uppercase',
+              }}
+              title={`Iniciativa originada no Canal Kaizen (${action.kaizenOrigin === 'toten' ? 'Toten Chão de Fábrica' : 'Formulário Web'})`}
+            >
+              Kaizen {action.kaizenOrigin === 'toten' ? '• Toten' : ''}
+            </span>
+          )}
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           {cleanSectorName && (
@@ -244,8 +350,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
         {action.title}
       </h4>
 
-      {/* Optional Highlight Pill: Financial or Master Pending */}
-      {(formattedSavings > 0 || isAwaitingApproval) && (
+      {/* Optional Highlight Pill: Financial, Master Pending or 5W2H checklist */}
+      {(formattedSavings > 0 || isAwaitingApproval || (action.checklist && action.checklist.length > 0)) && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
           {formattedSavings > 0 && (
             <span
@@ -330,6 +436,36 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               </span>
             );
           })()}
+
+          {/* 5W2H Checklist Progress Pill */}
+          {action.checklist && action.checklist.length > 0 && (
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: action.checklist.every((c) => c.completed)
+                  ? (isDark ? '#34d399' : '#047857')
+                  : (isDark ? '#cbd5e1' : '#475569'),
+                backgroundColor: action.checklist.every((c) => c.completed)
+                  ? (isDark ? 'rgba(16, 185, 129, 0.12)' : '#dcfce7')
+                  : (isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'),
+                border: `1px solid ${
+                  action.checklist.every((c) => c.completed)
+                    ? (isDark ? 'rgba(16, 185, 129, 0.3)' : '#86efac')
+                    : (isDark ? 'rgba(255, 255, 255, 0.1)' : '#cbd5e1')
+                }`,
+                padding: '0.1rem 0.4rem',
+                borderRadius: '5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+              title={`Ações 5W2H: ${action.checklist.filter((c) => c.completed).length} de ${action.checklist.length} concluídas`}
+            >
+              <CheckSquare size={10} color={action.checklist.every((c) => c.completed) ? (isDark ? '#34d399' : '#047857') : (isDark ? '#94a3b8' : '#64748b')} />
+              <span>{action.checklist.filter((c) => c.completed).length}/{action.checklist.length} 5W2H</span>
+            </span>
+          )}
         </div>
       )}
 

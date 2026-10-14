@@ -3,6 +3,37 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Automação Integral de Status Kanban e Avanço de Etapas PDCA (Plan -> Do -> Check -> Act)
+**Agentes Responsáveis:** `cleancod`, `designer`, `responsive`, `chronicler`  
+**Escopo:** Implementação da Opção A de automação total: transição automática de projetos para status 'em_andamento' no Kanban ao iniciar diagnóstico/planejamento, avanço automático da etapa Do para Check ao concluir o checklist 5W2H (com confetti), banners de avanço e navegação fluida entre todas as etapas PDCA (Plan -> Do -> Check -> Act), exibição de badge de etapa PDCA (`P • PLAN`, `D • DO`, `C • CHECK`, `A • ACT`), carimbo de Canal Kaizen e progresso 5W2H nos cards do Kanban.
+
+### 1. Diagnóstico e Necessidade Operacional
+- **Dúvida do Usuário sobre o Gatilho do Kanban:** O usuário questionou qual é o gatilho que faz um projeto mudar para o status "em andamento" no Kanban. Ao ser apresentada a Opção A (automação total sem atrito operacional), o usuário optou expressamente por: *"opção A, quero tudo automatico, após concluir todas as ações do 'Do', passa automatico pra proxima etapa, e assim por diante"*.
+- **Avanço Manual Excessivo:** Anteriormente, o usuário precisava alterar o status manualmente no modal ou na edição, e o ciclo PDCA não se movia automaticamente quando os colaboradores concluíam suas contramedidas 5W2H em campo.
+- **Falta de Visibilidade da Etapa no Kanban:** No quadro Kanban, todas as iniciativas em andamento ficavam na mesma coluna sem evidenciar visualmente se o projeto estava no diagnóstico (Plan), na execução das ações de campo (Do), na apuração dos resultados e ROI (Check) ou na padronização POP/Yokoten (Act).
+
+### 2. Ações Implementadas
+- **`src/services/dataService.ts`:**
+  - `updateAction`: Inserida lógica de auto-promoção de status: se a ação estiver com `status: 'aberta'`, qualquer trabalho ativo (modificação no diagnóstico Ishikawa/5 Porquês/Pareto, definição de metas/baseline, início de ações 5W2H ou avanço de etapa) altera automaticamente o status para `'em_andamento'` e grava o timestamp `startedAt`.
+  - Inserida transição automática de `pdcaStage`: quando o projeto está na etapa `do` e todas as ações do checklist 5W2H forem concluídas (`checklist.every(c => c.completed)`), o sistema avança automaticamente o `pdcaStage` para `'check'`.
+  - `toggleChecklistItem` e `updateActivityRecord`: Atualizados para refletir essa mesma regra automática ao alternar o status de itens do plano de ação em qualquer interface.
+- **`src/app/admin/projetos/[id]/page.tsx`:**
+  - `handleToggleChecklistItem`: Ao concluir a última contramedida 5W2H pendente, dispara imediatamente confetes comemorativos (`confetti({ particleCount: 85 })`), avança a aba ativa para `'check'`, persiste `pdcaStage: 'check'` e sincroniza o estado em memória.
+  - Implementada função auxiliar `handleSelectStage(stage)` que garante a persistência imediata da etapa PDCA no banco/storage tanto pelos cliques no menu superior de abas quanto pelos botões de avanço.
+  - **Banners de Avanço em Todas as Etapas:**
+    - **Plan -> Do:** Banner com chamada de ação clara *"Pronto para iniciar a Execução das Contramedidas no Gemba?"* e botão direto *"Avançar para 2. DO (Executar)"*.
+    - **Do -> Check:** Banner dinâmico informando o total de ações 5W2H concluídas, celebrando a finalização das contramedidas no Gemba e botão *"Avançar para 3. CHECK (Verificar)"*.
+    - **Check -> Act:** Banner de consolidação da eficácia técnica e financeira com botão direto *"Avançar para 4. ACT (Padronizar & Homologar)"*.
+- **`src/components/kanban/KanbanCard.tsx`:**
+  - Inserção de **Badge Visual da Etapa PDCA** ao lado do protocolo: `[P • PLAN]`, `[D • DO]`, `[C • CHECK]` ou `[A • ACT]`, com paleta de cores correspondente ao tema (Obsidian Navy / Light).
+  - Inserção do **Carimbo Canal Kaizen** (`Kaizen • Toten` ou `Kaizen`) nos cards do Kanban para imediata identificação visual das ideias vindas do chão de fábrica.
+  - Adição de **Pill de Progresso 5W2H** (`X/Y 5W2H`) no corpo do card com ícone de checklist, indicando o avanço das contramedidas diretamente no quadro Kanban.
+- **Validação de Build:**
+  - Execução de `npx tsc --noEmit` com 0 erros de tipagem TypeScript.
+  - Execução de `npm run build` com sucesso total (43 páginas compiladas e otimizadas).
+
+---
+
 ## [2026-10-14] Alinhamento Canal Kaizen (Toten & Web), Triagem com Carimbo, Mensuração e Estabilidade do Toten
 **Agentes Responsáveis:** `cleancod`, `designer`, `security-expert`, `responsive`, `chronicler`  
 **Escopo:** Unificação dos formulários Toten e Web (foto opcional em ambos), envio automático para Triagem do Supervisor com carimbo Kaizen e sincronização bidirecional, mensuração por KPIs/filtros, remoção do botão de cópia de link no Canal Kaizen e correção do timeout/radar do Toten.

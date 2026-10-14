@@ -392,7 +392,15 @@ export default function AdminProjectDetailPage() {
       observations: `Ação gerada automaticamente a partir do diagnóstico de Causa Raiz. Investigação: ${finalCause}`,
     };
     setChecklistItems((prev) => [...prev, newItem]);
-    setActiveTab('do');
+    handleSelectStage('do');
+  };
+
+  const handleSelectStage = (stage: PDCAMethodologyStage) => {
+    setActiveTab(stage);
+    if (action) {
+      const fresh = dataService.updateAction(action.id, { pdcaStage: stage });
+      if (fresh) setAction(fresh);
+    }
   };
 
   const handleIshikawaFieldChange = (field: string, val: string) => {
@@ -744,7 +752,7 @@ export default function AdminProjectDetailPage() {
       primaryRootCause: s.ishikawaRootCause.trim() || undefined,
     };
 
-    dataService.updateAction(projectId, {
+    const fresh = dataService.updateAction(projectId, {
       leaderName: s.leaderName.trim() || undefined,
       teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
       pdcaStage: s.activeTab,
@@ -796,6 +804,10 @@ export default function AdminProjectDetailPage() {
       yokotenReplication: s.yokotenReplication,
       lessonsLearned: s.lessonsLearned,
     });
+
+    if (fresh) {
+      setAction(fresh);
+    }
 
     setSaveStatus('saved');
   }, [projectId]);
@@ -1450,7 +1462,27 @@ export default function AdminProjectDetailPage() {
       return item;
     });
     setChecklistItems(updated);
-    dataService.updateAction(action.id, { checklist: updated });
+
+    // GATILHO AUTOMÁTICO: Se todas as ações 5W2H do Do forem concluídas, avança automaticamente para CHECK!
+    const allCompleted = updated.length > 0 && updated.every((it) => it.completed);
+    let nextStage = activeTab;
+
+    if (allCompleted && activeTab === 'do') {
+      nextStage = 'check';
+      setActiveTab('check');
+      try {
+        confetti({ particleCount: 85, spread: 75, origin: { y: 0.55 } });
+      } catch (_) {}
+    }
+
+    const fresh = dataService.updateAction(action.id, {
+      checklist: updated,
+      pdcaStage: nextStage,
+    });
+
+    if (fresh) {
+      setAction(fresh);
+    }
     refreshData();
   };
 
@@ -2011,7 +2043,7 @@ export default function AdminProjectDetailPage() {
         {/* P - PLAN */}
         <button
           type="button"
-          onClick={() => setActiveTab('plan')}
+          onClick={() => handleSelectStage('plan')}
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
@@ -2042,7 +2074,7 @@ export default function AdminProjectDetailPage() {
         {/* D - DO */}
         <button
           type="button"
-          onClick={() => setActiveTab('do')}
+          onClick={() => handleSelectStage('do')}
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
@@ -2073,7 +2105,7 @@ export default function AdminProjectDetailPage() {
         {/* C - CHECK */}
         <button
           type="button"
-          onClick={() => setActiveTab('check')}
+          onClick={() => handleSelectStage('check')}
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
@@ -2104,7 +2136,7 @@ export default function AdminProjectDetailPage() {
         {/* A - ACT */}
         <button
           type="button"
-          onClick={() => setActiveTab('act')}
+          onClick={() => handleSelectStage('act')}
           style={{
             padding: '0.85rem 1rem',
             borderRadius: '12px',
@@ -3190,6 +3222,55 @@ export default function AdminProjectDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Banner de Avanço de Etapa: Plan -> Do */}
+          <div
+            style={{
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+              border: isDark ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid #fcd34d',
+              borderRadius: '14px',
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              marginTop: '1.5rem',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Zap size={13} /> Etapa 1: Planejamento Lean Concluído
+              </span>
+              <h4 style={{ fontSize: '1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0.2rem 0', fontFamily: 'var(--font-heading)' }}>
+                Pronto para iniciar a Execução das Contramedidas no Gemba?
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
+                Ao avançar, o projeto passa automaticamente para a Etapa <strong>2. DO (Executar)</strong> no Kanban.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSelectStage('do');
+                window.scrollTo({ top: 250, behavior: 'smooth' });
+              }}
+              className="btn btn-primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                fontWeight: 800,
+                fontSize: '0.875rem',
+                borderRadius: '10px',
+              }}
+            >
+              <span>Avançar para 2. DO (Executar)</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -3690,6 +3771,81 @@ export default function AdminProjectDetailPage() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Banner de Avanço e Status da Etapa 2: DO */}
+          <div
+            style={{
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+              border: uncompletedActivities.length === 0 && checklistItems.length > 0
+                ? (isDark ? '1.5px solid #10b981' : '1.5px solid #16a34a')
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+              borderRadius: '14px',
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  color: uncompletedActivities.length === 0 && checklistItems.length > 0 ? '#34d399' : '#fbbf24',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                {uncompletedActivities.length === 0 && checklistItems.length > 0 ? (
+                  <CheckCircle2 size={14} color="#34d399" />
+                ) : (
+                  <Clock size={14} color="#fbbf24" />
+                )}
+                Etapa 2: Execução 5W2H ({checklistItems.filter((c) => c.completed).length}/{checklistItems.length} concluídas)
+              </span>
+              <h4 style={{ fontSize: '1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0.2rem 0', fontFamily: 'var(--font-heading)' }}>
+                {uncompletedActivities.length === 0 && checklistItems.length > 0
+                  ? 'Todas as contramedidas 5W2H foram executadas no Gemba!'
+                  : `${uncompletedActivities.length} ação(ões) 5W2H pendente(s) de conclusão no posto.`}
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
+                {uncompletedActivities.length === 0 && checklistItems.length > 0
+                  ? 'O projeto avançou automaticamente para a Etapa 3. CHECK (Verificação de Resultados).'
+                  : 'Ao marcar a última ação 5W2H como concluída, o sistema avança automaticamente para a etapa CHECK.'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('check');
+                if (action) {
+                  const fresh = dataService.updateAction(action.id, { pdcaStage: 'check' });
+                  if (fresh) setAction(fresh);
+                }
+                window.scrollTo({ top: 250, behavior: 'smooth' });
+              }}
+              className="btn btn-primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                fontWeight: 800,
+                fontSize: '0.875rem',
+                borderRadius: '10px',
+                backgroundColor: uncompletedActivities.length === 0 && checklistItems.length > 0 ? '#10b981' : undefined,
+                borderColor: uncompletedActivities.length === 0 && checklistItems.length > 0 ? '#10b981' : undefined,
+              }}
+            >
+              <span>Avançar para 3. CHECK (Verificar)</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}
@@ -4445,6 +4601,75 @@ export default function AdminProjectDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Banner de Avanço de Etapa: Check -> Act */}
+          <div
+            style={{
+              backgroundColor: isDark ? '#090e1a' : '#f8fafc',
+              border: (achievedValue !== '' && achievedValue !== undefined)
+                ? (isDark ? '1.5px solid #a855f7' : '1.5px solid #9333ea')
+                : (isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #cbd5e1'),
+              borderRadius: '14px',
+              padding: '1.25rem 1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+            }}
+          >
+            <div>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  color: (achievedValue !== '' && achievedValue !== undefined) ? '#c084fc' : '#fbbf24',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                {(achievedValue !== '' && achievedValue !== undefined) ? (
+                  <CheckCircle2 size={14} color="#c084fc" />
+                ) : (
+                  <Clock size={14} color="#fbbf24" />
+                )}
+                Etapa 3: Verificação de Resultados (Check)
+              </span>
+              <h4 style={{ fontSize: '1rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', margin: '0.2rem 0', fontFamily: 'var(--font-heading)' }}>
+                {(achievedValue !== '' && achievedValue !== undefined)
+                  ? 'Resultados e Eficácia Técnica Verificados!'
+                  : 'Preencha o resultado real atingido para consolidar a eficácia da melhoria.'}
+              </h4>
+              <p style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', margin: 0 }}>
+                Ao avançar, o projeto passa automaticamente para a Etapa <strong>4. ACT (Padronização POP/SOP, Yokoten & Homologação)</strong>.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSelectStage('act');
+                window.scrollTo({ top: 250, behavior: 'smooth' });
+              }}
+              className="btn btn-primary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.65rem 1.25rem',
+                fontWeight: 800,
+                fontSize: '0.875rem',
+                borderRadius: '10px',
+                backgroundColor: (achievedValue !== '' && achievedValue !== undefined) ? '#a855f7' : undefined,
+                borderColor: (achievedValue !== '' && achievedValue !== undefined) ? '#a855f7' : undefined,
+              }}
+            >
+              <span>Avançar para 4. ACT (Padronizar & Homologar)</span>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}
