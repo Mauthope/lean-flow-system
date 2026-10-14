@@ -936,6 +936,82 @@ export const dataService = {
     return `LEAN-${year}-${String(nextSeq).padStart(4, '0')}`;
   },
 
+  /**
+   * Avaliação e avanço automático de ciclo PDCA e status Kanban (Opção A)
+   * Garante que qualquer trabalho ativo mude o status para 'em_andamento'
+   * e que a conclusão de etapas avance automaticamente a metodologia.
+   */
+  evaluateActionPDCA(action: LeanAction): boolean {
+    let changed = false;
+
+    // 1. Promoção automática de 'aberta' para 'em_andamento':
+    // Se a iniciativa possui qualquer diagnóstico, meta, agente atribuído, triagem realizada ou etapa iniciada
+    if (action.status === 'aberta') {
+      const hasWorkStarted =
+        action.pdcaStage === 'do' ||
+        action.pdcaStage === 'check' ||
+        action.pdcaStage === 'act' ||
+        Boolean(action.assignedAgentId) ||
+        Boolean(action.assignedAgentName) ||
+        Boolean(action.triagedAt) ||
+        Boolean(action.triagedBy) ||
+        Boolean(action.problemStatement?.trim()) ||
+        Boolean(action.targetMetricName?.trim()) ||
+        Boolean(action.baselineValue !== undefined) ||
+        Boolean(action.targetGoalValue !== undefined) ||
+        Boolean(action.ishikawa?.primaryRootCause?.trim()) ||
+        Boolean(action.ishikawa?.method?.trim()) ||
+        (action.fiveWhys && action.fiveWhys.some((w) => Boolean(w?.trim()))) ||
+        (action.checklist && action.checklist.length > 0);
+
+      if (hasWorkStarted) {
+        action.status = 'em_andamento';
+        if (!action.startedAt) {
+          action.startedAt = action.createdAt || new Date().toISOString();
+        }
+        changed = true;
+      }
+    }
+
+    // 2. Se o checklist 5W2H já possui itens cadastrados e o estágio ainda é 'plan' ou indefinido, avança para 'do'
+    if ((!action.pdcaStage || action.pdcaStage === 'plan') && action.checklist && action.checklist.length > 0) {
+      action.pdcaStage = 'do';
+      changed = true;
+    }
+
+    // 3. Se estiver em 'do' e TODAS as ações 5W2H estiverem concluídas, avança para 'check'
+    if (
+      action.pdcaStage === 'do' &&
+      action.checklist &&
+      action.checklist.length > 0 &&
+      action.checklist.every((c) => c.completed)
+    ) {
+      action.pdcaStage = 'check';
+      changed = true;
+    }
+
+    // 4. Se estiver em 'check' e o resultado real atingido (achievedValue) foi preenchido, avança para 'act'
+    if (
+      action.pdcaStage === 'check' &&
+      action.achievedValue !== undefined &&
+      action.achievedValue !== null &&
+      (action.achievedValue as any) !== ''
+    ) {
+      action.pdcaStage = 'act';
+      changed = true;
+    }
+
+    // 5. Se já foi aprovado pelo Master (masterApproved = true) e não está com status 'concluida', move para 'concluida'
+    if (action.masterApproved && action.status !== 'concluida') {
+      action.status = 'concluida';
+      if (!action.completedAt) action.completedAt = new Date().toISOString();
+      if (!action.conclusionDate) action.conclusionDate = new Date().toISOString().split('T')[0];
+      changed = true;
+    }
+
+    return changed;
+  },
+
   getActions(tenantId?: string): LeanAction[] {
     const all = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
     const year = new Date().getFullYear();
@@ -983,6 +1059,11 @@ export const dataService = {
           };
         }
         hasChanges = true;
+      }
+
+      if (this.evaluateActionPDCA(action)) {
+        hasChanges = true;
+        this.persistActionToCloud(action).catch(() => {});
       }
     });
 
@@ -1226,6 +1307,11 @@ export const dataService = {
       }
 
       const merged = [...mappedCloudActions, ...unsyncedLocals];
+      merged.forEach((act) => {
+        if (this.evaluateActionPDCA(act)) {
+          this.persistActionToCloud(act).catch(() => {});
+        }
+      });
       setStoredData(STORAGE_KEYS.ACTIONS, merged);
 
       const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
@@ -1314,40 +1400,8 @@ export const dataService = {
       };
     }
 
-    // Transição automática para 'em_andamento':
-    // Se o projeto estiver 'aberta', qualquer trabalho ativo de diagnóstico, planejamento ou execução
-    // altera automaticamente o status para 'em_andamento' e registra o carimbo de início startedAt
-    if (merged.status === 'aberta') {
-      const hasWorkStarted =
-        merged.pdcaStage === 'do' ||
-        merged.pdcaStage === 'check' ||
-        merged.pdcaStage === 'act' ||
-        Boolean(merged.problemStatement?.trim()) ||
-        Boolean(merged.baselineValue !== undefined) ||
-        Boolean(merged.targetGoalValue !== undefined) ||
-        Boolean(merged.ishikawa?.primaryRootCause?.trim()) ||
-        Boolean(merged.ishikawa?.method?.trim()) ||
-        (merged.fiveWhys && merged.fiveWhys.some((w) => Boolean(w?.trim()))) ||
-        (merged.checklist && merged.checklist.some((c) => c.completed || c.status === 'em_andamento'));
-
-      if (hasWorkStarted) {
-        merged.status = 'em_andamento';
-        if (!merged.startedAt) {
-          merged.startedAt = new Date().toISOString();
-        }
-      }
-    }
-
-    // Transição automática de etapa PDCA: Se todas as ações do plano 5W2H (Do) estiverem concluídas,
-    // avança automaticamente a metodologia para a etapa Check (Verificação de Resultados)
-    if (
-      merged.pdcaStage === 'do' &&
-      merged.checklist &&
-      merged.checklist.length > 0 &&
-      merged.checklist.every((c) => c.completed)
-    ) {
-      merged.pdcaStage = 'check';
-    }
+    // Avaliação e transição automática para 'em_andamento' e avanço PDCA (Opção A)
+    this.evaluateActionPDCA(merged);
 
     // Garantir data de conclusão quando a ação for finalizada
     if (merged.status === 'concluida') {
@@ -2028,8 +2082,9 @@ export const dataService = {
       actions[index] = {
         ...item,
         title: decision.refinedTitle?.trim() || item.title,
-        description: decision.refinedDescription?.trim() || item.description,
-        status: 'aberta', // or remains aberta but assigned
+        status: 'em_andamento',
+        startedAt: item.startedAt || now,
+        pdcaStage: item.pdcaStage || 'plan',
         assignedAgentId: decision.assignedAgentId || item.assignedAgentId,
         assignedAgentName: agent?.name || item.assignedAgentName,
         assignedAgentAvatar: agent?.avatarUrl || item.assignedAgentAvatar,
@@ -2178,20 +2233,7 @@ export const dataService = {
     }
 
     actions[index].checklist = checklist;
-
-    // Transição automática de status e etapa
-    if (actions[index].status === 'aberta') {
-      actions[index].status = 'em_andamento';
-      if (!actions[index].startedAt) actions[index].startedAt = new Date().toISOString();
-    }
-    if (
-      actions[index].pdcaStage === 'do' &&
-      checklist.length > 0 &&
-      checklist.every((c) => c.completed)
-    ) {
-      actions[index].pdcaStage = 'check';
-    }
-
+    this.evaluateActionPDCA(actions[index]);
     actions[index].updatedAt = new Date().toISOString();
     return this.saveAndSyncAction(actions[index], actions);
   },
@@ -2348,20 +2390,7 @@ export const dataService = {
     }
 
     actions[index].checklist = checklist;
-
-    // Transição automática de status e etapa
-    if (actions[index].status === 'aberta') {
-      actions[index].status = 'em_andamento';
-      if (!actions[index].startedAt) actions[index].startedAt = new Date().toISOString();
-    }
-    if (
-      actions[index].pdcaStage === 'do' &&
-      checklist.length > 0 &&
-      checklist.every((c) => c.completed)
-    ) {
-      actions[index].pdcaStage = 'check';
-    }
-
+    this.evaluateActionPDCA(actions[index]);
     actions[index].updatedAt = new Date().toISOString();
     return this.saveAndSyncAction(actions[index], actions);
   },

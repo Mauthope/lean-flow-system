@@ -14,9 +14,11 @@
 
 ### 2. Ações Implementadas
 - **`src/services/dataService.ts`:**
-  - `updateAction`: Inserida lógica de auto-promoção de status: se a ação estiver com `status: 'aberta'`, qualquer trabalho ativo (modificação no diagnóstico Ishikawa/5 Porquês/Pareto, definição de metas/baseline, início de ações 5W2H ou avanço de etapa) altera automaticamente o status para `'em_andamento'` e grava o timestamp `startedAt`.
-  - Inserida transição automática de `pdcaStage`: quando o projeto está na etapa `do` e todas as ações do checklist 5W2H forem concluídas (`checklist.every(c => c.completed)`), o sistema avança automaticamente o `pdcaStage` para `'check'`.
-  - `toggleChecklistItem` e `updateActivityRecord`: Atualizados para refletir essa mesma regra automática ao alternar o status de itens do plano de ação em qualquer interface.
+  - Implementada função central `evaluateActionPDCA(action)`: avalia qualquer iniciativa em qualquer ponto de entrada (carregamento local ou nuvem). Se possuir trabalho ativo, diagnóstico, checklist 5W2H ou agente atribuído, promove imediatamente para `'em_andamento'`. Se todas as contramedidas 5W2H estiverem concluídas no `do`, avança para `check`. Se houver resultados apurados, avança para `act`. Se homologada pelo Master, conclui.
+  - Integrada em `getActions()` e `syncActionsFromCloud()`: garante retrocompatibilidade e atualização instantânea de todos os projetos pré-existentes na base ou no cache do navegador.
+  - `triageDemand`: Ao aprovar uma demanda na triagem e atribuir a um agente, define diretamente `status: 'em_andamento'` e `pdcaStage: 'plan'`.
+  - `updateAction`: Inserida lógica de auto-promoção de status: se a ação estiver com `status: 'aberta'`, qualquer trabalho ativo altera automaticamente o status para `'em_andamento'` e grava o timestamp `startedAt`.
+  - Migração de Banco Supabase executada: atualizados todos os registros legados de `lean_actions` com trabalho ativo para `status = 'em_andamento'`, sincronizando Nuvem e Cliente.
 - **`src/app/admin/projetos/[id]/page.tsx`:**
   - `handleToggleChecklistItem`: Ao concluir a última contramedida 5W2H pendente, dispara imediatamente confetes comemorativos (`confetti({ particleCount: 85 })`), avança a aba ativa para `'check'`, persiste `pdcaStage: 'check'` e sincroniza o estado em memória.
   - Implementada função auxiliar `handleSelectStage(stage)` que garante a persistência imediata da etapa PDCA no banco/storage tanto pelos cliques no menu superior de abas quanto pelos botões de avanço.
