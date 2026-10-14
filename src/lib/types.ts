@@ -279,6 +279,7 @@ export interface QuarterlyFollowUp {
   monthsFilledCount?: number;         // Quantidade de meses já aferidos (0 a 12)
   isCompleted?: boolean;              // Homologação dos 3 primeiros meses concluída
   isFullYearCompleted?: boolean;      // Fechamento completo dos 12 meses
+  isOneOffGain?: boolean;             // Identifica que o ganho é pontual único (sem necessidade de 12 meses)
   completedAt?: string;               // Data de consolidação final
   status:
     | 'aguardando_mes_1'
@@ -482,6 +483,10 @@ export interface LeanAction {
   auditToken?: string;
   gainDetails?: Record<string, GainProofDetail>;
 
+  // Modelo de Retorno Financeiro: Recorrente (12 meses) vs Pontual Único (Spot)
+  isOneOffGain?: boolean;                 // Flag: Ganho pontual único (sem acompanhamento de 12 meses)
+  oneOffGainExplanation?: string;         // Justificativa do ganho pontual único
+
   // Acompanhamento Trimestral de Ganhos Pós-Homologação (3 Meses)
   quarterlyFollowUp?: QuarterlyFollowUp;
 
@@ -528,6 +533,7 @@ export interface ExecutiveProjectFinancial {
   isExpired: boolean;                  // True quando completa 1 ano (> 365 dias) -> Deixa de computar nos totais
   expirationDate: string;              // Data exata em que completa 1 ano
   quarterlyMonthsFilled: number;       // Quantidade de meses aferidos (0 a 3)
+  isOneOffGain?: boolean;              // Identifica que é um ganho financeiro pontual único
 }
 
 export interface ExecutiveBoardFinancials {

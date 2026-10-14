@@ -330,6 +330,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSession();
   }, [loadSession]);
 
+  // Sincronização em tempo real (Supabase Realtime WebSocket) para eliminar atrasos e evitar F5
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+
+    const channel = supabase
+      .channel('realtime:app-global-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lean_actions' },
+        async () => {
+          try {
+            await dataService.syncActionsFromCloud();
+            setDataVersion((v) => v + 1);
+          } catch (err) {
+            console.warn('[Realtime] Erro ao sincronizar lean_actions:', err);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'authorized_users' },
+        async () => {
+          try {
+            await dataService.syncUsersFromCloud();
+            const curTenant = dataService.getCurrentTenant();
+            if (curTenant) {
+              setAllUsers(dataService.getUsers(curTenant.id));
+              setAllAgents(dataService.getAgents(curTenant.id));
+              setAllViewers(dataService.getViewers(curTenant.id));
+            }
+            setDataVersion((v) => v + 1);
+          } catch (err) {
+            console.warn('[Realtime] Erro ao sincronizar authorized_users:', err);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        async () => {
+          try {
+            await dataService.syncUsersFromCloud();
+            const curTenant = dataService.getCurrentTenant();
+            if (curTenant) {
+              setAllUsers(dataService.getUsers(curTenant.id));
+              setAllAgents(dataService.getAgents(curTenant.id));
+            }
+            setDataVersion((v) => v + 1);
+          } catch (err) {
+            console.warn('[Realtime] Erro ao sincronizar profiles:', err);
+          }
+        }
+      )
+      .subscribe();
+
+    // Re-sincroniza em segundo plano quando o usuário retorna à aba
+    const handleFocus = () => {
+      dataService.syncActionsFromCloud()
+        .then(() => setDataVersion((v) => v + 1))
+        .catch(() => {});
+    };
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const loginAs = (userIdOrEmail: string) => {
     const user = dataService.getUserByIdOrEmail(userIdOrEmail);
     if (user) {

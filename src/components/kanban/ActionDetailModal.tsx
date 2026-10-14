@@ -103,6 +103,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   );
   const [showCompletionForm, setShowCompletionForm] = useState(false);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
+  const [isOneOffGainInput, setIsOneOffGainInput] = useState<boolean>(false);
 
   // Sub-categories of Cost Avoidance
   const [cbLabor, setCbLabor] = useState<string>('');
@@ -130,6 +131,19 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
   }, [activitySector, action?.tenantId]);
 
   if (!action) return null;
+
+  const effectiveAgentAvatar = (() => {
+    if (action.assignedAgentId) {
+      const u = dataService.getUserById(action.assignedAgentId);
+      if (u?.avatarUrl) return u.avatarUrl;
+    }
+    if (action.assignedAgentName) {
+      const cleanName = action.assignedAgentName.trim().toLowerCase();
+      const u = dataService.getUsers('all').find((usr) => usr.name?.trim().toLowerCase() === cleanName);
+      if (u?.avatarUrl) return u.avatarUrl;
+    }
+    return action.assignedAgentAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+  })();
 
   const handleUpdateStrategicObjective = async (objectiveId: string) => {
     if (!action || isViewer) return;
@@ -230,6 +244,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         return;
       }
       setShowCompletionForm(true);
+      setIsOneOffGainInput(Boolean(action.isOneOffGain || action.quarterlyFollowUp?.isOneOffGain));
       setConclusionDateInput(action.conclusionDate || new Date().toISOString().split('T')[0]);
       const defaultAvg = action.quarterlyFollowUp?.averageCostAvoided || action.actualCostAvoided || action.estimatedCostAvoided || '';
       setActualCostInput(String(defaultAvg));
@@ -296,12 +311,37 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
       otherSavingsDescription: cbOtherDesc.trim() || undefined,
     };
 
+    const isOneOff = isOneOffGainInput;
+    const finalFollowUp = isOneOff ? {
+      enabled: false,
+      isOneOffGain: true,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      status: 'consolidado' as const,
+      isCompleted: true,
+      isFullYearCompleted: true,
+      monthsFilledCount: 12,
+      averageCostAvoided: 0,
+      totalRealizedCostAvoided: cost,
+      totalProjectedCostAvoided: cost,
+      month1: {
+        monthNumber: 1,
+        monthLabel: 'Mês de Homologação (Ganho Pontual Único)',
+        value: cost,
+        measuredAt: conclusionDateInput,
+        notes: 'Ganho financeiro pontual único certificado na homologação. Ciclo consolidado sem necessidade de acompanhamento recorrente.',
+        registeredBy: currentUser?.name || 'Gestão Master',
+      },
+    } : action.quarterlyFollowUp;
+
     dataService.updateActionStatus(action.id, 'concluida', {
       actualCostAvoided: cost,
       hoursSaved: hours,
       rootCauseAnalysis: rootCauseInput,
       costBreakdown,
       conclusionDate: conclusionDateInput,
+      isOneOffGain: isOneOff,
+      quarterlyFollowUp: finalFollowUp,
     });
 
     try {
@@ -1365,6 +1405,50 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
               </div>
             )}
 
+            {/* Modalidade de Ganho: Recorrente (12 Meses) vs Pontual Único */}
+            <div
+              style={{
+                marginBottom: '1rem',
+                padding: '0.875rem 1rem',
+                backgroundColor: isOneOffGainInput ? 'rgba(59, 130, 246, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                border: isOneOffGainInput ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                  <Zap size={18} style={{ color: isOneOffGainInput ? '#60a5fa' : '#94a3b8' }} />
+                  <div>
+                    <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#f8fafc' }}>
+                      Ganho Pontual Único (Sem Acompanhamento de 12 Meses)
+                    </span>
+                    <p style={{ fontSize: '0.725rem', color: '#94a3b8', margin: 0, marginTop: '2px' }}>
+                      {isOneOffGainInput
+                        ? 'O valor financeiro será contabilizado integralmente no mês da conclusão e o ciclo será dado por encerrado (consolidado), sem pendências mensais.'
+                        : 'Modalidade padrão com acompanhamento e medições mensais ao longo de 12 meses.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOneOffGainInput(!isOneOffGainInput)}
+                  style={{
+                    padding: '0.375rem 0.75rem',
+                    borderRadius: '6px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    border: isOneOffGainInput ? '1px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.2)',
+                    backgroundColor: isOneOffGainInput ? '#1d4ed8' : 'rgba(255, 255, 255, 0.05)',
+                    color: '#ffffff',
+                  }}
+                >
+                  {isOneOffGainInput ? '✓ Ativado: Ganho Pontual' : 'Definir como Ganho Pontual'}
+                </button>
+              </div>
+            </div>
+
             <div style={{ marginBottom: '1rem' }}>
               <label className="form-label" style={{ color: '#065f46' }}>
                 Resumo da Causa Raiz / Solução Padronizada:
@@ -1407,10 +1491,7 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <img
-              src={
-                action.assignedAgentAvatar ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-              }
+              src={effectiveAgentAvatar}
               alt={action.assignedAgentName || 'Agent'}
               style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255, 255, 255, 0.2)' }}
             />

@@ -14,6 +14,12 @@ import { DeadlineMonitoringPanel } from '@/components/monitoring/DeadlineMonitor
 export default function AgenteKanbanPage() {
   const { currentUser, dataVersion, refreshData } = useAuth();
 
+  React.useEffect(() => {
+    dataService.syncActionsFromCloud().then(() => {
+      refreshData();
+    }).catch(() => {});
+  }, [refreshData]);
+
   // Strictly filter only this agent's actions
   const myActions = useMemo(() => {
     if (!currentUser) return [];

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment, ActivityAttachment, ActionQualityEvaluation } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment, ActivityAttachment, ActionQualityEvaluation, QuarterlyFollowUp } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel, getDefaultMeasurementDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -172,6 +172,8 @@ export default function AdminProjectDetailPage() {
 
   // Memórias de cálculo e explicações por ganho (Obrigatório para o Agente antes da Controladoria)
   const [gainDetails, setGainDetails] = useState<Record<string, GainProofDetail>>({});
+  // Classificação do Retorno: Ganho Mensal Recorrente vs. Ganho Pontual Único (One-off)
+  const [isOneOffGain, setIsOneOffGain] = useState<boolean>(false);
 
   // Standardization & Act
   const [standardWorkUpdated, setStandardWorkUpdated] = useState(false);
@@ -316,6 +318,7 @@ export default function AdminProjectDetailPage() {
 
     const gDetails = found.gainDetails || found.controllershipAudit?.gainDetails || {};
     setGainDetails(JSON.parse(JSON.stringify(gDetails)));
+    setIsOneOffGain(Boolean(found.isOneOffGain || found.quarterlyFollowUp?.isOneOffGain));
 
     // A - ACT
     setStandardWorkUpdated(!!found.standardWorkUpdated);
@@ -701,6 +704,7 @@ export default function AdminProjectDetailPage() {
     paybackMonths,
     attachments,
     gainDetails,
+    isOneOffGain,
     standardWorkUpdated,
     standardWorkDocRef,
     yokotenReplication,
@@ -755,6 +759,7 @@ export default function AdminProjectDetailPage() {
       paybackMonths,
       attachments,
       gainDetails,
+      isOneOffGain,
       standardWorkUpdated,
       standardWorkDocRef,
       yokotenReplication,
@@ -846,6 +851,7 @@ export default function AdminProjectDetailPage() {
       standardWorkDocRef: s.standardWorkDocRef,
       yokotenReplication: s.yokotenReplication,
       lessonsLearned: s.lessonsLearned,
+      isOneOffGain: s.isOneOffGain,
     });
 
     if (fresh) {
@@ -1151,8 +1157,51 @@ export default function AdminProjectDetailPage() {
       }
     }
 
-    const monthlyAverage = action.quarterlyFollowUp?.averageCostAvoided || (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0) || action.actualCostAvoided || action.estimatedCostAvoided;
-    const finalAnnualCostAvoided = Math.round(monthlyAverage * 12);
+    const today = new Date().toISOString().split('T')[0];
+    const isOneOff = Boolean(isOneOffGain || action.isOneOffGain);
+
+    let finalAnnualCostAvoided = 0;
+    let followUpToSave: QuarterlyFollowUp | undefined = undefined;
+
+    if (isOneOff) {
+      // Ganho Pontual Único: contabilizado integralmente no mês de homologação (NÃO multiplicado por 12)
+      finalAnnualCostAvoided = identifiedGainValue || totalGrossSavings || action.actualCostAvoided || action.estimatedCostAvoided || 0;
+      followUpToSave = {
+        enabled: false,
+        isOneOffGain: true,
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        status: 'consolidado',
+        isCompleted: true,
+        isFullYearCompleted: true,
+        monthsFilledCount: 12,
+        averageCostAvoided: 0,
+        totalRealizedCostAvoided: finalAnnualCostAvoided,
+        totalProjectedCostAvoided: finalAnnualCostAvoided,
+        month1: {
+          monthNumber: 1,
+          monthLabel: 'Mês de Homologação (Ganho Pontual Único)',
+          value: finalAnnualCostAvoided,
+          measuredAt: today,
+          notes: 'Ganho financeiro pontual único certificado na homologação. Ciclo consolidado sem necessidade de acompanhamento recorrente.',
+          registeredBy: currentUser?.name || 'Gestão Master',
+        },
+      };
+    } else {
+      const monthlyAverage = action.quarterlyFollowUp?.averageCostAvoided || (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0) || action.actualCostAvoided || action.estimatedCostAvoided;
+      finalAnnualCostAvoided = Math.round(monthlyAverage * 12);
+      followUpToSave = action.quarterlyFollowUp || (hasMonetaryGain ? {
+        enabled: true,
+        startedAt: new Date().toISOString(),
+        month1: { monthNumber: 1, monthLabel: '1º Mês' },
+        month2: { monthNumber: 2, monthLabel: '2º Mês' },
+        month3: { monthNumber: 3, monthLabel: '3º Mês' },
+        status: 'aguardando_mes_1',
+        isCompleted: false,
+        monthsFilledCount: 0,
+        averageCostAvoided: monthlyAverage || 0,
+      } : undefined);
+    }
 
     if (!audit && currentObjectiveId) {
       const obj = dataService.getStrategicObjectiveById(currentObjectiveId);
@@ -1165,7 +1214,6 @@ export default function AdminProjectDetailPage() {
       }
     }
 
-    const today = new Date().toISOString().split('T')[0];
     const updated = dataService.updateAction(action.id, {
       status: 'concluida',
       pdcaStage: 'act',
@@ -1174,23 +1222,17 @@ export default function AdminProjectDetailPage() {
       masterApproved: true,
       masterApprovedAt: new Date().toISOString(),
       masterApprovedBy: currentUser?.name || 'Gestão Master',
+      isOneOffGain: isOneOff,
       actualCostAvoided: finalAnnualCostAvoided,
-      quarterlyFollowUp: action.quarterlyFollowUp || (hasMonetaryGain ? {
-        enabled: true,
-        startedAt: new Date().toISOString(),
-        month1: { monthNumber: 1, monthLabel: '1º Mês' },
-        month2: { monthNumber: 2, monthLabel: '2º Mês' },
-        month3: { monthNumber: 3, monthLabel: '3º Mês' },
-        status: 'aguardando_mes_1',
-        isCompleted: false,
-        monthsFilledCount: 0,
-        averageCostAvoided: monthlyAverage || 0,
-      } : undefined),
+      quarterlyFollowUp: followUpToSave,
       strategicObjectiveId: currentObjectiveId,
       strategicObjectiveName: currentObjectiveName,
       senseiStrategicAudit: audit || action.senseiStrategicAudit,
     });
-    setAction(updated);
+    if (updated) {
+      await dataService.persistActionToCloud(updated);
+      setAction(updated);
+    }
     refreshData();
     confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
   };
@@ -5998,6 +6040,93 @@ export default function AdminProjectDetailPage() {
                   </div>
                 )}
 
+                {/* Seleção do Modelo de Retorno Financeiro: Recorrente vs. Pontual Único */}
+                {hasMonetaryGain && !action.masterApproved && (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '1rem 1.25rem',
+                      borderRadius: '12px',
+                      backgroundColor: isOneOffGain ? 'rgba(56, 189, 248, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                      border: `1.5px solid ${isOneOffGain ? 'rgba(56, 189, 248, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.65rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Sparkles size={17} color={isOneOffGain ? '#38bdf8' : '#34d399'} />
+                        <span style={{ fontWeight: 800, fontSize: '0.875rem', color: isOneOffGain ? '#e0f2fe' : '#ecfdf5' }}>
+                          Classificação do Retorno Contábil ({formatCurrency(identifiedGainValue)})
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsOneOffGain(false);
+                            dataService.updateAction(action.id, { isOneOffGain: false });
+                          }}
+                          style={{
+                            padding: '0.35rem 0.85rem',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: !isOneOffGain ? '1.5px solid #10b981' : '1px solid rgba(255, 255, 255, 0.15)',
+                            backgroundColor: !isOneOffGain ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                            color: !isOneOffGain ? '#34d399' : '#94a3b8',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          Ganho Recorrente (12 Meses)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const confirmed = window.confirm(
+                              `Confirmar Ganho Pontual Único?\n\nO projeto declarará que o ganho de ${formatCurrency(identifiedGainValue)} é pontual (one-off).\n\nEle será contabilizado integralmente no mês da homologação e o projeto entrará diretamente para o histórico de ciclo de 12 meses concluído, sem exigir acompanhamento mensal.`
+                            );
+                            if (confirmed) {
+                              setIsOneOffGain(true);
+                              dataService.updateAction(action.id, { isOneOffGain: true });
+                            }
+                          }}
+                          style={{
+                            padding: '0.35rem 0.85rem',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            border: isOneOffGain ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.15)',
+                            backgroundColor: isOneOffGain ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                            color: isOneOffGain ? '#38bdf8' : '#94a3b8',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          Ganho Pontual Único (Sem Acompanhamento)
+                        </button>
+                      </div>
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: '0.78125rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                      {isOneOffGain ? (
+                        <span>
+                          <strong style={{ color: '#38bdf8' }}>Modo Ganho Pontual Único ativo:</strong> O valor de{' '}
+                          <strong style={{ color: '#ffffff' }}>{formatCurrency(identifiedGainValue)}</strong> será contabilizado apenas no mês de homologação. O ciclo de 12 meses será encerrado como concluído/consolidado, sem exigir acompanhamento mensal no chão de fábrica.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong style={{ color: '#34d399' }}>Modo Ganho Recorrente ativo:</strong> O projeto terá acompanhamento mensal de resultados (3 meses de homologação + 9 meses contínuos) para comprovação da sustentação do resultado.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: '280px' }}>
                   <div
                     style={{
@@ -6101,8 +6230,25 @@ export default function AdminProjectDetailPage() {
                         <CheckCircle2 size={16} /> Homologado
                       </span>
 
-                      {/* Status de Vigência no Ano (365 Dias) */}
-                      {isCycleExpired ? (
+                      {/* Status de Vigência no Ano (365 Dias) ou Ganho Pontual Consolidado */}
+                      {action.isOneOffGain ? (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                            color: '#38bdf8',
+                            border: '1px solid rgba(56, 189, 248, 0.35)',
+                            padding: '0.2rem 0.6rem',
+                            borderRadius: '9999px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <Sparkles size={11} /> Ganho Pontual Único ({formatCurrency(action.actualCostAvoided)}) • Ciclo Consolidado
+                        </span>
+                      ) : isCycleExpired ? (
                         <span
                           style={{
                             fontSize: '0.7rem',
@@ -6217,6 +6363,8 @@ export default function AdminProjectDetailPage() {
                           ? `Homologação Bloqueada (${uncompletedActivities.length} 5W2H)`
                           : isBlockedByControladoria
                           ? 'Homologação Bloqueada (Aguardando Controladoria)'
+                          : isOneOffGain
+                          ? 'Homologar Ganho Pontual Único & Consolidar Ciclo'
                           : 'Homologar Projeto & Concluir Ciclo PDCA'}
                       </span>
                     </button>

@@ -6,6 +6,7 @@ import { formatDate, formatCurrency, getFollowUpMonthsFilledCount } from '@/lib/
 import { PriorityBadge } from '@/components/ui/Badge';
 import { Calendar, DollarSign, Clock, Check, CheckSquare } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { dataService } from '@/services/dataService';
 
 interface KanbanCardProps {
   action: LeanAction;
@@ -18,6 +19,23 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   onClick,
 }) => {
   const { isDark } = useTheme();
+
+  // Resolução dinâmica do avatar mais recente do usuário para evitar placeholders ou fotos obsoletas
+  const effectiveAvatar = React.useMemo(() => {
+    if (action.assignedAgentId) {
+      const u = dataService.getUserById(action.assignedAgentId);
+      if (u?.avatarUrl) return u.avatarUrl;
+    }
+    if (action.assignedAgentName) {
+      const cleanName = action.assignedAgentName.trim().toLowerCase();
+      const u = dataService.getUsers('all').find((usr) => usr.name?.trim().toLowerCase() === cleanName);
+      if (u?.avatarUrl) return u.avatarUrl;
+    }
+    return (
+      action.assignedAgentAvatar ||
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+    );
+  }, [action.assignedAgentId, action.assignedAgentName, action.assignedAgentAvatar]);
 
   const isAwaitingApproval =
     action.status === 'aguardando_aprovacao' ||
@@ -437,6 +455,27 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             );
           })()}
 
+          {/* Badge de Ganho Pontual Único (One-Off) */}
+          {action.isOneOffGain && (
+            <span
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 800,
+                color: isDark ? '#38bdf8' : '#0284c7',
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : '#e0f2fe',
+                border: isDark ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid #7dd3fc',
+                padding: '0.1rem 0.45rem',
+                borderRadius: '5px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+              title="Ganho financeiro pontual único certificado na homologação (sem necessidade de 12 meses de acompanhamento)"
+            >
+              <span>Pontual</span>
+            </span>
+          )}
+
           {/* 5W2H Checklist Progress Pill */}
           {action.checklist && action.checklist.length > 0 && (
             <span
@@ -527,10 +566,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
               title={`Responsável: ${action.assignedAgentName}`}
             >
               <img
-                src={
-                  action.assignedAgentAvatar ||
-                  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                }
+                src={effectiveAvatar}
                 alt={action.assignedAgentName}
                 style={{
                   width: '18px',

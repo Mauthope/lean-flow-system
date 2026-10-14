@@ -479,3 +479,45 @@
   - `npm run build`: 100% de sucesso (43/43 páginas estáticas compiladas com zero warnings).
 
 ---
+
+### 15. Sincronização em Tempo Real (Supabase Realtime), Resolução Dinâmica de Avatares no Kanban e Homologação de Ganho Pontual Único (One-Off)
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `chronicler`  
+**Escopo:** Eliminação de latência e necessidade de recarregar a página (F5) através do Supabase Realtime WebSocket; resolução dinâmica do avatar de perfil de agentes e gestores no Kanban e modais; e implementação da modalidade de "Ganho Pontual Único" (One-off) na conclusão e homologação de projetos Kaizen/Lean, consolidando o ciclo financeiro sem gerar pendências de acompanhamento mensal de 12 meses e sem distorcer o DRE anual.
+
+- **Supabase Realtime & Fim da Necessidade de F5 (Zero Delay):**
+  - **Causa Raiz:** A publicação padrão do PostgreSQL (`supabase_realtime`) não continha as tabelas operacionais da plataforma (`lean_actions`, `authorized_users` e `profiles`). As mudanças efetuadas por um usuário ficavam restritas ao seu navegador ou exigiam recarregar a tela (F5) para outros operadores verem.
+  - **Correção no Banco:** Executadas instruções DDL no Supabase Cloud:
+    - `ALTER PUBLICATION supabase_realtime ADD TABLE public.lean_actions;`
+    - `ALTER PUBLICATION supabase_realtime ADD TABLE public.authorized_users;`
+    - `ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;`
+  - **Subscrição WebSocket Global (`src/contexts/AuthContext.tsx`):**
+    - Configurado canal `realtime:app-global-sync` com listeners `postgres_changes` em `INSERT`, `UPDATE` e `DELETE` para `lean_actions`, `authorized_users` e `profiles`.
+    - Ao detectar qualquer mutação na nuvem, o sistema sincroniza os dados via `dataService.syncActionsFromCloud()` e incrementa a flag de renderização reativa `dataVersion`.
+    - Adicionado listener de `window.focus` para revalidar instantaneamente caso o operador alterne entre abas.
+    - Telas de Kanban (`/admin/kanban` e `/agente/kanban`) sincronizadas proativamente no mount.
+
+- **Resolução Dinâmica e Retroativa de Avatares de Usuários:**
+  - **Causa Raiz:** Ações criadas anteriormente no banco guardavam uma URL estática de placeholder (Unsplash) no campo `methodology_data->assignedAgentAvatar`, enquanto o avatar real do agente (como Gustavo Maciel) já residia na tabela `public.authorized_users` em Base64.
+  - **Correção no Banco:** Executada query SQL sincronizando o `assignedAgentAvatar` de todas as ações atribuídas ao Gustavo com seu `avatar_url` da tabela `authorized_users`.
+  - **Resolução Dinâmica em Tempo de Execução:**
+    - `src/services/dataService.ts`: nas funções `getActions()`, `syncActionsFromCloud()` e `syncActionByIdFromCloud()`, o avatar do agente é resolvido dinamicamente a partir dos usuários cadastrados (`dataService.getUsers('all')`) buscando por `assignedAgentId` ou `assignedAgentName`.
+    - `src/components/kanban/KanbanCard.tsx`: implementado `effectiveAvatar` via `useMemo` com lookup dinâmico.
+    - `src/components/kanban/ActionDetailModal.tsx`: implementado `effectiveAgentAvatar` dinâmico em todos os blocos de visualização do responsável.
+
+- **Lógica e UI de Ganho Pontual Único (One-Off) na Homologação Master:**
+  - **Demanda Operacional:** Determinados projetos geram uma economia expressiva e pontual de caixa (ex: negociação única de frete, venda de sucata acumulada, cancelamento de multa ou recuperação pontual de lote), onde não faz sentido submeter o time a 12 medições mensais de sustentação. O ganho deve ser contabilizado integralmente no mês da homologação e o ciclo deve ir imediatamente para o histórico como 100% concluído/consolidado.
+  - **Modelagem de Tipos (`src/lib/types.ts`):**
+    - Adicionados `isOneOffGain?: boolean;` e `oneOffGainExplanation?: string;` em `LeanAction`, `QuarterlyFollowUp` e `ExecutiveProjectFinancial`.
+  - **Governança Financeira & DRE (`src/services/dataService.ts`):**
+    - `getMonthlyFollowUpPipeline()` e `getAgentPendingFollowUps()` ignoram ações com `isOneOffGain: true`, prevenindo a geração de pendências no pipeline de 12 meses.
+    - `getExecutiveBoardFinancials()`: para projetos com `isOneOffGain: true`, define `annualCostAvoided = monthlyCostAvoided = spotGain` (sem multiplicar por 12, garantindo a integridade dos relatórios executivos para a Diretoria).
+    - `updateActionStatus()` atualizado para aceitar e persistir `isOneOffGain` e `quarterlyFollowUp`.
+  - **Interface de Homologação Master e Conclusão (`src/app/admin/projetos/[id]/page.tsx` & `src/components/kanban/ActionDetailModal.tsx`):**
+    - Passo 4.4 da página do projeto: inserido card interativo (Obsidian Navy) permitindo ao Gestor Master alternar entre "Ganho Recorrente (12 Meses)" e "Ganho Pontual Único (Sem Acompanhamento)".
+    - Ao aprovar como ganho pontual, o sistema consolida o projeto (`status: 'consolidado'`, `isCompleted: true`, `isFullYearCompleted: true`, `monthsFilledCount: 12`) e registra o mês 1 como o mês de homologação, concluindo o ciclo imediatamente.
+    - Modal de conclusão no Kanban (`ActionDetailModal`): adicionado card de seleção de ganho pontual antes de confirmar a conclusão do projeto.
+    - Card do Kanban (`KanbanCard`): adicionado badge indicador "Pontual" em azul corporativo.
+
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - `npm run build`: 100% de sucesso (43/43 páginas estáticas compiladas com zero warnings).

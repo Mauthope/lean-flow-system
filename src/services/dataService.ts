@@ -1111,7 +1111,25 @@ export const dataService = {
       });
     }
 
+    const allUsers = this.getUsers('all');
+    const userById = new Map<string, User>();
+    const userByName = new Map<string, User>();
+    allUsers.forEach((u) => {
+      if (u.id) userById.set(u.id, u);
+      if (u.name) userByName.set(u.name.trim().toLowerCase(), u);
+    });
+
     all.forEach((action) => {
+      if (action.assignedAgentId || action.assignedAgentName) {
+        const matched =
+          (action.assignedAgentId ? userById.get(action.assignedAgentId) : undefined) ||
+          (action.assignedAgentName ? userByName.get(action.assignedAgentName.trim().toLowerCase()) : undefined);
+        if (matched?.avatarUrl && action.assignedAgentAvatar !== matched.avatarUrl) {
+          action.assignedAgentAvatar = matched.avatarUrl;
+          hasChanges = true;
+        }
+      }
+
       if (!action.quarterlyFollowUp) {
         const initAction = INITIAL_ACTIONS.find((ia) => ia.id === action.id);
         if (initAction?.quarterlyFollowUp) {
@@ -1230,7 +1248,15 @@ export const dataService = {
         gainDetails: method.gainDetails || method.controllershipAudit?.gainDetails || {},
         assignedAgentId: method.assignedAgentId || row.assigned_agent_id,
         assignedAgentName: method.assignedAgentName,
-        assignedAgentAvatar: method.assignedAgentAvatar,
+        assignedAgentAvatar: (() => {
+          const allU = this.getUsers('all');
+          const aId = method.assignedAgentId || row.assigned_agent_id;
+          const aName = method.assignedAgentName;
+          const found = allU.find((u) => (aId && u.id === aId) || (aName && u.name?.trim().toLowerCase() === aName.trim().toLowerCase()));
+          return found?.avatarUrl || method.assignedAgentAvatar;
+        })(),
+        isOneOffGain: Boolean(method.isOneOffGain),
+        oneOffGainExplanation: method.oneOffGainExplanation,
         strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
         strategicObjectiveName: method.strategicObjectiveName,
         senseiStrategicAudit: method.senseiStrategicAudit,
@@ -1345,6 +1371,8 @@ export const dataService = {
             strategicObjectiveName: action.strategicObjectiveName,
             senseiStrategicAudit: action.senseiStrategicAudit,
             controllershipAudit: action.controllershipAudit,
+            isOneOffGain: Boolean(action.isOneOffGain),
+            oneOffGainExplanation: action.oneOffGainExplanation || null,
             isPublicDemand: action.isPublicDemand,
             isKaizenIdea: action.isKaizenIdea,
             kaizenOrigin: action.kaizenOrigin,
@@ -1393,6 +1421,14 @@ export const dataService = {
         console.warn('[dataService] Sincronização de ações da nuvem não pôde ser concluída:', error?.message);
         return this.getActions(tenantId);
       }
+
+      const allUsers = this.getUsers('all');
+      const userById = new Map<string, User>();
+      const userByName = new Map<string, User>();
+      allUsers.forEach((u) => {
+        if (u.id) userById.set(u.id, u);
+        if (u.name) userByName.set(u.name.trim().toLowerCase(), u);
+      });
 
       const mappedCloudActions: LeanAction[] = cloudActions.map((row: any) => {
         const method = row.methodology_data || {};
@@ -1452,7 +1488,14 @@ export const dataService = {
           gainDetails: method.gainDetails || method.controllershipAudit?.gainDetails || {},
           assignedAgentId: method.assignedAgentId || row.assigned_agent_id,
           assignedAgentName: method.assignedAgentName,
-          assignedAgentAvatar: method.assignedAgentAvatar,
+          assignedAgentAvatar: (() => {
+            const aId = method.assignedAgentId || row.assigned_agent_id;
+            const aName = method.assignedAgentName;
+            const matched = (aId ? userById.get(aId) : undefined) || (aName ? userByName.get(aName.trim().toLowerCase()) : undefined);
+            return matched?.avatarUrl || method.assignedAgentAvatar;
+          })(),
+          isOneOffGain: Boolean(method.isOneOffGain),
+          oneOffGainExplanation: method.oneOffGainExplanation,
           strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
           strategicObjectiveName: method.strategicObjectiveName,
           senseiStrategicAudit: method.senseiStrategicAudit,
@@ -1718,6 +1761,15 @@ export const dataService = {
     const pendingProjects: PendingProjectFollowUp[] = [];
 
     eligibleActions.forEach((action) => {
+      // Ganho pontual único: ciclo já consolidado no mês de homologação, não gera pendências mensais
+      if (action.isOneOffGain || action.quarterlyFollowUp?.isOneOffGain) {
+        if (monthIndex === 1) {
+          reportedCount++;
+          confirmedValue += action.actualCostAvoided || action.estimatedCostAvoided || 0;
+        }
+        return;
+      }
+
       const fu = action.quarterlyFollowUp;
       const entry = fu ? (fu as any)[`month${monthIndex}`] : undefined;
       const isReported = entry && entry.value !== undefined;
@@ -1801,6 +1853,9 @@ export const dataService = {
     const pendingList: PendingProjectFollowUp[] = [];
 
     agentActions.forEach((action) => {
+      // Ganho pontual único: ciclo já consolidado no mês de homologação, não gera pendências mensais
+      if (action.isOneOffGain || action.quarterlyFollowUp?.isOneOffGain) return;
+
       const fu = action.quarterlyFollowUp;
       for (let m = 1; m <= 12; m++) {
         const entry = fu ? (fu as any)[`month${m}`] : undefined;
@@ -2393,6 +2448,8 @@ export const dataService = {
       rootCauseAnalysis?: string;
       costBreakdown?: LeanCostBreakdown;
       conclusionDate?: string;
+      isOneOffGain?: boolean;
+      quarterlyFollowUp?: QuarterlyFollowUp;
     }
   ): LeanAction {
     const actions = this.getActions('all');
@@ -2438,6 +2495,12 @@ export const dataService = {
       }
       if (extra?.costBreakdown !== undefined) {
         updates.costBreakdown = extra.costBreakdown;
+      }
+      if (extra?.isOneOffGain !== undefined) {
+        updates.isOneOffGain = extra.isOneOffGain;
+      }
+      if (extra?.quarterlyFollowUp !== undefined) {
+        updates.quarterlyFollowUp = extra.quarterlyFollowUp;
       }
     }
 
@@ -3149,12 +3212,20 @@ export const dataService = {
     const now = Date.now();
 
     const projectFinancials: ExecutiveProjectFinancial[] = homologatedActions.map((action) => {
-      // 1. Cálculo do Retorno Mensal (Média dos 3 meses)
+      const fu = action.quarterlyFollowUp;
+      // 1. Cálculo do Retorno Mensal & Retorno Anual
       let monthlyCostAvoided = 0;
-      if (action.quarterlyFollowUp?.averageCostAvoided && action.quarterlyFollowUp.averageCostAvoided > 0) {
-        monthlyCostAvoided = action.quarterlyFollowUp.averageCostAvoided;
+      let annualCostAvoided = 0;
+
+      if (action.isOneOffGain || fu?.isOneOffGain) {
+        // Ganho Pontual Único: registrado no mês de homologação e NÃO multiplicado por 12
+        const spot = action.actualCostAvoided || action.estimatedCostAvoided || 0;
+        monthlyCostAvoided = spot;
+        annualCostAvoided = spot;
+      } else if (fu?.averageCostAvoided && fu.averageCostAvoided > 0) {
+        monthlyCostAvoided = fu.averageCostAvoided;
+        annualCostAvoided = monthlyCostAvoided * 12;
       } else {
-        const fu = action.quarterlyFollowUp;
         const validValues = [fu?.month1?.value, fu?.month2?.value, fu?.month3?.value].filter(
           (v): v is number => typeof v === 'number' && !isNaN(v) && v > 0
         );
@@ -3165,10 +3236,8 @@ export const dataService = {
         } else if (action.estimatedCostAvoided && action.estimatedCostAvoided > 0) {
           monthlyCostAvoided = Math.round(action.estimatedCostAvoided / 12);
         }
+        annualCostAvoided = monthlyCostAvoided * 12;
       }
-
-      // 2. Retorno Total Anualizado (12 Meses) = Retorno Mensal * 12
-      const annualCostAvoided = monthlyCostAvoided * 12;
 
       // 3. Custos Totais de Investimento (Capex + Opex)
       const totalInvestmentCost = action.projectCosts?.totalCost || 0;
@@ -3198,10 +3267,12 @@ export const dataService = {
       const monthsElapsed = isExpired ? 12 : Math.min(12, Math.max(1, Math.ceil(daysElapsed / 30.4375)));
       const monthsRemaining = isExpired ? 0 : Math.max(0, 12 - monthsElapsed);
 
-      const fu = action.quarterlyFollowUp;
-      const quarterlyMonthsFilled = [fu?.month1?.value, fu?.month2?.value, fu?.month3?.value].filter(
-        (v) => v !== undefined && v !== null
-      ).length;
+      const isOneOff = Boolean(action.isOneOffGain || action.quarterlyFollowUp?.isOneOffGain);
+      const quarterlyMonthsFilled = isOneOff
+        ? 3
+        : [fu?.month1?.value, fu?.month2?.value, fu?.month3?.value].filter(
+            (v) => v !== undefined && v !== null
+          ).length;
 
       return {
         actionId: action.id,
@@ -3224,6 +3295,7 @@ export const dataService = {
         isExpired,
         expirationDate,
         quarterlyMonthsFilled,
+        isOneOffGain: isOneOff,
       };
     });
 

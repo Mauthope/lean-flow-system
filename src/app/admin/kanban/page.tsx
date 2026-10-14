@@ -17,6 +17,12 @@ export default function AdminKanbanPage() {
     return dataService.getActions(currentTenant?.id);
   }, [dataVersion, currentTenant?.id]);
 
+  React.useEffect(() => {
+    dataService.syncActionsFromCloud().then(() => {
+      refreshData();
+    }).catch(() => {});
+  }, [refreshData]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
