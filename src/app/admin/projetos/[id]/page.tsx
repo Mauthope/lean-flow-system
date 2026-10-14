@@ -1463,21 +1463,30 @@ export default function AdminProjectDetailPage() {
     });
     setChecklistItems(updated);
 
-    // GATILHO AUTOMÁTICO: Se todas as ações 5W2H do Do forem concluídas, avança automaticamente para CHECK!
+    // GATILHO AUTOMÁTICO: Se todas as ações 5W2H do Do forem concluídas, avança automaticamente para CHECK e Aguardando Homologação!
     const allCompleted = updated.length > 0 && updated.every((it) => it.completed);
     let nextStage = activeTab;
 
-    if (allCompleted && activeTab === 'do') {
-      nextStage = 'check';
-      setActiveTab('check');
+    if (allCompleted) {
+      if (activeTab === 'do') {
+        nextStage = 'check';
+        setActiveTab('check');
+      }
       try {
         confetti({ particleCount: 85, spread: 75, origin: { y: 0.55 } });
       } catch (_) {}
     }
 
+    const nextStatus = allCompleted
+      ? (action.masterApproved ? 'concluida' : 'aguardando_aprovacao')
+      : (action.masterApproved ? 'concluida' : 'em_andamento');
+
     const fresh = dataService.updateAction(action.id, {
       checklist: updated,
       pdcaStage: nextStage,
+      status: nextStatus,
+      submittedForApproval: allCompleted && !action.masterApproved ? true : action.submittedForApproval,
+      submittedForApprovalAt: allCompleted && !action.submittedForApprovalAt ? new Date().toISOString() : action.submittedForApprovalAt,
     });
 
     if (fresh) {

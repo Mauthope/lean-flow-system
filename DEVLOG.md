@@ -342,3 +342,28 @@
   - Total conformidade com o Design System Obsidian Navy (zero emojis, ícones Lucide).
 
 ---
+
+### 13. Unificação Canal Kaizen, Estabilidade do Toten e Automação Contínua PDCA no Kanban
+- **Unificação do Formulário Canal Kaizen (Web & Toten):**
+  - Alinhamento dos campos de cadastro do formulário web (`/canal-kaizen/sugestao`) e do terminal físico Toten (`/toten/sugestao`).
+  - Campo de evidência fotográfica tornado estritamente opcional com indicação de que o detalhamento técnico e fotos complementares ocorrem nas etapas seguintes do PDCA (Plan/Do).
+  - Remoção do botão redundante *"Copiar link exclusivo chão de fábrica"* no módulo administrativo do Canal Kaizen.
+- **Carimbo e Rastreabilidade do Canal Kaizen:**
+  - Criação do carimbo visual (*Badge* esmeralda/ciano com ícone Lucide `Layers` e identificação *"Canal Kaizen"*) nos cards do Kanban, lista de triagem e visualização do projeto.
+  - Implementação de métricas e filtros dedicados nos dashboards para mensurar a contribuição de projetos originados pelo Canal Kaizen versus projetos gerados por gestores.
+- **Estabilidade da Detecção Facial no Toten:**
+  - Ajuste na tolerância temporal e na máquina de estados de detecção de operador no Toten (`/toten`).
+  - Eliminação da transição prematura para o "modo de procura" quando um colaborador está diante do totem, ampliando o tempo de carência e suavizando a detecção de presença.
+- **Automação Poka-Yoke de Transição PDCA no Kanban:**
+  - **Avanço Automático Plan &rarr; Do:** Transição automática de status para `'em_andamento'` e `pdcaStage = 'do'` quando o supervisor aprova a triagem ou quando a primeira contramedida 5W2H é cadastrada.
+  - **Avanço Automático Do &rarr; Check ("Aguardando Homologação"):** Quando 100% das contramedidas do Plano de Ação 5W2H são marcadas como concluídas, o projeto transiciona automaticamente para o status `'aguardando_aprovacao'` (Coluna 3 do Kanban), ativando `submittedForApproval: true` e `pdcaStage = 'check'`.
+  - **Regressão Automática (Poka-Yoke):** Se qualquer item do 5W2H for desmarcado por revisão de execução e o projeto ainda não foi homologado pelo Gestor Master, o status regride automaticamente para `'em_andamento'`.
+  - **Avanço Final Check/Act &rarr; Concluída:** Ao receber a Homologação Master (`masterApproved = true`), o projeto transiciona definitivamente para `'concluida'` (Coluna 4 do Kanban).
+  - **Sincronização & Migração de Legados:**
+    - Atualização retroativa executada na tabela `lean_actions` do Supabase Cloud (garantindo que projetos como `LEAN-2026-0004` com contramedidas já concluídas fossem movidos imediatamente para *"Aguardando Homologação"*).
+    - Avaliação contínua implementada nas funções `evaluateActionPDCA`, `getActions` e `syncActionsFromCloud` no `dataService.ts`.
+- **Homologação:**
+  - `npx tsc --noEmit`: 0 erros de TypeScript.
+  - Sincronização em tempo real entre Cloud e LocalStorage validada.
+
+---

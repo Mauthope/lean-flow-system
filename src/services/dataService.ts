@@ -979,14 +979,29 @@ export const dataService = {
       changed = true;
     }
 
-    // 3. Se estiver em 'do' e TODAS as ações 5W2H estiverem concluídas, avança para 'check'
-    if (
-      action.pdcaStage === 'do' &&
-      action.checklist &&
-      action.checklist.length > 0 &&
-      action.checklist.every((c) => c.completed)
-    ) {
-      action.pdcaStage = 'check';
+    // 3. Se TODAS as ações 5W2H do plano estiverem concluídas:
+    // A execução das contramedidas no Gemba (DO) foi 100% finalizada!
+    // Automaticamente:
+    // a) Metodologia avança para 'check' (se ainda estiver em 'plan' ou 'do')
+    // b) O status no Kanban anda para 'aguardando_aprovacao' (Aguardando Homologação Master)
+    const hasChecklist = Boolean(action.checklist && action.checklist.length > 0);
+    const all5W2HCompleted = hasChecklist && action.checklist!.every((c) => c.completed);
+
+    if (all5W2HCompleted) {
+      if (!action.pdcaStage || action.pdcaStage === 'plan' || action.pdcaStage === 'do') {
+        action.pdcaStage = 'check';
+        changed = true;
+      }
+      if (action.status !== 'concluida' && action.status !== 'nao_aprovada' && action.status !== 'aguardando_aprovacao') {
+        action.status = 'aguardando_aprovacao';
+        action.submittedForApproval = true;
+        if (!action.submittedForApprovalAt) action.submittedForApprovalAt = new Date().toISOString();
+        changed = true;
+      }
+    } else if (hasChecklist && action.status === 'aguardando_aprovacao' && !action.masterApproved) {
+      // Se alguma ação 5W2H foi desmarcada e o projeto ainda não foi homologado pelo Master, retorna para 'em_andamento'
+      action.status = 'em_andamento';
+      action.submittedForApproval = false;
       changed = true;
     }
 
