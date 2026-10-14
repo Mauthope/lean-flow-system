@@ -1,4 +1,14 @@
-import { Tenant, LeanAction, ActionChecklistItem, StrategicObjective, SenseiStrategicAudit, ActionQualityEvaluation } from '@/lib/types';
+import {
+  Tenant,
+  LeanAction,
+  ActionChecklistItem,
+  StrategicObjective,
+  SenseiStrategicAudit,
+  ActionQualityEvaluation,
+  LeanWasteCategory,
+  LeanAssessmentDimensionId,
+  ASSESSMENT_DIMENSIONS_CONFIG,
+} from '@/lib/types';
 import { SENSEI_KNOWLEDGE_BASE } from '@/data/senseiKnowledgeBase';
 import { STORAGE_KEYS, getStoredData, setStoredData, INITIAL_TENANT } from '@/lib/storage';
 
@@ -1697,3 +1707,314 @@ export function evaluateActionQuality(
     ] : undefined,
   };
 }
+
+// =============================================================================
+// SENSEI IA: AUTO-ENQUADRAMENTO DE TRIAGEM & ADERÊNCIA HOSHIN KANRI
+// =============================================================================
+
+export interface SenseiTriageEnrichment {
+  refinedTitle: string;
+  refinedDescription: string;
+  wasteCategory: LeanWasteCategory;
+  assessmentDimensionIds: LeanAssessmentDimensionId[];
+  primaryAssessmentDimensionId: LeanAssessmentDimensionId;
+  matchedObjectiveId?: string;
+  matchedObjectiveName?: string;
+  strategicAudit: SenseiStrategicAudit;
+}
+
+export function getLocalFallbackDemandTriage(
+  action: Partial<LeanAction>,
+  targetObjectiveId: string | undefined,
+  strategicObjectives: StrategicObjective[]
+): SenseiTriageEnrichment {
+  const title = (action.title || '').trim();
+  const desc = (action.description || '').trim();
+  const fullText = `${title} ${desc} ${action.kaizenCategory || ''} ${action.originSectorName || ''}`.toLowerCase();
+  const now = new Date().toISOString();
+
+  // 1. Detecção de Dimensões do Lean Assessment
+  const scoredDimensions: { id: LeanAssessmentDimensionId; score: number }[] = [
+    { id: 'estabilidade_5s', score: 0 },
+    { id: 'trabalho_padronizado', score: 0 },
+    { id: 'fluxo_jit', score: 0 },
+    { id: 'qualidade_poka_yoke', score: 0 },
+    { id: 'tpm_oee', score: 0 },
+    { id: 'cultura_kaizen', score: 0 },
+  ];
+
+  if (/(5s|limpez|organiz|sujeir|bagun|desord|chao|piso|demarc|placa|visual|ferrament|bancada|arrum)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'estabilidade_5s')!.score += 5;
+  }
+  if (/(padra|padro|pop|sop|instru|procedimento|metod|receita|treina|operador nov|sequenc|tempo padr)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'trabalho_padronizado')!.score += 5;
+  }
+  if (/(fluxo|espera|gargal|fila|atraso|kanban|estoqu|wip|transporte|abastec|carrinho|empilhadeir|smed|setup|troca rap)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'fluxo_jit')!.score += 5;
+  }
+  if (/(refugo|defeit|trinca|furo|mancha|rebarba|erro|nao conform|rejeit|retrabalh|poka|sensor|travamento mec|inspec)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'qualidade_poka_yoke')!.score += 5;
+  }
+  if (/(quebr|maquin|equipamento|oleo|vazam|pressao|aquec|motor|rolamento|esteira|manutenc|tpm|oee|parada|falha mecan|lubrific)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'tpm_oee')!.score += 5;
+  }
+  if (/(ergonom|postur|peso|esforco|dor|seguranc|epi|acident|ideia|sugest|bem-estar|conforto|particip)/i.test(fullText)) {
+    scoredDimensions.find((d) => d.id === 'cultura_kaizen')!.score += 5;
+  }
+
+  scoredDimensions.sort((a, b) => b.score - a.score);
+  const topDimensions = scoredDimensions.filter((d) => d.score > 0).map((d) => d.id);
+  const assessmentDimensionIds: LeanAssessmentDimensionId[] = topDimensions.length > 0
+    ? topDimensions.slice(0, 3)
+    : [action.assessmentDimensionId || 'estabilidade_5s'];
+
+  // 2. Classificação de Desperdício Lean
+  let wasteCategory: LeanWasteCategory = action.wasteCategory || 'espera';
+  if (/(quebr|parada|espera|aguard|gargal|atraso)/i.test(fullText)) wasteCategory = 'espera';
+  else if (/(refugo|defeit|trinca|mancha|rejeit|retrabalh)/i.test(fullText)) wasteCategory = 'defeitos';
+  else if (/(transporte|carrinho|empilhadeir|moviment)/i.test(fullText)) {
+    wasteCategory = /(transporte|levar|trazer|distanc)/i.test(fullText) ? 'transporte' : 'movimentacao';
+  } else if (/(sobra|excesso|produzir mais|lote grand)/i.test(fullText)) wasteCategory = 'superproducao';
+  else if (/(estoqu|armazen|pilha|palete cheio)/i.test(fullText)) wasteCategory = 'estoque';
+  else if (/(retrabalho|dupla checagem|processo duplicado)/i.test(fullText)) wasteCategory = 'processamento_excessivo';
+  else if (/(ergonomia|ideia|habilidade|sugestao|talento)/i.test(fullText)) wasteCategory = 'talento_subutilizado';
+
+  // 3. Lapidação Técnica de Título e Descrição
+  let refinedTitle = title;
+  if (!refinedTitle.toLowerCase().includes('redução') && !refinedTitle.toLowerCase().includes('eliminação') && !refinedTitle.toLowerCase().includes('otimização') && !refinedTitle.toLowerCase().includes('padronização')) {
+    if (wasteCategory === 'defeitos') refinedTitle = `Eliminação de causa de refugo: ${title}`;
+    else if (wasteCategory === 'espera') refinedTitle = `Redução de tempo de espera e paradas: ${title}`;
+    else if (wasteCategory === 'movimentacao' || wasteCategory === 'transporte') refinedTitle = `Otimização de movimentação e ergonomia: ${title}`;
+    else refinedTitle = `Padronização e melhoria contínua: ${title}`;
+  }
+
+  const refinedDescription = desc.length > 10
+    ? `Diagnóstico no Gemba (${action.originSectorName || 'Setor Produtivo'}): ${desc}. Ação direcionada para combater perdas de ${wasteCategory} com padronização dos métodos e eliminação de desperdícios.`
+    : `Melhoria direcionada no setor ${action.originSectorName || 'operacional'} com foco na estabilização dos processos e eliminação de perdas de ${wasteCategory}.`;
+
+  // 4. Seleção e Alinhamento Hoshin Kanri
+  let matchedObj = strategicObjectives.find((o) => o.id === targetObjectiveId);
+  if (!matchedObj) {
+    let bestScore = -1;
+    for (const obj of strategicObjectives) {
+      let score = 0;
+      const pillar = obj.pillar;
+      if (pillar === 'produtividade_oee' && (assessmentDimensionIds.includes('tpm_oee') || wasteCategory === 'espera')) score += 5;
+      if (pillar === 'qualidade_refugo' && (assessmentDimensionIds.includes('qualidade_poka_yoke') || wasteCategory === 'defeitos')) score += 5;
+      if (pillar === 'lead_time_cliente' && (assessmentDimensionIds.includes('fluxo_jit') || wasteCategory === 'transporte')) score += 5;
+      if (pillar === 'financeiro_custos' && (wasteCategory === 'superproducao' || wasteCategory === 'estoque' || wasteCategory === 'espera')) score += 4;
+      if (pillar === 'sustentabilidade_esg' && (assessmentDimensionIds.includes('estabilidade_5s') || assessmentDimensionIds.includes('cultura_kaizen'))) score += 4;
+      
+      const words = `${obj.title} ${obj.description}`.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+      for (const w of words) {
+        if (fullText.includes(w)) score += 1;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        matchedObj = obj;
+      }
+    }
+    if (!matchedObj && strategicObjectives.length > 0) {
+      matchedObj = strategicObjectives[0];
+    }
+  }
+
+  // 5. Cálculo do Score e Justificativa Explicativa
+  let alignmentScore = 45;
+  const suggestions: string[] = [];
+
+  if (matchedObj) {
+    const p = matchedObj.pillar;
+    if (p === 'produtividade_oee') {
+      if (assessmentDimensionIds.includes('tpm_oee')) alignmentScore += 25;
+      else if (wasteCategory === 'espera') alignmentScore += 15;
+      else alignmentScore -= 10;
+    } else if (p === 'qualidade_refugo') {
+      if (assessmentDimensionIds.includes('qualidade_poka_yoke')) alignmentScore += 30;
+      else if (wasteCategory === 'defeitos') alignmentScore += 20;
+      else alignmentScore -= 10;
+    } else if (p === 'lead_time_cliente') {
+      if (assessmentDimensionIds.includes('fluxo_jit')) alignmentScore += 25;
+      else if (wasteCategory === 'espera' || wasteCategory === 'transporte') alignmentScore += 15;
+      else alignmentScore -= 10;
+    } else if (p === 'financeiro_custos') {
+      if (wasteCategory === 'superproducao' || wasteCategory === 'espera') alignmentScore += 20;
+      else alignmentScore += 5;
+    } else if (p === 'sustentabilidade_esg') {
+      if (assessmentDimensionIds.includes('cultura_kaizen') || assessmentDimensionIds.includes('estabilidade_5s')) alignmentScore += 25;
+      else alignmentScore += 5;
+    }
+
+    if (fullText.length > 80) alignmentScore += 5;
+    if (action.kaizenPhotoUrl) alignmentScore += 5;
+  } else {
+    alignmentScore = 35;
+  }
+
+  alignmentScore = Math.min(95, Math.max(25, alignmentScore));
+
+  let explanation = '';
+  if (matchedObj) {
+    const dimNames = assessmentDimensionIds.map((id) => ASSESSMENT_DIMENSIONS_CONFIG[id]?.shortName || id).join(', ');
+    if (alignmentScore >= 70) {
+      explanation = `A pontuação de ${alignmentScore}% foi atribuída pelo Sensei devido à alta convergência direta entre o problema relatado no setor ${action.originSectorName || 'produtivo'} e a diretriz "${matchedObj.code} - ${matchedObj.title}". O projeto atua com precisão nos eixos de [${dimNames}] e combate o desperdício de [${wasteCategory}], alavancando diretamente o pilar corporativo de ${matchedObj.pillar.toUpperCase()}. A dedução restante decorre do estágio preliminar da triagem (ausência de plano 5W2H e memória de cálculo homologada).`;
+      suggestions.push('Estruturar o plano 5W2H focando na causa raiz com 5 Porquês.');
+      suggestions.push('Quantificar a estimativa de custos evitados na etapa de planejamento.');
+    } else if (alignmentScore >= 50) {
+      explanation = `A pontuação de ${alignmentScore}% foi gerada pelo Sensei considerando uma convergência moderada com a diretriz "${matchedObj.code} - ${matchedObj.title}". Embora a iniciativa fortaleça a rotina com foco em [${dimNames}], o impacto no pilar de ${matchedObj.pillar.toUpperCase()} ocorre de forma parcialmente indireta. O projeto demonstra valor para a estabilidade do posto, mas necessita de desdobramento metodológico mais rigoroso para atingir alta aderência à diretoria.`;
+      suggestions.push('Conectar os entregáveis práticos do 5W2H às metas quantitativas da diretriz.');
+      suggestions.push('Implementar Poka-Yoke ou Trabalho Padronizado (POP) para consolidar o ganho.');
+    } else {
+      explanation = `A pontuação de ${alignmentScore}% foi calculada pelo Sensei refletindo um alinhamento reduzido com a diretriz estratégica prioritária "${matchedObj.code} - ${matchedObj.title}". A iniciativa aborda uma necessidade pontual do posto no setor ${action.originSectorName || 'operacional'}, sem correlação primária direta com os indicadores-chave fixados pela diretoria no pilar de ${matchedObj.pillar.toUpperCase()}. Para aprovação na triagem, o supervisor deve obrigatoriamente justificar a relevância operacional ou de segurança desta ação.`;
+      suggestions.push('Avaliar se há outra diretriz corporativa que melhor represente o escopo desta melhoria.');
+      suggestions.push('Se a ação for essencial para a operação diária ou segurança, o supervisor deve formalizar a justificativa de aprovação.');
+    }
+  } else {
+    explanation = `A pontuação de ${alignmentScore}% foi atribuída pelo Sensei devido à ausência de diretriz estratégica Hoshin Kanri conectada. É fundamental vincular uma meta corporativa para orientar os esforços de melhoria.`;
+    suggestions.push('Vincular um Objetivo Estratégico ativo da fábrica.');
+  }
+
+  const strategicAudit: SenseiStrategicAudit = {
+    justification: explanation,
+    alignmentScore,
+    contributionSummary: `Enquadramento em [${assessmentDimensionIds.map((id) => ASSESSMENT_DIMENSIONS_CONFIG[id]?.shortName || id).join(' + ')}] para eliminação de desperdício de ${wasteCategory}.`,
+    improvementSuggestions: suggestions,
+    evaluatedAt: now,
+    modelUsed: 'Sensei IA • Heurística Avançada de Triagem Lean',
+  };
+
+  return {
+    refinedTitle,
+    refinedDescription,
+    wasteCategory,
+    assessmentDimensionIds,
+    primaryAssessmentDimensionId: assessmentDimensionIds[0],
+    matchedObjectiveId: matchedObj?.id,
+    matchedObjectiveName: matchedObj ? `${matchedObj.code} - ${matchedObj.title}` : undefined,
+    strategicAudit,
+  };
+}
+
+export async function evaluateDemandTriageWithSensei(params: {
+  action: Partial<LeanAction>;
+  targetObjectiveId?: string;
+  strategicObjectives: StrategicObjective[];
+}): Promise<SenseiTriageEnrichment> {
+  const { action, targetObjectiveId, strategicObjectives } = params;
+  const fallback = getLocalFallbackDemandTriage(action, targetObjectiveId, strategicObjectives);
+
+  const availableObjectivesPrompt = strategicObjectives.map((o) => `
+- ID: "${o.id}"
+  Código: ${o.code}
+  Título: ${o.title}
+  Pilar: ${o.pillar}
+  Meta: ${o.targetValue ? `${o.targetValue} ${o.unitLabel || ''}` : 'Qualitativa'}
+  Descrição: ${o.description}
+  Patrocinador: ${o.sponsor}
+`).join('\n');
+
+  const selectedObj = strategicObjectives.find((o) => o.id === (targetObjectiveId || fallback.matchedObjectiveId));
+
+  const promptText = `
+Você é o Sensei Lean AI, mestre em Lean Manufacturing (Sistema Toyota de Produção), Kaizen, Gestão por Diretrizes Hoshin Kanri e Lean Assessment dos Setores.
+
+Sua tarefa é analisar a demanda pública recebida do chão de fábrica (Gemba) e realizar a triagem técnica completa:
+1. Lapidar o título informal em um Título Padronizado Kaizen (conciso, técnico, direto).
+2. Estruturar a Descrição Técnica do escopo, identificando a perda e a oportunidade.
+3. Classificar o Desperdício Lean (escolha estritamente UM entre: "espera", "defeitos", "superproducao", "movimentacao", "transporte", "processamento_excessivo", "estoque", "talento_subutilizado").
+4. Selecionar de 1 a 3 Eixos Alvo do Lean Assessment dos Setores que melhor enquadram a iniciativa (escolha apenas entre: "estabilidade_5s", "trabalho_padronizado", "fluxo_jit", "qualidade_poka_yoke", "tpm_oee", "cultura_kaizen").
+5. Avaliar a Aderência Estratégica com as diretrizes da Alta Gerência (Hoshin Kanri):
+   ${selectedObj ? `DIRETRIZ SELECIONADA PELO SUPERVISOR: [${selectedObj.code}] ${selectedObj.title} (Pilar: ${selectedObj.pillar})` : 'Escolha o melhor objetivo da lista.'}
+   - Atribuir uma pontuação percentual de aderência ("alignmentScore") de 0 a 100%.
+   - REDIGIR UM TEXTO EXPLICATIVO EXECUTIVO ("justification") DETALHANDO POR QUE ESSE VALOR PERCENTUAL FOI GERADO:
+     * Explique claramente quais aspectos do problema no Gemba convergem com a meta corporativa e somaram pontos.
+     * Explique quais fatores limitaram a nota (ex: caráter preliminar da triagem, falta de mensuração financeira de custos, escopo focado em um único posto vs sistêmico).
+     * Se a aderência for menor que 50%, deixe explícito o porquê do distanciamento da meta prioritária da diretoria.
+   - Fornecer um resumo conciso de impacto ("contributionSummary").
+   - Fornecer 2 a 3 sugestões de melhoria ("improvementSuggestions") para a equipe elevar a convergência aos objetivos da diretoria.
+
+DADOS DA DEMANDA DO GEMBA:
+- Título Original: ${action.title}
+- Relato Original: ${action.description}
+- Setor Solicitante: ${action.originSectorName || 'Fábrica'}
+- Solicitante: ${action.requesterName || 'Operador'}
+- Categoria Kaizen Declarada: ${action.kaizenCategory || 'Geral'}
+- Origem: ${action.kaizenOrigin === 'toten' ? 'Toten Físico do Chão de Fábrica' : 'Formulário Web'}
+${action.kaizenPhotoUrl ? '- Contém foto de evidência anexada' : ''}
+
+OBJETIVOS ESTRATÉGICOS VIGENTES (HOSHIN KANRI):
+${availableObjectivesPrompt}
+
+RESPONDA EXCLUSIVAMENTE COM JSON PURO (sem blocos markdown adicionais):
+{
+  "refinedTitle": "Título técnico no padrão Kaizen",
+  "refinedDescription": "Descrição técnica estruturada do escopo",
+  "wasteCategory": "espera | defeitos | superproducao | movimentacao | transporte | processamento_excessivo | estoque | talento_subutilizado",
+  "assessmentDimensionIds": ["dimensao_1", "dimensao_2"],
+  "matchedObjectiveId": "ID do objetivo mais aderente",
+  "alignmentScore": 75,
+  "justification": "Texto formal e executivo explicando detalhadamente POR QUE o valor percentual foi gerado...",
+  "contributionSummary": "Resumo de 1 frase do impacto prático no chão de fábrica",
+  "improvementSuggestions": ["Dica 1 para subir a aderência", "Dica 2..."]
+}
+`.trim();
+
+  try {
+    const rawText = await callSenseiBackend({
+      prompt: promptText,
+      temperature: 0.2,
+      maxTokens: 800,
+    });
+
+    if (rawText) {
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        const validWasteCategories: LeanWasteCategory[] = [
+          'espera', 'defeitos', 'superproducao', 'movimentacao', 'transporte', 'processamento_excessivo', 'estoque', 'talento_subutilizado'
+        ];
+        const validDimensions: LeanAssessmentDimensionId[] = [
+          'estabilidade_5s', 'trabalho_padronizado', 'fluxo_jit', 'qualidade_poka_yoke', 'tpm_oee', 'cultura_kaizen'
+        ];
+
+        const waste = validWasteCategories.includes(parsed.wasteCategory) ? parsed.wasteCategory : fallback.wasteCategory;
+        const dims = Array.isArray(parsed.assessmentDimensionIds)
+          ? parsed.assessmentDimensionIds.filter((d: any): d is LeanAssessmentDimensionId => validDimensions.includes(d))
+          : fallback.assessmentDimensionIds;
+
+        const effectiveDims = dims.length > 0 ? dims : fallback.assessmentDimensionIds;
+        const score = typeof parsed.alignmentScore === 'number'
+          ? Math.min(100, Math.max(10, Math.round(parsed.alignmentScore)))
+          : fallback.strategicAudit.alignmentScore;
+
+        const chosenObjId = targetObjectiveId || parsed.matchedObjectiveId || fallback.matchedObjectiveId;
+        const matchedObj = strategicObjectives.find((o) => o.id === chosenObjId) || fallback;
+
+        return {
+          refinedTitle: parsed.refinedTitle?.trim() || fallback.refinedTitle,
+          refinedDescription: parsed.refinedDescription?.trim() || fallback.refinedDescription,
+          wasteCategory: waste,
+          assessmentDimensionIds: effectiveDims,
+          primaryAssessmentDimensionId: effectiveDims[0],
+          matchedObjectiveId: chosenObjId,
+          matchedObjectiveName: ('title' in matchedObj && 'code' in matchedObj) ? `${matchedObj.code} - ${matchedObj.title}` : fallback.matchedObjectiveName,
+          strategicAudit: {
+            justification: parsed.justification?.trim() || fallback.strategicAudit.justification,
+            alignmentScore: score,
+            contributionSummary: parsed.contributionSummary?.trim() || fallback.strategicAudit.contributionSummary,
+            improvementSuggestions: Array.isArray(parsed.improvementSuggestions) && parsed.improvementSuggestions.length > 0
+              ? parsed.improvementSuggestions
+              : fallback.strategicAudit.improvementSuggestions,
+            evaluatedAt: new Date().toISOString(),
+            modelUsed: 'Sensei IA • Gemini Neural (Backend Seguro)',
+          },
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[SenseiTriage] Falha na chamada da IA, utilizando heurística estruturada:', err);
+  }
+
+  return fallback;
+}
+

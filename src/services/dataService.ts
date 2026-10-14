@@ -1260,6 +1260,8 @@ export const dataService = {
         strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
         strategicObjectiveName: method.strategicObjectiveName,
         senseiStrategicAudit: method.senseiStrategicAudit,
+        supervisorAdherenceJustification: method.supervisorAdherenceJustification,
+        assessmentDimensionIds: method.assessmentDimensionIds || (row.assessment_dimension_id ? [row.assessment_dimension_id] : undefined),
         controllershipAudit: method.controllershipAudit,
         auditToken: row.audit_token || method.controllershipAudit?.token || undefined,
         isPublicDemand: Boolean(method.isPublicDemand),
@@ -1370,6 +1372,8 @@ export const dataService = {
             targetSectorName: action.targetSectorName,
             strategicObjectiveName: action.strategicObjectiveName,
             senseiStrategicAudit: action.senseiStrategicAudit,
+            supervisorAdherenceJustification: action.supervisorAdherenceJustification || null,
+            assessmentDimensionIds: action.assessmentDimensionIds || [],
             controllershipAudit: action.controllershipAudit,
             isOneOffGain: Boolean(action.isOneOffGain),
             oneOffGainExplanation: action.oneOffGainExplanation || null,
@@ -1499,6 +1503,8 @@ export const dataService = {
           strategicObjectiveId: row.strategic_objective_id || method.strategicObjectiveId,
           strategicObjectiveName: method.strategicObjectiveName,
           senseiStrategicAudit: method.senseiStrategicAudit,
+          supervisorAdherenceJustification: method.supervisorAdherenceJustification,
+          assessmentDimensionIds: method.assessmentDimensionIds || (row.assessment_dimension_id ? [row.assessment_dimension_id] : undefined),
           controllershipAudit: method.controllershipAudit,
           auditToken: row.audit_token || method.controllershipAudit?.token || undefined,
           isPublicDemand: Boolean(method.isPublicDemand),
@@ -2355,6 +2361,8 @@ export const dataService = {
       dueDate?: string;
       strategicObjectiveId?: string;
       strategicObjectiveName?: string;
+      senseiStrategicAudit?: SenseiStrategicAudit;
+      supervisorAdherenceJustification?: string;
       assessmentDimensionId?: LeanAssessmentDimensionId;
       assessmentDimensionIds?: LeanAssessmentDimensionId[];
       refinedTitle?: string;
@@ -2383,9 +2391,36 @@ export const dataService = {
           ? item.assessmentDimensionIds
           : [this.getDefaultAssessmentDimensionForWaste(decision.wasteCategory || item.wasteCategory)];
 
+      let strategicAudit = decision.senseiStrategicAudit;
+      if (!strategicAudit) {
+        strategicAudit = this.calculateActionStrategicAdherence(
+          {
+            ...item,
+            title: decision.refinedTitle?.trim() || item.title,
+            description: decision.refinedDescription?.trim() || item.description,
+            wasteCategory: decision.wasteCategory || item.wasteCategory,
+            strategicObjectiveId: decision.strategicObjectiveId || item.strategicObjectiveId,
+          },
+          decision.strategicObjectiveId ? this.getStrategicObjectiveById(decision.strategicObjectiveId) : undefined
+        );
+      }
+
+      const notes = [...(item.notes || [])];
+      if (decision.supervisorAdherenceJustification?.trim()) {
+        notes.push({
+          id: generateId('note'),
+          authorId: 'supervisor_triage',
+          authorName: decision.adminName,
+          authorRole: 'admin',
+          text: `[Justificativa de Aderência Estratégica na Triagem (Alinhamento: ${strategicAudit?.alignmentScore || 0}%)]: ${decision.supervisorAdherenceJustification.trim()}`,
+          createdAt: now,
+        });
+      }
+
       actions[index] = {
         ...item,
         title: decision.refinedTitle?.trim() || item.title,
+        description: decision.refinedDescription?.trim() || item.description,
         status: 'em_andamento',
         startedAt: item.startedAt || now,
         pdcaStage: item.pdcaStage || 'plan',
@@ -2394,6 +2429,8 @@ export const dataService = {
         assignedAgentAvatar: agent?.avatarUrl || item.assignedAgentAvatar,
         strategicObjectiveId: decision.strategicObjectiveId || item.strategicObjectiveId,
         strategicObjectiveName: decision.strategicObjectiveName || item.strategicObjectiveName,
+        senseiStrategicAudit: strategicAudit,
+        supervisorAdherenceJustification: decision.supervisorAdherenceJustification?.trim() || undefined,
         assessmentDimensionId: effectiveDimensionIds[0],
         assessmentDimensionIds: effectiveDimensionIds,
         priority: decision.priority || item.priority,
@@ -2403,6 +2440,7 @@ export const dataService = {
         triagedAt: now,
         triagedBy: decision.adminName,
         updatedAt: now,
+        notes,
       };
     } else {
       // Reject

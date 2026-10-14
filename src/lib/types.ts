@@ -502,6 +502,7 @@ export interface LeanAction {
   rejectionReason?: string;
   triagedAt?: string;
   triagedBy?: string;
+  supervisorAdherenceJustification?: string; // Justificativa obrigatória do supervisor caso o alinhamento Hoshin seja baixo (< 50%)
 
   // Notes
   notes: ActionNote[];

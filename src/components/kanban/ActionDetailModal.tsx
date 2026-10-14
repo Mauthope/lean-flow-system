@@ -993,6 +993,37 @@ export const ActionDetailModal: React.FC<ActionDetailModalProps> = ({
                 )}
               </div>
             )}
+
+            {/* Justificativa de Aderência do Supervisor na Triagem */}
+            {action.supervisorAdherenceJustification && (
+              <div
+                style={{
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '8px',
+                  padding: '0.75rem',
+                  marginTop: '0.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#b91c1c', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <ShieldAlert size={13} />
+                    <span>Justificativa do Supervisor (Aprovação com Baixo Alinhamento Hoshin):</span>
+                  </div>
+                  {action.triagedBy && (
+                    <span style={{ fontSize: '0.65rem', color: '#64748b' }}>
+                      Aprovado por {action.triagedBy}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, color: '#1e293b', fontSize: '0.78125rem', lineHeight: 1.45 }}>
+                  "{action.supervisorAdherenceJustification}"
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

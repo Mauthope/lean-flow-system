@@ -5877,6 +5877,36 @@ export default function AdminProjectDetailPage() {
               </div>
             )}
 
+            {/* Justificativa de Aderência do Supervisor na Triagem */}
+            {action.supervisorAdherenceJustification && (
+              <div
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.45rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#f87171', fontSize: '0.8rem', fontWeight: 800 }}>
+                    <ShieldAlert size={15} />
+                    <span>Justificativa de Aderência do Supervisor (Aprovação com Baixo Alinhamento Hoshin):</span>
+                  </div>
+                  {action.triagedBy && (
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      Aprovado por {action.triagedBy} {action.triagedAt ? `em ${formatDate(action.triagedAt)}` : ''}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, color: '#f1f5f9', fontSize: '0.84375rem', lineHeight: 1.5 }}>
+                  "{action.supervisorAdherenceJustification}"
+                </p>
+              </div>
+            )}
+
             {/* Sugestões do Sensei para Elevar o Percentual */}
             {action.senseiStrategicAudit?.improvementSuggestions && action.senseiStrategicAudit.improvementSuggestions.length > 0 && (
               <div

@@ -3,6 +3,35 @@
 **Autor e Engenheiro Principal:** Mauricio Grigol  
 **Organização:** Grupo Vaccaro / Rafitec S.A.
 
+## [2026-10-14] Auto-Enquadramento Lean Assessment pelo Sensei, Parecer Explicativo de Aderência ao Hoshin Kanri e Justificativa Obrigatória do Supervisor
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Implementação na triagem (`/admin/triagem`) do auto-enquadramento inteligente dos eixos do Lean Assessment via Sensei IA, cálculo de convergência e geração de parecer explicativo analítico de aderência estratégica ao Hoshin Kanri, e trava de segurança Poka-Yoke com justificativa obrigatória do supervisor (mínimo 15 caracteres) para aprovação de demandas com score inferior a 50%, com rastreabilidade auditável na timeline e persistência integral no Supabase Cloud.
+
+### 1. Diagnóstico e Necessidade Operacional
+- **Auto-Enquadramento do Lean Assessment:** Anteriormente, a triagem exigia seleção manual dos eixos de maturidade Lean (`assessmentDimensionIds`), gerando inconsistências de categorização e atrito para o supervisor ao analisar novas ideias e demandas do chão de fábrica.
+- **Transparência no Alinhamento com o Hoshin Kanri:** O percentual de alinhamento com os objetivos estratégicos anuais carecia de fundamentação analítica visível. O usuário necessitava de um texto explicativo minucioso gerado por IA detalhando exatamente o porquê daquele valor percentual ter sido atribuído (quais palavras-chave, metas e restrições foram consideradas).
+- **Governança e Trava Poka-Yoke para Baixa Aderência (< 50%):** Projetos com alinhamento estratégico baixo ou nulo não devem ser aprovados no Kanban sem uma justificativa formal registrada pelo supervisor, garantindo conformidade com as diretrizes do Grupo Vaccaro e do comitê Lean.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Modelagem de Tipos e Persistência (`src/lib/types.ts` & `src/services/dataService.ts`):**
+  - Adicionado o campo `supervisorAdherenceJustification?: string;` à interface `LeanAction`.
+  - Atualizada a função `triageDemand`: persiste `supervisorAdherenceJustification` e `senseiStrategicAudit` nos dados da ação e registra automaticamente uma nota de auditoria com carimbo na timeline do projeto (`action.notes`).
+  - Sincronização cloud bidirecional (`persistActionToCloud`, `syncActionsFromCloud` e `syncActionByIdFromCloud`): inclui `supervisorAdherenceJustification` e `assessmentDimensionIds` com mapeamento resiliente no Supabase Cloud e fallback no `localStorage`.
+- **Serviço de Inteligência Artificial (`src/services/geminiService.ts`):**
+  - Implementadas as funções `evaluateDemandTriageWithSensei` e `getLocalFallbackDemandTriage` sob a interface `SenseiTriageEnrichment`.
+  - Mapeamento heurístico avançado e neural conectando descrições das ideias aos 6 eixos do Lean Assessment (`estabilidade_5s`, `trabalho_padronizado`, `fluxo_jit`, `qualidade_poka_yoke`, `tpm_oee`, `cultura_kaizen`) e aos 8 desperdícios Lean (`talento_subutilizado`, `espera`, `defeitos`, etc.).
+  - Geração de parecer explicativo analítico: descreve os fatores que elevaram a nota (convergência direta com o objetivo selecionado) e as restrições que limitaram o percentual, acompanhado de dicas práticas para aumentar a sinergia.
+- **Interface Modal de Triagem (`src/components/forms/TriageModal.tsx`):**
+  - Estratégia de hidratação em duas fases: execução heurística imediata em milissegundos seguida de enriquecimento neural assíncrono via API do Sensei (`/api/ai/sensei`), garantindo fluidez sem travamento de tela.
+  - Exibição de badge visual de indicação com ícone Sparkles nos pilares do Lean Assessment recomendados pelo Sensei, permitindo alternância e ajuste fino pelo supervisor.
+  - Recálculo dinâmico da aderência e do parecer explicativo ao alterar o Objetivo Estratégico no formulário.
+  - Painel de Convergência Hoshin Kanri com régua percentual colorida e parecer analítico.
+  - Trava de conformidade: se a aderência for inferior a 50%, exibe alerta institucional e torna obrigatório o preenchimento de `supervisorAdherenceJustification` (mínimo de 15 caracteres), bloqueando o botão de aprovação em caso de omissão.
+- **Visualização Executiva e Auditoria (`src/app/admin/projetos/[id]/page.tsx` & `src/components/kanban/ActionDetailModal.tsx`):**
+  - Integrado card com ícone de escudo (`ShieldAlert`), percentual de alinhamento, parecer explicativo e a justificativa fornecida pelo supervisor nos detalhes do projeto e no modal do Kanban.
+
+---
+
 ## [2026-10-14] Correção de Persistência Cloud de Memória de Cálculo no Check e Resolução de Acesso Seguro por Token na Controladoria
 **Agentes Responsáveis:** `security-expert`, `cleancod`, `chronicler`  
 **Escopo:** Diagnóstico e resolução do descompasso de persistência que impedia o salvamento e visualização de anexos de ganhos (Check) por outros usuários, e correção da rota de auditoria por token da Controladoria eliminando a falha de "link inválido ou expirado" para auditores externos.
