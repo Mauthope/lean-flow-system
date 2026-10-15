@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { Sector, SectorLeanAssessment, LeanAssessmentDimensionId, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
+import { Sector, SectorLeanAssessment, LeanAssessmentDimensionId, LeanAssessmentCriterion, ASSESSMENT_DIMENSIONS_CONFIG } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { LeanRadarChart, RadarDataPoint } from '@/components/charts/LeanRadarChart';
 import { SectorAssessmentModal } from '@/components/assessment/SectorAssessmentModal';
@@ -26,6 +26,8 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   ShieldCheck,
+  Shield,
+  Users,
   Calculator,
   ArrowUpRight,
   Clock,
@@ -200,7 +202,7 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
       { id: 'fluxo_jit', label: 'Fluxo Contínuo & JIT (Kanban)', short: 'Fluxo & Kanban' },
       { id: 'qualidade_poka_yoke', label: 'Qualidade na Origem (Poka-Yoke)', short: 'Qualidade & Poka-Yoke' },
       { id: 'tpm_oee', label: 'Manutenção Produtiva Total (TPM & OEE)', short: 'TPM & OEE' },
-      { id: 'cultura_kaizen', label: 'Cultura Kaizen & Pessoas', short: 'Cultura Kaizen' },
+      { id: 'cultura_kaizen', label: 'Segurança, Pessoas & Cultura Kaizen', short: 'Segurança & Pessoas' },
     ];
 
     const prev = comparisonData?.previousAssessment;
@@ -213,6 +215,17 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
       previousValue: prev ? prev.dimensions[dim.id] : undefined,
     }));
   }, [currentAssessment, comparisonData]);
+
+  // Mapa com critérios padrão para enriquecimento retrocompatível com badges SQCDP
+  const defaultCriteriaMap = useMemo(() => {
+    const map = new Map<string, LeanAssessmentCriterion>();
+    dataService.getDefaultLeanAssessmentDimensions().forEach((d) => {
+      d.criteria.forEach((c) => {
+        map.set(c.id, c);
+      });
+    });
+    return map;
+  }, []);
 
   const handlePrintPDF = () => {
     if (typeof window !== 'undefined') {
@@ -1205,6 +1218,218 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
         </div>
       )}
 
+      {/* 3.5. Matriz de Alinhamento SQCDP: Pilares de Segurança & Pessoas no Lean Assessment */}
+      <div
+        className="card"
+        style={{
+          padding: '1.25rem 1.5rem',
+          backgroundColor: '#090d16',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ShieldCheck size={20} color="#f87171" />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                  Alinhamento SQCDP: Pilares de Segurança & Pessoas no Gemba
+                </h3>
+                <span
+                  style={{
+                    fontSize: '0.675rem',
+                    fontWeight: 800,
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    color: '#fca5a5',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    padding: '0.12rem 0.5rem',
+                    borderRadius: '12px',
+                  }}
+                >
+                  Segurança (S) • Pessoas (P)
+                </span>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
+                Auditoria de padrões: como o Lean Flow avalia integridade física, rotas seguras, ergonomia, clima operacional e autonomia da equipe.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                color: '#cbd5e1',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                padding: '0.25rem 0.65rem',
+                borderRadius: '6px',
+              }}
+            >
+              Padrão Toyota (TPS / SQCDP)
+            </span>
+          </div>
+        </div>
+
+        {/* Grade com os 2 Pilares em Destaque */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1rem' }}>
+          {/* Coluna 1: Segurança (Safety - S) */}
+          <div
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.03)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '10px',
+              padding: '1rem 1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(239, 68, 68, 0.15)', paddingBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <ShieldCheck size={16} color="#f87171" />
+                <strong style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
+                  Pilar Segurança (Safety — S)
+                </strong>
+              </div>
+              <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#fca5a5', backgroundColor: 'rgba(239, 68, 68, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                5 Critérios Mestres
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.725rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Segurança Vital & Parada Imediata:</strong> Autoridade plena e imediata do operador em paralisar máquina/posto diante de perigo iminente (item kz_c1).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Rotina Diária Gemba com DDS:</strong> Alinhamento matinal de 10 min com DDS de Segurança e análise preventiva de quase-acidentes (item kz_c4).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>5S, Rotas de Fuga & Hidrantes:</strong> Demarcação visual clara, passagens desobstruídas, extintores e saídas de emergência 100% livres (item 5s_c2).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Ergonomia & Iluminação dos Postos:</strong> Redução de esforço repetitivo, planos de trabalho ergonômicos e luminosidade adequada (item 5s_c6).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Instruções de Trabalho com EPIs:</strong> Folhas de Processo Padronizado (POPs) com destaque visual rigoroso de riscos e EPIs obrigatórios (item tp_c1).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Coluna 2: Pessoas & Moral (People / Morale - P) */}
+          <div
+            style={{
+              backgroundColor: 'rgba(168, 85, 247, 0.03)',
+              border: '1px solid rgba(168, 85, 247, 0.2)',
+              borderRadius: '10px',
+              padding: '1rem 1.15rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(168, 85, 247, 0.15)', paddingBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Users size={16} color="#c084fc" />
+                <strong style={{ fontSize: '0.85rem', color: '#d8b4fe' }}>
+                  Pilar Pessoas & Moral (People / Morale — P)
+                </strong>
+              </div>
+              <span style={{ fontSize: '0.675rem', fontWeight: 800, color: '#d8b4fe', backgroundColor: 'rgba(168, 85, 247, 0.15)', padding: '0.1rem 0.45rem', borderRadius: '4px' }}>
+                6 Critérios Mestres
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.725rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Clima, Moral & Absenteísmo:</strong> Indicadores de faltas, rotatividade e clima acompanhados com acolhimento e escuta ativa da liderança (item kz_c6).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Matriz de Polivalência ILUO:</strong> Gestão visual de habilidades em cada posto e plano estruturado de capacitação contínua (item kz_c7).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Ideias da Base & Kaizen Ágil:</strong> Canal aberto onde os operadores propõem e implementam melhorias de baixo custo no posto (item kz_c2).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Reconhecimento & Mérito Operacional:</strong> Valorização pública e celebração das equipes que homologam projetos de melhoria (item kz_c5).
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', color: '#e2e8f0' }}>
+                <Check size={13} color="#c084fc" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: '#ffffff' }}>Autocontrole & Habilidades TPM:</strong> Operador habilitado no princípio Jidoka de qualidade na origem e manutenção autônoma LIP (itens q_c5 e tpm_c6).
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rodapé explicativo para Controladoria e Gestores */}
+        <div
+          style={{
+            backgroundColor: 'rgba(34, 211, 238, 0.04)',
+            border: '1px solid rgba(34, 211, 238, 0.2)',
+            borderRadius: '8px',
+            padding: '0.65rem 0.85rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.55rem',
+            fontSize: '0.725rem',
+            color: '#cbd5e1',
+          }}
+        >
+          <Lightbulb size={16} color="#22d3ee" style={{ flexShrink: 0 }} />
+          <span>
+            <strong style={{ color: '#22d3ee' }}>Esclarecimento Metodológico: </strong>
+            No Sistema Toyota de Produção, Segurança e Pessoas não operam em &quot;silos isolados&quot; — elas sustentam transversalmente os processos de 5S, Trabalho Padronizado, Qualidade e Manutenção. A Dimensão 6 foi formalizada como <strong style={{ color: '#ffffff' }}>Segurança, Pessoas & Cultura Kaizen</strong> para conferir total transparência e responder aos questionamentos de auditorias e controladoria.
+          </span>
+        </div>
+      </div>
+
       {/* 4. Tabela de Comparativo de Evolução das 6 Dimensões */}
       <div
         className="card"
@@ -1886,49 +2111,98 @@ export const SectorAssessmentDetailView: React.FC<SectorAssessmentDetailViewProp
                               </div>
 
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
-                                {criteria.map((crit, cIdx) => (
-                                  <div
-                                    key={crit.id || cIdx}
-                                    style={{
-                                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                                      borderRadius: '8px',
-                                      padding: '0.75rem',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '0.45rem',
-                                    }}
-                                  >
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                                      <div>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
-                                          Item {cIdx + 1} • Peso {crit.weight}
-                                        </span>
-                                        <strong style={{ display: 'block', fontSize: '0.8rem', color: '#ffffff', marginTop: '0.2rem' }}>
-                                          {crit.title}
-                                        </strong>
-                                      </div>
-                                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: crit.score >= 4 ? '#34d399' : crit.score >= 3 ? '#fbbf24' : '#f87171', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                                        Nota {crit.score}/5
-                                      </span>
-                                    </div>
+                                {criteria.map((crit, cIdx) => {
+                                  const defaultCrit = defaultCriteriaMap.get(crit.id);
+                                  const pillar = crit.sqcdpPillar || defaultCrit?.sqcdpPillar;
+                                  const pillarLabel = crit.sqcdpLabel || defaultCrit?.sqcdpLabel;
 
-                                    <div style={{ fontSize: '0.725rem', color: '#fef08a', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '0.4rem 0.55rem', borderRadius: '6px', lineHeight: 1.35 }}>
-                                      <strong>Gemba: </strong>{crit.gembaVerificationGuide}
-                                    </div>
-
-                                    {crit.checkpoints && crit.checkpoints.length > 0 && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
-                                        {crit.checkpoints.map((chk, chkI) => (
-                                          <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
-                                            <Check size={11} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                            <span>{chk}</span>
+                                  return (
+                                    <div
+                                      key={crit.id || cIdx}
+                                      style={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                                        borderRadius: '8px',
+                                        padding: '0.75rem',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.45rem',
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                        <div>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', backgroundColor: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                              Item {cIdx + 1} • Peso {crit.weight}
+                                            </span>
+                                            {pillar && (
+                                              <span
+                                                style={{
+                                                  fontSize: '0.62rem',
+                                                  fontWeight: 800,
+                                                  padding: '0.08rem 0.4rem',
+                                                  borderRadius: '4px',
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '0.25rem',
+                                                  backgroundColor: pillar === 'S'
+                                                    ? 'rgba(239, 68, 68, 0.15)'
+                                                    : pillar === 'P'
+                                                    ? 'rgba(168, 85, 247, 0.15)'
+                                                    : pillar === 'Q'
+                                                    ? 'rgba(59, 130, 246, 0.15)'
+                                                    : 'rgba(255, 255, 255, 0.08)',
+                                                  color: pillar === 'S'
+                                                    ? '#fca5a5'
+                                                    : pillar === 'P'
+                                                    ? '#d8b4fe'
+                                                    : pillar === 'Q'
+                                                    ? '#93c5fd'
+                                                    : '#cbd5e1',
+                                                  border: `1px solid ${
+                                                    pillar === 'S'
+                                                      ? 'rgba(239, 68, 68, 0.3)'
+                                                      : pillar === 'P'
+                                                      ? 'rgba(168, 85, 247, 0.3)'
+                                                      : 'rgba(255, 255, 255, 0.12)'
+                                                  }`,
+                                                }}
+                                              >
+                                                {pillar === 'S' && <ShieldCheck size={10} />}
+                                                {pillar === 'P' && <Users size={10} />}
+                                                <span>
+                                                  {pillar === 'S' ? 'SEGURANÇA' : pillar === 'P' ? 'PESSOAS' : `SQCDP: ${pillar}`}
+                                                  {pillarLabel ? ` • ${pillarLabel}` : ''}
+                                                </span>
+                                              </span>
+                                            )}
                                           </div>
-                                        ))}
+                                          <strong style={{ display: 'block', fontSize: '0.8rem', color: '#ffffff', marginTop: '0.2rem' }}>
+                                            {crit.title}
+                                          </strong>
+                                        </div>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: crit.score >= 4 ? '#34d399' : crit.score >= 3 ? '#fbbf24' : '#f87171', backgroundColor: 'rgba(255, 255, 255, 0.04)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                          Nota {crit.score}/5
+                                        </span>
                                       </div>
-                                    )}
-                                  </div>
-                                ))}
+
+                                      <div style={{ fontSize: '0.725rem', color: '#fef08a', backgroundColor: 'rgba(251, 191, 36, 0.06)', padding: '0.4rem 0.55rem', borderRadius: '6px', lineHeight: 1.35 }}>
+                                        <strong>Gemba: </strong>{crit.gembaVerificationGuide}
+                                      </div>
+
+                                      {crit.checkpoints && crit.checkpoints.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.2rem' }}>
+                                          {crit.checkpoints.map((chk, chkI) => (
+                                            <div key={chkI} style={{ fontSize: '0.685rem', color: '#94a3b8', display: 'flex', alignItems: 'flex-start', gap: '0.35rem', lineHeight: 1.3 }}>
+                                              <Check size={11} color="#22d3ee" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                              <span>{chk}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>

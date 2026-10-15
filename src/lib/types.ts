@@ -989,11 +989,11 @@ export const ASSESSMENT_DIMENSIONS_CONFIG: Record<
     description: 'Manutenção autônoma, rotinas LIP e eliminação de microparadas',
   },
   cultura_kaizen: {
-    name: 'Cultura Kaizen & Desenvolvimento de Pessoas',
-    shortName: 'Cultura Kaizen',
+    name: 'Segurança, Pessoas & Cultura Kaizen',
+    shortName: 'Segurança & Pessoas',
     color: '#f97316',
     icon: '',
-    description: 'Engajamento da equipe, banco de ideias do chão de fábrica e melhoria contínua',
+    description: 'Liderança ativa em segurança, gestão de pessoas, absenteísmo, TWI, reconhecimento e Kaizen',
   },
 };
 
@@ -1008,6 +1008,8 @@ export interface LeanAssessmentCriterion {
   checkpoints?: string[]; // Checkpoints práticos de campo derivados da matriz TPS
   observations?: string;
   evidencePhotoUrl?: string;
+  sqcdpPillar?: 'S' | 'Q' | 'C' | 'D' | 'P'; // Classificação SQCDP (S=Segurança, P=Pessoas, Q=Qualidade, C=Custo, D=Entrega)
+  sqcdpLabel?: string; // Rótulo descritivo da tag SQCDP (ex: "Segurança no Gemba", "Gestão de Pessoas & Clima")
 }
 
 export interface LeanAssessmentDimension {

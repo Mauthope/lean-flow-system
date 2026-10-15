@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Sector, SectorLeanAssessment, LeanAssessmentDimension, LeanAssessmentDimensionId } from '@/lib/types';
 import { dataService } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
-import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck, ListFilter, Layers, Trophy, BarChart3, List, Scale, Check, Keyboard, Sliders } from 'lucide-react';
+import { X, CheckCircle2, ChevronRight, ChevronLeft, Award, Sparkles, HelpCircle, AlertCircle, ShieldCheck, Shield, Users, ListFilter, Layers, Trophy, BarChart3, List, Scale, Check, Keyboard, Sliders } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { LeanAssessmentMethodologyDefense } from '@/components/assessment/LeanAssessmentMethodologyDefense';
 
@@ -618,9 +618,48 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
-                              Item {cIdx + 1} • Peso {criterion.weight}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>
+                                Item {cIdx + 1} • Peso {criterion.weight}
+                              </span>
+                              {criterion.sqcdpPillar && (
+                                <span
+                                  style={{
+                                    fontSize: '0.62rem',
+                                    fontWeight: 800,
+                                    padding: '0.05rem 0.35rem',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    backgroundColor: criterion.sqcdpPillar === 'S'
+                                      ? 'rgba(239, 68, 68, 0.15)'
+                                      : criterion.sqcdpPillar === 'P'
+                                      ? 'rgba(168, 85, 247, 0.15)'
+                                      : 'rgba(255, 255, 255, 0.08)',
+                                    color: criterion.sqcdpPillar === 'S'
+                                      ? '#fca5a5'
+                                      : criterion.sqcdpPillar === 'P'
+                                      ? '#d8b4fe'
+                                      : '#cbd5e1',
+                                    border: `1px solid ${
+                                      criterion.sqcdpPillar === 'S'
+                                        ? 'rgba(239, 68, 68, 0.3)'
+                                        : criterion.sqcdpPillar === 'P'
+                                        ? 'rgba(168, 85, 247, 0.3)'
+                                        : 'rgba(255, 255, 255, 0.12)'
+                                    }`,
+                                  }}
+                                >
+                                  {criterion.sqcdpPillar === 'S' && <ShieldCheck size={10} />}
+                                  {criterion.sqcdpPillar === 'P' && <Users size={10} />}
+                                  <span>
+                                    {criterion.sqcdpPillar === 'S' ? 'SEGURANÇA' : criterion.sqcdpPillar === 'P' ? 'PESSOAS' : criterion.sqcdpPillar}
+                                    {criterion.sqcdpLabel ? ` • ${criterion.sqcdpLabel}` : ''}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
                             <h5 style={{ margin: '0.1rem 0', fontSize: '0.875rem', fontWeight: 800, color: '#ffffff' }}>
                               {criterion.title}
                             </h5>
@@ -828,7 +867,7 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                     <span
                       style={{
                         fontSize: '0.65rem',
@@ -858,6 +897,52 @@ export const SectorAssessmentModal: React.FC<SectorAssessmentModalProps> = ({
                     >
                       <Scale size={12} /> Peso {currentCriterion.weight} ({currentCriterion.weight === 3 ? 'Vital' : 'Médio'})
                     </span>
+
+                    {currentCriterion.sqcdpPillar && (
+                      <span
+                        style={{
+                          fontSize: '0.65rem',
+                          fontWeight: 800,
+                          padding: '0.1rem 0.45rem',
+                          borderRadius: '4px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          backgroundColor: currentCriterion.sqcdpPillar === 'S'
+                            ? 'rgba(239, 68, 68, 0.15)'
+                            : currentCriterion.sqcdpPillar === 'P'
+                            ? 'rgba(168, 85, 247, 0.15)'
+                            : currentCriterion.sqcdpPillar === 'Q'
+                            ? 'rgba(59, 130, 246, 0.15)'
+                            : 'rgba(255, 255, 255, 0.08)',
+                          color: currentCriterion.sqcdpPillar === 'S'
+                            ? '#fca5a5'
+                            : currentCriterion.sqcdpPillar === 'P'
+                            ? '#d8b4fe'
+                            : currentCriterion.sqcdpPillar === 'Q'
+                            ? '#93c5fd'
+                            : '#cbd5e1',
+                          border: `1px solid ${
+                            currentCriterion.sqcdpPillar === 'S'
+                              ? 'rgba(239, 68, 68, 0.35)'
+                              : currentCriterion.sqcdpPillar === 'P'
+                              ? 'rgba(168, 85, 247, 0.35)'
+                              : 'rgba(255, 255, 255, 0.15)'
+                          }`,
+                        }}
+                      >
+                        {currentCriterion.sqcdpPillar === 'S' && <ShieldCheck size={11} />}
+                        {currentCriterion.sqcdpPillar === 'P' && <Users size={11} />}
+                        <span>
+                          {currentCriterion.sqcdpPillar === 'S' && 'SEGURANÇA (S)'}
+                          {currentCriterion.sqcdpPillar === 'P' && 'PESSOAS & MORAL (P)'}
+                          {currentCriterion.sqcdpPillar === 'Q' && 'QUALIDADE (Q)'}
+                          {currentCriterion.sqcdpPillar === 'C' && 'CUSTO (C)'}
+                          {currentCriterion.sqcdpPillar === 'D' && 'ENTREGA (D)'}
+                          {currentCriterion.sqcdpLabel ? ` • ${currentCriterion.sqcdpLabel}` : ''}
+                        </span>
+                      </span>
+                    )}
                   </div>
 
                   <h3 style={{ margin: '0.2rem 0', fontSize: '1.05rem', color: '#ffffff', fontWeight: 800, lineHeight: 1.35 }}>

@@ -5623,7 +5623,7 @@ export const dataService = {
       { id: 'fluxo_jit', name: 'Fluxo Contínuo & JIT' },
       { id: 'qualidade_poka_yoke', name: 'Qualidade & Poka-Yoke' },
       { id: 'tpm_oee', name: 'TPM & Confiabilidade' },
-      { id: 'cultura_kaizen', name: 'Cultura Kaizen & Pessoas' },
+      { id: 'cultura_kaizen', name: 'Segurança, Pessoas & Cultura Kaizen' },
     ];
 
     const dimensionsMetrics: DimensionEvolutionMetric[] = dimensionKeys.map((dim) => {
@@ -5726,6 +5726,8 @@ export const dataService = {
             gembaVerificationGuide: 'Observar se o operador alcança qualquer ferramenta essencial sem dar mais de 2 passos e se cada item tem seu contorno visual.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Ergonomia no Posto',
             checkpoints: [
               'Todas as ferramentas, equipamentos, gabaritos, documentação e peças estão no seu devido lugar.',
               'Toda a demarcação de piso para paletes, lixeiras e carrinhos está padronizada e visível.',
@@ -5754,6 +5756,8 @@ export const dataService = {
             gembaVerificationGuide: 'Checar o quadro de auditorias 5S da célula e constatar se as não-conformidades da última rodada foram tratadas no prazo.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Autodisciplina 5S',
             checkpoints: [
               'Supervisores e gerentes realizam auditorias regulares (Gemba Walk) com plano de ação evidente.',
               'Todos os funcionários têm conhecimento, formação de sensibilização e aplicam o 5S no dia a dia.',
@@ -5782,6 +5786,8 @@ export const dataService = {
             gembaVerificationGuide: 'Checar o quadro de produção hora a hora da célula: verificar se as medições das últimas 2 horas foram registradas pelo operador.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Segurança & Gestão SQCDP',
             checkpoints: [
               'Existem quadros visuais na área onde são informadas as métricas de segurança, qualidade e produção.',
               'A padronização das atividades e metas da produção estão visíveis no campo de trabalho.',
@@ -5806,6 +5812,8 @@ export const dataService = {
             gembaVerificationGuide: 'Verificar se o POP fixado no posto é visual, se foi elaborado com participação dos operadores e se detalha segurança, qualidade e técnica.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Segurança & Qualidade no POP',
             checkpoints: [
               'Todos os processos que exigem intervenção do operador possuem folhas de trabalho padronizado.',
               'O Trabalho Padronizado é apoiado por Folhas com fotos reais para segurança, qualidade e técnica.',
@@ -5820,6 +5828,8 @@ export const dataService = {
             gembaVerificationGuide: 'Observar 3 ciclos completos do operador: verificar se o trabalho foi projetado para cortar movimentações e manipulações extras.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Ergonomia no Posto (NR-17)',
             checkpoints: [
               'Etapas de valor agregado e que não agregam valor são identificadas na documentação do Trabalho Padrão.',
               'Desperdícios de espera, transporte e movimentos desnecessários são eliminados do ciclo.',
@@ -5862,6 +5872,8 @@ export const dataService = {
             gembaVerificationGuide: 'Perguntar ao operador mais novo da célula como ele foi treinado e verificar se há registro formal do método TWI na matriz de habilidades.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Capacitação TWI',
             checkpoints: [
               'Treinamento de todos os recém-chegados é realizado usando o Trabalho Padrão estruturado (TWI).',
               'Operador só assume operação solo após atingir o nível necessário de competência e qualidade.',
@@ -5970,6 +5982,8 @@ export const dataService = {
             gembaVerificationGuide: 'Analisar o caminho percorrido pela peça: verificar se o layout é compacto, seguro e permite resposta imediata a problemas.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Ergonomia no Layout',
             checkpoints: [
               'O layout promove o fluxo contínuo de produtos e a produção em pequenos lotes.',
               'Máquinas dispostas em layout celular compacto promovendo lotação flexível da equipe.',
@@ -6008,6 +6022,8 @@ export const dataService = {
             gembaVerificationGuide: 'Testar o botão/cordão Andon do posto: verificar se a torre luminosa acende e se o sinal sonoro é audível na célula.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Segurança & Parada Andon',
             checkpoints: [
               'Botões ou cordões Andon localizados junto aos operadores de produção em todas as estações.',
               'Sinais visuais e/ou sonoros atribuídos a cada máquina/grupo indicando o status operacional.',
@@ -6022,6 +6038,8 @@ export const dataService = {
             gembaVerificationGuide: 'Perguntar ao operador o que acontece ao acionar o Andon: quem responde, em quantos minutos e qual a contramedida imediata.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Cadeia de Ajuda',
             checkpoints: [
               'Cadeia de ajuda clara e estruturada: o operador sabe exatamente quem é o seu apoio imediato.',
               'Membros de suporte dedicados respondem e avaliam os problemas no Gemba em tempo hábil (<3 min).',
@@ -6062,6 +6080,8 @@ export const dataService = {
             title: 'Princípio do Autocontrole (Zero Defeitos Repassados)',
             description: 'O operador não aceita defeitos do processo anterior, não produz desvios e não repassa não-conformidades para a etapa seguinte.',
             gembaVerificationGuide: 'Verificar se os instrumentos de medição ou gabaritos de bancada são utilizados pelo operador e se há peças retrabalhadas sem identificação.',
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Autocontrole',
             weight: 3,
             score: 3,
             checkpoints: [
@@ -6170,6 +6190,8 @@ export const dataService = {
             title: 'Capacitação Técnica em TPM & Modos de Falha',
             description: 'Matriz de habilidades de manutenção autônoma ativa, com treinamentos práticos em resolução de problemas de equipamento.',
             gembaVerificationGuide: 'Checar a matriz de competências TPM dos operadores: verificar quem está habilitado para troca de peças de desgaste e ajustes finos.',
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Habilidades TPM',
             weight: 2,
             score: 3,
             checkpoints: [
@@ -6182,8 +6204,8 @@ export const dataService = {
       },
       {
         id: 'cultura_kaizen',
-        name: 'Cultura Kaizen, Resolução Científica & Pessoas',
-        shortName: 'Cultura Kaizen',
+        name: 'Segurança, Pessoas & Cultura Kaizen',
+        shortName: 'Segurança & Pessoas',
         description: 'Liderança ativa em segurança, canal de ideias, 5 Porquês, reunião diária de 10 min, reconhecimento e matriz de polivalência.',
         score: 60,
         level: 3,
@@ -6196,6 +6218,8 @@ export const dataService = {
             gembaVerificationGuide: 'Conversar com o operador e checar se a análise de risco é feita na prática e se os desvios de segurança relatados geram ação rápida.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Liderança Ativa em Segurança',
             checkpoints: [
               'Gestores demonstram liderança ativa em segurança no chão de fábrica e apoiam ações preventivas.',
               'Riscos e condições inseguras são identificados e neutralizados antes da execução das atividades.',
@@ -6210,6 +6234,8 @@ export const dataService = {
             gembaVerificationGuide: 'Checar o painel de ideias da célula: verificar quantas propostas foram implementadas pelos operadores nos últimos 30 dias.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Autonomia Kaizen',
             checkpoints: [
               'Equipes operacionais têm autonomia e canal aberto para propor e implementar melhorias.',
               'Empresa estimula e sustenta uma cultura ativa de envio e teste de ideias Kaizen.',
@@ -6224,6 +6250,8 @@ export const dataService = {
             gembaVerificationGuide: 'Analisar o último relatório de anomalia da célula: conferir se a análise passou pelos 5 níveis do "Por quê" ou parou no sintoma.',
             weight: 3,
             score: 3,
+            sqcdpPillar: 'Q',
+            sqcdpLabel: 'Solução Científica de Problemas',
             checkpoints: [
               'Líderes e operadores utilizam a ferramenta dos 5 Porquês para investigar desvios do turno.',
               'Estrutura formal de resolução de problemas implantada no Gemba para anomalias reincidentes.',
@@ -6238,6 +6266,8 @@ export const dataService = {
             gembaVerificationGuide: 'Presenciar a reunião diária de 10 minutos da equipe: verificar se há participação ativa dos operadores e foco em ações de 24 horas.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'S',
+            sqcdpLabel: 'Segurança no Alinhamento Diário',
             checkpoints: [
               'Reunião diária de 10 a 15 minutos realizada em pé no Gemba junto ao quadro visual da linha.',
               'Resultados do turno anterior (segurança, qualidade, produção) revisados com a equipe.',
@@ -6252,6 +6282,8 @@ export const dataService = {
             gembaVerificationGuide: 'Verificar no quadro de gestão o mural de destaques Kaizen com fotos dos colaboradores e o impacto financeiro/operacional gerado.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Reconhecimento',
             checkpoints: [
               'A empresa reconhece e promove publicamente os colaboradores que lideram melhorias.',
               'Apresentações periódicas de projetos Kaizen com a participação ativa da diretoria e gerência.',
@@ -6266,6 +6298,8 @@ export const dataService = {
             gembaVerificationGuide: 'Checar os índices de frequência do setor e verificar as ações de acolhimento para novos contratados e diálogo com os operadores.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Gestão de Pessoas & Clima',
             checkpoints: [
               'Indicadores de rotatividade e absenteísmo são monitorados regularmente com metas definidas.',
               'Gestão desenvolve programa acolhedor para integração, treinamento e escuta de novos colaboradores.',
@@ -6280,6 +6314,8 @@ export const dataService = {
             gembaVerificationGuide: 'Checar a matriz de polivalência da máquina crítica: certificar-se de que há pelo menos 2 operadores aptos para cada posto vital.',
             weight: 2,
             score: 3,
+            sqcdpPillar: 'P',
+            sqcdpLabel: 'Pessoas & Matriz de Polivalência',
             checkpoints: [
               'Existe plano de sucessão ou substituição estruturado para funções críticas da célula.',
               'Procedimentos de segurança e qualidade mantidos mesmo na ausência de pessoas-chave.',
@@ -6449,30 +6485,31 @@ export const dataService = {
         },
       },
       cultura_kaizen: {
-        name: 'Cultura Kaizen, Resolução Científica & Pessoas',
+        name: 'Segurança, Pessoas & Cultura Kaizen',
         project: {
-          title: `Ciclo Semanal de Kaizen Rápido & 5 Porquês - ${sectorName}`,
-          desc: 'Estruturar reuniões de 15 minutos na linha com os operadores para solucionar desvios com o método 5 Porquês.',
-          target: 'Cultura Kaizen & Pessoas',
-          benefits: 'Aumento no engajamento operacional e geração de pelo menos 6 melhorias de baixo custo por mês.',
-          executiveSummary: `Baixa participação operacional nas iniciativas de melhoria contínua no setor ${sectorName}; problemas do dia a dia são normalizados sem aplicação de metodologia de causa raiz.`,
+          title: `Rotina Diária Gemba de Segurança & Kaizen Rápido - ${sectorName}`,
+          desc: 'Estruturar reuniões de 10 minutos no Gemba com foco em Segurança zero acidentes, 5 Porquês e engajamento da equipe.',
+          target: 'Segurança, Pessoas & Cultura Kaizen',
+          benefits: 'Zero acidentes no setor, elevação do clima e engajamento com pelo menos 6 melhorias de baixo custo por mês.',
+          executiveSummary: `Baixa participação operacional nas iniciativas de segurança e melhoria contínua no setor ${sectorName}; problemas do dia a dia são normalizados sem aplicação de metodologia de causa raiz.`,
           criticalPoints: [
+            'Quase-acidentes e desvios de segurança ou ergonomia não tratados sistematicamente com a equipe.',
             'Ideias dos operadores do Gemba não são capturadas, avaliadas ou testadas de forma ágil.',
             'Tratamento superficial de desvios operacionais com soluções paleativas ("apagar incêndios").',
             'Pouca visibilidade dos sucessos e ausência de reconhecimento aos times que implementam melhorias.',
           ],
           rootCauses: [
-            'Ausência de reuniões diárias curtas de alinhamento operacional junto ao quadro de gestão à vista.',
+            'Ausência de reuniões diárias curtas de alinhamento operacional (DDS/Kaizen) junto ao quadro de gestão à vista.',
             'Falta de treinamento prático dos líderes de célula na ferramenta dos 5 Porquês e no ciclo PDCA.',
           ],
           actionableSuggestions: [
-            'Implantar a Reunião Diária de 10 minutos no Gemba para discutir desvios das últimas 24 horas.',
+            'Implantar a Reunião Diária de 10 minutos no Gemba iniciando com verificação de Segurança e 5S.',
             'Capacitar líderes e operadores no uso dos 5 Porquês para investigar anomalias antes de encerrar o turno.',
             'Estimular a submissão de ideias no Canal Kaizen com meta de pelo menos 2 ideias implantadas/operador/mês.',
             'Criar painel de destaque com fotos dos operadores e o impacto financeiro dos Kaizens homologados.',
           ],
-          estimatedMaturityJump: 'De nível crítico para ~82% (+26 pontos de maturidade)',
-          projectedCostAvoidedMonthly: 16500,
+          estimatedMaturityJump: 'De nível crítico para ~85% (+30 pontos de maturidade)',
+          projectedCostAvoidedMonthly: 22000,
         },
       },
     };

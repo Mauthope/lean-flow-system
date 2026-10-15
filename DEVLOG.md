@@ -24,6 +24,40 @@
 | **Outubro / 2026** | 10 | 98 | **48,0h** | 71,2h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual, Triagem e Concorrência Multi-Usuário. |
 | **TOTAL GERAL** | **24** | **264** | **105,4h** | **139,4h** | **Software Industrial Completo em Produção** |
 
+## [2026-10-15] Destaque dos Pilares de Segurança e Pessoas no Lean Assessment (Alinhamento SQCDP & Dimensão 6)
+**Agentes Responsáveis:** `copywriter`, `designer`, `cleancod`, `chronicler`  
+**Escopo:** Adequação semântica e visual de alta visibilidade para responder formalmente aos questionamentos de auditores e controladores sobre a localização dos pilares de "Segurança" e "Pessoas" no Lean Assessment; renomeação da Dimensão 6 para `Segurança, Pessoas & Cultura Kaizen` (com rótulo executivo `Segurança & Pessoas`), mapeamento cruzado dos 11 critérios mestres auditados no Gemba conforme o framework SQCDP (Safety, Quality, Cost, Delivery, People), enriquecimento visual com chips/badges temáticas e card executivo de alinhamento metodológico sem necessidade de migrações estruturais no banco de dados.
+
+### 1. Diagnóstico e Causa Raiz
+- **Questionamento de Liderança e Auditoria:** Gestores questionaram a ausência aparente de "Segurança" e "Pessoas" no Radar de Maturidade Lean do setor, pois os vértices originais exibiam rótulos focados em ferramentas (`5S`, `Trabalho Padronizado`, `Fluxo & Kanban`, `Qualidade & Poka-Yoke`, `TPM & OEE` e `Cultura Kaizen`).
+- **Análise Metodológica Lean TPS / SQCDP:** A auditoria no Gemba já continha 11 critérios mestres que avaliavam diretamente Segurança e Pessoas (ex: parada imediata por risco de acidente, rotina diária com DDS, desobstrução de hidrantes/rotas de fuga, postos ergonômicos com iluminação adequada, clima operacional, absenteísmo e matriz de polivalência ILUO). No entanto, esses itens estavam agrupados sob o título genérico de "Cultura Kaizen" e espalhados em outras dimensões, permanecendo imperceptíveis à primeira vista no Gráfico de Radar e nas tabelas resumidas.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Atualização Semântica e Estrutural das Dimensões (`src/lib/types.ts` & `src/services/dataService.ts`):**
+  - Configuração da Dimensão 6 atualizada para: `name: 'Segurança, Pessoas & Cultura Kaizen'` e `shortName: 'Segurança & Pessoas'`.
+  - Adicionados os campos opcionais `sqcdpPillar?: 'S' | 'Q' | 'C' | 'D' | 'P'` e `sqcdpLabel?: string` na interface `LeanAssessmentCriterion`.
+  - Mapeamento explícito de todos os 11 critérios no Gemba em `dataService.ts`:
+    - `kz_c1`: [S] Segurança Vital & Parada Imediata.
+    - `kz_c4`: [S] Rotina Diária Gemba com DDS de Segurança.
+    - `5s_c2`: [S] 5S & Rotas de Fuga e Hidrantes Livres.
+    - `5s_c6`: [S] Ergonomia & Iluminação dos Postos.
+    - `tp_c1`: [S] Procedimentos com Requisitos e EPIs de Segurança.
+    - `kz_c6`: [P] Clima, Moral & Gestão de Absenteísmo.
+    - `kz_c7`: [P] Matriz de Polivalência Operacional (ILUO).
+    - `kz_c5`: [P] Reconhecimento & Celebração do Mérito Kaizen.
+    - `kz_c2`: [P] Ideias da Base Operacional & Melhoria Contínua.
+    - `q_c5`: [P] Princípio do Autocontrole (Zero Defeitos Repassados).
+    - `tpm_c6`: [P] Capacitação Técnica em TPM & Modos de Falha.
+- **Gráficos de Radar & Polígono de Maturidade (`src/components/charts/SectorCardPolygon.tsx` & `SectorAssessmentDetailView.tsx`):**
+  - Vértice 6 atualizado com rótulo curto `Seg/Pessoas` e rótulo completo `Segurança & Pessoas`, tornando imediatamente visível para qualquer auditor ou diretor que a integridade física e o fator humano são auditados no polígono.
+- **Card Executivo de Alinhamento SQCDP no Gemba (`src/components/assessment/SectorAssessmentDetailView.tsx`):**
+  - Inserção de quadro executivo antes da tabela detalhada de evolução, destacando os blocos de **Segurança (Safety — S)** e **Pessoas & Moral (People / Morale — P)** com ícones Lucide (`ShieldCheck`, `Users`, `Check`), métricas auditadas e parecer metodológico do Sistema Toyota de Produção (TPS).
+  - Enriquecimento retrocompatível: os critérios salvos em auditorias anteriores herdados do Supabase são automaticamente enriquecidos com a badge SQCDP correspondente através do `defaultCriteriaMap`.
+- **Modal de Avaliação no Gemba (`src/components/assessment/SectorAssessmentModal.tsx`):**
+  - Badges coloridas SQCDP renderizadas dinamicamente tanto no modo individual (Slide) quanto no modo geral (Lista), orientando o auditor sobre o foco de cada pergunta durante a ronda na fábrica.
+  - Abas e barras de progresso exibindo `Segurança & Pessoas`.
+- **Conformidade com Diretrizes:** 0 emojis empregados (cumprimento estrito da regra do `designer`), 0 erros de TypeScript e retrocompatibilidade preservada com o banco de dados.
+
 ---
 
 ## [2026-10-15] Laudo Pericial de Auditoria Contábil (Impressão A4 com Assinaturas e IP), Saneamento Fiscal do CAPEX e Totalizadores Oficiais

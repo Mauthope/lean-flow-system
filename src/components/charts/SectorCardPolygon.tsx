@@ -23,7 +23,7 @@ const DIMENSIONS: DimensionConfig[] = [
   { id: 'fluxo_jit', shortLabel: 'JIT', label: 'Fluxo & Kanban' },
   { id: 'qualidade_poka_yoke', shortLabel: 'Qual', label: 'Qualidade' },
   { id: 'tpm_oee', shortLabel: 'TPM', label: 'TPM & OEE' },
-  { id: 'cultura_kaizen', shortLabel: 'Kaizen', label: 'Cultura Kaizen' },
+  { id: 'cultura_kaizen', shortLabel: 'Seg/Pessoas', label: 'Segurança & Pessoas' },
 ];
 
 export const SectorCardPolygon: React.FC<SectorCardPolygonProps> = ({
