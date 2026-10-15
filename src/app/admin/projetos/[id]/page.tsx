@@ -62,6 +62,7 @@ import {
   BarChart3,
   Image as ImageIcon,
   Send,
+  RotateCcw,
   Sigma,
   Play,
   X,
@@ -1832,9 +1833,14 @@ export default function AdminProjectDetailPage() {
       tenantSettings?.controladoriaEmail?.trim() ||
       'mauricio.grigol@rafitec.com.br';
 
+    const isResubmission = action?.controllershipAudit?.status === 'rejeitado';
+    const promptTitle = isResubmission
+      ? `CONFIRMAÇÃO DE RESSUBMISSÃO À CONTROLADORIA (APÓS REVISÃO)\n\n`
+      : `CONFIRMAÇÃO DE SUBMISSÃO À CONTROLADORIA\n\n`;
+
     const promptResponse = window.prompt(
-      `CONFIRMAÇÃO DE SUBMISSÃO À CONTROLADORIA\n\n` +
-      `Ganhos Declarados: ${formatCurrency(identifiedGainValue)}\n\n` +
+      promptTitle +
+      `Ganhos Declarados ${isResubmission ? 'Revisados' : 'do Kaizen'}: ${formatCurrency(identifiedGainValue)}\n\n` +
       `Confirme ou informe o e-mail da Controladoria para receber o link seguro de auditoria contábil:\n(Configurado na Entidade: ${configuredControladoriaEmail})`,
       configuredControladoriaEmail
     );
@@ -1888,11 +1894,11 @@ export default function AdminProjectDetailPage() {
         : `Aviso no envio de e-mail: ${res.emailResult?.error || res.emailResult?.message || 'Falha de entrega'}.`;
 
       alert(
-        `PROJETO SUBMETIDO À CONTROLADORIA COM SUCESSO!\n\n` +
+        (isResubmission ? `PROJETO RESSUBMETIDO À CONTROLADORIA COM SUCESSO!\n\n` : `PROJETO SUBMETIDO À CONTROLADORIA COM SUCESSO!\n\n`) +
         `Destinatário: ${currentControladoriaEmail}\n` +
         `Status da Notificação: ${emailStatusText}\n\n` +
         `Link seguro de auditoria:\n${res.auditUrl}\n\n` +
-        `O auditor contábil já pode acessar e validar os números declarados.`
+        `O auditor contábil já foi notificado e pode reavaliar as novas premissas revisadas.`
       );
     } catch (err: any) {
       alert(err.message || 'Erro ao submeter à Controladoria');
@@ -5712,6 +5718,7 @@ export default function AdminProjectDetailPage() {
 
           {/* Card 4.2b: Auditoria & Certificação Prévia da Controladoria */}
           <div
+            id="secao-controladoria-42b"
             className="card"
             style={{
               padding: '1.75rem',
@@ -5808,6 +5815,87 @@ export default function AdminProjectDetailPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Banner de Projeto Devolvido para Revisão com Instruções e Botão de Ação */}
+              {action.controllershipAudit?.status === 'rejeitado' && (
+                <div
+                  style={{
+                    width: '100%',
+                    padding: '1.15rem 1.35rem',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.85rem',
+                    marginTop: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                      <AlertTriangle size={18} color="#ef4444" />
+                      <strong style={{ fontSize: '0.9rem', color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                        Projeto Devolvido para Revisão pela Controladoria
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>
+                      Auditor: <strong>{action.controllershipAudit.reviewedBy}</strong> ({action.controllershipAudit.reviewerRole || 'Controladoria'}) • {formatDateTime(action.controllershipAudit.reviewedAt)}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(0,0,0,0.35)',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '8px',
+                      borderLeft: '4px solid #ef4444',
+                      fontSize: '0.8125rem',
+                      color: '#f8fafc',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <strong style={{ color: '#fca5a5', display: 'block', marginBottom: '0.2rem' }}>
+                      Parecer / Motivo da Recusa Informado pelo Auditor:
+                    </strong>
+                    &quot;{action.controllershipAudit.rejectionReason}&quot;
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.85rem' }}>
+                    <div style={{ fontSize: '0.78125rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                      <strong style={{ color: '#ffffff' }}>Como proceder para concluir a revisão:</strong>
+                      <ol style={{ margin: '0.25rem 0 0 1.25rem', padding: 0 }}>
+                        <li>Ajuste os valores e memórias de cálculo das <strong>7 Fontes de Custo Evitado</strong> no card abaixo;</li>
+                        <li>Revise a lista de despesas e deduções fiscais no card de <strong>Custos do Projeto (CAPEX)</strong> se necessário;</li>
+                        <li>Clique em <strong>Ressubmeter à Controladoria</strong> para gerar uma nova rodada de auditoria contábil.</li>
+                      </ol>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSubmeterControladoria}
+                      disabled={submittingControladoria || uncompletedActivities.length > 0}
+                      className="btn btn-primary"
+                      style={{
+                        padding: '0.7rem 1.35rem',
+                        borderRadius: '8px',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        backgroundColor: '#dc2626',
+                        borderColor: '#b91c1c',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+                        cursor: submittingControladoria ? 'wait' : 'pointer',
+                      }}
+                      title="Enviar as correções realizadas para uma nova auditoria da Controladoria"
+                    >
+                      <RotateCcw size={16} />
+                      {submittingControladoria ? 'Ressubmetendo...' : 'Ressubmeter à Controladoria'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Aviso Poka-Yoke: Submissão Bloqueada por Pendências 5W2H */}
               {hasMonetaryGain && uncompletedActivities.length > 0 && !action.controllershipAudit && (
@@ -5918,6 +6006,40 @@ export default function AdminProjectDetailPage() {
                     >
                       <Zap size={13} /> Aprovar (Modo Teste)
                     </button>
+                  </div>
+                ) : action.controllershipAudit.status === 'rejeitado' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleSubmeterControladoria}
+                      disabled={submittingControladoria || uncompletedActivities.length > 0}
+                      className="btn btn-primary"
+                      style={{
+                        padding: '0.65rem 1.3rem',
+                        borderRadius: '8px',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        backgroundColor: '#dc2626',
+                        borderColor: '#b91c1c',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.35)',
+                      }}
+                      title="Ressubmeter o projeto para uma nova rodada de validação contábil"
+                    >
+                      <RotateCcw size={15} />
+                      {submittingControladoria ? 'Ressubmetendo...' : 'Ressubmeter à Controladoria'}
+                    </button>
+
+                    <Link
+                      href={`/controladoria/auditoria/${action.controllershipAudit.token}`}
+                      target="_blank"
+                      className="btn btn-secondary"
+                      style={{ padding: '0.6rem 1.05rem', borderRadius: '8px', fontSize: '0.8125rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <FileCheck2 size={15} color="#f87171" /> Ver Motivo da Recusa no Laudo
+                    </Link>
                   </div>
                 ) : (
                   <Link
@@ -6762,18 +6884,51 @@ export default function AdminProjectDetailPage() {
                       fontSize: '0.8125rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.65rem',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.75rem',
                     }}
                   >
-                    <ShieldAlert size={18} color={action.controllershipAudit?.status === 'rejeitado' ? '#ef4444' : '#f59e0b'} style={{ flexShrink: 0 }} />
-                    <span>
-                      <strong>Homologação Bloqueada pela Controladoria:</strong> Este projeto possui retorno monetário identificado ({formatCurrency(identifiedGainValue)}).
-                      {!action.controllershipAudit
-                        ? ' Conforme as diretrizes corporativas, é OBRIGATÓRIO submeter este projeto para auditoria da Controladoria no Passo 4.2b antes da homologação final.'
-                        : action.controllershipAudit.status === 'pendente'
-                        ? ` Notificação enviada em ${formatDateTime(action.controllershipAudit.submittedAt)}. Aguardando parecer do auditor contábil.`
-                        : ` A Controladoria solicitou ajustes contábeis: "${action.controllershipAudit.rejectionReason}". Revise os cálculos no Passo 4.2b.`}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: '280px' }}>
+                      <ShieldAlert size={18} color={action.controllershipAudit?.status === 'rejeitado' ? '#ef4444' : '#f59e0b'} style={{ flexShrink: 0 }} />
+                      <span>
+                        <strong>Homologação Bloqueada pela Controladoria:</strong> Este projeto possui retorno monetário identificado ({formatCurrency(identifiedGainValue)}).
+                        {!action.controllershipAudit
+                          ? ' Conforme as diretrizes corporativas, é OBRIGATÓRIO submeter este projeto para auditoria da Controladoria no Passo 4.2b antes da homologação final.'
+                          : action.controllershipAudit.status === 'pendente'
+                          ? ` Notificação enviada em ${formatDateTime(action.controllershipAudit.submittedAt)}. Aguardando parecer do auditor contábil.`
+                          : ` A Controladoria solicitou ajustes contábeis: "${action.controllershipAudit.rejectionReason}". Revise os cálculos no Passo 4.2b e ressubmeta.`}
+                      </span>
+                    </div>
+
+                    {action.controllershipAudit?.status === 'rejeitado' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveTab('check');
+                          setTimeout(() => {
+                            document.getElementById('secao-controladoria-42b')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }}
+                        className="btn btn-secondary"
+                        style={{
+                          padding: '0.5rem 0.9rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          color: '#ffffff',
+                          backgroundColor: '#dc2626',
+                          borderColor: '#b91c1c',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          borderRadius: '8px',
+                          boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <RotateCcw size={13} /> Ir para Passo 4.2b (Revisar e Ressubmeter)
+                      </button>
+                    )}
                   </div>
                 )}
 

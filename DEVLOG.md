@@ -47,6 +47,15 @@
   - Na aprovação ou ajuste pelo auditor, a função `processControllershipAudit` e a rota de API atualizam atômica e simultaneamente `actual_cost_avoided` e `estimated_cost_avoided` na tabela `lean_actions`.
   - O método `applyActionToForm` passa a priorizar `approvedCostBreakdown` sobre o breakdown original caso o projeto já tenha passado pela auditoria da Controladoria.
   - Eliminação de linhas estáticas residuais de R$ 0,00 no detalhamento de despesas quando já existem itens dinâmicos cadastrados.
+- **Transparência Contábil na Coluna de Variação / Glosa (`Homologado (-) Proposta`):**
+  - Adequação semântica das tabelas na Mesa de Auditoria e no Laudo Impresso A4: coluna renomeada para `Variação / Glosa Contábil`.
+  - Exibição de sufixos semânticos claros: `(-) R$ 800,00 (Glosa/Corte)` para reduções e `(+) R$ 200,00 (Acréscimo)` para reconhecimentos superiores à proposta.
+  - Inclusão de notas explicativas periciais no rodapé de ambas as tabelas fundamentando que $Variação = Homologado - Proposta$, eliminando dúvidas do usuário ao interpretar o sinal negativo de uma glosa.
+- **Fluxo Completo de Devolução para Revisão e Ressubmissão à Controladoria (`src/app/admin/projetos/[id]/page.tsx`):**
+  - Implementação de Card Executivo de Alerta no Passo 4.2b quando o status da auditoria é `rejeitado`: exibe em destaque o parecer/motivo de recusa digitado pelo auditor, data/hora e identificação do auditor.
+  - Apresentação de roteiro passo a passo com orientações para o usuário ajustar as 7 Fontes e o CAPEX.
+  - Adição do botão **`Ressubmeter à Controladoria`** (cor vermelha/âmbar corporativa `#dc2626` com ícone `RotateCcw`), permitindo reenviar a nova versão revisada para um novo ciclo de auditoria com geração de novo token e notificação por e-mail.
+  - Adição de atalho rápido no banner de bloqueio da Homologação Master direcionando o usuário diretamente para a Seção 4.2b com scroll suave.
 - **Laudo Técnico Pericial de Auditoria Contábil (Formato A4 para Impressão e Tela):**
   - Implementado em `src/app/controladoria/auditoria/[token]/page.tsx` com regras estritas de `@media print`:
     - Cabeçalho executivo institucional com monograma do Grupo Vaccaro / Rafitec S.A., Protocolo, Token e IP do Terminal.

@@ -34,6 +34,7 @@ import {
   Image as ImageIcon,
   Calculator,
   Receipt,
+  Info,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Modal } from '@/components/ui/Modal';
@@ -995,9 +996,9 @@ export default function ControladoriaAuditoriaPage() {
               <thead>
                 <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', textAlign: 'left' }}>
                   <th style={{ padding: '0.75rem 1rem' }}>Fonte de Custo Evitado Lean</th>
-                  <th style={{ padding: '0.75rem 1rem', width: '220px' }}>Proposta do Kaizen (R$/ano)</th>
-                  <th style={{ padding: '0.75rem 1rem', width: '250px' }}>Validado pela Controladoria (R$/ano)</th>
-                  <th style={{ padding: '0.75rem 1rem', width: '160px', textAlign: 'right' }}>Variação</th>
+                  <th style={{ padding: '0.75rem 1rem', width: '210px' }}>Proposta do Kaizen (R$/ano)</th>
+                  <th style={{ padding: '0.75rem 1rem', width: '230px' }}>Validado pela Controladoria (R$/ano)</th>
+                  <th style={{ padding: '0.75rem 1rem', width: '200px', textAlign: 'right' }}>Variação / Glosa Contábil</th>
                 </tr>
               </thead>
               <tbody>
@@ -1121,7 +1122,7 @@ export default function ControladoriaAuditoriaPage() {
                           />
                         </td>
                         <td style={{ padding: '0.85rem 1rem', textAlign: 'right', fontWeight: 700, color: delta === 0 ? '#64748b' : delta > 0 ? '#34d399' : '#f87171' }}>
-                          {delta > 0 ? `+${formatCurrency(delta)}` : formatCurrency(delta)}
+                          {delta > 0 ? `+${formatCurrency(delta)} (Acréscimo)` : delta < 0 ? `${formatCurrency(delta)} (Glosa/Corte)` : formatCurrency(delta)}
                         </td>
                       </tr>
 
@@ -1364,11 +1365,19 @@ export default function ControladoriaAuditoriaPage() {
                     {formatCurrency(auditedTotal)}/ano
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right', fontWeight: 800, fontSize: '1rem', color: deltaTotal === 0 ? '#64748b' : deltaTotal > 0 ? '#34d399' : '#f87171' }}>
-                    {deltaTotal > 0 ? `+${formatCurrency(deltaTotal)}` : formatCurrency(deltaTotal)}
+                    {deltaTotal > 0 ? `+${formatCurrency(deltaTotal)} (Acréscimo)` : deltaTotal < 0 ? `${formatCurrency(deltaTotal)} (Glosa Total)` : formatCurrency(deltaTotal)}
                   </td>
                 </tr>
               </tbody>
             </table>
+
+            {/* Nota de Esclarecimento Contábil */}
+            <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.85rem', backgroundColor: '#090e1a', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: 1.4 }}>
+              <Info size={14} color="#60a5fa" style={{ flexShrink: 0 }} />
+              <span>
+                <strong>Critério Contábil da Variação:</strong> Variação = Valor Homologado (-) Proposta do Kaizen. Um resultado com sinal negativo (ex: <code>-R$ 800,00</code>) reflete a <strong>glosa/corte contábil</strong> aplicado pela Controladoria sobre o valor originalmente pleiteado pela equipe (proposta R$ 1.000 (-) homologado R$ 200 = corte de R$ 800).
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1959,7 +1968,7 @@ export default function ControladoriaAuditoriaPage() {
                 <th style={{ padding: '0.35rem 0.5rem', width: '28%' }}>Memorial / Documentação Verificada</th>
                 <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '16%' }}>Proposta Kaizen (R$/ano)</th>
                 <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '18%' }}>Homologado Controladoria (R$/ano)</th>
-                <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '14%' }}>Variação (R$)</th>
+                <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '18%' }}>Variação / Glosa Contábil</th>
               </tr>
             </thead>
             <tbody>
@@ -1982,7 +1991,7 @@ export default function ControladoriaAuditoriaPage() {
                     <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatCurrency(row.orig)}</td>
                     <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{formatCurrency(row.val)}</td>
                     <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', fontWeight: 700, color: delta === 0 ? '#64748b' : delta > 0 ? '#15803d' : '#b91c1c' }}>
-                      {delta > 0 ? `+${formatCurrency(delta)}` : formatCurrency(delta)}
+                      {delta > 0 ? `+${formatCurrency(delta)} (Acréscimo)` : delta < 0 ? `${formatCurrency(delta)} (Glosa/Corte)` : formatCurrency(delta)}
                     </td>
                   </tr>
                 );
@@ -1995,11 +2004,14 @@ export default function ControladoriaAuditoriaPage() {
                 <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatCurrency(originalTotal)}/ano</td>
                 <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: '#0f172a', fontSize: '8.5pt' }}>{formatCurrency(auditedTotal)}/ano</td>
                 <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: deltaTotal === 0 ? '#475569' : deltaTotal > 0 ? '#15803d' : '#b91c1c' }}>
-                  {deltaTotal > 0 ? `+${formatCurrency(deltaTotal)}` : formatCurrency(deltaTotal)}
+                  {deltaTotal > 0 ? `+${formatCurrency(deltaTotal)} (Acréscimo)` : deltaTotal < 0 ? `${formatCurrency(deltaTotal)} (Glosa Total)` : formatCurrency(deltaTotal)}
                 </td>
               </tr>
             </tbody>
           </table>
+          <div style={{ fontSize: '6.5pt', color: '#64748b', marginTop: '0.25rem', fontStyle: 'italic', lineHeight: 1.3 }}>
+            * Nota Pericial Contábil: A coluna &quot;Variação / Glosa Contábil&quot; representa a diferença matemática (Homologado (-) Proposta). Valores negativos (ex: -R$ 800,00) representam cortes e glosas das estimativas operacionais aplicadas pela Controladoria corporativa.
+          </div>
         </div>
 
         {/* 3. Demonstrativo de Capital (CAPEX) & 4. DRE Operacional da Melhoria */}
