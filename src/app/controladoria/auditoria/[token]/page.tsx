@@ -52,6 +52,8 @@ export default function ControladoriaAuditoriaPage() {
   const [reviewerName, setReviewerName] = useState('');
   const [reviewerEmail, setReviewerEmail] = useState('');
   const [reviewerRole, setReviewerRole] = useState('Controladoria & Auditoria Financeira');
+  const [clientIp, setClientIp] = useState('');
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [auditNotes, setAuditNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -110,6 +112,9 @@ export default function ControladoriaAuditoriaPage() {
     if (found.controllershipAudit?.rejectionReason) {
       setRejectionReason(found.controllershipAudit.rejectionReason);
     }
+    if (found.controllershipAudit?.reviewerIp) {
+      setClientIp(found.controllershipAudit.reviewerIp);
+    }
   };
 
   // Carregar Ação pelo Token
@@ -120,12 +125,25 @@ export default function ControladoriaAuditoriaPage() {
       return;
     }
 
+    // Tenta capturar IP público da estação em segundo plano para fé pública do laudo
+    try {
+      fetch('https://api.ipify.org?format=json')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d?.ip) setClientIp(d.ip);
+        })
+        .catch(() => {});
+    } catch {}
+
     const loadAction = async () => {
       // 1. Tentar carregar diretamente pela API protegida por Token (sem exigência de login prévio do auditor)
       try {
         const res = await fetch(`/api/controladoria/audit?token=${encodeURIComponent(token)}`);
         if (res.ok) {
           const json = await res.json();
+          if (json.clientIp) {
+            setClientIp((prev) => prev || json.clientIp);
+          }
           const rawAct = json.action || json.result?.action;
           const rawAud = json.audit || json.result?.audit;
 
@@ -181,6 +199,7 @@ export default function ControladoriaAuditoriaPage() {
                 reviewedBy: rawAud.reviewed_by || rawAud.reviewedBy,
                 reviewerEmail: rawAud.reviewer_email || rawAud.reviewerEmail,
                 reviewerRole: rawAud.reviewer_role || rawAud.reviewerRole,
+                reviewerIp: rawAud.reviewer_ip || rawAud.reviewerIp || method.controllershipAudit?.reviewerIp,
                 auditNotes: rawAud.audit_notes || rawAud.auditNotes,
                 rejectionReason: rawAud.rejection_reason || rawAud.rejectionReason,
                 emailSentTo: rawAud.email_sent_to || rawAud.emailSentTo,
@@ -386,19 +405,24 @@ export default function ControladoriaAuditoriaPage() {
     const grossCapex = opCostTotal > 0 ? opCostTotal : (partsAndEquipment + thirdPartyServices + internalLaborCost + otherCosts || (Number(rawCosts.totalCost) || 0));
 
     const pisCofinsRate = rawCosts.pisCofinsRate !== undefined ? Number(rawCosts.pisCofinsRate) : 22;
-    const pisCofinsCredit = rawCosts.pisCofinsCredit !== undefined
-      ? Number(rawCosts.pisCofinsCredit)
-      : (grossCapex > 0 ? Number(((grossCapex * pisCofinsRate) / 100).toFixed(2)) : 0);
+    const defaultPis = grossCapex > 0 ? Number(((grossCapex * pisCofinsRate) / 100).toFixed(2)) : 0;
+    const rawPisCredit = rawCosts.pisCofinsCredit !== undefined ? Number(rawCosts.pisCofinsCredit) : undefined;
+    const pisCofinsCredit =
+      rawPisCredit !== undefined && rawPisCredit > 0 && rawPisCredit <= grossCapex
+        ? rawPisCredit
+        : defaultPis;
     const icmsCredit = Number(rawCosts.icmsCredit) || 0;
-    const netInvestmentCost = rawCosts.netInvestmentCost !== undefined
-      ? Number(rawCosts.netInvestmentCost)
-      : Math.max(0, Number((grossCapex - pisCofinsCredit - icmsCredit).toFixed(2)));
+    const netInvestmentCost =
+      rawCosts.netInvestmentCost !== undefined && Number(rawCosts.netInvestmentCost) <= grossCapex
+        ? Number(rawCosts.netInvestmentCost)
+        : Math.max(0, Number((grossCapex - pisCofinsCredit - icmsCredit).toFixed(2)));
 
     const incomeTaxRate = rawCosts.incomeTaxRate !== undefined ? Number(rawCosts.incomeTaxRate) : 34;
     const depreciationMonths = rawCosts.depreciationMonths !== undefined ? Number(rawCosts.depreciationMonths) : 60;
     const financialRate = rawCosts.financialRate !== undefined ? Number(rawCosts.financialRate) : 1.0;
 
-    const monthlyGross7Sources = auditedTotal > 0 ? Number((auditedTotal / 12).toFixed(2)) : 0;
+    const effectiveAvoided = auditedTotal > 0 ? auditedTotal : originalTotal;
+    const monthlyGross7Sources = effectiveAvoided > 0 ? Number((effectiveAvoided / 12).toFixed(2)) : 0;
     const grossOperationalGainMonthly = monthlyGross7Sources;
 
     const incomeTaxOnGainMonthly = Number(((grossOperationalGainMonthly * incomeTaxRate) / 100).toFixed(2));
@@ -450,7 +474,7 @@ export default function ControladoriaAuditoriaPage() {
       discountedPaybackMonths,
       roiAnnualPercentage,
     };
-  }, [action, auditedTotal]);
+  }, [action, auditedTotal, originalTotal]);
 
   // Status da Auditoria
   const auditStatus = action?.controllershipAudit?.status || 'pendente';
@@ -484,6 +508,8 @@ export default function ControladoriaAuditoriaPage() {
         roiAnnualPercentage: corporateFinancials.roiAnnualPercentage,
       };
 
+      const effectiveIp = clientIp || action?.controllershipAudit?.reviewerIp || '127.0.0.1';
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'aprovado',
         gainDetails: finalGainDetails,
@@ -491,6 +517,7 @@ export default function ControladoriaAuditoriaPage() {
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
         reviewerRole: reviewerRole.trim(),
+        reviewerIp: effectiveIp,
         auditNotes: auditNotes.trim() || 'Ganhos financeiros auditados e certificados integralmente pela Controladoria.',
       });
       setAction(updated);
@@ -509,6 +536,7 @@ export default function ControladoriaAuditoriaPage() {
           reviewerName: reviewerName.trim(),
           reviewerEmail: reviewerEmail.trim(),
           reviewerRole: reviewerRole.trim(),
+          reviewerIp: effectiveIp,
           auditNotes: auditNotes.trim() || 'Ganhos financeiros auditados e certificados integralmente pela Controladoria.',
           gainDetails: finalGainDetails,
         }),
@@ -583,6 +611,8 @@ export default function ControladoriaAuditoriaPage() {
         roiAnnualPercentage: corporateFinancials.roiAnnualPercentage,
       };
 
+      const effectiveIp = clientIp || action?.controllershipAudit?.reviewerIp || '127.0.0.1';
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'ajustado_e_aprovado',
         approvedBreakdown,
@@ -592,6 +622,7 @@ export default function ControladoriaAuditoriaPage() {
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
         reviewerRole: reviewerRole.trim(),
+        reviewerIp: effectiveIp,
         auditNotes: auditNotes.trim(),
       });
       setAction(updated);
@@ -610,6 +641,7 @@ export default function ControladoriaAuditoriaPage() {
           reviewerName: reviewerName.trim(),
           reviewerEmail: reviewerEmail.trim(),
           reviewerRole: reviewerRole.trim(),
+          reviewerIp: effectiveIp,
           auditNotes: auditNotes.trim(),
           gainDetails: finalGainDetails,
         }),
@@ -717,17 +749,96 @@ export default function ControladoriaAuditoriaPage() {
               Protocolo: {action.protocol}
             </span>
             <button
-              onClick={() => window.print()}
+              type="button"
+              onClick={() => setShowPrintPreview(!showPrintPreview)}
               className="btn btn-secondary"
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', fontSize: '0.78rem', borderRadius: '8px' }}
+              title="Visualizar a diagramação em formato A4 do Laudo Pericial"
             >
-              <Printer size={14} /> Imprimir Parecer
+              <Eye size={14} /> {showPrintPreview ? 'Voltar para Mesa' : 'Visualizar Laudo A4'}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.85rem', fontSize: '0.78rem', borderRadius: '8px', backgroundColor: '#0284c7' }}
+              title="Imprimir ou salvar em PDF o Laudo Pericial Oficial"
+            >
+              <Printer size={14} /> Imprimir Laudo Pericial
             </button>
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: '1200px', margin: '2rem auto 0 auto', padding: '0 1.5rem' }}>
+      {/* Barra de Controle de Impressão quando em modo Pré-visualização */}
+      {showPrintPreview && (
+        <div
+          className="no-print"
+          style={{
+            maxWidth: '960px',
+            margin: '1.5rem auto 0 auto',
+            padding: '1rem 1.5rem',
+            backgroundColor: '#0f172a',
+            border: '1.5px solid #0284c7',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={18} color="#38bdf8" />
+              <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>
+                Pré-visualização do Laudo Pericial Oficial (A4)
+              </strong>
+            </div>
+            <span style={{ color: '#94a3b8', fontSize: '0.78rem', display: 'block', marginTop: '0.15rem' }}>
+              Este é o documento contábil emitido com os dados certificados, campos de assinatura formal e IP da estação.
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              type="button"
+              onClick={() => setShowPrintPreview(false)}
+              className="btn btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', borderRadius: '8px' }}
+            >
+              Voltar para a Mesa de Auditoria
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="btn btn-primary"
+              style={{
+                padding: '0.5rem 1.25rem',
+                fontSize: '0.8rem',
+                borderRadius: '8px',
+                backgroundColor: '#0284c7',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                fontWeight: 800,
+              }}
+            >
+              <Printer size={15} /> Imprimir Agora (PDF / Papel)
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main
+        className="no-print"
+        style={{
+          maxWidth: '1200px',
+          margin: '2rem auto 0 auto',
+          padding: '0 1.5rem',
+          display: showPrintPreview ? 'none' : 'block',
+        }}
+      >
         {/* Banner de Status Atual */}
         {auditStatus === 'pendente' ? (
           <div style={{ padding: '1.25rem 1.5rem', borderRadius: '14px', backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1.5px solid rgba(245, 158, 11, 0.35)', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
@@ -1341,10 +1452,6 @@ export default function ControladoriaAuditoriaPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.8rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-                  <span>Peças e Equipamentos:</span>
-                  <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.partsAndEquipment)}</strong>
-                </div>
                 {corporateFinancials.opItems.length > 0 ? (
                   <div style={{ maxHeight: '120px', overflowY: 'auto', marginBottom: '0.35rem', paddingRight: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                     {corporateFinancials.opItems.map((item, idx) => (
@@ -1742,6 +1849,428 @@ export default function ControladoriaAuditoriaPage() {
           </Modal>
         )}
       </main>
+
+      {/* =========================================================================
+          LAUDO TÉCNICO PERICIAL DE AUDITORIA CONTÁBIL & HOMOLOGAÇÃO FINANCEIRA
+          Layout corporativo oficial formatado para impressão A4 e exportação PDF
+         ========================================================================= */}
+      <div className={`print-report-wrapper ${showPrintPreview ? 'force-preview' : 'print-only'}`}>
+        {/* Cabeçalho Corporativo e Fé Pública */}
+        <div style={{ borderBottom: '3px solid #0f172a', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '13pt', fontWeight: 900, letterSpacing: '0.05em', color: '#0f172a', textTransform: 'uppercase' }}>
+                  RAFTEC S.A. | GRUPO VACCARO
+                </span>
+              </div>
+              <span style={{ fontSize: '7.8pt', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+                Departamento de Controladoria Corporativa & Governança de Eficiência Operacional
+              </span>
+              <h1 style={{ fontSize: '12pt', fontWeight: 900, color: '#0f172a', margin: '0.35rem 0 0 0', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
+                Laudo Pericial de Auditoria Contábil & Homologação de CAPEX
+              </h1>
+              <span style={{ fontSize: '7.2pt', color: '#64748b' }}>
+                Metodologia Lean Flow / DMAIC • Conformidade com CPC 27, CPC 01 e Lucro Real (Lei 12.973/14)
+              </span>
+            </div>
+
+            <div style={{ textAlign: 'right', borderLeft: '2px solid #e2e8f0', paddingLeft: '1rem', minWidth: '220px' }}>
+              <div style={{ fontSize: '8.5pt', color: '#0f172a', fontWeight: 800 }}>
+                PROTOCOLO: <span style={{ fontFamily: 'monospace' }}>{action.protocol}</span>
+              </div>
+              <div style={{ fontSize: '7.2pt', color: '#64748b', marginTop: '0.15rem' }}>
+                TOKEN: <span style={{ fontFamily: 'monospace' }}>{(action.controllershipAudit?.token || token).substring(0, 16)}...</span>
+              </div>
+              <div style={{ fontSize: '7.2pt', color: '#475569', marginTop: '0.15rem' }}>
+                EMISSÃO: {new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR')}
+              </div>
+              <div style={{ fontSize: '7.2pt', color: '#0369a1', fontWeight: 700, marginTop: '0.15rem' }}>
+                TERMINAL / IP: {action.controllershipAudit?.reviewerIp || clientIp || '127.0.0.1 (Estação Corporativa)'}
+              </div>
+              <div style={{ marginTop: '0.35rem' }}>
+                <span style={{
+                  fontSize: '7pt',
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '4px',
+                  backgroundColor: auditStatus === 'aprovado' || auditStatus === 'ajustado_e_aprovado' ? '#dcfce7' : '#fef3c7',
+                  color: auditStatus === 'aprovado' || auditStatus === 'ajustado_e_aprovado' ? '#166534' : '#92400e',
+                  border: `1px solid ${auditStatus === 'aprovado' || auditStatus === 'ajustado_e_aprovado' ? '#86efac' : '#fcd34d'}`
+                }}>
+                  {auditStatus === 'aprovado' ? 'Ganhos Homologados Integralmente' : auditStatus === 'ajustado_e_aprovado' ? 'Ganhos Homologados com Ajuste Pericial' : 'Pendente de Certificação'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 1. Identificação Cadastral do Projeto */}
+        <div className="page-break-inside-avoid" style={{ marginBottom: '1.15rem' }}>
+          <h2 style={{ fontSize: '8.5pt', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', borderBottom: '1.5px solid #0f172a', paddingBottom: '0.2rem', marginBottom: '0.4rem' }}>
+            1. Identificação Cadastral do Projeto de Melhoria Contínua
+          </h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.8pt' }}>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569', width: '22%' }}>Título da Ação:</td>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 800, color: '#0f172a' }} colSpan={3}>{action.title}</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569' }}>Setor de Origem:</td>
+                <td style={{ padding: '0.3rem 0.5rem', color: '#0f172a', width: '38%' }}>{action.originSectorName || 'Setor Fabril'}</td>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569', width: '18%' }}>Setor de Destino:</td>
+                <td style={{ padding: '0.3rem 0.5rem', color: '#0f172a' }}>{action.targetSectorName || 'Linha Operacional'}</td>
+              </tr>
+              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569' }}>Líder do Kaizen:</td>
+                <td style={{ padding: '0.3rem 0.5rem', color: '#0f172a' }}>{action.leaderName || action.assignedAgentName || 'Especialista Lean'}</td>
+                <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569' }}>Desperdício TPS:</td>
+                <td style={{ padding: '0.3rem 0.5rem', color: '#0f172a' }}>{action.wasteCategory || 'Geral'}</td>
+              </tr>
+              {action.problemStatement && (
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569' }}>Problema (PLAN):</td>
+                  <td style={{ padding: '0.3rem 0.5rem', color: '#334155' }} colSpan={3}>{action.problemStatement}</td>
+                </tr>
+              )}
+              {action.targetMetricName && (
+                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.3rem 0.5rem', fontWeight: 700, color: '#475569' }}>Indicador & Meta:</td>
+                  <td style={{ padding: '0.3rem 0.5rem', color: '#0f172a' }} colSpan={3}>
+                    <strong>{action.targetMetricName}:</strong> Inicial: {action.baselineValue} → Meta: {action.targetGoalValue} → <strong>Alcançado: {action.achievedValue || action.targetGoalValue} {action.targetMetricUnit || ''}</strong>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 2. Auditoria Pericial das 7 Fontes de Custo Evitado Lean */}
+        <div className="page-break-inside-avoid" style={{ marginBottom: '1.15rem' }}>
+          <h2 style={{ fontSize: '8.5pt', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', borderBottom: '1.5px solid #0f172a', paddingBottom: '0.2rem', marginBottom: '0.4rem' }}>
+            2. Auditoria Pericial das 7 Fontes Tradicionais de Custo Evitado Lean
+          </h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.8pt', border: '1px solid #cbd5e1' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1.5px solid #94a3b8', color: '#0f172a', textAlign: 'left' }}>
+                <th style={{ padding: '0.35rem 0.5rem' }}>Conta de Economia Lean (7 Fontes)</th>
+                <th style={{ padding: '0.35rem 0.5rem', width: '28%' }}>Memorial / Documentação Verificada</th>
+                <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '16%' }}>Proposta Kaizen (R$/ano)</th>
+                <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '18%' }}>Homologado Controladoria (R$/ano)</th>
+                <th style={{ padding: '0.35rem 0.5rem', textAlign: 'right', width: '14%' }}>Variação (R$)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: '1. Mão de Obra e Horas Salvas', orig: action.controllershipAudit?.originalCostBreakdown?.laborSavings || 0, val: Number(laborSavings) || 0, proof: gainDetails['laborSavings'] },
+                { name: '2. Aumento de Produção / SMED', orig: action.controllershipAudit?.originalCostBreakdown?.productionIncrease || 0, val: Number(productionIncrease) || 0, proof: gainDetails['productionIncrease'] },
+                { name: '3. Redução de Refugo e Matéria-Prima', orig: action.controllershipAudit?.originalCostBreakdown?.scrapReduction || 0, val: Number(scrapReduction) || 0, proof: gainDetails['scrapReduction'] },
+                { name: '4. Redução de Paradas de Máquina (OEE)', orig: action.controllershipAudit?.originalCostBreakdown?.machineDowntime || 0, val: Number(machineDowntime) || 0, proof: gainDetails['machineDowntime'] },
+                { name: '5. Ferramental, Energia e Insumos', orig: action.controllershipAudit?.originalCostBreakdown?.toolingAndEnergy || 0, val: Number(toolingAndEnergy) || 0, proof: gainDetails['toolingAndEnergy'] },
+                { name: '6. Fretes Especiais e Estoque (WIP)', orig: action.controllershipAudit?.originalCostBreakdown?.logisticsAndFreight || 0, val: Number(logisticsAndFreight) || 0, proof: gainDetails['logisticsAndFreight'] },
+                { name: `7. Outros Custos Evitados${otherSavingsDescription ? ` (${otherSavingsDescription})` : ''}`, orig: action.controllershipAudit?.originalCostBreakdown?.otherSavings || 0, val: Number(otherSavings) || 0, proof: gainDetails['otherSavings'] },
+              ].map((row, i) => {
+                const delta = row.val - row.orig;
+                const hasProof = Boolean(row.proof?.attachment || row.proof?.explanation || row.proof?.auditorAttachment || row.proof?.auditorExplanation);
+                const proofText = row.proof?.auditorExplanation || row.proof?.explanation || (row.proof?.attachment ? `Planilha: ${row.proof.attachment.name}` : hasProof ? 'Documentado' : 'Premissa operacional declarada');
+                return (
+                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: i % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                    <td style={{ padding: '0.3rem 0.5rem', fontWeight: 600, color: '#0f172a' }}>{row.name}</td>
+                    <td style={{ padding: '0.3rem 0.5rem', color: '#475569', fontSize: '7.2pt', fontStyle: 'italic' }}>{proofText}</td>
+                    <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatCurrency(row.orig)}</td>
+                    <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>{formatCurrency(row.val)}</td>
+                    <td style={{ padding: '0.3rem 0.5rem', textAlign: 'right', fontWeight: 700, color: delta === 0 ? '#64748b' : delta > 0 ? '#15803d' : '#b91c1c' }}>
+                      {delta > 0 ? `+${formatCurrency(delta)}` : formatCurrency(delta)}
+                    </td>
+                  </tr>
+                );
+              })}
+              {/* Linha Totalizadora */}
+              <tr style={{ backgroundColor: '#e2e8f0', borderTop: '2px solid #0f172a', fontWeight: 900 }}>
+                <td style={{ padding: '0.45rem 0.5rem', color: '#0f172a', textTransform: 'uppercase' }} colSpan={2}>
+                  TOTAL ANUALIZADO HOMOLOGADO (BASE OFICIAL)
+                </td>
+                <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: '#475569' }}>{formatCurrency(originalTotal)}/ano</td>
+                <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: '#0f172a', fontSize: '8.5pt' }}>{formatCurrency(auditedTotal)}/ano</td>
+                <td style={{ padding: '0.45rem 0.5rem', textAlign: 'right', color: deltaTotal === 0 ? '#475569' : deltaTotal > 0 ? '#15803d' : '#b91c1c' }}>
+                  {deltaTotal > 0 ? `+${formatCurrency(deltaTotal)}` : formatCurrency(deltaTotal)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* 3. Demonstrativo de Capital (CAPEX) & 4. DRE Operacional da Melhoria */}
+        <div className="page-break-inside-avoid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.15rem' }}>
+          {/* Quadro CAPEX */}
+          <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.65rem' }}>
+            <h3 style={{ fontSize: '8pt', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', borderBottom: '1.5px solid #0f172a', paddingBottom: '0.2rem', margin: '0 0 0.4rem 0' }}>
+              3. Composição de Capital (CAPEX) & Deduções Fiscais (CPC 27)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
+              <tbody>
+                {corporateFinancials.opItems.length > 0 ? (
+                  corporateFinancials.opItems.map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.2rem 0', color: '#334155' }}>
+                        {item.description || 'Despesa de Investimento'} {item.quantity && item.quantity > 1 ? `(${item.quantity}x)` : ''}
+                      </td>
+                      <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
+                        {formatCurrency(Math.abs(item.monthlyValue || 0))}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <>
+                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.2rem 0', color: '#334155' }}>Peças & Sensores:</td>
+                      <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(corporateFinancials.partsAndEquipment)}</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.2rem 0', color: '#334155' }}>Serviços de Terceiros / Usinagem:</td>
+                      <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(corporateFinancials.thirdPartyServices)}</td>
+                    </tr>
+                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '0.2rem 0', color: '#334155' }}>Mão de Obra Interna da Equipe:</td>
+                      <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(corporateFinancials.internalLaborCost)}</td>
+                    </tr>
+                    {corporateFinancials.otherCosts > 0 && (
+                      <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '0.2rem 0', color: '#334155' }}>Outros Custos de Investimento:</td>
+                        <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(corporateFinancials.otherCosts)}</td>
+                      </tr>
+                    )}
+                  </>
+                )}
+                <tr style={{ borderTop: '1px solid #94a3b8', fontWeight: 800 }}>
+                  <td style={{ padding: '0.25rem 0', color: '#0f172a' }}>Total Bruto em CAPEX:</td>
+                  <td style={{ padding: '0.25rem 0', textAlign: 'right', color: '#0f172a' }}>{formatCurrency(corporateFinancials.grossCapex)}</td>
+                </tr>
+                <tr style={{ color: '#0284c7' }}>
+                  <td style={{ padding: '0.18rem 0' }}>(-) PIS/COFINS ({corporateFinancials.pisCofinsRate}% - Lei 10.833/03):</td>
+                  <td style={{ padding: '0.18rem 0', textAlign: 'right' }}>-{formatCurrency(corporateFinancials.pisCofinsCredit)}</td>
+                </tr>
+                {corporateFinancials.icmsCredit > 0 && (
+                  <tr style={{ color: '#0284c7' }}>
+                    <td style={{ padding: '0.18rem 0' }}>(-) ICMS Recuperável:</td>
+                    <td style={{ padding: '0.18rem 0', textAlign: 'right' }}>-{formatCurrency(corporateFinancials.icmsCredit)}</td>
+                  </tr>
+                )}
+                <tr style={{ borderTop: '1.5px solid #0f172a', backgroundColor: '#f1f5f9', fontWeight: 900 }}>
+                  <td style={{ padding: '0.3rem 0.2rem', color: '#0f172a' }}>(=) INVESTIMENTO LÍQUIDO REAL:</td>
+                  <td style={{ padding: '0.3rem 0.2rem', textAlign: 'right', color: '#0f172a', fontSize: '8pt' }}>
+                    {formatCurrency(corporateFinancials.netInvestmentCost)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Quadro DRE Operacional & Fluxo de Caixa */}
+          <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.65rem' }}>
+            <h3 style={{ fontSize: '8pt', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', borderBottom: '1.5px solid #0f172a', paddingBottom: '0.2rem', margin: '0 0 0.4rem 0' }}>
+              4. DRE Operacional & Fluxo de Caixa Livre (Lucro Real)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5pt' }}>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '0.2rem 0', color: '#334155' }}>(+) Ganho Operacional Mensal Bruto:</td>
+                  <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 700, color: '#15803d' }}>
+                    +{formatCurrency(corporateFinancials.grossOperationalGainMonthly)}/mês
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #f1f5f9', color: '#b91c1c' }}>
+                  <td style={{ padding: '0.2rem 0' }}>(-) IRPJ + CSLL (Alíquota 34%):</td>
+                  <td style={{ padding: '0.2rem 0', textAlign: 'right' }}>
+                    -{formatCurrency(corporateFinancials.incomeTaxOnGainMonthly)}/mês
+                  </td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', fontWeight: 700 }}>
+                  <td style={{ padding: '0.25rem 0', color: '#0f172a' }}>(=) Ganho Líquido Operacional pós-IR:</td>
+                  <td style={{ padding: '0.25rem 0', textAlign: 'right', color: '#0f172a' }}>
+                    {formatCurrency(corporateFinancials.netOperationalGainMonthly)}/mês
+                  </td>
+                </tr>
+                <tr style={{ color: '#475569' }}>
+                  <td style={{ padding: '0.2rem 0' }}>Quota Depreciação Linear (60 meses / 20% a.a.):</td>
+                  <td style={{ padding: '0.2rem 0', textAlign: 'right' }}>
+                    {formatCurrency(corporateFinancials.monthlyDepreciation)}/mês
+                  </td>
+                </tr>
+                <tr style={{ color: '#15803d' }}>
+                  <td style={{ padding: '0.2rem 0' }}>(+) Benefício Fiscal Depreciação (Tax Shield 34%):</td>
+                  <td style={{ padding: '0.2rem 0', textAlign: 'right' }}>
+                    +{formatCurrency(corporateFinancials.taxShieldDepreciationMonthly)}/mês
+                  </td>
+                </tr>
+                <tr style={{ borderTop: '1.5px solid #0f172a', backgroundColor: '#f1f5f9', fontWeight: 900 }}>
+                  <td style={{ padding: '0.3rem 0.2rem', color: '#0f172a' }}>(=) FLUXO DE CAIXA MENSAL LÍQUIDO:</td>
+                  <td style={{ padding: '0.3rem 0.2rem', textAlign: 'right', color: '#15803d', fontSize: '8pt' }}>
+                    {formatCurrency(corporateFinancials.finalNetMonthlyCashFlow)}/mês
+                  </td>
+                </tr>
+                <tr style={{ borderTop: '1px dashed #cbd5e1' }}>
+                  <td style={{ padding: '0.25rem 0', color: '#0f172a', fontWeight: 700 }}>Payback Simples / Descontado (TMA 1% a.m.):</td>
+                  <td style={{ padding: '0.25rem 0', textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
+                    {corporateFinancials.simplePaybackMonths}m / {corporateFinancials.discountedPaybackMonths}m
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '0.2rem 0', color: '#0f172a', fontWeight: 700 }}>Taxa de Retorno Anualizada (ROI):</td>
+                  <td style={{ padding: '0.2rem 0', textAlign: 'right', fontWeight: 800, color: '#0369a1' }}>
+                    {corporateFinancials.roiAnnualPercentage}% ao ano
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 5. Parecer Técnico-Pericial da Controladoria */}
+        <div className="page-break-inside-avoid" style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.65rem 0.85rem', marginBottom: '1.15rem', backgroundColor: '#fafafa' }}>
+          <h2 style={{ fontSize: '8pt', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: '0 0 0.35rem 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem' }}>
+            5. Parecer Técnico-Pericial & Justificativa da Controladoria
+          </h2>
+          <p style={{ fontSize: '7.8pt', color: '#334155', lineHeight: 1.5, margin: '0 0 0.35rem 0' }}>
+            {action.controllershipAudit?.auditNotes || auditNotes || 'Ganhos financeiros auditados, conferidos por memória de cálculo e certificados integralmente pela Controladoria Corporativa.'}
+          </p>
+          <p style={{ fontSize: '7.2pt', color: '#64748b', fontStyle: 'italic', margin: 0 }}>
+            Conclusão Pericial: A Controladoria Corporativa do Grupo Vaccaro atesta a veracidade das premissas econômico-fiscais analisadas, em conformidade com o regime do Lucro Real (RIR/2018) e pronunciamentos do CPC, homologando o valor anualizado como meta oficial e autorizando o acompanhamento trimestral (Follow-up de 90 dias).
+          </p>
+        </div>
+
+        {/* 6. Termo Formal de Homologação e Assinaturas */}
+        <div className="page-break-inside-avoid" style={{ border: '1.5px solid #0f172a', borderRadius: '6px', padding: '0.85rem', backgroundColor: '#ffffff' }}>
+          <h2 style={{ fontSize: '8pt', fontWeight: 900, color: '#0f172a', textTransform: 'uppercase', textAlign: 'center', margin: '0 0 0.75rem 0', letterSpacing: '0.05em' }}>
+            6. Termo Formal de Homologação, Certificação & Responsabilidade
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', alignItems: 'flex-start' }}>
+            {/* Assinatura 1: Auditor da Controladoria */}
+            <div style={{ border: '1px solid #94a3b8', borderRadius: '6px', padding: '0.65rem', backgroundColor: '#f8fafc', minHeight: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '6.8pt', fontWeight: 800, textTransform: 'uppercase', color: '#166534', borderBottom: '1px solid #bbf7d0', paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
+                  [✓] Assinado Eletronicamente
+                </div>
+                <div style={{ fontSize: '8.2pt', fontWeight: 800, color: '#0f172a' }}>
+                  {action.controllershipAudit?.reviewedBy || reviewerName || 'Auditor da Controladoria'}
+                </div>
+                <div style={{ fontSize: '7.2pt', color: '#475569' }}>
+                  {action.controllershipAudit?.reviewerRole || reviewerRole || 'Auditor Contábil / Controller'}
+                </div>
+                <div style={{ fontSize: '6.8pt', color: '#64748b' }}>
+                  {action.controllershipAudit?.reviewerEmail || reviewerEmail || 'controladoria@empresa.com.br'}
+                </div>
+              </div>
+              <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '0.35rem', marginTop: '0.35rem', fontSize: '6.5pt', color: '#64748b' }}>
+                <div>Data: {formatDateTime(action.controllershipAudit?.reviewedAt || new Date().toISOString())}</div>
+                <div>IP: <strong style={{ color: '#0284c7' }}>{action.controllershipAudit?.reviewerIp || clientIp || '127.0.0.1'}</strong></div>
+                <div>Hash: SHA256-{(action.controllershipAudit?.token || token).substring(0, 10).toUpperCase()}</div>
+              </div>
+            </div>
+
+            {/* Assinatura 2: Gerente / Gestor da Área */}
+            <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.65rem', backgroundColor: '#ffffff', minHeight: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '6.8pt', fontWeight: 800, textTransform: 'uppercase', color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
+                  Gestor da Unidade / Solicitante
+                </div>
+                <div style={{ height: '36px', borderBottom: '1px solid #0f172a', marginBottom: '0.35rem' }}></div>
+                <div style={{ fontSize: '7.2pt', color: '#0f172a' }}>
+                  Nome: ____________________________
+                </div>
+                <div style={{ fontSize: '6.8pt', color: '#64748b', marginTop: '0.15rem' }}>
+                  Cargo: Gerente / Coordenador da Área
+                </div>
+              </div>
+              <div style={{ fontSize: '6.8pt', color: '#64748b', borderTop: '1px dashed #e2e8f0', paddingTop: '0.3rem' }}>
+                Data: _____ / _____ / _________
+              </div>
+            </div>
+
+            {/* Assinatura 3: Diretoria Executiva / CFO */}
+            <div style={{ border: '1px solid #cbd5e1', borderRadius: '6px', padding: '0.65rem', backgroundColor: '#ffffff', minHeight: '140px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '6.8pt', fontWeight: 800, textTransform: 'uppercase', color: '#475569', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.2rem', marginBottom: '0.35rem' }}>
+                  Diretoria Executiva / CFO
+                </div>
+                <div style={{ height: '36px', borderBottom: '1px solid #0f172a', marginBottom: '0.35rem' }}></div>
+                <div style={{ fontSize: '7.2pt', color: '#0f172a' }}>
+                  Nome: ____________________________
+                </div>
+                <div style={{ fontSize: '6.8pt', color: '#64748b', marginTop: '0.15rem' }}>
+                  Cargo: CFO / Diretor Geral
+                </div>
+              </div>
+              <div style={{ fontSize: '6.8pt', color: '#64748b', borderTop: '1px dashed #e2e8f0', paddingTop: '0.3rem' }}>
+                Data: _____ / _____ / _________
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Rodapé Jurídico */}
+        <div style={{ textAlign: 'center', marginTop: '0.85rem', paddingTop: '0.45rem', borderTop: '1px solid #e2e8f0', fontSize: '6.5pt', color: '#94a3b8' }}>
+          Documento emitido eletronicamente pelo Lean Flow System com assinatura digital e registro de IP auditável • Rafitec S.A. / Grupo Vaccaro • Uso estritamente interno e sigiloso.
+        </div>
+      </div>
+
+      {/* Estilos Globais de Impressão e Pré-Visualização */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 10mm 12mm;
+          }
+          html, body {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-size: 8pt !important;
+            line-height: 1.35 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-only {
+            display: block !important;
+          }
+          .print-report-wrapper {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+          }
+          .page-break-inside-avoid {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+        }
+        @media screen {
+          .print-only {
+            display: none !important;
+          }
+          .force-preview {
+            display: block !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            padding: 3rem !important;
+            border-radius: 12px !important;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.6) !important;
+            max-width: 960px !important;
+            margin: 1.5rem auto 3rem auto !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 8.5pt !important;
+            line-height: 1.4 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

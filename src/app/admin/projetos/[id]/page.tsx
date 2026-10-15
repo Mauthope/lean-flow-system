@@ -356,13 +356,20 @@ export default function AdminProjectDetailPage() {
     }
     setOperationalItems(initialOpItems);
 
-    setMachineDowntime(found.costBreakdown?.machineDowntime || '');
-    setLaborSavings(found.costBreakdown?.laborSavings || '');
-    setScrapReduction(found.costBreakdown?.scrapReduction || '');
-    setToolingAndEnergy(found.costBreakdown?.toolingAndEnergy || '');
-    setLogisticsAndFreight(found.costBreakdown?.logisticsAndFreight || '');
-    setProductionIncrease(found.costBreakdown?.productionIncrease || '');
-    setOtherSavings(found.costBreakdown?.otherSavings || '');
+    const isAuditedAndApproved =
+      found.controllershipAudit?.status === 'aprovado' || found.controllershipAudit?.status === 'ajustado_e_aprovado';
+    const effectiveBreakdown =
+      isAuditedAndApproved && found.controllershipAudit?.approvedCostBreakdown
+        ? found.controllershipAudit.approvedCostBreakdown
+        : (found.costBreakdown || {});
+
+    setMachineDowntime(effectiveBreakdown.machineDowntime !== undefined ? effectiveBreakdown.machineDowntime : '');
+    setLaborSavings(effectiveBreakdown.laborSavings !== undefined ? effectiveBreakdown.laborSavings : '');
+    setScrapReduction(effectiveBreakdown.scrapReduction !== undefined ? effectiveBreakdown.scrapReduction : '');
+    setToolingAndEnergy(effectiveBreakdown.toolingAndEnergy !== undefined ? effectiveBreakdown.toolingAndEnergy : '');
+    setLogisticsAndFreight(effectiveBreakdown.logisticsAndFreight !== undefined ? effectiveBreakdown.logisticsAndFreight : '');
+    setProductionIncrease(effectiveBreakdown.productionIncrease !== undefined ? effectiveBreakdown.productionIncrease : '');
+    setOtherSavings(effectiveBreakdown.otherSavings !== undefined ? effectiveBreakdown.otherSavings : '');
 
     const gDetails = found.gainDetails || found.controllershipAudit?.gainDetails || {};
     setGainDetails(JSON.parse(JSON.stringify(gDetails)));
@@ -718,7 +725,7 @@ export default function AdminProjectDetailPage() {
   const numIcmsCredit = Number(icmsCredit) || 0;
   const numPisRate = pisCofinsRate !== '' ? Number(pisCofinsRate) : 22.0;
   const numPisCredit =
-    pisCofinsCredit !== ''
+    pisCofinsCredit !== '' && Number(pisCofinsCredit) > 0 && Number(pisCofinsCredit) <= grossInvestmentCost
       ? Number(pisCofinsCredit)
       : Math.round(grossInvestmentCost * (numPisRate / 100));
 
@@ -739,11 +746,22 @@ export default function AdminProjectDetailPage() {
     (Number(productionIncrease) || 0) +
     (Number(otherSavings) || 0);
 
-  // Fluxo Operacional Mensal da Melhoria (Alimentado 100% diretamente pelas 7 Fontes Tradicionais)
-  const grossMonthly7Sources = total7SourcesSavings > 0 ? total7SourcesSavings / 12 : 0;
-  const grossMonthlyOperationalGain = grossMonthly7Sources;
+  // Prioriza o valor oficial homologado pela Controladoria se já auditado
+  const isActionAuditedAndApproved =
+    action?.controllershipAudit?.status === 'aprovado' || action?.controllershipAudit?.status === 'ajustado_e_aprovado';
+  const approvedTotalAvoided =
+    isActionAuditedAndApproved && typeof action?.controllershipAudit?.approvedEstimatedCostAvoided === 'number'
+      ? action.controllershipAudit.approvedEstimatedCostAvoided
+      : undefined;
 
-  const totalGrossSavings = total7SourcesSavings;
+  const totalGrossSavings =
+    approvedTotalAvoided !== undefined && approvedTotalAvoided > 0
+      ? approvedTotalAvoided
+      : total7SourcesSavings;
+
+  // Fluxo Operacional Mensal da Melhoria (Alimentado 100% diretamente pelas 7 Fontes Tradicionais)
+  const grossMonthly7Sources = totalGrossSavings > 0 ? totalGrossSavings / 12 : 0;
+  const grossMonthlyOperationalGain = grossMonthly7Sources;
 
   const incomeTaxOnGainMonthly =
     grossMonthlyOperationalGain > 0 ? Math.round(grossMonthlyOperationalGain * taxFactor) : 0;

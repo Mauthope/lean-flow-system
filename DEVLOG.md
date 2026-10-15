@@ -26,6 +26,47 @@
 
 ---
 
+## [2026-10-15] Laudo Pericial de Auditoria Contábil (Impressão A4 com Assinaturas e IP), Saneamento Fiscal do CAPEX e Totalizadores Oficiais
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Implementação do Laudo Pericial Oficial de Auditoria Contábil & Homologação de CAPEX pronto para impressão física e PDF em formato A4, rastreabilidade forense com captura automática de IP de auditoria (`reviewerIp`), e-mail corporativo e carimbo de data/hora, triplo quadro de assinaturas (Auditor com selo eletrônico, Gestor da Área e Diretoria/CFO), saneamento da fórmula fiscal de deduções do CAPEX (CPC 27 e limitação da alíquota de 22% de PIS/COFINS recuperável ao teto do investimento bruto), eliminação de anomalias de Payback 0/ROI 0% para investimentos pequenos, e sincronização dos totalizadores de ganho operacional para priorizar o valor oficial homologado pela Controladoria.
+
+### 1. Diagnóstico Contábil e Causa Raiz
+- **Anomalia de Payback 0 meses e ROI 0% no CAPEX:** Ao reduzir o investimento bruto de um projeto (ex: de R$ 1.000 para R$ 50,00), o sistema mantinha em memória o crédito fiscal digitado anteriormente (R$ 219,00). Pela fórmula contábil sem trava de teto (`Math.max(0, 50 - 219)`), o `Investimento Líquido` resultava em R$ 0,00. Consequentemente, a cota de depreciação mensal e o escudo fiscal (Tax Shield) zeravam, apresentando um demonstrativo financeiro confuso e incoerente para o auditor.
+- **Divergência nos Totalizadores de Ganho:** Quando a Controladoria ajustava e homologava um ganho financeiro diferente do solicitado pela equipe operacional (ex: reduzia de R$ 68.000 para R$ 45.000), os cards do projeto continuavam exibindo o totalizador original digitado pelo líder (`costBreakdown` / `estimatedCostAvoided`), gerando descompasso entre o relatório da Controladoria e os dashboards executivos.
+- **Necessidade de Relatório Pericial Imprimível com Assinaturas:** A governança corporativa exige que, após o processo digital de auditoria, a Controladoria possa imprimir uma folha única oficial (A4) para colher rubricas do Gerente da Área e da Diretoria/CFO, contendo a discriminação analítica das 7 fontes de perdas, deduções fiscais, DRE operacional pós-IR e auditoria eletrônica não-repudiável com o IP da estação de trabalho.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Rastreabilidade Forense e Captura de IP do Auditor (`src/app/api/controladoria/audit/route.ts` & `src/lib/types.ts`):**
+  - Adicionado o campo `reviewerIp?: string` na interface `ControllershipAudit`.
+  - A rota `/api/controladoria/audit` captura o endereço IP da estação através dos cabeçalhos HTTP `x-forwarded-for` e `x-real-ip`.
+  - Registro pericial persistido no Supabase na tabela `controllership_audits` e retornado na inicialização da tela para exibição transparente no carimbo do laudo.
+- **Saneamento da Matemática Fiscal do CAPEX e Deduções (`src/services/dataService.ts` & `src/app/admin/projetos/[id]/page.tsx`):**
+  - Aplicação de regra de conformidade fiscal CPC 27 / Lei 10.833/03 na função `calculateCorporateProjectFinancials`: o crédito de PIS/COFINS é estritamente limitado ao teto do investimento bruto (`grossInvestment * (pisCofinsRate / 100)`).
+  - Com a trava, um investimento de R$ 50,00 gera exatamente R$ 11,00 de crédito recuperável (22%), apurando R$ 39,00 de Investimento Líquido ativável, depreciação linear de R$ 0,65/mês, benefício fiscal de R$ 0,22/mês e Payback Simples real de 0,7 meses (21 dias).
+- **Sincronização Atômica dos Totalizadores Homologados (`src/services/dataService.ts` & `src/app/admin/projetos/[id]/page.tsx`):**
+  - Na aprovação ou ajuste pelo auditor, a função `processControllershipAudit` e a rota de API atualizam atômica e simultaneamente `actual_cost_avoided` e `estimated_cost_avoided` na tabela `lean_actions`.
+  - O método `applyActionToForm` passa a priorizar `approvedCostBreakdown` sobre o breakdown original caso o projeto já tenha passado pela auditoria da Controladoria.
+  - Eliminação de linhas estáticas residuais de R$ 0,00 no detalhamento de despesas quando já existem itens dinâmicos cadastrados.
+- **Laudo Técnico Pericial de Auditoria Contábil (Formato A4 para Impressão e Tela):**
+  - Implementado em `src/app/controladoria/auditoria/[token]/page.tsx` com regras estritas de `@media print`:
+    - Cabeçalho executivo institucional com monograma do Grupo Vaccaro / Rafitec S.A., Protocolo, Token e IP do Terminal.
+    - Metadados do Projeto Kaizen, Linha de Produção, Turno e Liderança.
+    - Quadro Comparativo Pericial das 7 Fontes Tradicionais: Valor Proposto vs Valor Homologado vs Variação (+/- R$) com status pericial individual.
+    - Quadro de Ativação do Imobilizado (CAPEX & Deduções Fiscais).
+    - Quadro de DRE Operacional & Fluxo de Caixa Pós-IR (34% Lucro Real) com Tax Shield e Paybacks Simples e Descontado.
+    - Parecer Técnico Circunstanciado emitido pela Controladoria.
+    - Três Campos Formais de Assinatura:
+      1. **Auditor da Controladoria:** Homologação eletrônica com carimbo digital, data/hora, e-mail e IP da estação.
+      2. **Gestor da Área Solicitante:** Linha formal para visto físico com Data e Assinatura.
+      3. **Diretoria Executiva / CFO:** Linha formal para homologação executiva com Data e Assinatura.
+  - Botão de alternância `Visualizar Laudo A4` no topo da página de auditoria, permitindo ao auditor inspecionar visualmente o documento com tipografia e diagramação idênticas ao papel antes do comando de impressão.
+
+### 3. Validação e Qualidade Técnica
+- **Aferição Contábil:** Rigorosamente validado contra as regras do CPC 27 e metodologia de Lucro Real.
+- **Padrão Estético e SecOps:** Fundo Obsidian Navy na interface interativa, formatação preto-e-branco de alta nitidez na impressão, ausência absoluta de emojis e garantia de não-repúdio na cadeia de auditoria.
+
+---
+
 ## [2026-10-15] Supabase Storage para Anexos, Proteção contra Eco Realtime e Unificação dos Ganhos Brutos das 7 Fontes no Check
 **Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
 **Escopo:** Resolução definitiva do problema de salvamento instável e perda de anexos, transição da codificação Base64 para Supabase Storage dedicado (`project-attachments`), proteção de quota do `localStorage`, eliminação de loops de eco no Supabase Realtime com janela de bloqueio local, unificação do cálculo do ganho operacional diretamente aos Ganhos Brutos das 7 Fontes Tradicionais na etapa Check e simplificação da interface com remoção de itens operacionais redundantes.

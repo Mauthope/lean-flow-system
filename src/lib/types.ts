@@ -412,6 +412,7 @@ export interface ControllershipAudit {
   reviewedBy?: string;                 // Nome do auditor financeiro
   reviewerEmail?: string;              // E-mail do auditor
   reviewerRole?: string;               // Cargo (ex: "Controladoria & Finanças")
+  reviewerIp?: string;                 // Endereço IP do computador da Controladoria
   auditNotes?: string;                 // Parecer técnico / notas de validação
   rejectionReason?: string;            // Motivo da recusa / orientações de revisão
 

@@ -1681,11 +1681,13 @@ export const dataService = {
     const pisCofinsRate = costs.pisCofinsRate !== undefined ? Number(costs.pisCofinsRate) : 22.0;
     costs.pisCofinsRate = pisCofinsRate;
 
-    // Se o valor monetário de PIS/COFINS recuperável não foi fixado manualmente, calcula proporcional à taxa
+    // Se o valor monetário de PIS/COFINS recuperável não foi fixado manualmente ou exceder o CAPEX, calcula proporcional à taxa
+    const calculatedPis = Math.round(grossInvestment * (pisCofinsRate / 100));
+    const rawPisCredit = costs.pisCofinsCredit !== undefined ? Number(costs.pisCofinsCredit) : undefined;
     const pisCofinsCredit =
-      costs.pisCofinsCredit !== undefined && costs.pisCofinsCredit > 0
-        ? Number(costs.pisCofinsCredit)
-        : Math.round(grossInvestment * (pisCofinsRate / 100));
+      rawPisCredit !== undefined && rawPisCredit > 0 && rawPisCredit <= grossInvestment
+        ? rawPisCredit
+        : calculatedPis;
     costs.pisCofinsCredit = pisCofinsCredit;
 
     // (=) INVESTIMENTO LÍQUIDO DE CAPITAL
@@ -1702,6 +1704,14 @@ export const dataService = {
     costs.incomeTaxRate = incomeTaxRate;
 
     // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais)
+    // Prioriza os valores homologados e certificados pela Controladoria se já auditados
+    const isAuditedAndApproved =
+      action.controllershipAudit?.status === 'aprovado' || action.controllershipAudit?.status === 'ajustado_e_aprovado';
+    const approvedAvoided =
+      isAuditedAndApproved && typeof action.controllershipAudit?.approvedEstimatedCostAvoided === 'number'
+        ? action.controllershipAudit.approvedEstimatedCostAvoided
+        : undefined;
+
     const gross7SourcesAvoided =
       (Number(action.costBreakdown?.laborSavings) || 0) +
       (Number(action.costBreakdown?.productionIncrease) || 0) +
@@ -1712,9 +1722,11 @@ export const dataService = {
       (Number(action.costBreakdown?.otherSavings) || 0);
 
     const grossAvoided =
-      gross7SourcesAvoided > 0
-        ? gross7SourcesAvoided
-        : Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
+      approvedAvoided !== undefined && approvedAvoided > 0
+        ? approvedAvoided
+        : (gross7SourcesAvoided > 0
+            ? gross7SourcesAvoided
+            : Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0);
     const grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
     costs.grossOperationalGainMonthly = Math.round(grossMonthlyGain);
 
@@ -2358,6 +2370,7 @@ export const dataService = {
       reviewerName: string;
       reviewerEmail: string;
       reviewerRole?: string;
+      reviewerIp?: string;
       auditNotes?: string;
       rejectionReason?: string;
     }
@@ -2377,6 +2390,7 @@ export const dataService = {
     action.controllershipAudit.reviewedBy = review.reviewerName;
     action.controllershipAudit.reviewerEmail = review.reviewerEmail;
     action.controllershipAudit.reviewerRole = review.reviewerRole;
+    action.controllershipAudit.reviewerIp = review.reviewerIp;
     action.controllershipAudit.auditNotes = review.auditNotes;
     action.controllershipAudit.rejectionReason = review.rejectionReason;
 
@@ -2393,6 +2407,15 @@ export const dataService = {
         action.controllershipAudit.originalEstimatedCostAvoided;
       action.controllershipAudit.approvedProjectCosts =
         action.controllershipAudit.originalProjectCosts;
+
+      // Sincroniza os valores oficiais de custo evitado no projeto
+      if (typeof action.controllershipAudit.approvedEstimatedCostAvoided === 'number') {
+        action.actualCostAvoided = action.controllershipAudit.approvedEstimatedCostAvoided;
+        action.estimatedCostAvoided = action.controllershipAudit.approvedEstimatedCostAvoided;
+      }
+      if (action.controllershipAudit.approvedCostBreakdown) {
+        action.costBreakdown = action.controllershipAudit.approvedCostBreakdown;
+      }
 
       // Habilita automaticamente o acompanhamento trimestral com a baseline homologada
       if (!action.quarterlyFollowUp) {
@@ -2417,6 +2440,7 @@ export const dataService = {
       }
       if (typeof review.approvedEstimatedCostAvoided === 'number') {
         action.estimatedCostAvoided = review.approvedEstimatedCostAvoided;
+        action.actualCostAvoided = review.approvedEstimatedCostAvoided;
       }
       if (review.approvedProjectCosts) {
         action.projectCosts = review.approvedProjectCosts;

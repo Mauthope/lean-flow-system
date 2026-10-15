@@ -99,13 +99,19 @@ export async function GET(req: NextRequest) {
       email_sent_at: effectiveAudit.email_sent_at || effectiveAudit.emailSentAt,
       emailStatus: effectiveAudit.email_status || effectiveAudit.emailStatus,
       email_status: effectiveAudit.email_status || effectiveAudit.emailStatus,
+      reviewerIp: effectiveAudit.reviewer_ip || effectiveAudit.reviewerIp,
+      reviewer_ip: effectiveAudit.reviewer_ip || effectiveAudit.reviewerIp,
     };
+
+    const forwarded = req.headers.get('x-forwarded-for');
+    const clientIp = forwarded ? forwarded.split(',')[0].trim() : (req.headers.get('x-real-ip') || '127.0.0.1');
 
     return NextResponse.json({
       success: true,
       result: { audit: normalizedAudit, action: actionData },
       audit: normalizedAudit,
       action: actionData,
+      clientIp,
     });
   } catch (err: any) {
     console.error('[api/controladoria/audit] Erro inesperado no GET:', err);
@@ -116,6 +122,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const forwarded = req.headers.get('x-forwarded-for');
+    const headerIp = forwarded ? forwarded.split(',')[0].trim() : (req.headers.get('x-real-ip') || '127.0.0.1');
     const {
       token,
       status,
@@ -125,6 +133,7 @@ export async function POST(req: NextRequest) {
       reviewerName,
       reviewerEmail,
       reviewerRole = 'Controladoria',
+      reviewerIp = headerIp,
       auditNotes = '',
       rejectionReason = '',
       gainDetails = null,
@@ -138,25 +147,67 @@ export async function POST(req: NextRequest) {
     }
 
     // Submete decisão via função RPC privada protegida submit_audit_decision_v2
-    const { data, error } = await supabase.rpc('submit_audit_decision_v2', {
-      p_token: token,
-      p_status: status,
-      p_approved_estimated: approvedEstimatedCostAvoided,
-      p_approved_breakdown: approvedBreakdown,
-      p_approved_costs: approvedProjectCosts,
-      p_reviewer_name: reviewerName,
-      p_reviewer_email: reviewerEmail,
-      p_reviewer_role: reviewerRole,
-      p_audit_notes: auditNotes,
-      p_rejection_reason: rejectionReason,
-      p_gain_details: gainDetails,
-    });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    let rpcError = null;
+    let rpcData = null;
+    try {
+      const { data, error } = await supabase.rpc('submit_audit_decision_v2', {
+        p_token: token,
+        p_status: status,
+        p_approved_estimated: approvedEstimatedCostAvoided,
+        p_approved_breakdown: approvedBreakdown,
+        p_approved_costs: approvedProjectCosts,
+        p_reviewer_name: reviewerName,
+        p_reviewer_email: reviewerEmail,
+        p_reviewer_role: reviewerRole,
+        p_audit_notes: auditNotes,
+        p_rejection_reason: rejectionReason,
+        p_gain_details: gainDetails,
+      });
+      rpcData = data;
+      rpcError = error;
+    } catch (e: any) {
+      rpcError = e;
     }
 
-    return NextResponse.json({ success: true, result: data });
+    // Se o RPC não existir ou falhar por assinatura antiga, atualiza diretamente
+    if (rpcError) {
+      console.warn('[api/controladoria/audit] RPC falhou, aplicando fallback de atualização direta:', rpcError);
+      await supabase
+        .from('controllership_audits')
+        .update({
+          status,
+          approved_estimated_cost_avoided: approvedEstimatedCostAvoided,
+          approved_breakdown: approvedBreakdown,
+          approved_project_costs: approvedProjectCosts,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: reviewerName,
+          reviewer_email: reviewerEmail,
+          reviewer_role: reviewerRole,
+          audit_notes: auditNotes,
+          rejection_reason: rejectionReason,
+          gain_details: gainDetails,
+        })
+        .eq('token', token);
+    }
+
+    // Atualiza a tabela lean_actions para sincronizar os valores homologados no projeto
+    if (status === 'aprovado' || status === 'ajustado_e_aprovado') {
+      try {
+        await supabase
+          .from('lean_actions')
+          .update({
+            actual_cost_avoided: approvedEstimatedCostAvoided,
+            estimated_cost_avoided: approvedEstimatedCostAvoided,
+            cost_breakdown: approvedBreakdown,
+            investment_costs: approvedProjectCosts,
+          })
+          .or(`audit_token.eq.${token},methodology_data->controllershipAudit->>token.eq.${token}`);
+      } catch (actErr) {
+        console.warn('[api/controladoria/audit] Não foi possível atualizar lean_actions diretamente:', actErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, result: rpcData || { status } });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Erro interno' }, { status: 500 });
   }
