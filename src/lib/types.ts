@@ -200,14 +200,52 @@ export interface LeanCostBreakdown {
   otherSavingsDescription?: string;
 }
 
-// Custos & Investimento do Projeto (Capex + Opex)
+// Item individual de ganho (+) ou novo custo operacional (-) no fluxo de caixa da melhoria
+export interface OperationalCashFlowItem {
+  id: string;
+  type: 'ganho' | 'custo'; // (+) Economia/Ganho ou (-) Novo Custo/Despesa Decorrente
+  description: string;     // Ex: "Redução de Consumo de Energia", "Regravação dos Anilox"
+  quantity?: number;       // Ex: 1.00
+  unitValue?: number;      // Ex: 715.55
+  monthlyValue: number;    // Ex: 715.55
+}
+
+// Custos & Investimento do Projeto (Capex + Opex) e Engenharia Financeira / Fiscal (Lucro Real)
 export interface ProjectInvestmentCosts {
+  // Composição Física do Investimento (CAPEX)
   partsAndEquipment?: number;     // Aquisição de peças, dispositivos e sensores (R$)
   thirdPartyServices?: number;    // Usinagem externa, calibração, consultoria (R$)
   internalLaborHours?: number;    // Total de horas dos agentes envolvidos no desenvolvimento (h)
   laborHourlyRate?: number;       // Custo médio homem-hora (R$/h) - padrão R$ 45,00
   otherCosts?: number;           // Outras despesas operacionais (R$)
-  totalCost?: number;            // Soma total do investimento
+  totalCost?: number;            // Investimento Total Bruto (R$)
+
+  // Deduções Fiscais e Tributárias sobre o Ativo Imobilizado (CPC 27 / Lucro Real)
+  icmsCredit?: number;           // (-) Impostos Recuperáveis: ICMS (R$)
+  pisCofinsRate?: number;        // Alíquota PIS/COFINS recuperável (%) - padrão 22,00%
+  pisCofinsCredit?: number;      // (-) Impostos Recuperáveis: PIS/COFINS (R$)
+  netInvestmentCost?: number;    // (=) INVESTIMENTO LÍQUIDO DE CAPITAL (R$)
+
+  // Parâmetros Financeiros e Fiscais
+  financialRate?: number;        // Taxa financeira mensal de oportunidade / desconto (%) - padrão 1,00% a.m.
+  depreciationMonths?: number;   // Prazo de depreciação contábil (meses) - padrão 60 meses (5 anos)
+  incomeTaxRate?: number;        // Alíquota de IRPJ + CSLL no Lucro Real (%) - padrão 34,00%
+
+  // Itens de Fluxo Operacional (Ganhos vs Novos Custos Recorrentes)
+  operationalItems?: OperationalCashFlowItem[];
+
+  // Demonstração do Resultado Operacional e Caixa Mensal (Memória da Controladoria)
+  grossOperationalGainMonthly?: number; // (=) GANHO MENSAL OPERACIONAL (Antes do IR)
+  incomeTaxOnGainMonthly?: number;      // (-) IR s/ ganho (34%)
+  netOperationalGainMonthly?: number;   // (=) GANHO LÍQUIDO OPERACIONAL
+  monthlyDepreciation?: number;         // Depreciação mensal contábil (Investimento Líquido / Meses)
+  taxShieldDepreciationMonthly?: number;// (+) IR s/ depreciação (Benefício Fiscal de 34%)
+  finalNetMonthlyCashFlow?: number;     // (=) GANHO LÍQUIDO FINAL (Fluxo de Caixa Livre Mensal)
+
+  // Indicadores de Retorno Apropriados
+  simplePaybackMonths?: number;         // Payback Simples = Investimento Líquido / Ganho Líquido Final (meses)
+  discountedPaybackMonths?: number;     // Payback Descontado considerando a Taxa Financeira mensal (meses)
+  roiAnnualPercentage?: number;         // ROI Anual Líquido (%)
 }
 
 // Comprovação & Análise por Gráfico de Pareto (Regra 80/20)

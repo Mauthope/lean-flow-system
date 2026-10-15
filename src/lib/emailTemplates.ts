@@ -15,7 +15,10 @@ export interface ControladoriaEmailTemplateData {
   leaderName: string;
   estimatedSavings: number;
   investmentCost?: number;
+  netInvestmentCost?: number;
+  monthlyNetCashFlow?: number;
   paybackMonths?: number;
+  discountedPaybackMonths?: number;
   auditUrl: string;
   tenantName: string;
 }
@@ -41,14 +44,29 @@ export function buildControladoriaAuditEmailHtml(data: ControladoriaEmailTemplat
     leaderName,
     estimatedSavings,
     investmentCost = 0,
+    netInvestmentCost,
+    monthlyNetCashFlow,
     paybackMonths,
+    discountedPaybackMonths,
     auditUrl,
     tenantName,
   } = data;
 
+  const effectiveInvestment = netInvestmentCost !== undefined ? netInvestmentCost : investmentCost;
   const formattedSavings = formatCurrencyBRL(estimatedSavings);
-  const formattedInvestment = investmentCost > 0 ? formatCurrencyBRL(investmentCost) : 'R$ 0,00 (Sem Capex)';
-  const formattedPayback = paybackMonths ? `${paybackMonths.toFixed(1)} meses` : 'Imediato';
+  const formattedInvestment = effectiveInvestment > 0
+    ? netInvestmentCost !== undefined && investmentCost > netInvestmentCost
+      ? `${formatCurrencyBRL(effectiveInvestment)} (Líquido)`
+      : formatCurrencyBRL(effectiveInvestment)
+    : 'R$ 0,00 (Sem Capex)';
+
+  let formattedPayback = 'Imediato';
+  if (paybackMonths && paybackMonths > 0) {
+    formattedPayback = `${paybackMonths.toFixed(1)} meses (Simples)`;
+    if (discountedPaybackMonths && discountedPaybackMonths > 0 && discountedPaybackMonths < 900) {
+      formattedPayback += ` | ${discountedPaybackMonths.toFixed(1)}m (Descontado)`;
+    }
+  }
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">

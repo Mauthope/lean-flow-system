@@ -19,7 +19,10 @@ export interface ControladoriaInviteParams {
   leaderName?: string;
   estimatedSavings: number; // Retorno Anual Estimado (R$/ano)
   investmentCost?: number;  // Capex/Investimento (R$)
-  paybackMonths?: number;   // Payback em meses
+  netInvestmentCost?: number; // Investimento Líquido (R$)
+  monthlyNetCashFlow?: number; // Fluxo de Caixa Líquido Mensal (R$)
+  paybackMonths?: number;   // Payback em meses (Simples)
+  discountedPaybackMonths?: number; // Payback Descontado (meses)
   auditUrl: string;
   token: string;
   tenantName?: string;
@@ -48,7 +51,10 @@ export function generateAuditEmailHtml(params: ControladoriaInviteParams): strin
     leaderName: params.leaderName || 'Especialista Lean',
     estimatedSavings: params.estimatedSavings,
     investmentCost: params.investmentCost,
+    netInvestmentCost: params.netInvestmentCost,
+    monthlyNetCashFlow: params.monthlyNetCashFlow,
     paybackMonths: params.paybackMonths,
+    discountedPaybackMonths: params.discountedPaybackMonths,
     auditUrl: params.auditUrl,
     tenantName: params.tenantName || 'Rafitec S.A.',
   });

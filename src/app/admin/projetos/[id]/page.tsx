@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { dataService } from '@/services/dataService';
-import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment, ActivityAttachment, ActionQualityEvaluation, QuarterlyFollowUp } from '@/lib/types';
+import { LeanAction, PDCAMethodologyStage, ActionChecklistItem, ProjectAttachment, IshikawaAnalysis, GainProofDetail, GainProofAttachment, ActivityAttachment, ActionQualityEvaluation, QuarterlyFollowUp, OperationalCashFlowItem } from '@/lib/types';
 import { StatusBadge, PriorityBadge, WasteCategoryBadge } from '@/components/ui/Badge';
 import { formatDateTime, formatDate, formatCurrency, WASTE_CATEGORIES, getFollowUpMonthsFilledCount, isThreeMonthsFollowUpCompleted, getProjectMonthLabel, getDefaultMeasurementDate } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
+  Calculator,
+  Receipt,
   TrendingUp,
   Building,
   User,
@@ -163,6 +165,17 @@ export default function AdminProjectDetailPage() {
   const [internalLaborHours, setInternalLaborHours] = useState<number | ''>('');
   const [laborHourlyRate, setLaborHourlyRate] = useState<number | ''>(45);
   const [otherCosts, setOtherCosts] = useState<number | ''>('');
+
+  // Deduções Fiscais e Parâmetros Tributários (CPC 27 / Lucro Real)
+  const [icmsCredit, setIcmsCredit] = useState<number | ''>('');
+  const [pisCofinsRate, setPisCofinsRate] = useState<number | ''>(22);
+  const [pisCofinsCredit, setPisCofinsCredit] = useState<number | ''>('');
+  const [financialRate, setFinancialRate] = useState<number | ''>(1.0);
+  const [depreciationMonths, setDepreciationMonths] = useState<number | ''>(60);
+  const [incomeTaxRate, setIncomeTaxRate] = useState<number | ''>(34);
+
+  // Itens Operacionais Mensais (Ganhos vs Novos Custos Recorrentes - DRE da Melhoria)
+  const [operationalItems, setOperationalItems] = useState<OperationalCashFlowItem[]>([]);
 
   // Gains (7 Fontes) - Limpos sem '0' pré-estabelecido
   const [machineDowntime, setMachineDowntime] = useState<number | ''>('');
@@ -311,6 +324,14 @@ export default function AdminProjectDetailPage() {
     setInternalLaborHours(found.projectCosts?.internalLaborHours || '');
     setLaborHourlyRate(found.projectCosts?.laborHourlyRate || 45);
     setOtherCosts(found.projectCosts?.otherCosts || '');
+
+    setIcmsCredit(found.projectCosts?.icmsCredit !== undefined ? found.projectCosts.icmsCredit : '');
+    setPisCofinsRate(found.projectCosts?.pisCofinsRate !== undefined ? found.projectCosts.pisCofinsRate : 22);
+    setPisCofinsCredit(found.projectCosts?.pisCofinsCredit !== undefined ? found.projectCosts.pisCofinsCredit : '');
+    setFinancialRate(found.projectCosts?.financialRate !== undefined ? found.projectCosts.financialRate : 1.0);
+    setDepreciationMonths(found.projectCosts?.depreciationMonths !== undefined ? found.projectCosts.depreciationMonths : 60);
+    setIncomeTaxRate(found.projectCosts?.incomeTaxRate !== undefined ? found.projectCosts.incomeTaxRate : 34);
+    setOperationalItems(found.projectCosts?.operationalItems ? JSON.parse(JSON.stringify(found.projectCosts.operationalItems)) : []);
 
     setMachineDowntime(found.costBreakdown?.machineDowntime || '');
     setLaborSavings(found.costBreakdown?.laborSavings || '');
@@ -643,14 +664,29 @@ export default function AdminProjectDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [presentationOpen, paretoZoomOpen]);
 
-  // Dynamic Calculated Financials
-  const totalInvestmentCost =
+  // Dynamic Calculated Financials (Modelo Contábil-Corporativo de Lucro Real / CPC 27)
+  const grossInvestmentCost =
     (Number(partsAndEquipment) || 0) +
     (Number(thirdPartyServices) || 0) +
     (Number(internalLaborHours) || 0) * (Number(laborHourlyRate) || 0) +
     (Number(otherCosts) || 0);
 
-  const totalGrossSavings =
+  const numIcmsCredit = Number(icmsCredit) || 0;
+  const numPisRate = pisCofinsRate !== '' ? Number(pisCofinsRate) : 22.0;
+  const numPisCredit =
+    pisCofinsCredit !== ''
+      ? Number(pisCofinsCredit)
+      : Math.round(grossInvestmentCost * (numPisRate / 100));
+
+  const netInvestmentCost = Math.max(0, grossInvestmentCost - numIcmsCredit - numPisCredit);
+
+  const numFinancialRate = financialRate !== '' ? Number(financialRate) : 1.0;
+  const numDeprMonths = Number(depreciationMonths) > 0 ? Number(depreciationMonths) : 60;
+  const numTaxRate = incomeTaxRate !== '' ? Number(incomeTaxRate) : 34.0;
+  const taxFactor = numTaxRate / 100;
+
+  // 7 Fontes Tradicionais
+  const total7SourcesSavings =
     (Number(machineDowntime) || 0) +
     (Number(laborSavings) || 0) +
     (Number(scrapReduction) || 0) +
@@ -659,16 +695,56 @@ export default function AdminProjectDetailPage() {
     (Number(productionIncrease) || 0) +
     (Number(otherSavings) || 0);
 
-  const netSavings = Math.max(0, totalGrossSavings - totalInvestmentCost);
-  const roiPercentage = totalInvestmentCost > 0 ? Math.round((netSavings / totalInvestmentCost) * 100) : 0;
-  const monthlyGrossSavings = totalGrossSavings / 12;
-  const paybackMonths =
-    totalGrossSavings > 0 ? Number(((totalInvestmentCost / totalGrossSavings) * 12).toFixed(1)) : 0;
+  // Fluxo Operacional Mensal da Melhoria (Ganhos vs Novos Custos Decorrentes)
+  const operationalItemsMonthly = operationalItems.reduce((acc, item) => {
+    const val = Number(item.monthlyValue) || Number(item.quantity) * Number(item.unitValue) || 0;
+    return item.type === 'custo' ? acc - Math.abs(val) : acc + Math.abs(val);
+  }, 0);
+
+  const grossMonthlyOperationalGain =
+    operationalItems.length > 0 ? operationalItemsMonthly : total7SourcesSavings > 0 ? total7SourcesSavings / 12 : 0;
+
+  const totalGrossSavings =
+    operationalItems.length > 0 ? Math.round(grossMonthlyOperationalGain * 12) : total7SourcesSavings;
+
+  const incomeTaxOnGainMonthly =
+    grossMonthlyOperationalGain > 0 ? Math.round(grossMonthlyOperationalGain * taxFactor) : 0;
+
+  const netOperationalGainMonthly = grossMonthlyOperationalGain - incomeTaxOnGainMonthly;
+
+  const monthlyDepreciation = netInvestmentCost > 0 ? netInvestmentCost / numDeprMonths : 0;
+  const taxShieldDepreciationMonthly = Math.round(monthlyDepreciation * taxFactor);
+
+  const finalNetMonthlyCashFlow = Math.round(netOperationalGainMonthly + taxShieldDepreciationMonthly);
+
+  const simplePaybackMonths =
+    finalNetMonthlyCashFlow > 0 && netInvestmentCost > 0
+      ? Number((netInvestmentCost / finalNetMonthlyCashFlow).toFixed(1))
+      : 0;
+
+  let discountedPaybackMonths = simplePaybackMonths;
+  if (finalNetMonthlyCashFlow > 0 && netInvestmentCost > 0 && numFinancialRate > 0) {
+    const i = numFinancialRate / 100;
+    const cover = (netInvestmentCost * i) / finalNetMonthlyCashFlow;
+    if (cover < 1) {
+      discountedPaybackMonths = Number((-Math.log(1 - cover) / Math.log(1 + i)).toFixed(1));
+    } else {
+      discountedPaybackMonths = 999;
+    }
+  }
+
+  // Compatibilidade com variáveis existentes
+  const totalInvestmentCost = netInvestmentCost > 0 ? netInvestmentCost : grossInvestmentCost;
+  const paybackMonths = simplePaybackMonths;
+  const netSavings = Math.max(0, finalNetMonthlyCashFlow * 12 - totalInvestmentCost);
+  const roiPercentage =
+    totalInvestmentCost > 0 ? Math.round((netSavings / totalInvestmentCost) * 100) : 0;
+  const monthlyGrossSavings = grossMonthlyOperationalGain;
 
   // Governança Diretoria: Retorno Mensal (Média 3M) × 12 Meses & Ciclo Anual (365 Dias)
   const provenMonthlySavings =
     action?.quarterlyFollowUp?.averageCostAvoided ||
-    (totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0);
+    (finalNetMonthlyCashFlow > 0 ? finalNetMonthlyCashFlow : totalGrossSavings > 0 ? Math.round(totalGrossSavings / 12) : 0);
   const provenAnnualSavings = provenMonthlySavings * 12;
   const provenNetAnnualSavings = Math.max(0, provenAnnualSavings - totalInvestmentCost);
   const provenNetMonthlySavings = Math.round(provenNetAnnualSavings / 12);
@@ -766,6 +842,23 @@ export default function AdminProjectDetailPage() {
     internalLaborHours,
     laborHourlyRate,
     otherCosts,
+    icmsCredit,
+    pisCofinsRate,
+    pisCofinsCredit,
+    financialRate,
+    depreciationMonths,
+    incomeTaxRate,
+    operationalItems,
+    grossInvestmentCost,
+    netInvestmentCost,
+    grossMonthlyOperationalGain,
+    incomeTaxOnGainMonthly,
+    netOperationalGainMonthly,
+    monthlyDepreciation,
+    taxShieldDepreciationMonthly,
+    finalNetMonthlyCashFlow,
+    simplePaybackMonths,
+    discountedPaybackMonths,
     machineDowntime,
     laborSavings,
     scrapReduction,
@@ -821,6 +914,23 @@ export default function AdminProjectDetailPage() {
       internalLaborHours,
       laborHourlyRate,
       otherCosts,
+      icmsCredit,
+      pisCofinsRate,
+      pisCofinsCredit,
+      financialRate,
+      depreciationMonths,
+      incomeTaxRate,
+      operationalItems,
+      grossInvestmentCost,
+      netInvestmentCost,
+      grossMonthlyOperationalGain,
+      incomeTaxOnGainMonthly,
+      netOperationalGainMonthly,
+      monthlyDepreciation,
+      taxShieldDepreciationMonthly,
+      finalNetMonthlyCashFlow,
+      simplePaybackMonths,
+      discountedPaybackMonths,
       machineDowntime,
       laborSavings,
       scrapReduction,
@@ -884,7 +994,15 @@ export default function AdminProjectDetailPage() {
       s.partsAndEquipment !== (base?.projectCosts?.partsAndEquipment || '') ||
       s.thirdPartyServices !== (base?.projectCosts?.thirdPartyServices || '') ||
       s.internalLaborHours !== (base?.projectCosts?.internalLaborHours || '') ||
-      s.otherCosts !== (base?.projectCosts?.otherCosts || '');
+      s.laborHourlyRate !== (base?.projectCosts?.laborHourlyRate || 45) ||
+      s.otherCosts !== (base?.projectCosts?.otherCosts || '') ||
+      s.icmsCredit !== (base?.projectCosts?.icmsCredit !== undefined ? base.projectCosts.icmsCredit : '') ||
+      s.pisCofinsRate !== (base?.projectCosts?.pisCofinsRate !== undefined ? base.projectCosts.pisCofinsRate : 22) ||
+      s.pisCofinsCredit !== (base?.projectCosts?.pisCofinsCredit !== undefined ? base.projectCosts.pisCofinsCredit : '') ||
+      s.financialRate !== (base?.projectCosts?.financialRate !== undefined ? base.projectCosts.financialRate : 1.0) ||
+      s.depreciationMonths !== (base?.projectCosts?.depreciationMonths !== undefined ? base.projectCosts.depreciationMonths : 60) ||
+      s.incomeTaxRate !== (base?.projectCosts?.incomeTaxRate !== undefined ? base.projectCosts.incomeTaxRate : 34) ||
+      JSON.stringify(s.operationalItems || []) !== JSON.stringify(base?.projectCosts?.operationalItems || []);
 
     const isBreakdownDirty =
       s.machineDowntime !== (base?.costBreakdown?.machineDowntime || '') ||
@@ -979,8 +1097,28 @@ export default function AdminProjectDetailPage() {
         internalLaborHours: s.internalLaborHours !== '' ? Number(s.internalLaborHours) : undefined,
         laborHourlyRate: s.laborHourlyRate !== '' ? Number(s.laborHourlyRate) : 45,
         otherCosts: s.otherCosts !== '' ? Number(s.otherCosts) : undefined,
-        totalCost: s.totalInvestmentCost,
+        totalCost: s.grossInvestmentCost,
+        icmsCredit: s.icmsCredit !== '' ? Number(s.icmsCredit) : undefined,
+        pisCofinsRate: s.pisCofinsRate !== '' ? Number(s.pisCofinsRate) : 22,
+        pisCofinsCredit: s.pisCofinsCredit !== '' ? Number(s.pisCofinsCredit) : undefined,
+        netInvestmentCost: s.netInvestmentCost,
+        financialRate: s.financialRate !== '' ? Number(s.financialRate) : 1.0,
+        depreciationMonths: s.depreciationMonths !== '' ? Number(s.depreciationMonths) : 60,
+        incomeTaxRate: s.incomeTaxRate !== '' ? Number(s.incomeTaxRate) : 34,
+        operationalItems: s.operationalItems,
+        grossOperationalGainMonthly: s.grossMonthlyOperationalGain,
+        incomeTaxOnGainMonthly: s.incomeTaxOnGainMonthly,
+        netOperationalGainMonthly: s.netOperationalGainMonthly,
+        monthlyDepreciation: s.monthlyDepreciation,
+        taxShieldDepreciationMonthly: s.taxShieldDepreciationMonthly,
+        finalNetMonthlyCashFlow: s.finalNetMonthlyCashFlow,
+        simplePaybackMonths: s.simplePaybackMonths,
+        discountedPaybackMonths: s.discountedPaybackMonths,
+        roiAnnualPercentage: s.roiPercentage,
       };
+      updates.paybackMonths = s.simplePaybackMonths;
+      updates.netSavings = s.netSavings;
+      updates.roiPercentage = s.roiPercentage;
     }
 
     if (isBreakdownDirty) {
@@ -2033,6 +2171,41 @@ export default function AdminProjectDetailPage() {
     if (refinement.yokotenOpportunity) {
       setYokotenReplication(refinement.yokotenOpportunity);
     }
+    setSaveStatus('unsaved');
+  };
+
+  const handleAddOperationalItem = (type: 'ganho' | 'custo') => {
+    if (isViewer) return;
+    const newItem: OperationalCashFlowItem = {
+      id: `item_${Math.random().toString(36).substring(2, 9)}`,
+      type,
+      description: type === 'ganho' ? 'Nova Economia Operacional' : 'Novo Custo Operacional Decorrente',
+      quantity: 1,
+      unitValue: 0,
+      monthlyValue: 0,
+    };
+    setOperationalItems((prev) => [...prev, newItem]);
+    setSaveStatus('unsaved');
+  };
+
+  const handleUpdateOperationalItem = (id: string, updates: Partial<OperationalCashFlowItem>) => {
+    if (isViewer) return;
+    setOperationalItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        const merged = { ...item, ...updates };
+        const qty = updates.quantity !== undefined ? Number(updates.quantity) : Number(item.quantity);
+        const unit = updates.unitValue !== undefined ? Number(updates.unitValue) : Number(item.unitValue);
+        merged.monthlyValue = Number((qty * unit).toFixed(2));
+        return merged;
+      })
+    );
+    setSaveStatus('unsaved');
+  };
+
+  const handleRemoveOperationalItem = (id: string) => {
+    if (isViewer) return;
+    setOperationalItems((prev) => prev.filter((item) => item.id !== id));
     setSaveStatus('unsaved');
   };
 
@@ -4354,6 +4527,111 @@ export default function AdminProjectDetailPage() {
                     style={{ backgroundColor: '#090e1a', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff' }}
                   />
                 </div>
+
+                {/* Subtotal: Investimento Total Bruto */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', backgroundColor: '#090e1a', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700 }}>INVESTIMENTO TOTAL (BRUTO):</span>
+                  <strong style={{ fontSize: '0.95rem', color: '#ffffff', fontFamily: 'var(--font-heading)' }}>
+                    {formatCurrency(grossInvestmentCost)}
+                  </strong>
+                </div>
+
+                {/* Bloco de Deduções Tributárias (Lucro Real / CPC 27) */}
+                <div style={{ padding: '0.85rem', backgroundColor: '#080d1a', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.25)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Receipt size={13} /> Deduções Fiscais sobre CAPEX (Créditos Tributários)
+                  </span>
+
+                  {/* (-) ICMS */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0 }}>
+                      (-) Impostos Recuperáveis (ICMS R$):
+                    </label>
+                    <div style={{ width: '130px' }}>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        placeholder="0"
+                        value={icmsCredit === 0 || icmsCredit === '' || icmsCredit === undefined ? '' : icmsCredit}
+                        onChange={(e) => setIcmsCredit(e.target.value === '' ? '' : Number(e.target.value))}
+                        style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#ffffff', textAlign: 'right' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* (-) PIS / COFINS com Alíquota % e Valor R$ */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 85px 125px', gap: '0.4rem', alignItems: 'center' }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', color: '#cbd5e1', margin: 0 }}>
+                      (-) PIS/COFINS:
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        placeholder="22"
+                        value={pisCofinsRate === '' ? '' : pisCofinsRate}
+                        onChange={(e) => setPisCofinsRate(e.target.value === '' ? '' : Number(e.target.value))}
+                        style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#38bdf8', textAlign: 'right', paddingRight: '1.25rem' }}
+                      />
+                      <span style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: '#64748b' }}>%</span>
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        className="form-control form-control-sm"
+                        placeholder={formatCurrency(Math.round(grossInvestmentCost * (numPisRate / 100)))}
+                        value={pisCofinsCredit === 0 || pisCofinsCredit === '' || pisCofinsCredit === undefined ? '' : pisCofinsCredit}
+                        onChange={(e) => setPisCofinsCredit(e.target.value === '' ? '' : Number(e.target.value))}
+                        style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.12)', color: '#f87171', textAlign: 'right', fontWeight: 700 }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* (=) INVESTIMENTO LÍQUIDO DE CAPITAL */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', backgroundColor: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', border: '1.5px solid rgba(56, 189, 248, 0.35)', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: 800 }}>(=) INVESTIMENTO LÍQUIDO:</span>
+                    <strong style={{ fontSize: '1.15rem', color: '#38bdf8', fontFamily: 'var(--font-heading)' }}>
+                      {formatCurrency(netInvestmentCost)}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Parâmetros Corporativos de Finanças & Controladoria (Lucro Real) */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', backgroundColor: '#090e1a', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <div>
+                    <label style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block' }}>Taxa Fin. (a.m.):</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="form-control form-control-sm"
+                      value={financialRate}
+                      onChange={(e) => setFinancialRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      style={{ backgroundColor: '#050811', borderColor: 'rgba(255,255,255,0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.75rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block' }}>Depreciação:</label>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm"
+                      placeholder="60"
+                      value={depreciationMonths}
+                      onChange={(e) => setDepreciationMonths(e.target.value === '' ? '' : Number(e.target.value))}
+                      style={{ backgroundColor: '#050811', borderColor: 'rgba(255,255,255,0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.75rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block' }}>IRPJ+CSLL (%):</label>
+                    <input
+                      type="number"
+                      className="form-control form-control-sm"
+                      placeholder="34"
+                      value={incomeTaxRate}
+                      onChange={(e) => setIncomeTaxRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      style={{ backgroundColor: '#050811', borderColor: 'rgba(255,255,255,0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.75rem' }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -4670,6 +4948,261 @@ export default function AdminProjectDetailPage() {
             </div>
           </div>
 
+          {/* 3.2 DEMONSTRATIVO DE FLUXO OPERACIONAL & DRE DA CONTROLADORIA (LUCRO REAL) */}
+          <div
+            className="card"
+            style={{
+              padding: '1.5rem',
+              borderRadius: '16px',
+              borderTop: '4px solid #06b6d4',
+              backgroundColor: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.25rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Calculator size={20} color="#22d3ee" />
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
+                    3.2 Demonstrativo de Fluxo Operacional & DRE da Controladoria (Lucro Real)
+                  </h3>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0.25rem 0 0 0' }}>
+                  Detalhamento de economias operacionais mensais (+), novos custos decorrentes (-) e cálculo contábil de fluxo de caixa livre após IR (34%) e benefício fiscal da depreciação.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handleAddOperationalItem('ganho')}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    color: '#34d399',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <Plus size={13} /> Adicionar Economia (+)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddOperationalItem('custo')}
+                  style={{
+                    padding: '0.45rem 0.85rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    color: '#f87171',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <Plus size={13} /> Adicionar Custo Decorrente (-)
+                </button>
+                {operationalItems.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const list: OperationalCashFlowItem[] = [];
+                      if (Number(machineDowntime) > 0) list.push({ id: `op_1`, type: 'ganho', description: 'Redução de Paradas de Máquina / OEE', quantity: 1, unitValue: Number((Number(machineDowntime) / 12).toFixed(2)), monthlyValue: Number((Number(machineDowntime) / 12).toFixed(2)) });
+                      if (Number(laborSavings) > 0) list.push({ id: `op_2`, type: 'ganho', description: 'Mão de Obra / Horas Economizadas', quantity: 1, unitValue: Number((Number(laborSavings) / 12).toFixed(2)), monthlyValue: Number((Number(laborSavings) / 12).toFixed(2)) });
+                      if (Number(scrapReduction) > 0) list.push({ id: `op_3`, type: 'ganho', description: 'Redução de Refugo / Matéria-Prima', quantity: 1, unitValue: Number((Number(scrapReduction) / 12).toFixed(2)), monthlyValue: Number((Number(scrapReduction) / 12).toFixed(2)) });
+                      if (Number(toolingAndEnergy) > 0) list.push({ id: `op_4`, type: 'ganho', description: 'Ferramental, Energia & Insumos', quantity: 1, unitValue: Number((Number(toolingAndEnergy) / 12).toFixed(2)), monthlyValue: Number((Number(toolingAndEnergy) / 12).toFixed(2)) });
+                      if (Number(productionIncrease) > 0) list.push({ id: `op_5`, type: 'ganho', description: 'Aumento de Produção / Capacidade Extra', quantity: 1, unitValue: Number((Number(productionIncrease) / 12).toFixed(2)), monthlyValue: Number((Number(productionIncrease) / 12).toFixed(2)) });
+                      if (Number(logisticsAndFreight) > 0) list.push({ id: `op_6`, type: 'ganho', description: 'Fretes Especiais e Estoque', quantity: 1, unitValue: Number((Number(logisticsAndFreight) / 12).toFixed(2)), monthlyValue: Number((Number(logisticsAndFreight) / 12).toFixed(2)) });
+                      if (Number(otherSavings) > 0) list.push({ id: `op_7`, type: 'ganho', description: 'Outros Custos Evitados', quantity: 1, unitValue: Number((Number(otherSavings) / 12).toFixed(2)), monthlyValue: Number((Number(otherSavings) / 12).toFixed(2)) });
+                      if (list.length === 0) {
+                        list.push(
+                          { id: `op_a`, type: 'ganho', description: 'Redução de Consumo de Energia', quantity: 1, unitValue: 715.55, monthlyValue: 715.55 },
+                          { id: `op_b`, type: 'ganho', description: 'Economia de solvente para viscosidade', quantity: 1, unitValue: 2580.85, monthlyValue: 2580.85 },
+                          { id: `op_c`, type: 'ganho', description: 'Economia de solvente Reciclado', quantity: 1, unitValue: 2904.0, monthlyValue: 2904.0 },
+                          { id: `op_d`, type: 'custo', description: 'Regravação dos Anilox', quantity: 1, unitValue: 3108.33, monthlyValue: 3108.33 }
+                        );
+                      }
+                      setOperationalItems(list);
+                      setSaveStatus('unsaved');
+                    }}
+                    style={{
+                      padding: '0.45rem 0.85rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                      color: '#38bdf8',
+                      border: '1px solid rgba(56, 189, 248, 0.35)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                    }}
+                  >
+                    <FileSpreadsheet size={13} /> Modelo Padrão Controladoria
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Tabela de Itens Operacionais */}
+            {operationalItems.length > 0 ? (
+              <div style={{ overflowX: 'auto', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'left', color: '#94a3b8', width: '90px' }}>Tipo</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'left', color: '#94a3b8' }}>Descrição da Linha</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '100px' }}>Quantidade</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '140px' }}>Valor Unitário</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '140px' }}>Valor Mensal</th>
+                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'center', color: '#94a3b8', width: '60px' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {operationalItems.map((item) => {
+                      const isGanho = item.type === 'ganho';
+                      return (
+                        <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)', backgroundColor: isGanho ? 'rgba(16, 185, 129, 0.02)' : 'rgba(239, 68, 68, 0.02)' }}>
+                          <td style={{ padding: '0.5rem 0.75rem' }}>
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                padding: '0.15rem 0.45rem',
+                                borderRadius: '6px',
+                                backgroundColor: isGanho ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: isGanho ? '#34d399' : '#f87171',
+                                border: isGanho ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                                display: 'inline-block',
+                              }}
+                            >
+                              {isGanho ? '(+) Ganho' : '(-) Custo'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.5rem 0.75rem' }}>
+                            <input
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleUpdateOperationalItem(item.id, { description: e.target.value })}
+                              className="form-control form-control-sm"
+                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.78rem' }}
+                            />
+                          </td>
+                          <td style={{ padding: '0.5rem 0.75rem' }}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.quantity}
+                              onChange={(e) => handleUpdateOperationalItem(item.id, { quantity: Number(e.target.value) })}
+                              className="form-control form-control-sm"
+                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.78rem' }}
+                            />
+                          </td>
+                          <td style={{ padding: '0.5rem 0.75rem' }}>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={item.unitValue}
+                              onChange={(e) => handleUpdateOperationalItem(item.id, { unitValue: Number(e.target.value) })}
+                              className="form-control form-control-sm"
+                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.78rem' }}
+                            />
+                          </td>
+                          <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 800, color: isGanho ? '#34d399' : '#f87171', fontFamily: 'var(--font-heading)' }}>
+                            {isGanho ? formatCurrency(item.monthlyValue) : `- ${formatCurrency(Math.abs(item.monthlyValue))}`}
+                          </td>
+                          <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOperationalItem(item.id)}
+                              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem' }}
+                              title="Remover linha"
+                            >
+                              <Trash2 size={14} color="#f87171" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding: '1rem', textAlign: 'center', backgroundColor: '#090e1a', borderRadius: '8px', border: '1px dashed rgba(255, 255, 255, 0.1)' }}>
+                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>
+                  Nenhum item operacional detalhado individualmente. O sistema está utilizando o valor global das <strong>7 Fontes Tradicionais</strong> acima ({formatCurrency(total7SourcesSavings)}/ano = {formatCurrency(total7SourcesSavings / 12)}/mês).
+                </p>
+              </div>
+            )}
+
+            {/* Cascata Contábil da Controladoria (DRE Fiscal & Fluxo de Caixa) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>
+              {/* Box 1: Apuração do Ganho Líquido Após IR */}
+              <div style={{ backgroundColor: '#080d1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Resultado Operacional Mensal
+                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                  <span>(+) Ganho Mensal Operacional:</span>
+                  <strong style={{ color: '#34d399' }}>{formatCurrency(grossMonthlyOperationalGain)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#f87171' }}>
+                  <span>(-) IR s/ ganho ({numTaxRate}% Lucro Real):</span>
+                  <strong>- {formatCurrency(incomeTaxOnGainMonthly)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#ffffff', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.4rem', fontWeight: 800 }}>
+                  <span>(=) GANHO LÍQUIDO (APÓS IR):</span>
+                  <span>{formatCurrency(netOperationalGainMonthly)}</span>
+                </div>
+              </div>
+
+              {/* Box 2: Escudo Fiscal da Depreciação (Tax Shield) */}
+              <div style={{ backgroundColor: '#080d1a', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Benefício Fiscal da Depreciação (Tax Shield)
+                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                  <span>Depreciação Mensal ({numDeprMonths}m):</span>
+                  <strong>{formatCurrency(monthlyDepreciation)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: '#38bdf8' }}>
+                  <span>(+) IR s/ depreciação ({numTaxRate}%):</span>
+                  <strong>+ {formatCurrency(taxShieldDepreciationMonthly)}</strong>
+                </div>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontStyle: 'italic', marginTop: '0.15rem' }}>
+                  Investimento Líquido {formatCurrency(netInvestmentCost)} depreciado linearmente em {numDeprMonths / 12} anos.
+                </span>
+              </div>
+
+              {/* Box 3: Fluxo de Caixa Livre Mensal Oficial */}
+              <div style={{ backgroundColor: 'rgba(6, 182, 212, 0.08)', padding: '1rem', borderRadius: '12px', border: '1.5px solid rgba(6, 182, 212, 0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.35rem' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#22d3ee', textTransform: 'uppercase' }}>
+                  (=) GANHO LÍQUIDO FINAL (FLUXO DE CAIXA MENSAL)
+                </span>
+                <strong style={{ fontSize: '1.6rem', color: '#22d3ee', fontFamily: 'var(--font-heading)' }}>
+                  {formatCurrency(finalNetMonthlyCashFlow)}
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.35rem' }}>/mês</span>
+                </strong>
+                <span style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>
+                  Amortização oficial auditada pela Controladoria
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* BALANÇO EXECUTIVO: LUCRO LÍQUIDO, ROI % & PAYBACK */}
           <div
             style={{
@@ -4684,17 +5217,17 @@ export default function AdminProjectDetailPage() {
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
             }}
           >
-            {/* 1. Retorno Mensal (Média 3M) */}
+            {/* 1. Retorno Mensal Líquido */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <Calendar size={13} /> RETORNO MENSAL (3M)
+                <Calendar size={13} /> RETORNO MENSAL LÍQUIDO
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#34d399', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {formatCurrency(provenMonthlySavings)}
+                {formatCurrency(finalNetMonthlyCashFlow > 0 ? finalNetMonthlyCashFlow : provenMonthlySavings)}
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/mês</span>
               </strong>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                {action.quarterlyFollowUp?.averageCostAvoided ? 'Média aferida dos 3 meses' : 'Estimativa mensal'}
+                Fluxo de caixa livre após IR e depreciação
               </span>
             </div>
 
@@ -4704,24 +5237,24 @@ export default function AdminProjectDetailPage() {
                 <TrendingUp size={13} /> RESULTADO DO ANO (12M)
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#22d3ee', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {formatCurrency(provenAnnualSavings)}
+                {formatCurrency((finalNetMonthlyCashFlow > 0 ? finalNetMonthlyCashFlow : provenMonthlySavings) * 12)}
                 <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginLeft: '0.25rem' }}>/ano</span>
               </strong>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                Economia operacional gerada (Computada)
+                Economia líquida anualizada
               </span>
             </div>
 
-            {/* 3. Investimento Total (Capex) */}
+            {/* 3. Investimento Líquido (Capex) */}
             <div>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <DollarSign size={13} /> INVESTIMENTO (CAPEX)
+                <DollarSign size={13} /> INVESTIMENTO LÍQUIDO (CAPEX)
               </span>
-              <strong style={{ fontSize: '1.65rem', color: totalInvestmentCost > 0 ? '#f87171' : '#64748b', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {totalInvestmentCost > 0 ? formatCurrency(totalInvestmentCost) : 'R$ 0,00'}
+              <strong style={{ fontSize: '1.65rem', color: netInvestmentCost > 0 ? '#38bdf8' : '#64748b', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
+                {netInvestmentCost > 0 ? formatCurrency(netInvestmentCost) : 'R$ 0,00'}
               </strong>
               <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                Informativo de capital (Não abate de 12m)
+                {grossInvestmentCost > netInvestmentCost ? `Bruto: ${formatCurrency(grossInvestmentCost)} (- créditos)` : 'Sem créditos tributários'}
               </span>
             </div>
 
@@ -4731,16 +5264,16 @@ export default function AdminProjectDetailPage() {
                 <Clock size={13} /> TEMPO DE PAYBACK
               </span>
               <strong style={{ fontSize: '1.65rem', color: '#fbbf24', display: 'block', marginTop: '0.35rem', fontFamily: 'var(--font-heading)' }}>
-                {totalInvestmentCost === 0 ? (
+                {netInvestmentCost === 0 ? (
                   'Imediato'
-                ) : paybackMonths >= 12 ? (
-                  <span>{(paybackMonths / 12).toFixed(1)} <span style={{ fontSize: '0.85rem' }}>anos ({paybackMonths}m)</span></span>
+                ) : simplePaybackMonths >= 12 ? (
+                  <span>{(simplePaybackMonths / 12).toFixed(1)} <span style={{ fontSize: '0.85rem' }}>anos ({simplePaybackMonths}m)</span></span>
                 ) : (
-                  <span>{paybackMonths} <span style={{ fontSize: '0.85rem' }}>meses</span></span>
+                  <span>{simplePaybackMonths} <span style={{ fontSize: '0.85rem' }}>meses</span></span>
                 )}
               </strong>
-              <span style={{ fontSize: '0.725rem', color: '#94a3b8' }}>
-                Amortização total sem penalizar o ganho anual
+              <span style={{ fontSize: '0.725rem', color: '#94a3b8', display: 'block', marginTop: '0.15rem' }}>
+                Simples: {simplePaybackMonths}m {discountedPaybackMonths > 0 && discountedPaybackMonths < 900 ? `• Desc. (${numFinancialRate}%): ${discountedPaybackMonths}m` : ''}
               </span>
             </div>
 

@@ -26,6 +26,52 @@
 
 ---
 
+## [2026-10-15] Engenharia Financeira da Controladoria: Modelo Contábil de Lucro Real, Benefício Fiscal de Depreciação (Tax Shield) e Payback Descontado
+**Agentes Responsáveis:** `cleancod`, `designer`, `copywriter`, `security-expert`, `chronicler`  
+**Escopo:** Adequação integral do sistema Lean Flow ao modelo contábil oficial da Controladoria corporativa (Grupo Vaccaro / Rafitec, regime de tributação por Lucro Real). Implementação de deduções tributárias recuperáveis sobre o CAPEX (PIS/COFINS a 22,00% e ICMS), DRE Operacional da melhoria líquida de IRPJ/CSLL (34,00%), apropriação do Tax Shield da depreciação contábil do imobilizado (60 meses / 5 anos), cálculo do Payback Simples e Payback Descontado (taxa financeira a 1,00% a.m.), atualização reativa dos indicadores executivos do Check, A3 e Portal de Auditoria da Controladoria.
+
+### 1. Contexto e Alinhamento com a Metodologia Corporativa
+- **Divergência Histórica de Critérios:** Anteriormente, o payback era calculado de forma simplificada e bruta (Investimento Nominal / Economia Anualizada / 12), desconsiderando a realidade fiscal de grandes empresas industriais sob o regime de Lucro Real.
+- **Modelo Oficial da Controladoria:** Aprovado e validado contra a planilha corporativa de viabilidade econômica de projetos de melhoria contínua da empresa:
+  1. **Investimento Líquido (CAPEX Real):** Investimento Total Bruto deduzido dos impostos recuperáveis (PIS/COFINS com alíquota padrão de 22,00% e créditos de ICMS).
+  2. **DRE Operacional da Melhoria:** Mapeamento de economias mensais brutas e novos custos decorrentes (ex: insumos adicionais, mão de obra recorrente).
+  3. **Tributação do Ganho Operacional:** Incidência de 34,00% de IRPJ + CSLL sobre o ganho operacional da melhoria, apurando o ganho líquido operacional.
+  4. **Benefício Fiscal da Depreciação (Tax Shield):** Como o investimento em máquinas, dispositivos e moldes é ativado no ativo imobilizado e depreciado contabilmente ao longo de 60 meses (5 anos), a despesa de depreciação mensal reduz o lucro tributável da empresa no Lucro Real, gerando um ganho de caixa fiscal efetivo de 34,00% sobre o valor da cota de depreciação mensal.
+  5. **Fluxo de Caixa Líquido Mensal:** Soma do Ganho Líquido Operacional pós IR com o Benefício Fiscal da Depreciação.
+  6. **Payback Simples e Descontado:** Payback Simples calculado como Investimento Líquido / Fluxo de Caixa Mensal. Payback Descontado calculado considerando o custo de oportunidade do capital (taxa financeira de 1,00% a.m.).
+
+### 2. Componentes e Telas Implementadas
+- **Tipagem Expandida (`src/lib/types.ts`):**
+  - Criação da interface `OperationalCashFlowItem` para registro discriminado de itens de fluxo operacional com flexibilidade e tipagem estrita.
+  - Expansão de `ProjectInvestmentCosts` com parâmetros fiscais: `icmsCredit`, `pisCofinsRate`, `pisCofinsCredit`, `netInvestmentCost`, `financialRate`, `depreciationMonths`, `incomeTaxRate`, `operationalItems`, `grossOperationalGainMonthly`, `incomeTaxOnGainMonthly`, `netOperationalGainMonthly`, `monthlyDepreciation`, `taxShieldDepreciationMonthly`, `finalNetMonthlyCashFlow`, `simplePaybackMonths`, `discountedPaybackMonths`, `roiAnnualPercentage`.
+- **Serviço de Dados (`src/services/dataService.ts`):**
+  - Implementação da função `calculateCorporateProjectFinancials(action: LeanAction)` contendo a formulação matemática exata da Controladoria, garantindo fallback elegante quando o projeto não possui itens operacionais discriminados (utilizando a economia anual homologada dividida por 12).
+  - Integração nos métodos `updateAction`, `processControllershipAudit`, `getExecutiveFinancials` e `submitActionToControladoria`.
+- **Etapa de Check nos Detalhes do Projeto (`src/app/admin/projetos/[id]/page.tsx`):**
+  - Seção 3.1: Configuração de Deduções Fiscais do CAPEX (PIS/COFINS recuperável e ICMS) e Parâmetros da Controladoria (Taxa financeira 1,00% a.m., Depreciação 60 meses, IR 34,00%).
+  - Seção 3.2: Tabela interativa de Itens Operacionais (Ganhos vs Custos Recorrentes) com adição, edição e exclusão dinâmica, cascata de apuração da DRE e cálculo em tempo real do Tax Shield e Payback.
+  - Balanço Executivo no rodapé do Check com Investimento Líquido, Retorno Mensal Líquido e Paybacks Simples e Descontado.
+- **Portal de Auditoria da Controladoria (`src/app/controladoria/auditoria/[token]/page.tsx`):**
+  - Inclusão do "Demonstrativo da Viabilidade Contábil & Fluxo de Caixa (Lucro Real)" para o auditor, contendo a decomposição do CAPEX, DRE operacional e Tax Shield de depreciação.
+  - Sincronização automática dos parâmetros contábeis na homologação integral ou homologação com ajustes.
+- **Relatório A3 PDCA (`src/components/pdca/RelatorioA3View.tsx`):**
+  - Quadrante 3 (CHECK): Exibição do Investimento Bruto, Deduções Fiscais e Investimento Líquido, além de Payback Simples e Descontado tanto no banner executivo do topo quanto no grid de custos.
+- **Templates de E-mail Corporativo (`src/lib/emailTemplates.ts` & `src/services/emailService.ts`):**
+  - Atualização dos convites e notificações de auditoria com Investimento Líquido, Fluxo Mensal Final e Paybacks Simples e Descontado.
+
+### 3. Validação e Qualidade Técnica
+- **Aferição Numérica Automatizada:** Teste executado comprovando 100% de convergência com a planilha da Controladoria:
+  - CAPEX Bruto: R$ 145.400,00 | PIS/COFINS (22%): -R$ 31.988,00 | Investimento Líquido: R$ 113.412,00.
+  - Ganho Mensal Bruto: R$ 18.412,00 | IR (34%): -R$ 6.260,08 | Ganho Líquido: R$ 12.151,92.
+  - Depreciação (60m): R$ 1.890,20/mês | Benefício Fiscal (+34%): +R$ 642,67/mês.
+  - Fluxo de Caixa Mensal Líquido: R$ 12.794,59/mês.
+  - Payback Simples: **8,9 meses** (exato).
+  - Payback Descontado (1,0% a.m.): **9,3 meses** (exato).
+- **Compilação Estrita do TypeScript:** `npx tsc --noEmit` aprovado com 0 erros e 0 warnings.
+- **Padrão Visual:** Obsidian Navy com Lucide React, seguindo diretrizes do Design System e SecOps sem emojis.
+
+---
+
 ## [2026-10-15] Proteção Colaborativa Multi-Usuário (Delta Save & Realtime Merge) e Resolução Definitiva de Link Canônico na Controladoria
 **Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
 **Escopo:** Eliminação definitiva de sobrescrita concorrente de dados entre múltiplos usuários na edição simultânea do mesmo projeto (`/admin/projetos/[id]`), implantação de salvamento cirúrgico por delta (Partial Updates), mesclagem de atualizações remotas em tempo real via Supabase Realtime sem perda de foco do usuário, blindagem da URL pública canônica corporativa nos e-mails de auditoria da Controladoria e normalização robusta de payload (camelCase/snake_case).

@@ -1567,6 +1567,120 @@ export const dataService = {
     return action;
   },
 
+  // Cálculo Contábil-Corporativo Rigoroso de Engenharia Financeira (Lucro Real / CPC 27)
+  calculateCorporateProjectFinancials(action: LeanAction): LeanAction {
+    const costs: ProjectInvestmentCosts = action.projectCosts ? { ...action.projectCosts } : {};
+
+    // 1. Investimento Total Bruto (Soma dos componentes físicos ou valor de CAPEX direto)
+    const parts = Number(costs.partsAndEquipment) || 0;
+    const third = Number(costs.thirdPartyServices) || 0;
+    const hours = Number(costs.internalLaborHours) || 0;
+    const rate = Number(costs.laborHourlyRate) || 45;
+    const other = Number(costs.otherCosts) || 0;
+    const componentTotal = parts + third + hours * rate + other;
+    const grossInvestment = costs.totalCost && costs.totalCost > 0 ? costs.totalCost : componentTotal;
+    costs.totalCost = grossInvestment;
+
+    // 2. Deduções Tributárias sobre o CAPEX (CPC 27 / Lucro Real)
+    const icmsCredit = Number(costs.icmsCredit) || 0;
+    costs.icmsCredit = icmsCredit;
+    const pisCofinsRate = costs.pisCofinsRate !== undefined ? Number(costs.pisCofinsRate) : 22.0;
+    costs.pisCofinsRate = pisCofinsRate;
+
+    // Se o valor monetário de PIS/COFINS recuperável não foi fixado manualmente, calcula proporcional à taxa
+    const pisCofinsCredit =
+      costs.pisCofinsCredit !== undefined && costs.pisCofinsCredit > 0
+        ? Number(costs.pisCofinsCredit)
+        : Math.round(grossInvestment * (pisCofinsRate / 100));
+    costs.pisCofinsCredit = pisCofinsCredit;
+
+    // (=) INVESTIMENTO LÍQUIDO DE CAPITAL
+    const netInvestmentCost = Math.max(0, grossInvestment - icmsCredit - pisCofinsCredit);
+    costs.netInvestmentCost = netInvestmentCost;
+
+    // 3. Parâmetros Fiscais e Financeiros
+    const financialRate = costs.financialRate !== undefined ? Number(costs.financialRate) : 1.0; // 1% a.m.
+    costs.financialRate = financialRate;
+    const depreciationMonths =
+      costs.depreciationMonths && costs.depreciationMonths > 0 ? Number(costs.depreciationMonths) : 60; // 5 anos
+    costs.depreciationMonths = depreciationMonths;
+    const incomeTaxRate = costs.incomeTaxRate !== undefined ? Number(costs.incomeTaxRate) : 34.0; // 34% IRPJ + CSLL
+    costs.incomeTaxRate = incomeTaxRate;
+
+    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos vs Novos Custos Recorrentes)
+    let grossMonthlyGain = 0;
+    if (costs.operationalItems && costs.operationalItems.length > 0) {
+      grossMonthlyGain = costs.operationalItems.reduce((acc, item) => {
+        const val = Number(item.monthlyValue) || Number(item.quantity) * Number(item.unitValue) || 0;
+        return item.type === 'custo' ? acc - Math.abs(val) : acc + Math.abs(val);
+      }, 0);
+    } else {
+      // Fallback para as 7 fontes tradicionais de custo evitado
+      const grossAvoided = Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
+      grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
+    }
+    costs.grossOperationalGainMonthly = Math.round(grossMonthlyGain);
+
+    // 5. Efeito Fiscal do IRPJ/CSLL (34%) e Escudo Fiscal da Depreciação
+    const taxRateFactor = incomeTaxRate / 100;
+    const incomeTaxOnGain = grossMonthlyGain > 0 ? Math.round(grossMonthlyGain * taxRateFactor) : 0;
+    costs.incomeTaxOnGainMonthly = incomeTaxOnGain;
+
+    const netOperationalGain = grossMonthlyGain - incomeTaxOnGain;
+    costs.netOperationalGainMonthly = Math.round(netOperationalGain);
+
+    // Depreciação mensal contábil linear
+    const monthlyDepr = netInvestmentCost > 0 ? netInvestmentCost / depreciationMonths : 0;
+    costs.monthlyDepreciation = Math.round(monthlyDepr);
+
+    // Benefício Fiscal (Tax Shield) gerado pela despesa dedutível de depreciação
+    const taxShieldDepr = Math.round(monthlyDepr * taxRateFactor);
+    costs.taxShieldDepreciationMonthly = taxShieldDepr;
+
+    // Ganho Líquido Final Mensal (Fluxo de Caixa Livre Operacional)
+    const finalNetMonthlyCashFlow = Math.round(netOperationalGain + taxShieldDepr);
+    costs.finalNetMonthlyCashFlow = finalNetMonthlyCashFlow;
+
+    // 6. Métricas de Payback e Retorno Apropriados
+    // Payback Simples: Investimento Líquido / Ganho Líquido Final Mensal
+    const simplePayback =
+      finalNetMonthlyCashFlow > 0 && netInvestmentCost > 0
+        ? Number((netInvestmentCost / finalNetMonthlyCashFlow).toFixed(1))
+        : 0;
+    costs.simplePaybackMonths = simplePayback;
+
+    // Payback Descontado: n = -ln(1 - (I * i) / FC) / ln(1 + i)
+    let discountedPayback = simplePayback;
+    if (finalNetMonthlyCashFlow > 0 && netInvestmentCost > 0 && financialRate > 0) {
+      const i = financialRate / 100;
+      const interestCover = (netInvestmentCost * i) / finalNetMonthlyCashFlow;
+      if (interestCover < 1) {
+        discountedPayback = Number((-Math.log(1 - interestCover) / Math.log(1 + i)).toFixed(1));
+      } else {
+        discountedPayback = 999;
+      }
+    }
+    costs.discountedPaybackMonths = discountedPayback;
+
+    // ROI Anual Líquido: ((Ganho Líquido Final * 12) - Investimento Líquido) / Investimento Líquido
+    const annualNetCashFlow = finalNetMonthlyCashFlow * 12;
+    const roiAnnual =
+      netInvestmentCost > 0
+        ? Math.round(((annualNetCashFlow - netInvestmentCost) / netInvestmentCost) * 100)
+        : annualNetCashFlow > 0
+        ? 100
+        : 0;
+    costs.roiAnnualPercentage = roiAnnual;
+
+    // Atualiza campos de raiz da ação para compatibilidade com o sistema
+    action.projectCosts = costs;
+    action.paybackMonths = simplePayback;
+    action.roiPercentage = roiAnnual;
+    action.netSavings = Math.max(0, annualNetCashFlow - netInvestmentCost);
+
+    return action;
+  },
+
   updateAction(id: string, updates: Partial<LeanAction>): LeanAction {
     const actions = this.getActions('all');
     const index = actions.findIndex((a) => a.id === id);
@@ -1574,16 +1688,6 @@ export const dataService = {
 
     const current = actions[index];
     const merged = { ...current, ...updates };
-
-    // Auto-calculate Project Costs (Investimento Capex + Opex)
-    if (merged.projectCosts) {
-      const parts = Number(merged.projectCosts.partsAndEquipment) || 0;
-      const third = Number(merged.projectCosts.thirdPartyServices) || 0;
-      const hours = Number(merged.projectCosts.internalLaborHours) || 0;
-      const rate = Number(merged.projectCosts.laborHourlyRate) || 45;
-      const other = Number(merged.projectCosts.otherCosts) || 0;
-      merged.projectCosts.totalCost = parts + third + hours * rate + other;
-    }
 
     // Auto-calculate Cost Breakdown (Ganhos Brutos)
     if (merged.costBreakdown) {
@@ -1601,17 +1705,8 @@ export const dataService = {
       }
     }
 
-    // Auto-calculate Net Savings, ROI % and Payback
-    const totalCost = Number(merged.projectCosts?.totalCost) || 0;
-    const grossAvoided = Number(merged.actualCostAvoided) || Number(merged.estimatedCostAvoided) || 0;
-
-    if (grossAvoided > 0 || totalCost > 0) {
-      merged.netSavings = grossAvoided - totalCost;
-      merged.roiPercentage = totalCost > 0 ? Math.round(((grossAvoided - totalCost) / totalCost) * 100) : 0;
-      
-      const monthlySavings = grossAvoided / 12;
-      merged.paybackMonths = monthlySavings > 0 && totalCost > 0 ? Number((totalCost / monthlySavings).toFixed(1)) : 0;
-    }
+    // Executa o cálculo contábil-corporativo oficial (Lucro Real / Payback Rigoroso)
+    this.calculateCorporateProjectFinancials(merged);
 
     // Auto-inicializar acompanhamento contínuo (12 meses) quando houver ganho financeiro
     if (this.hasMonetaryGain(merged) && !merged.quarterlyFollowUp) {
@@ -2074,7 +2169,10 @@ export const dataService = {
       leaderName: action.leaderName || action.assignedAgentName || submittedBy,
       estimatedSavings: originalEstimated,
       investmentCost: originalCosts?.totalCost,
-      paybackMonths: action.paybackMonths,
+      netInvestmentCost: originalCosts?.netInvestmentCost,
+      monthlyNetCashFlow: originalCosts?.finalNetMonthlyCashFlow,
+      paybackMonths: originalCosts?.simplePaybackMonths || action.paybackMonths,
+      discountedPaybackMonths: originalCosts?.discountedPaybackMonths,
       auditUrl,
       token,
       tenantName: tenant?.name || 'Rafitec S.A.',
@@ -2242,19 +2340,20 @@ export const dataService = {
     }
 
     action.updatedAt = now;
-    actions[index] = action;
+    const finalAction = this.calculateCorporateProjectFinancials(action);
+    actions[index] = finalAction;
     const saved = this.saveAndSyncAction(actions[index], actions);
 
     if (isSupabaseConfigured()) {
       try {
         Promise.all([
-          this.persistActionToCloud(action),
+          this.persistActionToCloud(finalAction),
           supabase.from('controllership_audits').update({
             status: review.status,
-            approved_estimated_cost_avoided: action.controllershipAudit.approvedEstimatedCostAvoided || 0,
-            approved_breakdown: action.controllershipAudit.approvedCostBreakdown || {},
-            approved_project_costs: action.controllershipAudit.approvedProjectCosts || {},
-            gain_details: action.gainDetails || {},
+            approved_estimated_cost_avoided: finalAction.controllershipAudit?.approvedEstimatedCostAvoided || 0,
+            approved_breakdown: finalAction.controllershipAudit?.approvedCostBreakdown || {},
+            approved_project_costs: finalAction.controllershipAudit?.approvedProjectCosts || {},
+            gain_details: finalAction.gainDetails || {},
             reviewed_at: now,
             reviewed_by: review.reviewerName,
             reviewer_email: review.reviewerEmail,
@@ -3306,21 +3405,35 @@ export const dataService = {
         annualCostAvoided = monthlyCostAvoided * 12;
       }
 
-      // 3. Custos Totais de Investimento (Capex + Opex)
-      const totalInvestmentCost = action.projectCosts?.totalCost || 0;
+      // 3. Custos Totais de Investimento (Capex Líquido)
+      const totalInvestmentCost =
+        action.projectCosts?.netInvestmentCost !== undefined
+          ? action.projectCosts.netInvestmentCost
+          : action.projectCosts?.totalCost || 0;
 
-      // 4. Retorno Líquido
-      const netAnnualSavings = annualCostAvoided - totalInvestmentCost;
+      // 4. Retorno Líquido e Fluxo de Caixa Mensal
+      const effectiveMonthlyCashFlow =
+        action.projectCosts?.finalNetMonthlyCashFlow && action.projectCosts.finalNetMonthlyCashFlow > 0
+          ? action.projectCosts.finalNetMonthlyCashFlow
+          : monthlyCostAvoided;
+
+      const netAnnualSavings = effectiveMonthlyCashFlow * 12 - totalInvestmentCost;
       const netMonthlySavings = Math.round(netAnnualSavings / 12);
 
       const roiPercentage =
         totalInvestmentCost > 0
           ? Math.round((netAnnualSavings / totalInvestmentCost) * 100)
-          : annualCostAvoided > 0 ? 100 : 0;
+          : annualCostAvoided > 0
+          ? 100
+          : 0;
 
       const paybackMonths =
-        monthlyCostAvoided > 0
-          ? Math.round((totalInvestmentCost / monthlyCostAvoided) * 10) / 10
+        action.projectCosts?.simplePaybackMonths !== undefined && action.projectCosts.simplePaybackMonths > 0
+          ? action.projectCosts.simplePaybackMonths
+          : action.paybackMonths !== undefined && action.paybackMonths > 0
+          ? action.paybackMonths
+          : effectiveMonthlyCashFlow > 0
+          ? Math.round((totalInvestmentCost / effectiveMonthlyCashFlow) * 10) / 10
           : 0;
       const paybackYears = Number((paybackMonths / 12).toFixed(1));
 

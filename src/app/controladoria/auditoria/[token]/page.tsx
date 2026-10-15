@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
 import { isSupabaseConfigured } from '@/lib/supabaseClient';
-import { LeanAction, LeanCostBreakdown, ProjectInvestmentCosts, GainProofDetail, GainProofAttachment } from '@/lib/types';
+import { LeanAction, LeanCostBreakdown, ProjectInvestmentCosts, GainProofDetail, GainProofAttachment, OperationalCashFlowItem } from '@/lib/types';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import {
   FileCheck2,
@@ -32,6 +32,8 @@ import {
   UploadCloud,
   Eye,
   Image as ImageIcon,
+  Calculator,
+  Receipt,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Modal } from '@/components/ui/Modal';
@@ -366,6 +368,91 @@ export default function ControladoriaAuditoriaPage() {
   const deltaTotal = auditedTotal - originalTotal;
   const hasValuesChanged = Math.abs(deltaTotal) > 0.01;
 
+  // Modelo Contábil-Corporativo Oficial (Lucro Real & Depreciação)
+  const corporateFinancials = useMemo(() => {
+    const rawCosts = action?.projectCosts || {};
+    const partsAndEquipment = Number(rawCosts.partsAndEquipment) || 0;
+    const thirdPartyServices = Number(rawCosts.thirdPartyServices) || 0;
+    const internalLaborHours = Number(rawCosts.internalLaborHours) || 0;
+    const laborHourlyRate = Number(rawCosts.laborHourlyRate) || 45;
+    const otherCosts = Number(rawCosts.otherCosts) || 0;
+    const internalLaborCost = internalLaborHours * laborHourlyRate;
+    const grossCapex = partsAndEquipment + thirdPartyServices + internalLaborCost + otherCosts || (Number(rawCosts.totalCost) || 0);
+
+    const pisCofinsRate = rawCosts.pisCofinsRate !== undefined ? Number(rawCosts.pisCofinsRate) : 22;
+    const pisCofinsCredit = rawCosts.pisCofinsCredit !== undefined
+      ? Number(rawCosts.pisCofinsCredit)
+      : (grossCapex > 0 ? Number(((grossCapex * pisCofinsRate) / 100).toFixed(2)) : 0);
+    const icmsCredit = Number(rawCosts.icmsCredit) || 0;
+    const netInvestmentCost = rawCosts.netInvestmentCost !== undefined
+      ? Number(rawCosts.netInvestmentCost)
+      : Math.max(0, Number((grossCapex - pisCofinsCredit - icmsCredit).toFixed(2)));
+
+    const incomeTaxRate = rawCosts.incomeTaxRate !== undefined ? Number(rawCosts.incomeTaxRate) : 34;
+    const depreciationMonths = rawCosts.depreciationMonths !== undefined ? Number(rawCosts.depreciationMonths) : 60;
+    const financialRate = rawCosts.financialRate !== undefined ? Number(rawCosts.financialRate) : 1.0;
+
+    const opItems: OperationalCashFlowItem[] = Array.isArray(rawCosts.operationalItems) ? rawCosts.operationalItems : [];
+    let grossOperationalGainMonthly = 0;
+    if (opItems.length > 0) {
+      grossOperationalGainMonthly = opItems.reduce((acc, it) => {
+        const val = Number(it.monthlyValue) || 0;
+        return it.type === 'ganho' ? acc + val : acc - val;
+      }, 0);
+    } else {
+      grossOperationalGainMonthly = auditedTotal > 0 ? Number((auditedTotal / 12).toFixed(2)) : 0;
+    }
+
+    const incomeTaxOnGainMonthly = Number(((grossOperationalGainMonthly * incomeTaxRate) / 100).toFixed(2));
+    const netOperationalGainMonthly = Number((grossOperationalGainMonthly - incomeTaxOnGainMonthly).toFixed(2));
+
+    const monthlyDepreciation = depreciationMonths > 0 ? Number((netInvestmentCost / depreciationMonths).toFixed(2)) : 0;
+    const taxShieldDepreciationMonthly = Number(((monthlyDepreciation * incomeTaxRate) / 100).toFixed(2));
+
+    const finalNetMonthlyCashFlow = Number((netOperationalGainMonthly + taxShieldDepreciationMonthly).toFixed(2));
+
+    const simplePaybackMonths = finalNetMonthlyCashFlow > 0 ? Number((netInvestmentCost / finalNetMonthlyCashFlow).toFixed(1)) : 0;
+
+    let discountedPaybackMonths = simplePaybackMonths;
+    if (finalNetMonthlyCashFlow > 0 && netInvestmentCost > 0 && financialRate > 0) {
+      const i = financialRate / 100;
+      const cover = (netInvestmentCost * i) / finalNetMonthlyCashFlow;
+      if (cover < 1) {
+        discountedPaybackMonths = Number((-Math.log(1 - cover) / Math.log(1 + i)).toFixed(1));
+      } else {
+        discountedPaybackMonths = 999;
+      }
+    }
+
+    const annualNetCashFlow = finalNetMonthlyCashFlow * 12;
+    const roiAnnualPercentage = netInvestmentCost > 0 ? Math.round((annualNetCashFlow / netInvestmentCost) * 100) : 0;
+
+    return {
+      grossCapex,
+      partsAndEquipment,
+      thirdPartyServices,
+      internalLaborCost,
+      otherCosts,
+      pisCofinsRate,
+      pisCofinsCredit,
+      icmsCredit,
+      netInvestmentCost,
+      incomeTaxRate,
+      depreciationMonths,
+      financialRate,
+      opItems,
+      grossOperationalGainMonthly,
+      incomeTaxOnGainMonthly,
+      netOperationalGainMonthly,
+      monthlyDepreciation,
+      taxShieldDepreciationMonthly,
+      finalNetMonthlyCashFlow,
+      simplePaybackMonths,
+      discountedPaybackMonths,
+      roiAnnualPercentage,
+    };
+  }, [action, auditedTotal]);
+
   // Status da Auditoria
   const auditStatus = action?.controllershipAudit?.status || 'pendente';
   const isAlreadyReviewed = auditStatus === 'aprovado' || auditStatus === 'ajustado_e_aprovado' || auditStatus === 'rejeitado';
@@ -384,9 +471,24 @@ export default function ControladoriaAuditoriaPage() {
         finalGainDetails[cat].auditorValue = finalGainDetails[cat].value;
       });
 
+      const approvedProjectCosts: ProjectInvestmentCosts = {
+        ...(action?.projectCosts || {}),
+        netInvestmentCost: corporateFinancials.netInvestmentCost,
+        grossOperationalGainMonthly: corporateFinancials.grossOperationalGainMonthly,
+        incomeTaxOnGainMonthly: corporateFinancials.incomeTaxOnGainMonthly,
+        netOperationalGainMonthly: corporateFinancials.netOperationalGainMonthly,
+        monthlyDepreciation: corporateFinancials.monthlyDepreciation,
+        taxShieldDepreciationMonthly: corporateFinancials.taxShieldDepreciationMonthly,
+        finalNetMonthlyCashFlow: corporateFinancials.finalNetMonthlyCashFlow,
+        simplePaybackMonths: corporateFinancials.simplePaybackMonths,
+        discountedPaybackMonths: corporateFinancials.discountedPaybackMonths,
+        roiAnnualPercentage: corporateFinancials.roiAnnualPercentage,
+      };
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'aprovado',
         gainDetails: finalGainDetails,
+        approvedProjectCosts,
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
         reviewerRole: reviewerRole.trim(),
@@ -404,7 +506,7 @@ export default function ControladoriaAuditoriaPage() {
           status: 'aprovado',
           approvedEstimatedCostAvoided: originalTotal,
           approvedBreakdown: action?.costBreakdown || {},
-          approvedProjectCosts: action?.projectCosts || {},
+          approvedProjectCosts,
           reviewerName: reviewerName.trim(),
           reviewerEmail: reviewerEmail.trim(),
           reviewerRole: reviewerRole.trim(),
@@ -468,10 +570,25 @@ export default function ControladoriaAuditoriaPage() {
         }
       });
 
+      const approvedProjectCosts: ProjectInvestmentCosts = {
+        ...(action?.projectCosts || {}),
+        netInvestmentCost: corporateFinancials.netInvestmentCost,
+        grossOperationalGainMonthly: corporateFinancials.grossOperationalGainMonthly,
+        incomeTaxOnGainMonthly: corporateFinancials.incomeTaxOnGainMonthly,
+        netOperationalGainMonthly: corporateFinancials.netOperationalGainMonthly,
+        monthlyDepreciation: corporateFinancials.monthlyDepreciation,
+        taxShieldDepreciationMonthly: corporateFinancials.taxShieldDepreciationMonthly,
+        finalNetMonthlyCashFlow: corporateFinancials.finalNetMonthlyCashFlow,
+        simplePaybackMonths: corporateFinancials.simplePaybackMonths,
+        discountedPaybackMonths: corporateFinancials.discountedPaybackMonths,
+        roiAnnualPercentage: corporateFinancials.roiAnnualPercentage,
+      };
+
       const updated = dataService.processControllershipAudit(token, {
         status: 'ajustado_e_aprovado',
         approvedBreakdown,
         approvedEstimatedCostAvoided: auditedTotal,
+        approvedProjectCosts,
         gainDetails: finalGainDetails,
         reviewerName: reviewerName.trim(),
         reviewerEmail: reviewerEmail.trim(),
@@ -490,7 +607,7 @@ export default function ControladoriaAuditoriaPage() {
           status: 'ajustado_e_aprovado',
           approvedEstimatedCostAvoided: auditedTotal,
           approvedBreakdown,
-          approvedProjectCosts: action?.projectCosts || {},
+          approvedProjectCosts,
           reviewerName: reviewerName.trim(),
           reviewerEmail: reviewerEmail.trim(),
           reviewerRole: reviewerRole.trim(),
@@ -690,14 +807,26 @@ export default function ControladoriaAuditoriaPage() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '1.5rem', backgroundColor: '#1e293b', padding: '0.85rem 1.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <div style={{ display: 'flex', gap: '1.25rem', backgroundColor: '#1e293b', padding: '0.85rem 1.25rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)', flexWrap: 'wrap' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Líder do Kaizen</span>
                 <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>{action.leaderName || action.assignedAgentName || 'Especialista Lean'}</strong>
               </div>
-              <div style={{ borderLeft: '1px solid #334155', paddingLeft: '1.5rem' }}>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Investimento Capex</span>
-                <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>{formatCurrency(action.projectCosts?.totalCost || 0)}</strong>
+              <div style={{ borderLeft: '1px solid #334155', paddingLeft: '1.25rem' }}>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block' }}>Investimento Bruto</span>
+                <strong style={{ fontSize: '0.875rem', color: '#ffffff' }}>{formatCurrency(corporateFinancials.grossCapex)}</strong>
+              </div>
+              {corporateFinancials.netInvestmentCost !== corporateFinancials.grossCapex && (
+                <div style={{ borderLeft: '1px solid #334155', paddingLeft: '1.25rem' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8', display: 'block' }}>Investimento Líquido</span>
+                  <strong style={{ fontSize: '0.875rem', color: '#38bdf8' }}>{formatCurrency(corporateFinancials.netInvestmentCost)}</strong>
+                </div>
+              )}
+              <div style={{ borderLeft: '1px solid #334155', paddingLeft: '1.25rem' }}>
+                <span style={{ fontSize: '0.7rem', color: '#fbbf24', display: 'block' }}>Payback Simp / Desc</span>
+                <strong style={{ fontSize: '0.875rem', color: '#fbbf24' }}>
+                  {corporateFinancials.simplePaybackMonths}m {corporateFinancials.discountedPaybackMonths && corporateFinancials.discountedPaybackMonths !== corporateFinancials.simplePaybackMonths ? `(${corporateFinancials.discountedPaybackMonths}m)` : ''}
+                </strong>
               </div>
             </div>
           </div>
@@ -1130,6 +1259,208 @@ export default function ControladoriaAuditoriaPage() {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Demonstrativo de Viabilidade Contábil & Fluxo de Caixa (Modelo Oficial Controladoria - Lucro Real) */}
+        <div className="card" style={{ padding: '1.75rem', borderRadius: '14px', backgroundColor: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Calculator size={20} color="#38bdf8" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Demonstrativo da Viabilidade Contábil & Fluxo de Caixa (Lucro Real)
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                  Modelo Oficial da Controladoria: Investimento Líquido de Impostos, DRE Operacional pós IR (34%) e Benefício Fiscal de Depreciação (60 meses)
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.35rem 0.75rem', borderRadius: '6px', backgroundColor: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                Tax Shield: +34% s/ Deprec.
+              </span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.35rem 0.75rem', borderRadius: '6px', backgroundColor: 'rgba(52, 211, 153, 0.1)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+                Taxa Desconto: {corporateFinancials.financialRate.toFixed(2)}% a.m.
+              </span>
+            </div>
+          </div>
+
+          {/* Cards Indicadores no Topo */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid #1e293b' }}>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Investimento Bruto</span>
+              <strong style={{ fontSize: '1.15rem', color: '#ffffff', display: 'block', margin: '0.2rem 0' }}>
+                {formatCurrency(corporateFinancials.grossCapex)}
+              </strong>
+              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>CAPEX Nominal Total</span>
+            </div>
+
+            <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+              <span style={{ fontSize: '0.7rem', color: '#38bdf8', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Investimento Líquido</span>
+              <strong style={{ fontSize: '1.15rem', color: '#38bdf8', display: 'block', margin: '0.2rem 0' }}>
+                {formatCurrency(corporateFinancials.netInvestmentCost)}
+              </strong>
+              <span style={{ fontSize: '0.68rem', color: '#0284c7' }}>
+                (-) PIS/COF ({formatCurrency(corporateFinancials.pisCofinsCredit)}) {corporateFinancials.icmsCredit > 0 ? `| ICMS (${formatCurrency(corporateFinancials.icmsCredit)})` : ''}
+              </span>
+            </div>
+
+            <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(52, 211, 153, 0.25)' }}>
+              <span style={{ fontSize: '0.7rem', color: '#34d399', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Fluxo Caixa Mensal Líquido</span>
+              <strong style={{ fontSize: '1.15rem', color: '#34d399', display: 'block', margin: '0.2rem 0' }}>
+                {formatCurrency(corporateFinancials.finalNetMonthlyCashFlow)}/mês
+              </strong>
+              <span style={{ fontSize: '0.68rem', color: '#059669' }}>
+                DRE Líquida + Benefício Fiscal
+              </span>
+            </div>
+
+            <div style={{ backgroundColor: '#090e1a', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(251, 191, 36, 0.25)' }}>
+              <span style={{ fontSize: '0.7rem', color: '#fbbf24', textTransform: 'uppercase', fontWeight: 700, display: 'block' }}>Payback Simples / Desc.</span>
+              <strong style={{ fontSize: '1.15rem', color: '#fbbf24', display: 'block', margin: '0.2rem 0' }}>
+                {corporateFinancials.simplePaybackMonths} meses {corporateFinancials.discountedPaybackMonths && corporateFinancials.discountedPaybackMonths !== corporateFinancials.simplePaybackMonths ? `(${corporateFinancials.discountedPaybackMonths}m desc.)` : ''}
+              </strong>
+              <span style={{ fontSize: '0.68rem', color: '#d97706' }}>
+                ROI Anual: {corporateFinancials.roiAnnualPercentage}%
+              </span>
+            </div>
+          </div>
+
+          {/* Grid com 3 Painéis Detalhados */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+            {/* Painel 1: Composição do Investimento */}
+            <div style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '10px', border: '1px solid #1e293b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #1e293b' }}>
+                <Receipt size={16} color="#38bdf8" />
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  1. Investimento Total vs Líquido
+                </h4>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.8rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                  <span>Peças e Equipamentos:</span>
+                  <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.partsAndEquipment)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                  <span>Serviços de Terceiros:</span>
+                  <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.thirdPartyServices)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                  <span>Equipe Interna:</span>
+                  <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.internalLaborCost)}</strong>
+                </div>
+                {corporateFinancials.otherCosts > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                    <span>Outros Custos de CAPEX:</span>
+                    <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.otherCosts)}</strong>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1e293b', paddingTop: '0.4rem', color: '#ffffff', fontWeight: 700 }}>
+                  <span>Total Bruto (Investimento):</span>
+                  <span>{formatCurrency(corporateFinancials.grossCapex)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#38bdf8' }}>
+                  <span>(-) PIS / COFINS ({corporateFinancials.pisCofinsRate}% recuperável):</span>
+                  <span>-{formatCurrency(corporateFinancials.pisCofinsCredit)}</span>
+                </div>
+                {corporateFinancials.icmsCredit > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#38bdf8' }}>
+                    <span>(-) ICMS Recuperável:</span>
+                    <span>-{formatCurrency(corporateFinancials.icmsCredit)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #0284c7', paddingTop: '0.5rem', color: '#38bdf8', fontWeight: 800, fontSize: '0.875rem' }}>
+                  <span>(=) Investimento Líquido Real:</span>
+                  <span>{formatCurrency(corporateFinancials.netInvestmentCost)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Painel 2: DRE Operacional da Melhoria */}
+            <div style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '10px', border: '1px solid #1e293b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #1e293b' }}>
+                <TrendingUp size={16} color="#34d399" />
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  2. DRE Operacional da Melhoria
+                </h4>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.8rem' }}>
+                {corporateFinancials.opItems.length > 0 ? (
+                  <div style={{ maxHeight: '110px', overflowY: 'auto', marginBottom: '0.35rem', paddingRight: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    {corporateFinancials.opItems.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: item.type === 'ganho' ? '#34d399' : '#f87171', fontSize: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>
+                        <span>{item.type === 'ganho' ? '(+) ' : '(-) '}{item.description}</span>
+                        <strong>{item.type === 'ganho' ? '+' : '-'}{formatCurrency(item.monthlyValue)}/mês</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                    <span>Economia Mapeada (Anual / 12):</span>
+                    <strong style={{ color: '#34d399' }}>+{formatCurrency(corporateFinancials.grossOperationalGainMonthly)}/mês</strong>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1e293b', paddingTop: '0.4rem', color: '#ffffff', fontWeight: 700 }}>
+                  <span>Ganho Operacional Mensal Bruto:</span>
+                  <span style={{ color: '#34d399' }}>{formatCurrency(corporateFinancials.grossOperationalGainMonthly)}/mês</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171' }}>
+                  <span>(-) Efeito IRPJ + CSLL ({corporateFinancials.incomeTaxRate}%):</span>
+                  <span>-{formatCurrency(corporateFinancials.incomeTaxOnGainMonthly)}/mês</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1.5px solid #334155', paddingTop: '0.5rem', color: '#ffffff', fontWeight: 800, fontSize: '0.875rem' }}>
+                  <span>(=) Ganho Líquido Operacional:</span>
+                  <span>{formatCurrency(corporateFinancials.netOperationalGainMonthly)}/mês</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Painel 3: Benefício Fiscal da Depreciação e Payback */}
+            <div style={{ backgroundColor: '#090e1a', padding: '1.25rem', borderRadius: '10px', border: '1px solid #1e293b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid #1e293b' }}>
+                <ShieldCheck size={16} color="#fbbf24" />
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  3. Tax Shield & Payback Corporativo
+                </h4>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.8rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                  <span>Depreciação ({corporateFinancials.depreciationMonths} meses):</span>
+                  <strong style={{ color: '#ffffff' }}>{formatCurrency(corporateFinancials.monthlyDepreciation)}/mês</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#34d399' }}>
+                  <span>(+) Benefício Fiscal ({corporateFinancials.incomeTaxRate}% IR dedutível):</span>
+                  <strong style={{ color: '#34d399' }}>+{formatCurrency(corporateFinancials.taxShieldDepreciationMonthly)}/mês</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #1e293b', paddingTop: '0.4rem', color: '#34d399', fontWeight: 800, fontSize: '0.875rem' }}>
+                  <span>(=) Fluxo Caixa Líquido Final:</span>
+                  <span>{formatCurrency(corporateFinancials.finalNetMonthlyCashFlow)}/mês</span>
+                </div>
+
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px dashed #334155', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fbbf24', fontWeight: 700 }}>
+                    <span>Payback Simples:</span>
+                    <span>{corporateFinancials.simplePaybackMonths} meses</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', fontWeight: 700 }}>
+                    <span>Payback Descontado ({corporateFinancials.financialRate}% a.m.):</span>
+                    <span>{corporateFinancials.discountedPaybackMonths} meses</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#60a5fa', fontWeight: 700 }}>
+                    <span>Retorno Anualizado (ROI):</span>
+                    <span>{corporateFinancials.roiAnnualPercentage}% ao ano</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

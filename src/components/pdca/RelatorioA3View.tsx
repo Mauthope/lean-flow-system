@@ -55,10 +55,17 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
   const defaultBackUrl = isAgent ? `/agente/projetos/${action.id}` : `/admin/projetos/${action.id}`;
 
   const totalCosts = action.projectCosts?.totalCost || 0;
+  const netInvestmentCost = action.projectCosts?.netInvestmentCost !== undefined ? action.projectCosts.netInvestmentCost : totalCosts;
   const grossSavings = action.actualCostAvoided || action.estimatedCostAvoided || 0;
   const netSavings = action.netSavings !== undefined ? action.netSavings : grossSavings - totalCosts;
-  const roi = action.roiPercentage !== undefined ? action.roiPercentage : (totalCosts > 0 ? Math.round((netSavings / totalCosts) * 100) : 0);
-  const payback = action.paybackMonths !== undefined ? action.paybackMonths : 0;
+  const roi = action.projectCosts?.roiAnnualPercentage !== undefined
+    ? action.projectCosts.roiAnnualPercentage
+    : (action.roiPercentage !== undefined ? action.roiPercentage : (netInvestmentCost > 0 ? Math.round((netSavings / netInvestmentCost) * 100) : 0));
+  const payback = action.projectCosts?.simplePaybackMonths !== undefined
+    ? action.projectCosts.simplePaybackMonths
+    : (action.paybackMonths !== undefined ? action.paybackMonths : 0);
+  const discountedPayback = action.projectCosts?.discountedPaybackMonths;
+  const hasTaxCredits = Boolean(action.projectCosts?.pisCofinsCredit || action.projectCosts?.icmsCredit);
 
   return (
     <div
@@ -276,10 +283,10 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
 
             <div style={{ textAlign: 'left' }}>
               <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748b', display: 'block', textTransform: 'uppercase' }}>
-                Payback
+                Payback {discountedPayback && discountedPayback !== payback ? '(Simp / Desc)' : ''}
               </span>
               <strong style={{ fontSize: '1rem', color: '#b45309', fontWeight: 900 }}>
-                {payback} meses
+                {payback}m {discountedPayback && discountedPayback !== payback ? `| ${discountedPayback}m` : ''}
               </strong>
             </div>
           </div>
@@ -571,7 +578,7 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
               {/* Investimento Capex/Opex */}
               <div style={{ backgroundColor: '#ffffff', padding: '0.45rem 0.55rem', borderRadius: '6px', border: '1px solid #fecaca' }}>
                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#dc2626', display: 'block', textTransform: 'uppercase' }}>
-                  Investimento / Custos:
+                  Investimento / CAPEX:
                 </span>
                 <div style={{ fontSize: '0.675rem', color: '#475569', marginTop: '0.2rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -587,9 +594,29 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                     <strong>{formatCurrency((action.projectCosts?.internalLaborHours || 0) * (action.projectCosts?.laborHourlyRate || 45))}</strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '0.15rem', color: '#dc2626', fontWeight: 800 }}>
-                    <span>Total Investido:</span>
+                    <span>Total Bruto:</span>
                     <span>{formatCurrency(totalCosts)}</span>
                   </div>
+                  {hasTaxCredits && (
+                    <>
+                      {Boolean(action.projectCosts?.pisCofinsCredit) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0284c7', fontSize: '0.625rem' }}>
+                          <span>(-) PIS/COF ({action.projectCosts?.pisCofinsRate || 22}%):</span>
+                          <span>-{formatCurrency(action.projectCosts?.pisCofinsCredit || 0)}</span>
+                        </div>
+                      )}
+                      {Boolean(action.projectCosts?.icmsCredit) && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0284c7', fontSize: '0.625rem' }}>
+                          <span>(-) ICMS:</span>
+                          <span>-{formatCurrency(action.projectCosts?.icmsCredit || 0)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #bfdbfe', paddingTop: '0.15rem', color: '#1d4ed8', fontWeight: 800 }}>
+                        <span>Inv. Líquido:</span>
+                        <span>{formatCurrency(netInvestmentCost)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -637,12 +664,14 @@ export const RelatorioA3View: React.FC<RelatorioA3ViewProps> = ({ action, onBack
                 <strong style={{ fontSize: '0.85rem', color: '#047857' }}>{formatCurrency(netSavings)}</strong>
               </div>
               <div>
-                <span style={{ fontSize: '0.6rem', color: '#065f46', fontWeight: 700, display: 'block' }}>ROI REAL</span>
+                <span style={{ fontSize: '0.6rem', color: '#065f46', fontWeight: 700, display: 'block' }}>ROI ANUAL</span>
                 <strong style={{ fontSize: '0.85rem', color: '#2563eb' }}>{roi}%</strong>
               </div>
               <div>
                 <span style={{ fontSize: '0.6rem', color: '#065f46', fontWeight: 700, display: 'block' }}>PAYBACK</span>
-                <strong style={{ fontSize: '0.85rem', color: '#b45309' }}>{payback} meses</strong>
+                <strong style={{ fontSize: '0.85rem', color: '#b45309' }}>
+                  {payback}m {discountedPayback && discountedPayback !== payback ? `(${discountedPayback}m desc.)` : ''}
+                </strong>
               </div>
               <div>
                 <span style={{ fontSize: '0.6rem', color: '#065f46', fontWeight: 700, display: 'block' }}>HORAS SALVAS</span>
