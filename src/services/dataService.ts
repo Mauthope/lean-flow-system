@@ -1662,14 +1662,17 @@ export const dataService = {
   calculateCorporateProjectFinancials(action: LeanAction): LeanAction {
     const costs: ProjectInvestmentCosts = action.projectCosts ? { ...action.projectCosts } : {};
 
-    // 1. Investimento Total Bruto (Soma dos componentes físicos ou valor de CAPEX direto)
+    // 1. Investimento Total Bruto (Soma das despesas do projeto ou componentes físicos)
+    const opCostItems = (costs.operationalItems || []).filter((it) => it.type === 'custo' || Number(it.monthlyValue) > 0);
+    const opCostTotal = opCostItems.reduce((acc, it) => acc + Math.abs(Number(it.monthlyValue) || 0), 0);
+
     const parts = Number(costs.partsAndEquipment) || 0;
     const third = Number(costs.thirdPartyServices) || 0;
     const hours = Number(costs.internalLaborHours) || 0;
     const rate = Number(costs.laborHourlyRate) || 45;
     const other = Number(costs.otherCosts) || 0;
     const componentTotal = parts + third + hours * rate + other;
-    const grossInvestment = costs.totalCost && costs.totalCost > 0 ? costs.totalCost : componentTotal;
+    const grossInvestment = opCostTotal > 0 ? opCostTotal : (costs.totalCost && costs.totalCost > 0 ? costs.totalCost : componentTotal);
     costs.totalCost = grossInvestment;
 
     // 2. Deduções Tributárias sobre o CAPEX (CPC 27 / Lucro Real)
@@ -1698,7 +1701,7 @@ export const dataService = {
     const incomeTaxRate = costs.incomeTaxRate !== undefined ? Number(costs.incomeTaxRate) : 34.0; // 34% IRPJ + CSLL
     costs.incomeTaxRate = incomeTaxRate;
 
-    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais deduzido de Outras Despesas Recorrentes)
+    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais)
     const gross7SourcesAvoided =
       (Number(action.costBreakdown?.laborSavings) || 0) +
       (Number(action.costBreakdown?.productionIncrease) || 0) +
@@ -1712,14 +1715,7 @@ export const dataService = {
       gross7SourcesAvoided > 0
         ? gross7SourcesAvoided
         : Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
-    const grossMonthlyGain7Sources = grossAvoided > 0 ? grossAvoided / 12 : 0;
-
-    // Outras despesas / custos recorrentes decorrentes do projeto (-)
-    const operationalCostsMonthly = (costs.operationalItems || [])
-      .filter((it) => it.type === 'custo' || Number(it.monthlyValue) < 0)
-      .reduce((acc, it) => acc + Math.abs(Number(it.monthlyValue) || 0), 0);
-
-    const grossMonthlyGain = Math.max(0, grossMonthlyGain7Sources - operationalCostsMonthly);
+    const grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
     costs.grossOperationalGainMonthly = Math.round(grossMonthlyGain);
 
     // 5. Efeito Fiscal do IRPJ/CSLL (34%) e Escudo Fiscal da Depreciação

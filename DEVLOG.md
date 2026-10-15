@@ -45,12 +45,15 @@
   - Criação do ref `lastLocalSaveTimestampRef` estabelecendo uma janela de bloqueio de 3.500ms pós-gravação local. Durante essa janela, eventos remotos de eco gerados pela própria estação são desconsiderados.
   - O método `syncIncomingRemote` agora compara explicitamente os timestamps (`latestTime > screenTime`) antes de mesclar alterações, eliminando a reversão de campos digitados.
   - Atualização atômica imediata de `setAction`, `baselineActionRef` e `stateRef` durante o upload de anexos, eliminando concorrência com o debounce de auto-save.
-- **Unificação dos Ganhos Brutos e Gestão de Outras Despesas no Check (`src/services/dataService.ts`, `src/app/admin/projetos/[id]/page.tsx` & `/controladoria/auditoria/[token]/page.tsx`):**
-  - Eliminação da adição manual redundante de economias: o ganho operacional bruto mensal passou a ser alimentado 100% diretamente pela divisão dos Ganhos Brutos das 7 Fontes Tradicionais (`gross7SourcesAvoided / 12`).
-  - Preservação e enriquecimento da funcionalidade de **Outras Despesas Operacionais Recorrentes (-)**: disponibilizado botão "+ Adicionar Outra Despesa (-)" e tabela intuitiva para registrar custos e despesas recorrentes decorrentes da melhoria (ex: novos insumos, manutenção adicional de ferramentas, energia complementar), que abatem do ganho bruto das 7 fontes para apuração do Resultado Operacional antes do IR na DRE de Lucro Real.
-  - Sincronização em tempo real e dirty-checking estrito para `operationalItems`, garantindo persistência sem conflito com o auto-save.
+- **Unificação Dinâmica de Despesas no Card de Custos do Projeto / CAPEX (`src/app/admin/projetos/[id]/page.tsx` & `src/services/dataService.ts`):**
+  - Atendimento à solicitação do usuário de substituir os campos estáticos (*Peças, Dispositivos & Sensores*, *Serviços de Terceiros / Usinagem*, *Horas Equipe x Custo/Hora* e *Outras Despesas Operacionais: 11*) por uma lista dinâmica direta com o botão `+ Adicionar Despesa`.
+  - Cada despesa do projeto possui Descrição, Quantidade, Valor Unitário (R$) e Total calculado, compondo de forma fluida e flexível o `INVESTIMENTO TOTAL (BRUTO)`.
+  - Migração retrocompatível automática na inicialização: caso o projeto possua valores legados nos campos anteriores, o sistema os converte automaticamente em itens individualizados da lista de despesas.
+  - Sobre o Investimento Total Bruto continuam operando as Deduções Fiscais (Crédito PIS/COFINS recuperável 22% e ICMS) para gerar o `(=) INVESTIMENTO LÍQUIDO`, que por sua vez alimenta a depreciação linear (60 meses) com Escudo Fiscal (Tax Shield de +34%).
+  - A Seção 3.2 foi simplificada para apresentar o demonstrativo executivo consolidado da DRE e Fluxo de Caixa Operacional sem tabelas redundantes.
 - **Atualização das Telas de Auditoria e Kanbans (`src/app/controladoria/auditoria/[token]/page.tsx` & `ActivityAttachmentModal.tsx`):**
   - Modais de anexos e auditoria da Controladoria migrados para o upload leve via Supabase Storage.
+  - Painel de Auditoria da Controladoria atualizado para listar os itens de despesa do CAPEX de forma itemizada e rastreável.
 
 ### 3. Validação e Qualidade Técnica
 - **Compilação e Verificação Estrita:**
