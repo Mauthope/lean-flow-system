@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ActivityAttachment } from '@/lib/types';
+import { dataService } from '@/services/dataService';
 import { Paperclip, UploadCloud, Timer, FileText, Trash2, Download, Check, AlertCircle } from 'lucide-react';
 
 interface ActivityAttachmentModalProps {
@@ -33,13 +34,13 @@ export const ActivityAttachmentModal: React.FC<ActivityAttachmentModalProps> = (
     }
   }, [isOpen, currentAttachment]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsProcessing(true);
-    const reader = new FileReader();
-    reader.onload = () => {
+    try {
+      const uploadedUrl = await dataService.uploadAttachmentFile(file, 'activities');
       const sizeBytes = file.size;
       const sizeFormatted =
         sizeBytes < 1024
@@ -52,12 +53,16 @@ export const ActivityAttachmentModal: React.FC<ActivityAttachmentModalProps> = (
         name: file.name,
         fileType: file.type || 'application/octet-stream',
         sizeFormatted,
-        url: reader.result as string,
+        url: uploadedUrl,
         uploadedAt: new Date().toISOString(),
       });
+    } catch (err) {
+      console.warn('Erro ao carregar arquivo de atividade:', err);
+      alert('Erro ao carregar anexo da atividade.');
+    } finally {
       setIsProcessing(false);
-    };
-    reader.readAsDataURL(file);
+      e.target.value = '';
+    }
   };
 
   const handleLinkCronoanalise = () => {

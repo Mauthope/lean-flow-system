@@ -242,7 +242,7 @@ export default function ControladoriaAuditoriaPage() {
     }));
   };
 
-  const handleAuditorFileUpload = (
+  const handleAuditorFileUpload = async (
     category: string,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -256,16 +256,15 @@ export default function ControladoriaAuditoriaPage() {
       return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     };
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
+    try {
+      const uploadedUrl = await dataService.uploadAttachmentFile(file, `actions/${action?.id || 'audit'}/auditor`);
       const newAttachment: GainProofAttachment = {
         id: 'att_auditor_' + Date.now(),
         name: file.name,
         sizeBytes: file.size,
         sizeFormatted: formatFileSize(file.size),
         fileType: file.type || 'application/octet-stream',
-        url: dataUrl,
+        url: uploadedUrl,
         uploadedAt: new Date().toISOString(),
         uploadedBy: reviewerName.trim() || 'Auditor da Controladoria',
       };
@@ -281,8 +280,12 @@ export default function ControladoriaAuditoriaPage() {
           auditorAttachment: newAttachment,
         },
       }));
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Erro ao carregar anexo do auditor:', err);
+      alert('Erro ao anexar arquivo do auditor.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleRemoveAuditorFile = (category: string) => {

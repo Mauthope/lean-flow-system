@@ -121,7 +121,43 @@ export function setStoredData<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error(`Erro ao salvar chave ${key} no localStorage:`, error);
+    console.warn(`[storage] Aviso ao salvar chave ${key} no localStorage, acionando fallback:`, error);
+    // Se a cota do localStorage for excedida (QuotaExceededError) e a chave for ACTIONS,
+    // preservamos todos os dados removendo payloads base64 pesados (>50KB) do cache local
+    if (key === STORAGE_KEYS.ACTIONS && Array.isArray(value)) {
+      try {
+        const sanitized = value.map((action: any) => {
+          if (!action || typeof action !== 'object') return action;
+          const copy = { ...action };
+          if (copy.gainDetails && typeof copy.gainDetails === 'object') {
+            copy.gainDetails = { ...copy.gainDetails };
+            Object.keys(copy.gainDetails).forEach((cat) => {
+              const item = copy.gainDetails[cat];
+              if (item?.attachment?.url && item.attachment.url.startsWith('data:') && item.attachment.url.length > 50000) {
+                copy.gainDetails[cat] = {
+                  ...item,
+                  attachment: { ...item.attachment, url: '' }, // Limpa apenas o base64 pesado mantendo metadata
+                };
+              }
+            });
+          }
+          if (Array.isArray(copy.attachments)) {
+            copy.attachments = copy.attachments.map((att: any) => {
+              if (att?.url && att.url.startsWith('data:') && att.url.length > 50000) {
+                return { ...att, url: '' };
+              }
+              return att;
+            });
+          }
+          return copy;
+        });
+        localStorage.setItem(key, JSON.stringify(sanitized));
+        console.info(`[storage] Chave ${key} salva com sucesso após higienização de base64 pesado.`);
+        return;
+      } catch (innerError) {
+        console.error(`[storage] Falha definitiva ao salvar ${key}:`, innerError);
+      }
+    }
   }
 }
 

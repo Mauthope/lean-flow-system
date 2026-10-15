@@ -7,22 +7,54 @@
 
 ## Painel Consolidado de Horas Trabalhadas (Time Tracking Oficial)
 > **Apuração realizada pelo agente `chronicler` via Git Log Audit.**  
-> Período apurado: 14/08/2026 a 15/10/2026 | Total de Commits: 263 | Dias com Atividade: 24 dias
+> Período apurado: 14/08/2026 a 15/10/2026 | Total de Commits: 264 | Dias com Atividade: 24 dias
 
 | Métrica de Esforço | Total Consolidado | Observação Metodológica |
 | :--- | :--- | :--- |
-| **Horas Líquidas Ativas (Active Hours)** | **104,2 horas** | Tempo estrito de codificação, engenharia, refatoração e testes de build (descontando intervalos superiores a 2h). |
-| **Amplitude Bruta de Dedicação (Span Hours)** | **138,2 horas** | Amplitude total entre o primeiro e o último commit diário (+ buffer de setup e alinhamento). |
-| **Total de Commits Registrados** | **263 commits** | Rastreabilidade integral de cada entrega no histórico versionado do Git. |
-| **Média de Dedicação Diária** | **4,3 horas / dia ativo** | Calculado sobre os 24 dias com entregas de engenharia registradas. |
+| **Horas Líquidas Ativas (Active Hours)** | **105,4 horas** | Tempo estrito de codificação, engenharia, refatoração e testes de build (descontando intervalos superiores a 2h). |
+| **Amplitude Bruta de Dedicação (Span Hours)** | **139,4 horas** | Amplitude total entre o primeiro e o último commit diário (+ buffer de setup e alinhamento). |
+| **Total de Commits Registrados** | **264 commits** | Rastreabilidade integral de cada entrega no histórico versionado do Git. |
+| **Média de Dedicação Diária** | **4,4 horas / dia ativo** | Calculado sobre os 24 dias com entregas de engenharia registradas. |
 
 ### Resumo Mensal Acumulado
 | Mês | Dias Ativos | Commits | Horas Líquidas Ativas | Amplitude Bruta Diária | Principais Entregas do Período |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Agosto / 2026** | 5 | 66 | **19,9h** | 23,5h | Setup multi-tenant, Kanban 5 colunas, Cronoanálise, TPM 4 fases, Modo Apresentação e Follow-up. |
 | **Setembro / 2026** | 9 | 100 | **37,7h** | 44,8h | Metodologia PDCA (Plan, Do, Check, Act), Engenharia Financeira (ROI/Payback), Toten e Canal Kaizen. |
-| **Outubro / 2026** | 10 | 97 | **46,8h** | 70,0h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual, Triagem e Concorrência Multi-Usuário. |
-| **TOTAL GERAL** | **24** | **263** | **104,2h** | **138,2h** | **Software Industrial Completo em Produção** |
+| **Outubro / 2026** | 10 | 98 | **48,0h** | 71,2h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual, Triagem e Concorrência Multi-Usuário. |
+| **TOTAL GERAL** | **24** | **264** | **105,4h** | **139,4h** | **Software Industrial Completo em Produção** |
+
+---
+
+## [2026-10-15] Supabase Storage para Anexos, Proteção contra Eco Realtime e Unificação dos Ganhos Brutos das 7 Fontes no Check
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Resolução definitiva do problema de salvamento instável e perda de anexos, transição da codificação Base64 para Supabase Storage dedicado (`project-attachments`), proteção de quota do `localStorage`, eliminação de loops de eco no Supabase Realtime com janela de bloqueio local, unificação do cálculo do ganho operacional diretamente aos Ganhos Brutos das 7 Fontes Tradicionais na etapa Check e simplificação da interface com remoção de itens operacionais redundantes.
+
+### 1. Diagnóstico da Causa Raiz
+- **Sumiço de Anexos por Estouro de Quota (LocalStorage QuotaExceededError):** Anteriormente, o upload de arquivos convertia imagens e PDFs de até 15MB em strings Base64 puras gravadas no payload da ação. Como o `localStorage` dos navegadores tem limite estrito de ~5MB, a chamada a `localStorage.setItem` falhava com `QuotaExceededError`. O fallback local falhava silenciosamente e, ao recarregar ou sincronizar com o banco, os anexos não eram persistidos.
+- **Perda de Dados Digitados por Eco Realtime:** O cliente ouvia o canal Realtime do Supabase. Ao salvar uma alteração, o próprio servidor disparava o evento de volta para a mesma aba. Como a verificação `s.field === base.field` ocorria logo após o debounce ter gravado o novo baseline, o merge identificava o estado como inalterado e restaurava valores antigos que vinham no payload defasado da rede.
+- **Redundância na Seção de Economias no Check:** A existência de uma tabela adicional de itens operacionais (`operationalItems`) criava duplicidade de inserção, quando na metodologia industrial da empresa os indicadores operacionais e da Controladoria devem ser alimentados diretamente pelo somatório dos Ganhos Brutos das 7 Fontes Tradicionais da engenharia Lean.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Bucket no Supabase Storage (`project-attachments`):**
+  - Criação do bucket público `project-attachments` no Supabase com políticas de segurança RLS granulares para `SELECT`, `INSERT`, `UPDATE` e `DELETE`.
+  - Implementação de `dataService.uploadAttachmentFile(file, folder)`: upload com sanitização de nome e timestamp, retornando URLs HTTP públicas compactas (~120 caracteres) em vez de megabytes de Base64.
+- **Proteção de Quota e Sanitização no Cache Local (`src/lib/storage.ts`):**
+  - Implementação de fallback com captura de `QuotaExceededError` no `setStoredData`. Em caso de estouro, os arquivos Base64 gigantes (>50KB) são higienizados preservando 100% dos metadados e textos digitados, impedindo que o `localStorage` recuse gravações textuais.
+- **Sincronização Atômica e Imunidade ao Eco Realtime (`src/app/admin/projetos/[id]/page.tsx` & `src/services/dataService.ts`):**
+  - Criação do ref `lastLocalSaveTimestampRef` estabelecendo uma janela de bloqueio de 3.500ms pós-gravação local. Durante essa janela, eventos remotos de eco gerados pela própria estação são desconsiderados.
+  - O método `syncIncomingRemote` agora compara explicitamente os timestamps (`latestTime > screenTime`) antes de mesclar alterações, eliminando a reversão de campos digitados.
+  - Atualização atômica imediata de `setAction`, `baselineActionRef` e `stateRef` durante o upload de anexos, eliminando concorrência com o debounce de auto-save.
+- **Unificação dos Ganhos Brutos na DRE do Check (`src/services/dataService.ts` & `src/app/admin/projetos/[id]/page.tsx`):**
+  - Eliminação da adição manual de economias (`operationalItems`). O cálculo do ganho operacional bruto mensal passou a ser apurado diretamente pela divisão dos Ganhos Brutos das 7 Fontes (`gross7SourcesAvoided / 12`).
+  - Reformulação visual da Seção 3.2 do Check em um painel executivo direto e legível, conectando as 7 Fontes à DRE de Lucro Real, Tax Shield e Payback. Custos e descrições complementares de infraestrutura foram mantidos nos campos apropriados de investimento.
+- **Atualização das Telas de Auditoria e Kanbans (`src/app/controladoria/auditoria/[token]/page.tsx` & `ActivityAttachmentModal.tsx`):**
+  - Modais de anexos e auditoria da Controladoria migrados para o upload leve via Supabase Storage.
+
+### 3. Validação e Qualidade Técnica
+- **Compilação e Verificação Estrita:**
+  - `npx tsc --noEmit` executado com 0 erros.
+  - `npm run build` executado com sucesso e 100% das 43 rotas estáticas e dinâmicas geradas sem erros.
 
 ---
 

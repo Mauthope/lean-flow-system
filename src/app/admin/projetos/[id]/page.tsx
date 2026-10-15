@@ -118,6 +118,7 @@ export default function AdminProjectDetailPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const baselineActionRef = useRef<LeanAction | null>(null);
   const previousDataVersionRef = useRef<number>(dataVersion || 1);
+  const lastLocalSaveTimestampRef = useRef<number>(0);
 
   // Modo Apresentação (Hero Banner Pop-up com Slides P -> D -> C -> A -> Antes/Depois)
   const [presentationOpen, setPresentationOpen] = useState(false);
@@ -401,6 +402,11 @@ export default function AdminProjectDetailPage() {
     previousDataVersionRef.current = dataVersion;
 
     const syncIncomingRemote = async () => {
+      // Ignora ecos do Realtime disparados pelo próprio salvamento recente (< 3500ms)
+      if (Date.now() - lastLocalSaveTimestampRef.current < 3500) {
+        return;
+      }
+
       let latest: LeanAction | null | undefined = dataService.getActionById(projectId);
       if (!latest) {
         try {
@@ -409,8 +415,11 @@ export default function AdminProjectDetailPage() {
       }
       if (!latest || !action) return;
 
-      // Se a versão do banco possui timestamp mais recente que o da tela
-      if (latest.updatedAt && latest.updatedAt !== action.updatedAt) {
+      // Se a versão do banco possui timestamp estritamente mais recente que o da tela
+      const latestTime = latest.updatedAt ? new Date(latest.updatedAt).getTime() : 0;
+      const screenTime = action.updatedAt ? new Date(action.updatedAt).getTime() : 0;
+
+      if (latestTime > screenTime) {
         const base = baselineActionRef.current;
         const s = stateRef.current;
         let remoteChangesMerged = false;
@@ -695,17 +704,11 @@ export default function AdminProjectDetailPage() {
     (Number(productionIncrease) || 0) +
     (Number(otherSavings) || 0);
 
-  // Fluxo Operacional Mensal da Melhoria (Ganhos vs Novos Custos Decorrentes)
-  const operationalItemsMonthly = operationalItems.reduce((acc, item) => {
-    const val = Number(item.monthlyValue) || Number(item.quantity) * Number(item.unitValue) || 0;
-    return item.type === 'custo' ? acc - Math.abs(val) : acc + Math.abs(val);
-  }, 0);
-
+  // Fluxo Operacional Mensal da Melhoria (Alimentado diretamente pelas 7 Fontes Tradicionais)
   const grossMonthlyOperationalGain =
-    operationalItems.length > 0 ? operationalItemsMonthly : total7SourcesSavings > 0 ? total7SourcesSavings / 12 : 0;
+    total7SourcesSavings > 0 ? total7SourcesSavings / 12 : 0;
 
-  const totalGrossSavings =
-    operationalItems.length > 0 ? Math.round(grossMonthlyOperationalGain * 12) : total7SourcesSavings;
+  const totalGrossSavings = total7SourcesSavings;
 
   const incomeTaxOnGainMonthly =
     grossMonthlyOperationalGain > 0 ? Math.round(grossMonthlyOperationalGain * taxFactor) : 0;
@@ -1001,8 +1004,7 @@ export default function AdminProjectDetailPage() {
       s.pisCofinsCredit !== (base?.projectCosts?.pisCofinsCredit !== undefined ? base.projectCosts.pisCofinsCredit : '') ||
       s.financialRate !== (base?.projectCosts?.financialRate !== undefined ? base.projectCosts.financialRate : 1.0) ||
       s.depreciationMonths !== (base?.projectCosts?.depreciationMonths !== undefined ? base.projectCosts.depreciationMonths : 60) ||
-      s.incomeTaxRate !== (base?.projectCosts?.incomeTaxRate !== undefined ? base.projectCosts.incomeTaxRate : 34) ||
-      JSON.stringify(s.operationalItems || []) !== JSON.stringify(base?.projectCosts?.operationalItems || []);
+      s.incomeTaxRate !== (base?.projectCosts?.incomeTaxRate !== undefined ? base.projectCosts.incomeTaxRate : 34);
 
     const isBreakdownDirty =
       s.machineDowntime !== (base?.costBreakdown?.machineDowntime || '') ||
@@ -1105,7 +1107,6 @@ export default function AdminProjectDetailPage() {
         financialRate: s.financialRate !== '' ? Number(s.financialRate) : 1.0,
         depreciationMonths: s.depreciationMonths !== '' ? Number(s.depreciationMonths) : 60,
         incomeTaxRate: s.incomeTaxRate !== '' ? Number(s.incomeTaxRate) : 34,
-        operationalItems: s.operationalItems,
         grossOperationalGainMonthly: s.grossMonthlyOperationalGain,
         incomeTaxOnGainMonthly: s.incomeTaxOnGainMonthly,
         netOperationalGainMonthly: s.netOperationalGainMonthly,
@@ -1158,6 +1159,7 @@ export default function AdminProjectDetailPage() {
       return;
     }
 
+    lastLocalSaveTimestampRef.current = Date.now();
     const fresh = dataService.updateAction(projectId, updates);
     if (fresh) {
       setAction(fresh);
@@ -1543,7 +1545,7 @@ export default function AdminProjectDetailPage() {
   };
 
   // Manipulação de Memórias de Cálculo por Tipo de Ganho (Auditoria Controladoria)
-  const handleGainFileUpload = (
+  const handleGainFileUpload = async (
     category: string,
     categoryLabel: string,
     e: React.ChangeEvent<HTMLInputElement>
@@ -1561,16 +1563,16 @@ export default function AdminProjectDetailPage() {
       ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
       : `${Math.round(file.size / 1024)} KB`;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
+    try {
+      // Upload para o bucket project-attachments (ou fallback local)
+      const uploadedUrl = await dataService.uploadAttachmentFile(file, `actions/${action.id}/gains`);
       const newAttachment: GainProofAttachment = {
         id: 'att_gain_' + Date.now(),
         name: file.name,
         sizeBytes: file.size,
         sizeFormatted,
         fileType: file.type || 'application/octet-stream',
-        url: dataUrl,
+        url: uploadedUrl,
         uploadedAt: new Date().toISOString(),
         uploadedBy: currentUser?.name || action.assignedAgentName || 'Agente Lean',
       };
@@ -1589,21 +1591,25 @@ export default function AdminProjectDetailPage() {
           attachment: newAttachment,
         },
       };
+
       setGainDetails(updated);
       stateRef.current.gainDetails = updated;
-
-      try {
-        const fresh = dataService.updateAction(action.id, { gainDetails: updated });
-        if (fresh) {
-          setAction(fresh);
-          await dataService.persistActionToCloud(fresh);
-        }
-      } catch (err) {
-        console.warn('Erro ao atualizar anexo de ganho:', err);
+      if (baselineActionRef.current) {
+        baselineActionRef.current.gainDetails = JSON.parse(JSON.stringify(updated));
       }
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+      lastLocalSaveTimestampRef.current = Date.now();
+
+      const fresh = dataService.updateAction(action.id, { gainDetails: updated });
+      if (fresh) {
+        setAction(fresh);
+        baselineActionRef.current = JSON.parse(JSON.stringify(fresh));
+      }
+    } catch (err) {
+      console.warn('Erro ao atualizar anexo de ganho:', err);
+      alert('Erro ao processar anexo. Tente novamente.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleRemoveGainFile = async (category: string) => {
@@ -1612,13 +1618,19 @@ export default function AdminProjectDetailPage() {
     if (!current) return;
     const updated = { ...gainDetails };
     delete updated[category].attachment;
+
     setGainDetails(updated);
     stateRef.current.gainDetails = updated;
+    if (baselineActionRef.current?.gainDetails) {
+      baselineActionRef.current.gainDetails = JSON.parse(JSON.stringify(updated));
+    }
+    lastLocalSaveTimestampRef.current = Date.now();
+
     try {
       const fresh = dataService.updateAction(action.id, { gainDetails: updated });
       if (fresh) {
         setAction(fresh);
-        await dataService.persistActionToCloud(fresh);
+        baselineActionRef.current = JSON.parse(JSON.stringify(fresh));
       }
     } catch (err) {
       console.warn('Erro ao remover anexo de ganho:', err);
@@ -1853,7 +1865,7 @@ export default function AdminProjectDetailPage() {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !action || isViewer) return;
 
@@ -1861,16 +1873,15 @@ export default function AdminProjectDetailPage() {
     const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
     const sizeFormatted = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${Math.round(file.size / 1024)} KB`;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
+    try {
+      const uploadedUrl = await dataService.uploadAttachmentFile(file, `actions/${action.id}/attachments`);
       const newAtt: ProjectAttachment = {
         id: 'att_' + Date.now(),
         name: file.name,
         sizeBytes: file.size,
         sizeFormatted,
         fileType: file.type || 'application/pdf',
-        url: dataUrl,
+        url: uploadedUrl,
         uploadedAt: new Date().toISOString(),
         uploadedBy: currentUser?.name || 'Agente Lean',
         category: newAttachmentCategory,
@@ -1879,19 +1890,41 @@ export default function AdminProjectDetailPage() {
 
       const nextList = [...attachments, newAtt];
       setAttachments(nextList);
-      dataService.updateAction(action.id, { attachments: nextList });
+      stateRef.current.attachments = nextList;
+      if (baselineActionRef.current) {
+        baselineActionRef.current.attachments = JSON.parse(JSON.stringify(nextList));
+      }
+      lastLocalSaveTimestampRef.current = Date.now();
+
+      const fresh = dataService.updateAction(action.id, { attachments: nextList });
+      if (fresh) {
+        setAction(fresh);
+        baselineActionRef.current = JSON.parse(JSON.stringify(fresh));
+      }
       setNewAttachmentDesc('');
-      refreshData();
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Erro ao anexar arquivo:', err);
+      alert('Erro ao anexar arquivo. Tente novamente.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleRemoveAttachment = (attId: string) => {
     if (!action || isViewer) return;
     const nextList = attachments.filter((a) => a.id !== attId);
     setAttachments(nextList);
-    dataService.updateAction(action.id, { attachments: nextList });
-    refreshData();
+    stateRef.current.attachments = nextList;
+    if (baselineActionRef.current) {
+      baselineActionRef.current.attachments = JSON.parse(JSON.stringify(nextList));
+    }
+    lastLocalSaveTimestampRef.current = Date.now();
+
+    const fresh = dataService.updateAction(action.id, { attachments: nextList });
+    if (fresh) {
+      setAction(fresh);
+      baselineActionRef.current = JSON.parse(JSON.stringify(fresh));
+    }
   };
 
   const handleDownloadAttachment = (att: ProjectAttachment) => {
@@ -2171,41 +2204,6 @@ export default function AdminProjectDetailPage() {
     if (refinement.yokotenOpportunity) {
       setYokotenReplication(refinement.yokotenOpportunity);
     }
-    setSaveStatus('unsaved');
-  };
-
-  const handleAddOperationalItem = (type: 'ganho' | 'custo') => {
-    if (isViewer) return;
-    const newItem: OperationalCashFlowItem = {
-      id: `item_${Math.random().toString(36).substring(2, 9)}`,
-      type,
-      description: type === 'ganho' ? 'Nova Economia Operacional' : 'Novo Custo Operacional Decorrente',
-      quantity: 1,
-      unitValue: 0,
-      monthlyValue: 0,
-    };
-    setOperationalItems((prev) => [...prev, newItem]);
-    setSaveStatus('unsaved');
-  };
-
-  const handleUpdateOperationalItem = (id: string, updates: Partial<OperationalCashFlowItem>) => {
-    if (isViewer) return;
-    setOperationalItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const merged = { ...item, ...updates };
-        const qty = updates.quantity !== undefined ? Number(updates.quantity) : Number(item.quantity);
-        const unit = updates.unitValue !== undefined ? Number(updates.unitValue) : Number(item.unitValue);
-        merged.monthlyValue = Number((qty * unit).toFixed(2));
-        return merged;
-      })
-    );
-    setSaveStatus('unsaved');
-  };
-
-  const handleRemoveOperationalItem = (id: string) => {
-    if (isViewer) return;
-    setOperationalItems((prev) => prev.filter((item) => item.id !== id));
     setSaveStatus('unsaved');
   };
 
@@ -4963,7 +4961,7 @@ export default function AdminProjectDetailPage() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-              <div>
+              <div style={{ flex: 1, minWidth: '300px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Calculator size={20} color="#22d3ee" />
                   <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff', margin: 0, fontFamily: 'var(--font-heading)' }}>
@@ -4971,182 +4969,26 @@ export default function AdminProjectDetailPage() {
                   </h3>
                 </div>
                 <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0.25rem 0 0 0' }}>
-                  Detalhamento de economias operacionais mensais (+), novos custos decorrentes (-) e cálculo contábil de fluxo de caixa livre após IR (34%) e benefício fiscal da depreciação.
+                  A apuração operacional do projeto é alimentada diretamente pelos <strong>Ganhos Brutos das 7 Fontes Tradicionais</strong> ({formatCurrency(total7SourcesSavings)}/ano = {formatCurrency(grossMonthlyOperationalGain)}/mês), calculando a dedução de IRPJ/CSLL (34%), o benefício fiscal de depreciação do CAPEX (Tax Shield) e o fluxo de caixa líquido homologável.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={() => handleAddOperationalItem('ganho')}
-                  style={{
-                    padding: '0.45rem 0.85rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                    color: '#34d399',
-                    border: '1px solid rgba(16, 185, 129, 0.35)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  <Plus size={13} /> Adicionar Economia (+)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddOperationalItem('custo')}
-                  style={{
-                    padding: '0.45rem 0.85rem',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    borderRadius: '8px',
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                    color: '#f87171',
-                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                  }}
-                >
-                  <Plus size={13} /> Adicionar Custo Decorrente (-)
-                </button>
-                {operationalItems.length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const list: OperationalCashFlowItem[] = [];
-                      if (Number(machineDowntime) > 0) list.push({ id: `op_1`, type: 'ganho', description: 'Redução de Paradas de Máquina / OEE', quantity: 1, unitValue: Number((Number(machineDowntime) / 12).toFixed(2)), monthlyValue: Number((Number(machineDowntime) / 12).toFixed(2)) });
-                      if (Number(laborSavings) > 0) list.push({ id: `op_2`, type: 'ganho', description: 'Mão de Obra / Horas Economizadas', quantity: 1, unitValue: Number((Number(laborSavings) / 12).toFixed(2)), monthlyValue: Number((Number(laborSavings) / 12).toFixed(2)) });
-                      if (Number(scrapReduction) > 0) list.push({ id: `op_3`, type: 'ganho', description: 'Redução de Refugo / Matéria-Prima', quantity: 1, unitValue: Number((Number(scrapReduction) / 12).toFixed(2)), monthlyValue: Number((Number(scrapReduction) / 12).toFixed(2)) });
-                      if (Number(toolingAndEnergy) > 0) list.push({ id: `op_4`, type: 'ganho', description: 'Ferramental, Energia & Insumos', quantity: 1, unitValue: Number((Number(toolingAndEnergy) / 12).toFixed(2)), monthlyValue: Number((Number(toolingAndEnergy) / 12).toFixed(2)) });
-                      if (Number(productionIncrease) > 0) list.push({ id: `op_5`, type: 'ganho', description: 'Aumento de Produção / Capacidade Extra', quantity: 1, unitValue: Number((Number(productionIncrease) / 12).toFixed(2)), monthlyValue: Number((Number(productionIncrease) / 12).toFixed(2)) });
-                      if (Number(logisticsAndFreight) > 0) list.push({ id: `op_6`, type: 'ganho', description: 'Fretes Especiais e Estoque', quantity: 1, unitValue: Number((Number(logisticsAndFreight) / 12).toFixed(2)), monthlyValue: Number((Number(logisticsAndFreight) / 12).toFixed(2)) });
-                      if (Number(otherSavings) > 0) list.push({ id: `op_7`, type: 'ganho', description: 'Outros Custos Evitados', quantity: 1, unitValue: Number((Number(otherSavings) / 12).toFixed(2)), monthlyValue: Number((Number(otherSavings) / 12).toFixed(2)) });
-                      if (list.length === 0) {
-                        list.push(
-                          { id: `op_a`, type: 'ganho', description: 'Redução de Consumo de Energia', quantity: 1, unitValue: 715.55, monthlyValue: 715.55 },
-                          { id: `op_b`, type: 'ganho', description: 'Economia de solvente para viscosidade', quantity: 1, unitValue: 2580.85, monthlyValue: 2580.85 },
-                          { id: `op_c`, type: 'ganho', description: 'Economia de solvente Reciclado', quantity: 1, unitValue: 2904.0, monthlyValue: 2904.0 },
-                          { id: `op_d`, type: 'custo', description: 'Regravação dos Anilox', quantity: 1, unitValue: 3108.33, monthlyValue: 3108.33 }
-                        );
-                      }
-                      setOperationalItems(list);
-                      setSaveStatus('unsaved');
-                    }}
-                    style={{
-                      padding: '0.45rem 0.85rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56, 189, 248, 0.35)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <FileSpreadsheet size={13} /> Modelo Padrão Controladoria
-                  </button>
-                )}
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#cbd5e1',
+                  backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                  padding: '0.5rem 0.85rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  maxWidth: '380px',
+                  lineHeight: 1.4,
+                }}
+              >
+                <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '0.15rem' }}>Premissa de Governança:</strong>
+                Ganhos de infraestrutura específicos e premissas complementares podem ser descritos diretamente no campo de infraestrutura / custos do projeto.
               </div>
             </div>
-
-            {/* Tabela de Itens Operacionais */}
-            {operationalItems.length > 0 ? (
-              <div style={{ overflowX: 'auto', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#090e1a', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'left', color: '#94a3b8', width: '90px' }}>Tipo</th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'left', color: '#94a3b8' }}>Descrição da Linha</th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '100px' }}>Quantidade</th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '140px' }}>Valor Unitário</th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: '#94a3b8', width: '140px' }}>Valor Mensal</th>
-                      <th style={{ padding: '0.65rem 0.75rem', textAlign: 'center', color: '#94a3b8', width: '60px' }}>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operationalItems.map((item) => {
-                      const isGanho = item.type === 'ganho';
-                      return (
-                        <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)', backgroundColor: isGanho ? 'rgba(16, 185, 129, 0.02)' : 'rgba(239, 68, 68, 0.02)' }}>
-                          <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <span
-                              style={{
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                padding: '0.15rem 0.45rem',
-                                borderRadius: '6px',
-                                backgroundColor: isGanho ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                                color: isGanho ? '#34d399' : '#f87171',
-                                border: isGanho ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                                display: 'inline-block',
-                              }}
-                            >
-                              {isGanho ? '(+) Ganho' : '(-) Custo'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <input
-                              type="text"
-                              value={item.description}
-                              onChange={(e) => handleUpdateOperationalItem(item.id, { description: e.target.value })}
-                              className="form-control form-control-sm"
-                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', fontSize: '0.78rem' }}
-                            />
-                          </td>
-                          <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={item.quantity}
-                              onChange={(e) => handleUpdateOperationalItem(item.id, { quantity: Number(e.target.value) })}
-                              className="form-control form-control-sm"
-                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.78rem' }}
-                            />
-                          </td>
-                          <td style={{ padding: '0.5rem 0.75rem' }}>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={item.unitValue}
-                              onChange={(e) => handleUpdateOperationalItem(item.id, { unitValue: Number(e.target.value) })}
-                              className="form-control form-control-sm"
-                              style={{ backgroundColor: '#050811', borderColor: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', textAlign: 'right', fontSize: '0.78rem' }}
-                            />
-                          </td>
-                          <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 800, color: isGanho ? '#34d399' : '#f87171', fontFamily: 'var(--font-heading)' }}>
-                            {isGanho ? formatCurrency(item.monthlyValue) : `- ${formatCurrency(Math.abs(item.monthlyValue))}`}
-                          </td>
-                          <td style={{ padding: '0.5rem 0.75rem', textAlign: 'center' }}>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveOperationalItem(item.id)}
-                              style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem' }}
-                              title="Remover linha"
-                            >
-                              <Trash2 size={14} color="#f87171" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div style={{ padding: '1rem', textAlign: 'center', backgroundColor: '#090e1a', borderRadius: '8px', border: '1px dashed rgba(255, 255, 255, 0.1)' }}>
-                <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: 0 }}>
-                  Nenhum item operacional detalhado individualmente. O sistema está utilizando o valor global das <strong>7 Fontes Tradicionais</strong> acima ({formatCurrency(total7SourcesSavings)}/ano = {formatCurrency(total7SourcesSavings / 12)}/mês).
-                </p>
-              </div>
-            )}
 
             {/* Cascata Contábil da Controladoria (DRE Fiscal & Fluxo de Caixa) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '0.5rem' }}>

@@ -1281,6 +1281,32 @@ export const dataService = {
       const localActions = this.getActions('all');
       const idx = localActions.findIndex((a) => a.id === mapped.id);
       if (idx >= 0) {
+        const local = localActions[idx];
+        const localTime = new Date(local.updatedAt || 0).getTime();
+        const cloudTime = new Date(mapped.updatedAt || 0).getTime();
+
+        if (localTime > cloudTime) {
+          // Versão local foi editada mais recentemente! Não sobrescreve com nuvem defasada
+          this.persistActionToCloud(local).catch(() => {});
+          return local;
+        }
+
+        // Se a nuvem for mais recente ou igual, preserva anexos locais caso a nuvem venha vazia
+        if (local.gainDetails) {
+          mapped.gainDetails = { ...(mapped.gainDetails || {}) };
+          Object.keys(local.gainDetails).forEach((cat) => {
+            if (local.gainDetails![cat]?.attachment && !mapped.gainDetails![cat]?.attachment) {
+              mapped.gainDetails![cat] = {
+                ...mapped.gainDetails![cat],
+                attachment: local.gainDetails![cat].attachment,
+              };
+            }
+          });
+        }
+        if (local.attachments && local.attachments.length > 0 && (!mapped.attachments || mapped.attachments.length === 0)) {
+          mapped.attachments = local.attachments;
+        }
+
         localActions[idx] = mapped;
       } else {
         localActions.push(mapped);
@@ -1416,6 +1442,34 @@ export const dataService = {
     }
   },
 
+  async uploadAttachmentFile(file: File, folder: string = 'general'): Promise<string> {
+    if (isSupabaseConfigured()) {
+      try {
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filePath = `${folder}/${Date.now()}_${sanitizedName}`;
+        const { error } = await supabase.storage.from('project-attachments').upload(filePath, file, {
+          upsert: true,
+          contentType: file.type || 'application/octet-stream',
+        });
+        if (!error) {
+          const { data } = supabase.storage.from('project-attachments').getPublicUrl(filePath);
+          if (data?.publicUrl) return data.publicUrl;
+        } else {
+          console.warn('[dataService] Supabase Storage upload error:', error.message);
+        }
+      } catch (err) {
+        console.warn('[dataService] Exceção ao subir anexo no Supabase Storage, caindo para fallback:', err);
+      }
+    }
+    // Fallback local se não conseguir subir no Supabase Storage
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string) || '');
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
+
   async syncActionsFromCloud(tenantId?: string): Promise<LeanAction[]> {
     if (!isSupabaseConfigured()) return this.getActions(tenantId);
 
@@ -1523,26 +1577,63 @@ export const dataService = {
       });
 
       const localActions = getStoredData<LeanAction[]>(STORAGE_KEYS.ACTIONS, INITIAL_ACTIONS);
+      const localActionMap = new Map(localActions.map((a) => [a.id, a]));
       const cloudIdSet = new Set(mappedCloudActions.map((a) => a.id));
 
-      const unsyncedLocals = localActions.filter((a) => !cloudIdSet.has(a.id));
-      if (unsyncedLocals.length > 0) {
-        for (const localAct of unsyncedLocals) {
-          await this.persistActionToCloud(localAct);
+      const finalActions: LeanAction[] = [];
+
+      for (const cloudAct of mappedCloudActions) {
+        const localAct = localActionMap.get(cloudAct.id);
+        if (!localAct) {
+          finalActions.push(cloudAct);
+          continue;
+        }
+
+        const localTime = new Date(localAct.updatedAt || 0).getTime();
+        const cloudTime = new Date(cloudAct.updatedAt || 0).getTime();
+
+        if (localTime > cloudTime) {
+          // Versão local foi editada mais recentemente! Mantém a local e propaga para a nuvem
+          finalActions.push(localAct);
+          this.persistActionToCloud(localAct).catch(() => {});
+        } else {
+          // Versão da nuvem é mais recente ou igual; mas preserva anexos locais caso a nuvem venha truncada
+          const mergedAct = { ...cloudAct };
+          if (localAct.gainDetails) {
+            mergedAct.gainDetails = { ...(mergedAct.gainDetails || {}) };
+            Object.keys(localAct.gainDetails).forEach((cat) => {
+              if (localAct.gainDetails![cat]?.attachment && !mergedAct.gainDetails![cat]?.attachment) {
+                mergedAct.gainDetails![cat] = {
+                  ...mergedAct.gainDetails![cat],
+                  attachment: localAct.gainDetails![cat].attachment,
+                };
+              }
+            });
+          }
+          if (localAct.attachments && localAct.attachments.length > 0 && (!mergedAct.attachments || mergedAct.attachments.length === 0)) {
+            mergedAct.attachments = localAct.attachments;
+          }
+          finalActions.push(mergedAct);
         }
       }
 
-      const merged = [...mappedCloudActions, ...unsyncedLocals];
-      merged.forEach((act) => {
+      // Adiciona ações locais que ainda não existem na nuvem
+      const unsyncedLocals = localActions.filter((a) => !cloudIdSet.has(a.id));
+      for (const localAct of unsyncedLocals) {
+        finalActions.push(localAct);
+        await this.persistActionToCloud(localAct);
+      }
+
+      finalActions.forEach((act) => {
         if (this.evaluateActionPDCA(act)) {
           this.persistActionToCloud(act).catch(() => {});
         }
       });
-      setStoredData(STORAGE_KEYS.ACTIONS, merged);
+      setStoredData(STORAGE_KEYS.ACTIONS, finalActions);
 
       const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
-      if (!effective) return merged;
-      return merged.filter((a) => a.tenantId === effective);
+      if (!effective) return finalActions;
+      return finalActions.filter((a) => a.tenantId === effective);
     } catch (err) {
       console.warn('[dataService] Exceção na sincronização de ações Lean:', err);
       return this.getActions(tenantId);
@@ -1607,18 +1698,21 @@ export const dataService = {
     const incomeTaxRate = costs.incomeTaxRate !== undefined ? Number(costs.incomeTaxRate) : 34.0; // 34% IRPJ + CSLL
     costs.incomeTaxRate = incomeTaxRate;
 
-    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos vs Novos Custos Recorrentes)
-    let grossMonthlyGain = 0;
-    if (costs.operationalItems && costs.operationalItems.length > 0) {
-      grossMonthlyGain = costs.operationalItems.reduce((acc, item) => {
-        const val = Number(item.monthlyValue) || Number(item.quantity) * Number(item.unitValue) || 0;
-        return item.type === 'custo' ? acc - Math.abs(val) : acc + Math.abs(val);
-      }, 0);
-    } else {
-      // Fallback para as 7 fontes tradicionais de custo evitado
-      const grossAvoided = Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
-      grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
-    }
+    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais)
+    const gross7SourcesAvoided =
+      (Number(action.costBreakdown?.laborSavings) || 0) +
+      (Number(action.costBreakdown?.productionIncrease) || 0) +
+      (Number(action.costBreakdown?.scrapReduction) || 0) +
+      (Number(action.costBreakdown?.machineDowntime) || 0) +
+      (Number(action.costBreakdown?.toolingAndEnergy) || 0) +
+      (Number(action.costBreakdown?.logisticsAndFreight) || 0) +
+      (Number(action.costBreakdown?.otherSavings) || 0);
+
+    const grossAvoided =
+      gross7SourcesAvoided > 0
+        ? gross7SourcesAvoided
+        : Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
+    const grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
     costs.grossOperationalGainMonthly = Math.round(grossMonthlyGain);
 
     // 5. Efeito Fiscal do IRPJ/CSLL (34%) e Escudo Fiscal da Depreciação
