@@ -1992,6 +1992,30 @@ export const dataService = {
 
     return { allowed: true };
   },
+  // Obter a URL base canônica pública para links externos corporativos (e-mails, WhatsApp, auditorias)
+  getCanonicalAppUrl(originUrl?: string): string {
+    if (originUrl && !originUrl.includes('localhost') && !originUrl.includes('127.0.0.1')) {
+      return originUrl.replace(/\/+$/, '');
+    }
+    if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_APP_URL) {
+      const envUrl = process.env.NEXT_PUBLIC_APP_URL.trim().replace(/\/+$/, '');
+      if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+        return envUrl;
+      }
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      const origin = window.location.origin.trim().replace(/\/+$/, '');
+      if (
+        !origin.includes('localhost') &&
+        !origin.includes('127.0.0.1') &&
+        !origin.includes('192.168.') &&
+        !origin.includes('10.')
+      ) {
+        return origin;
+      }
+    }
+    return 'https://lean-flow-system.vercel.app';
+  },
 
   // Submeter ganhos financeiros do projeto à Controladoria
   async submitActionToControladoria(
@@ -2025,8 +2049,7 @@ export const dataService = {
 
     // Gerar token escopado único (ex: sec_aud_8f9d7c2a_...)
     const token = `sec_aud_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
-    const baseUrl =
-      originUrl || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+    const baseUrl = this.getCanonicalAppUrl(originUrl);
     const auditUrl = `${baseUrl}/controladoria/auditoria/${token}`;
 
     const originalBreakdown: LeanCostBreakdown = action.costBreakdown ? { ...action.costBreakdown } : {};
@@ -2083,12 +2106,17 @@ export const dataService = {
     actions[index] = action;
     const saved = this.saveAndSyncAction(actions[index], actions);
 
-    // Persistência direta e garantida no Supabase Cloud (ambas as tabelas)
+    // Persistência direta e garantida no Supabase Cloud (ambas as tabelas com isolamento de falha)
     if (isSupabaseConfigured()) {
       try {
-        await Promise.all([
-          this.persistActionToCloud(action),
-          supabase.from('controllership_audits').upsert({
+        await this.persistActionToCloud(action);
+      } catch (cloudErr) {
+        console.warn('[dataService] Erro ao sincronizar submissão de ação no Supabase:', cloudErr);
+      }
+
+      try {
+        await supabase.from('controllership_audits').upsert(
+          {
             action_id: action.id,
             tenant_id: action.tenantId || tenant?.id || 'tenant_rafitec_01',
             token: token,
@@ -2104,10 +2132,11 @@ export const dataService = {
             email_sent_at: new Date().toISOString(),
             email_status: emailResult.simulated ? 'simulado' : emailResult.success ? 'enviado' : 'falha',
             updated_at: new Date().toISOString(),
-          }, { onConflict: 'token' }),
-        ]);
-      } catch (cloudErr) {
-        console.warn('[dataService] Erro ao sincronizar submissão da Controladoria no Supabase:', cloudErr);
+          },
+          { onConflict: 'token' }
+        );
+      } catch (auditErr) {
+        console.warn('[dataService] controllership_audits upsert ignorado:', auditErr);
       }
     }
 

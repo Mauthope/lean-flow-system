@@ -100,7 +100,7 @@ export default function AdminProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
-  const { currentUser, allAgents, refreshData } = useAuth();
+  const { currentUser, allAgents, refreshData, dataVersion } = useAuth();
   const { isDark } = useTheme();
   const isViewer = currentUser?.role === 'viewer';
 
@@ -109,10 +109,13 @@ export default function AdminProjectDetailPage() {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<PDCAMethodologyStage>('plan');
   
-  // Status de Auto-Save em Tempo Real
+  // Status de Auto-Save e Sincronização Concorrente em Tempo Real
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [remoteSyncNotification, setRemoteSyncNotification] = useState<string | null>(null);
   const isInitialLoadRef = useRef(true);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const baselineActionRef = useRef<LeanAction | null>(null);
+  const previousDataVersionRef = useRef<number>(dataVersion || 1);
 
   // Modo Apresentação (Hero Banner Pop-up com Slides P -> D -> C -> A -> Antes/Depois)
   const [presentationOpen, setPresentationOpen] = useState(false);
@@ -240,6 +243,7 @@ export default function AdminProjectDetailPage() {
 
   const applyActionToForm = useCallback((found: LeanAction) => {
     setAction(found);
+    baselineActionRef.current = JSON.parse(JSON.stringify(found));
     setActiveTab(found.pdcaStage || 'plan');
     
     // P - PLAN
@@ -368,6 +372,78 @@ export default function AdminProjectDetailPage() {
       isMounted = false;
     };
   }, [projectId, applyActionToForm]);
+ 
+  // Sincronização em tempo real reativa para colaboração simultânea (ex: Gustavo e Maurício no mesmo projeto)
+  useEffect(() => {
+    if (isInitialLoadRef.current || !projectId) return;
+    if (dataVersion === previousDataVersionRef.current) return;
+    previousDataVersionRef.current = dataVersion;
+
+    const syncIncomingRemote = async () => {
+      let latest: LeanAction | null | undefined = dataService.getActionById(projectId);
+      if (!latest) {
+        try {
+          latest = await dataService.syncActionByIdFromCloud(projectId);
+        } catch {}
+      }
+      if (!latest || !action) return;
+
+      // Se a versão do banco possui timestamp mais recente que o da tela
+      if (latest.updatedAt && latest.updatedAt !== action.updatedAt) {
+        const base = baselineActionRef.current;
+        const s = stateRef.current;
+        let remoteChangesMerged = false;
+
+        // Para cada bloco, se o usuário local NÃO alterou em relação ao baseline, mescla a versão da nuvem
+        if ((s.leaderName || '').trim() === (base?.leaderName || '').trim() && latest.leaderName !== action.leaderName) {
+          setLeaderName(latest.leaderName || latest.assignedAgentName || '');
+          remoteChangesMerged = true;
+        }
+
+        const parsedLocalTeam = s.teamMembersInput.split(/[,;\n]+/).map((i) => i.trim()).filter(Boolean);
+        if (JSON.stringify(parsedLocalTeam) === JSON.stringify(base?.teamMembers || []) && JSON.stringify(latest.teamMembers || []) !== JSON.stringify(action.teamMembers || [])) {
+          setTeamMembersInput(latest.teamMembers && latest.teamMembers.length > 0 ? latest.teamMembers.join(', ') : '');
+          remoteChangesMerged = true;
+        }
+
+        if ((s.problemStatement || '').trim() === (base?.problemStatement || '').trim() && latest.problemStatement !== action.problemStatement) {
+          setProblemStatement(latest.problemStatement || '');
+          remoteChangesMerged = true;
+        }
+
+        if (JSON.stringify(s.fiveWhys) === JSON.stringify(base?.fiveWhys || ['', '', '', '', '']) && JSON.stringify(latest.fiveWhys || []) !== JSON.stringify(action.fiveWhys || [])) {
+          setFiveWhys(latest.fiveWhys && latest.fiveWhys.length === 5 ? latest.fiveWhys : ['', '', '', '', '']);
+          remoteChangesMerged = true;
+        }
+
+        if (JSON.stringify(s.checklistItems) === JSON.stringify(base?.checklist || []) && JSON.stringify(latest.checklist || []) !== JSON.stringify(action.checklist || [])) {
+          setChecklistItems(latest.checklist || []);
+          remoteChangesMerged = true;
+        }
+
+        if (JSON.stringify(s.gainDetails || {}) === JSON.stringify(base?.gainDetails || {}) && JSON.stringify(latest.gainDetails || {}) !== JSON.stringify(action.gainDetails || {})) {
+          const gDetails = latest.gainDetails || latest.controllershipAudit?.gainDetails || {};
+          setGainDetails(JSON.parse(JSON.stringify(gDetails)));
+          remoteChangesMerged = true;
+        }
+
+        if (JSON.stringify(s.attachments || []) === JSON.stringify(base?.attachments || []) && JSON.stringify(latest.attachments || []) !== JSON.stringify(action.attachments || [])) {
+          setAttachments(latest.attachments || []);
+          remoteChangesMerged = true;
+        }
+
+        if (remoteChangesMerged) {
+          setAction(latest);
+          baselineActionRef.current = JSON.parse(JSON.stringify(latest));
+          const author = latest.assignedAgentName || 'outro colaborador';
+          setRemoteSyncNotification(`Alterações salvas por ${author} sincronizadas em tempo real.`);
+          setTimeout(() => setRemoteSyncNotification(null), 5000);
+        }
+      }
+    };
+
+    syncIncomingRemote();
+  }, [dataVersion, projectId, action]);
 
   // Contadores auxiliares para badges e seletor
   const fiveWhysFilledCount = useMemo(() => {
@@ -770,55 +846,145 @@ export default function AdminProjectDetailPage() {
   const executeSave = useCallback(() => {
     if (!projectId || isViewer) return;
     const s = stateRef.current;
+    const base = baselineActionRef.current;
+
+    // Obter o estado atual mais recente da base para não sobrescrever edições remotas
+    const latestDbAction = dataService.getActionById(projectId) || action;
+    if (!latestDbAction) return;
 
     const parsedTeamMembers = s.teamMembersInput
       .split(/[,;\n]+/)
       .map((item) => item.trim())
       .filter(Boolean);
 
-    const ishikawaData: IshikawaAnalysis = {
-      method: s.ishikawaMethod.trim() || undefined,
-      machine: s.ishikawaMachine.trim() || undefined,
-      material: s.ishikawaMaterial.trim() || undefined,
-      manpower: s.ishikawaManpower.trim() || undefined,
-      measurement: s.ishikawaMeasurement.trim() || undefined,
-      environment: s.ishikawaEnvironment.trim() || undefined,
-      primaryRootCause: s.ishikawaRootCause.trim() || undefined,
-    };
+    // Detecção cirúrgica de campos que sofreram alteração local em relação ao baseline do usuário
+    const isLeaderDirty = (s.leaderName || '').trim() !== (base?.leaderName || '').trim();
+    const isTeamDirty = JSON.stringify(parsedTeamMembers) !== JSON.stringify(base?.teamMembers || []);
+    const isProblemDirty = (s.problemStatement || '').trim() !== (base?.problemStatement || '').trim();
+    const isTargetMetricNameDirty = (s.targetMetricName || '').trim() !== (base?.targetMetricName || '').trim();
+    const isTargetMetricUnitDirty = (s.targetMetricUnit || '').trim() !== (base?.targetMetricUnit || '').trim();
+    const isBaselineValueDirty = s.baselineValue !== '' && Number(s.baselineValue) !== Number(base?.baselineValue);
+    const isTargetGoalDirty = s.targetGoalValue !== '' && Number(s.targetGoalValue) !== Number(base?.targetGoalValue);
+    const isAchievedDirty = s.achievedValue !== '' && Number(s.achievedValue) !== Number(base?.achievedValue);
+    const isCurrentProblemCostDirty = s.currentProblemCostMonthly !== '' && Number(s.currentProblemCostMonthly) !== Number(base?.currentProblemCostMonthly);
+    const isFiveWhysDirty = JSON.stringify(s.fiveWhys) !== JSON.stringify(base?.fiveWhys || ['', '', '', '', '']);
+    const isChecklistDirty = JSON.stringify(s.checklistItems) !== JSON.stringify(base?.checklist || []);
+    const isPilotAreaDirty = (s.pilotArea || '').trim() !== (base?.pilotArea || '').trim();
+    const isPilotObsDirty = (s.pilotTestObservations || '').trim() !== (base?.pilotTestObservations || '').trim();
+    const isPhotoBeforeDirty = s.photoBeforeUrl !== (base?.photoBeforeUrl || '');
+    const isPhotoAfterDirty = s.photoAfterUrl !== (base?.photoAfterUrl || '');
+    const isGainDetailsDirty = JSON.stringify(s.gainDetails || {}) !== JSON.stringify(base?.gainDetails || {});
+    const isAttachmentsDirty = JSON.stringify(s.attachments || []) !== JSON.stringify(base?.attachments || []);
+    const isStandardWorkDirty = s.standardWorkUpdated !== !!base?.standardWorkUpdated || (s.standardWorkDocRef || '').trim() !== (base?.standardWorkDocRef || '').trim();
+    const isYokotenDirty = (s.yokotenReplication || '').trim() !== (base?.yokotenReplication || '').trim();
+    const isLessonsDirty = (s.lessonsLearned || '').trim() !== (base?.lessonsLearned || '').trim();
+    const isOneOffDirty = s.isOneOffGain !== Boolean(base?.isOneOffGain);
 
-    const fresh = dataService.updateAction(projectId, {
-      leaderName: s.leaderName.trim() || undefined,
-      teamMembers: parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined,
-      pdcaStage: s.activeTab,
-      problemStatement: s.problemStatement,
-      targetMetricName: s.targetMetricName,
-      targetMetricUnit: s.targetMetricUnit,
-      baselineValue: s.baselineValue === '' ? undefined : Number(s.baselineValue),
-      targetGoalValue: s.targetGoalValue === '' ? undefined : Number(s.targetGoalValue),
-      achievedValue: s.achievedValue === '' ? undefined : Number(s.achievedValue),
-      currentProblemCostMonthly: s.currentProblemCostMonthly === '' ? undefined : Number(s.currentProblemCostMonthly),
-      fiveWhys: s.fiveWhys,
-      pareto: {
+    const isCostsDirty =
+      s.partsAndEquipment !== (base?.projectCosts?.partsAndEquipment || '') ||
+      s.thirdPartyServices !== (base?.projectCosts?.thirdPartyServices || '') ||
+      s.internalLaborHours !== (base?.projectCosts?.internalLaborHours || '') ||
+      s.otherCosts !== (base?.projectCosts?.otherCosts || '');
+
+    const isBreakdownDirty =
+      s.machineDowntime !== (base?.costBreakdown?.machineDowntime || '') ||
+      s.laborSavings !== (base?.costBreakdown?.laborSavings || '') ||
+      s.scrapReduction !== (base?.costBreakdown?.scrapReduction || '') ||
+      s.toolingAndEnergy !== (base?.costBreakdown?.toolingAndEnergy || '') ||
+      s.logisticsAndFreight !== (base?.costBreakdown?.logisticsAndFreight || '') ||
+      s.productionIncrease !== (base?.costBreakdown?.productionIncrease || '') ||
+      s.otherSavings !== (base?.costBreakdown?.otherSavings || '');
+
+    const isIshikawaDirty =
+      (s.ishikawaMethod || '').trim() !== (base?.ishikawa?.method || '').trim() ||
+      (s.ishikawaMachine || '').trim() !== (base?.ishikawa?.machine || '').trim() ||
+      (s.ishikawaMaterial || '').trim() !== (base?.ishikawa?.material || '').trim() ||
+      (s.ishikawaManpower || '').trim() !== (base?.ishikawa?.manpower || '').trim() ||
+      (s.ishikawaMeasurement || '').trim() !== (base?.ishikawa?.measurement || '').trim() ||
+      (s.ishikawaEnvironment || '').trim() !== (base?.ishikawa?.environment || '').trim() ||
+      (s.ishikawaRootCause || '').trim() !== (base?.ishikawa?.primaryRootCause || '').trim();
+
+    const isParetoDirty =
+      s.paretoImageUrl !== (base?.pareto?.chartImageUrl || '') ||
+      (s.paretoVitalCauses || '').trim() !== (base?.pareto?.vitalCausesSummary || '').trim() ||
+      s.paretoCumulativePercent !== (base?.pareto?.cumulativeImpactPercentage !== undefined ? base.pareto.cumulativeImpactPercentage : 80);
+
+    const anyDirty =
+      isLeaderDirty || isTeamDirty || isProblemDirty || isTargetMetricNameDirty || isTargetMetricUnitDirty ||
+      isBaselineValueDirty || isTargetGoalDirty || isAchievedDirty || isCurrentProblemCostDirty ||
+      isFiveWhysDirty || isChecklistDirty || isPilotAreaDirty || isPilotObsDirty || isPhotoBeforeDirty ||
+      isPhotoAfterDirty || isGainDetailsDirty || isAttachmentsDirty || isStandardWorkDirty ||
+      isYokotenDirty || isLessonsDirty || isOneOffDirty || isCostsDirty || isBreakdownDirty ||
+      isIshikawaDirty || isParetoDirty;
+
+    // Se nenhum campo foi alterado localmente, encerra sem tocar no banco/nuvem
+    if (!anyDirty && base) {
+      setSaveStatus('saved');
+      return;
+    }
+
+    // Criar payload de atualização cirúrgica preservando tudo o que a equipe editou remotamente
+    const updates: Partial<LeanAction> = {};
+
+    if (isLeaderDirty) updates.leaderName = s.leaderName.trim() || undefined;
+    if (isTeamDirty) updates.teamMembers = parsedTeamMembers.length > 0 ? parsedTeamMembers : undefined;
+    if (isProblemDirty) updates.problemStatement = s.problemStatement;
+    if (isTargetMetricNameDirty) updates.targetMetricName = s.targetMetricName;
+    if (isTargetMetricUnitDirty) updates.targetMetricUnit = s.targetMetricUnit;
+    if (isBaselineValueDirty) updates.baselineValue = s.baselineValue === '' ? undefined : Number(s.baselineValue);
+    if (isTargetGoalDirty) updates.targetGoalValue = s.targetGoalValue === '' ? undefined : Number(s.targetGoalValue);
+    if (isAchievedDirty) updates.achievedValue = s.achievedValue === '' ? undefined : Number(s.achievedValue);
+    if (isCurrentProblemCostDirty) updates.currentProblemCostMonthly = s.currentProblemCostMonthly === '' ? undefined : Number(s.currentProblemCostMonthly);
+    if (isFiveWhysDirty) updates.fiveWhys = s.fiveWhys;
+    if (isChecklistDirty) updates.checklist = s.checklistItems;
+    if (isPilotAreaDirty) updates.pilotArea = s.pilotArea;
+    if (isPilotObsDirty) updates.pilotTestObservations = s.pilotTestObservations;
+    if (isPhotoBeforeDirty) updates.photoBeforeUrl = s.photoBeforeUrl;
+    if (isPhotoAfterDirty) updates.photoAfterUrl = s.photoAfterUrl;
+    if (isAttachmentsDirty) updates.attachments = s.attachments;
+    if (isStandardWorkDirty) {
+      updates.standardWorkUpdated = s.standardWorkUpdated;
+      updates.standardWorkDocRef = s.standardWorkDocRef;
+    }
+    if (isYokotenDirty) updates.yokotenReplication = s.yokotenReplication;
+    if (isLessonsDirty) updates.lessonsLearned = s.lessonsLearned;
+    if (isOneOffDirty) updates.isOneOffGain = s.isOneOffGain;
+
+    if (isIshikawaDirty) {
+      updates.ishikawa = {
+        ...(latestDbAction?.ishikawa || {}),
+        method: s.ishikawaMethod.trim() || undefined,
+        machine: s.ishikawaMachine.trim() || undefined,
+        material: s.ishikawaMaterial.trim() || undefined,
+        manpower: s.ishikawaManpower.trim() || undefined,
+        measurement: s.ishikawaMeasurement.trim() || undefined,
+        environment: s.ishikawaEnvironment.trim() || undefined,
+        primaryRootCause: s.ishikawaRootCause.trim() || undefined,
+      };
+    }
+
+    if (isParetoDirty) {
+      updates.pareto = {
         chartImageUrl: s.paretoImageUrl,
         chartImageName: s.paretoImageName,
         vitalCausesSummary: s.paretoVitalCauses,
         cumulativeImpactPercentage: s.paretoCumulativePercent === '' ? 80 : Number(s.paretoCumulativePercent),
-      },
-      ishikawa: ishikawaData,
-      pilotArea: s.pilotArea,
-      pilotTestObservations: s.pilotTestObservations,
-      photoBeforeUrl: s.photoBeforeUrl,
-      photoAfterUrl: s.photoAfterUrl,
-      checklist: s.checklistItems,
-      projectCosts: {
+      };
+    }
+
+    if (isCostsDirty) {
+      updates.projectCosts = {
         partsAndEquipment: s.partsAndEquipment !== '' ? Number(s.partsAndEquipment) : undefined,
         thirdPartyServices: s.thirdPartyServices !== '' ? Number(s.thirdPartyServices) : undefined,
         internalLaborHours: s.internalLaborHours !== '' ? Number(s.internalLaborHours) : undefined,
         laborHourlyRate: s.laborHourlyRate !== '' ? Number(s.laborHourlyRate) : 45,
         otherCosts: s.otherCosts !== '' ? Number(s.otherCosts) : undefined,
         totalCost: s.totalInvestmentCost,
-      },
-      costBreakdown: {
+      };
+    }
+
+    if (isBreakdownDirty) {
+      updates.costBreakdown = {
         machineDowntime: s.machineDowntime !== '' ? Number(s.machineDowntime) : undefined,
         laborSavings: s.laborSavings !== '' ? Number(s.laborSavings) : undefined,
         scrapReduction: s.scrapReduction !== '' ? Number(s.scrapReduction) : undefined,
@@ -826,36 +992,38 @@ export default function AdminProjectDetailPage() {
         logisticsAndFreight: s.logisticsAndFreight !== '' ? Number(s.logisticsAndFreight) : undefined,
         productionIncrease: s.productionIncrease !== '' ? Number(s.productionIncrease) : undefined,
         otherSavings: s.otherSavings !== '' ? Number(s.otherSavings) : undefined,
-      },
-      // Poka-Yoke: Garantir preservação estrita de anexos de gainDetails já existentes
-      gainDetails: (() => {
-        const currentGainDetails = s.gainDetails || {};
-        const safeGainDetails: Record<string, GainProofDetail> = { ...(action?.gainDetails || {}), ...currentGainDetails };
-        Object.keys(action?.gainDetails || {}).forEach((cat) => {
-          if (action?.gainDetails?.[cat]?.attachment && !safeGainDetails[cat]?.attachment) {
-            safeGainDetails[cat] = {
-              ...safeGainDetails[cat],
-              attachment: action.gainDetails[cat].attachment,
-            };
-          }
-        });
-        return safeGainDetails;
-      })(),
-      controllershipAudit: action?.controllershipAudit,
-      actualCostAvoided: s.totalGrossSavings,
-      netSavings: s.netSavings,
-      roiPercentage: s.roiPercentage,
-      paybackMonths: s.paybackMonths,
-      attachments: s.attachments,
-      standardWorkUpdated: s.standardWorkUpdated,
-      standardWorkDocRef: s.standardWorkDocRef,
-      yokotenReplication: s.yokotenReplication,
-      lessonsLearned: s.lessonsLearned,
-      isOneOffGain: s.isOneOffGain,
-    });
+      };
+      updates.actualCostAvoided = s.totalGrossSavings;
+      updates.netSavings = s.netSavings;
+      updates.roiPercentage = s.roiPercentage;
+      updates.paybackMonths = s.paybackMonths;
+    }
 
+    if (isGainDetailsDirty) {
+      const safeGainDetails: Record<string, GainProofDetail> = {
+        ...(latestDbAction?.gainDetails || {}),
+        ...(s.gainDetails || {}),
+      };
+      Object.keys(latestDbAction?.gainDetails || {}).forEach((cat) => {
+        if (latestDbAction.gainDetails?.[cat]?.attachment && !safeGainDetails[cat]?.attachment) {
+          safeGainDetails[cat] = {
+            ...safeGainDetails[cat],
+            attachment: latestDbAction.gainDetails[cat].attachment,
+          };
+        }
+      });
+      updates.gainDetails = safeGainDetails;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      setSaveStatus('saved');
+      return;
+    }
+
+    const fresh = dataService.updateAction(projectId, updates);
     if (fresh) {
       setAction(fresh);
+      baselineActionRef.current = JSON.parse(JSON.stringify(fresh));
     }
 
     setSaveStatus('saved');
@@ -880,7 +1048,6 @@ export default function AdminProjectDetailPage() {
   }, [
     leaderName,
     teamMembersInput,
-    activeTab,
     problemStatement,
     targetMetricName,
     targetMetricUnit,
@@ -1465,7 +1632,7 @@ export default function AdminProjectDetailPage() {
       const res = await dataService.submitActionToControladoria(
         action.id,
         currentUser?.name || action.assignedAgentName || 'Agente Lean',
-        undefined,
+        dataService.getCanonicalAppUrl(),
         finalGainDetails,
         currentControladoriaEmail
       );
@@ -2055,6 +2222,30 @@ export default function AdminProjectDetailPage() {
             <Play size={14} fill={isDark ? '#c084fc' : '#7e22ce'} />
             <span>Modo Apresentação</span>
           </button>
+
+          {/* Alerta de Sincronização em Tempo Real (Colaboração Simultânea) */}
+          {remoteSyncNotification && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: isDark ? 'rgba(6, 182, 212, 0.18)' : '#e0f2fe',
+                border: `1px solid ${isDark ? 'rgba(6, 182, 212, 0.45)' : '#38bdf8'}`,
+                padding: '0.35rem 0.8rem',
+                borderRadius: '9999px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: isDark ? '#22d3ee' : '#0369a1',
+                boxShadow: isDark ? '0 0 12px rgba(6, 182, 212, 0.3)' : '0 1px 3px rgba(3, 105, 161, 0.2)',
+                animation: 'fade-in 0.3s ease',
+              }}
+              title="Dados atualizados remotamente por outro usuário"
+            >
+              <Users size={13} />
+              <span>{remoteSyncNotification}</span>
+            </div>
+          )}
 
           {/* Indicador em Tempo Real de Auto-Save ou Modo Viewer */}
           {isViewer ? (

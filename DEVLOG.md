@@ -7,25 +7,55 @@
 
 ## Painel Consolidado de Horas Trabalhadas (Time Tracking Oficial)
 > **Apuração realizada pelo agente `chronicler` via Git Log Audit.**  
-> Período apurado: 14/08/2026 a 14/10/2026 | Total de Commits: 262 | Dias com Atividade: 23 dias
+> Período apurado: 14/08/2026 a 15/10/2026 | Total de Commits: 263 | Dias com Atividade: 24 dias
 
 | Métrica de Esforço | Total Consolidado | Observação Metodológica |
 | :--- | :--- | :--- |
-| **Horas Líquidas Ativas (Active Hours)** | **102,2 horas** | Tempo estrito de codificação, engenharia, refatoração e testes de build (descontando intervalos superiores a 2h). |
-| **Amplitude Bruta de Dedicação (Span Hours)** | **135,2 horas** | Amplitude total entre o primeiro e o último commit diário (+ buffer de setup e alinhamento). |
-| **Total de Commits Registrados** | **262 commits** | Rastreabilidade integral de cada entrega no histórico versionado do Git. |
-| **Média de Dedicação Diária** | **4,4 horas / dia ativo** | Calculado sobre os 23 dias com entregas de engenharia registradas. |
+| **Horas Líquidas Ativas (Active Hours)** | **104,2 horas** | Tempo estrito de codificação, engenharia, refatoração e testes de build (descontando intervalos superiores a 2h). |
+| **Amplitude Bruta de Dedicação (Span Hours)** | **138,2 horas** | Amplitude total entre o primeiro e o último commit diário (+ buffer de setup e alinhamento). |
+| **Total de Commits Registrados** | **263 commits** | Rastreabilidade integral de cada entrega no histórico versionado do Git. |
+| **Média de Dedicação Diária** | **4,3 horas / dia ativo** | Calculado sobre os 24 dias com entregas de engenharia registradas. |
 
 ### Resumo Mensal Acumulado
 | Mês | Dias Ativos | Commits | Horas Líquidas Ativas | Amplitude Bruta Diária | Principais Entregas do Período |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Agosto / 2026** | 5 | 66 | **19,9h** | 23,5h | Setup multi-tenant, Kanban 5 colunas, Cronoanálise, TPM 4 fases, Modo Apresentação e Follow-up. |
 | **Setembro / 2026** | 9 | 100 | **37,7h** | 44,8h | Metodologia PDCA (Plan, Do, Check, Act), Engenharia Financeira (ROI/Payback), Toten e Canal Kaizen. |
-| **Outubro / 2026** | 9 | 96 | **44,8h** | 67,0h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual e Triagem Inteligente. |
-| **TOTAL GERAL** | **23** | **262** | **102,2h** | **135,2h** | **Software Industrial Completo em Produção** |
+| **Outubro / 2026** | 10 | 97 | **46,8h** | 70,0h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual, Triagem e Concorrência Multi-Usuário. |
+| **TOTAL GERAL** | **24** | **263** | **104,2h** | **138,2h** | **Software Industrial Completo em Produção** |
 
 ---
 
+## [2026-10-15] Proteção Colaborativa Multi-Usuário (Delta Save & Realtime Merge) e Resolução Definitiva de Link Canônico na Controladoria
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Eliminação definitiva de sobrescrita concorrente de dados entre múltiplos usuários na edição simultânea do mesmo projeto (`/admin/projetos/[id]`), implantação de salvamento cirúrgico por delta (Partial Updates), mesclagem de atualizações remotas em tempo real via Supabase Realtime sem perda de foco do usuário, blindagem da URL pública canônica corporativa nos e-mails de auditoria da Controladoria e normalização robusta de payload (camelCase/snake_case).
+
+### 1. Diagnóstico do Problema Concorrente e Link de Auditoria
+- **Sobrescrita Concorrente entre Usuários (Cenário Gustavo e Maurício):** Ao abrirem o mesmo projeto simultaneamente, o mecanismo anterior de auto-salvamento disparava um payload com a íntegra de todos os 40 campos do formulário a cada 600ms. Quando o usuário A alterava uma aba ou campo, seu navegador enviava o estado total em que carregou a página (ex: 08:00), sobrescrevendo e apagando em segundo plano os itens de 5W2H, Ishikawa ou memória de cálculo recém-salvos pelo usuário B (ex: 08:02).
+- **Disparo Indevido de Auto-Save por Troca de Aba:** O hook de salvamento continha `activeTab` no array de dependências, forçando o recálculo e o salvamento em massa do projeto toda vez que o usuário apenas navegava entre as abas do projeto.
+- **Link Quebrado nos E-mails da Controladoria:** Quando a submissão de auditoria era originada em ambiente local ou máquina corporativa com IP de intranet, a função gerava o link utilizando `window.location.origin` (resultando em `http://localhost:3000/...`), o que impedia que o auditor ou gestor abrisse a validação em seu smartphone ou outra estação corporativa. Além disso, a página de auditoria falhava ao ler campos do JSONB `methodology_data` devido à disparidade de nomenclatura entre `camelCase` e `snake_case`.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Salvamento Cirúrgico por Delta (Partial Updates em `src/app/admin/projetos/[id]/page.tsx`):**
+  - Introdução do `baselineActionRef` para armazenar o snapshot exato dos dados carregados do banco.
+  - O método `executeSave` agora calcula isoladamente a alteração de cada bloco (`isLeaderDirty`, `isTeamDirty`, `isProblemDirty`, `isTargetMetricDirty`, `isFiveWhysDirty`, `isChecklistDirty`, `isGainDetailsDirty`, etc.).
+  - Apenas as propriedades modificadas localmente pelo usuário em relação ao seu baseline são enviadas no payload de atualização (`updates: Partial<LeanAction>`), preservando integralmente quaisquer campos alterados por outros colaboradores na base.
+  - Remoção de `activeTab` das dependências do `useEffect` de auto-save.
+- **Sincronização Reativa Colaborativa (Supabase Realtime WebSocket):**
+  - Implementado listener reativo que monitora incrementos de `dataVersion` emitidos pelo Supabase Realtime.
+  - Quando outro usuário salva alterações no banco, o sistema faz o merge cirúrgico em tempo real: se o usuário local não modificou um campo específico, esse campo é atualizado dinamicamente na tela com o novo valor remoto sem perder o foco ou resetar o formulário.
+  - Exibição de indicador executivo não-intrusivo de colaboração (`remoteChangesMerged`) avisando que novos dados de outros usuários foram incorporados.
+- **Resolução de Link Canônico Corporativo (`src/services/dataService.ts`):**
+  - Implementado o método `getCanonicalAppUrl(originUrl?: string)`: valida a origem e, caso identifique `localhost`, `127.0.0.1` ou IPs locais de desenvolvimento, comuta automaticamente para o domínio de produção oficial (`https://lean-flow-system.vercel.app` ou `NEXT_PUBLIC_APP_URL`), garantindo que os links nos e-mails corporativos via Microsoft Graph sempre funcionem em qualquer rede e no Microsoft Outlook.
+  - Isolamento de persistência em blocos `try/catch` independentes entre a ação principal e a tabela `controllership_audits`, garantindo que eventuais restrições transitórias de RLS em uma tabela não anulem a outra.
+- **Normalização Bidirecional e Resiliência da API de Auditoria (`src/app/api/controladoria/audit/route.ts` & `/controladoria/auditoria/[token]/page.tsx`):**
+  - Normalização profunda de payloads retornando propriedades tanto em `snake_case` (`gain_details`, `original_breakdown`, `submitted_by`) quanto em `camelCase` (`gainDetails`, `originalCostBreakdown`, `submittedBy`).
+  - Fallback direto de consulta à tabela `lean_actions` caso a RPC `get_audit_action_by_token` não retorne o registro pelo token, assegurando abertura instantânea da tela do auditor.
+- **Garantia de Tipagem Estrita e Qualidade:**
+  - Zero erros de TypeScript (`npx tsc --noEmit` aprovado com sucesso).
+  - Guarda estrita de nulidade em `latestDbAction` e tipagem unificada de `latest: LeanAction | null | undefined`.
+
+---
 
 ## [2026-10-14] Auto-Enquadramento Lean Assessment pelo Sensei, Parecer Explicativo de Aderência ao Hoshin Kanri e Justificativa Obrigatória do Supervisor
 **Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
