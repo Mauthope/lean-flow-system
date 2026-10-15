@@ -396,15 +396,12 @@ export default function ControladoriaAuditoriaPage() {
     const financialRate = rawCosts.financialRate !== undefined ? Number(rawCosts.financialRate) : 1.0;
 
     const opItems: OperationalCashFlowItem[] = Array.isArray(rawCosts.operationalItems) ? rawCosts.operationalItems : [];
-    let grossOperationalGainMonthly = 0;
-    if (opItems.length > 0) {
-      grossOperationalGainMonthly = opItems.reduce((acc, it) => {
-        const val = Number(it.monthlyValue) || 0;
-        return it.type === 'ganho' ? acc + val : acc - val;
-      }, 0);
-    } else {
-      grossOperationalGainMonthly = auditedTotal > 0 ? Number((auditedTotal / 12).toFixed(2)) : 0;
-    }
+    const monthlyGross7Sources = auditedTotal > 0 ? Number((auditedTotal / 12).toFixed(2)) : 0;
+    const operationalCostsMonthly = opItems
+      .filter((it) => it.type === 'custo' || Number(it.monthlyValue) < 0)
+      .reduce((acc, it) => acc + Math.abs(Number(it.monthlyValue) || 0), 0);
+
+    const grossOperationalGainMonthly = Math.max(0, Number((monthlyGross7Sources - operationalCostsMonthly).toFixed(2)));
 
     const incomeTaxOnGainMonthly = Number(((grossOperationalGainMonthly * incomeTaxRate) / 100).toFixed(2));
     const netOperationalGainMonthly = Number((grossOperationalGainMonthly - incomeTaxOnGainMonthly).toFixed(2));
@@ -444,6 +441,8 @@ export default function ControladoriaAuditoriaPage() {
       depreciationMonths,
       financialRate,
       opItems,
+      monthlyGross7Sources,
+      operationalCostsMonthly,
       grossOperationalGainMonthly,
       incomeTaxOnGainMonthly,
       netOperationalGainMonthly,
@@ -1394,19 +1393,19 @@ export default function ControladoriaAuditoriaPage() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.8rem' }}>
-                {corporateFinancials.opItems.length > 0 ? (
-                  <div style={{ maxHeight: '110px', overflowY: 'auto', marginBottom: '0.35rem', paddingRight: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                    {corporateFinancials.opItems.map((item, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: item.type === 'ganho' ? '#34d399' : '#f87171', fontSize: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>
-                        <span>{item.type === 'ganho' ? '(+) ' : '(-) '}{item.description}</span>
-                        <strong>{item.type === 'ganho' ? '+' : '-'}{formatCurrency(item.monthlyValue)}/mês</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                  <span>(+) Ganho Bruto 7 Fontes (Anual / 12):</span>
+                  <strong style={{ color: '#34d399' }}>+{formatCurrency(corporateFinancials.monthlyGross7Sources)}/mês</strong>
+                </div>
+
+                {corporateFinancials.operationalCostsMonthly > 0 && (
+                  <div style={{ maxHeight: '110px', overflowY: 'auto', margin: '0.2rem 0', paddingRight: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    {corporateFinancials.opItems.filter((it) => it.type === 'custo' || Number(it.monthlyValue) < 0).map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171', fontSize: '0.75rem', backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>
+                        <span>(-) {item.description || 'Outra Despesa Recorrente'}</span>
+                        <strong>-{formatCurrency(Math.abs(item.monthlyValue))}/mês</strong>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-                    <span>Economia Mapeada (Anual / 12):</span>
-                    <strong style={{ color: '#34d399' }}>+{formatCurrency(corporateFinancials.grossOperationalGainMonthly)}/mês</strong>
                   </div>
                 )}
 

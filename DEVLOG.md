@@ -45,9 +45,10 @@
   - Criação do ref `lastLocalSaveTimestampRef` estabelecendo uma janela de bloqueio de 3.500ms pós-gravação local. Durante essa janela, eventos remotos de eco gerados pela própria estação são desconsiderados.
   - O método `syncIncomingRemote` agora compara explicitamente os timestamps (`latestTime > screenTime`) antes de mesclar alterações, eliminando a reversão de campos digitados.
   - Atualização atômica imediata de `setAction`, `baselineActionRef` e `stateRef` durante o upload de anexos, eliminando concorrência com o debounce de auto-save.
-- **Unificação dos Ganhos Brutos na DRE do Check (`src/services/dataService.ts` & `src/app/admin/projetos/[id]/page.tsx`):**
-  - Eliminação da adição manual de economias (`operationalItems`). O cálculo do ganho operacional bruto mensal passou a ser apurado diretamente pela divisão dos Ganhos Brutos das 7 Fontes (`gross7SourcesAvoided / 12`).
-  - Reformulação visual da Seção 3.2 do Check em um painel executivo direto e legível, conectando as 7 Fontes à DRE de Lucro Real, Tax Shield e Payback. Custos e descrições complementares de infraestrutura foram mantidos nos campos apropriados de investimento.
+- **Unificação dos Ganhos Brutos e Gestão de Outras Despesas no Check (`src/services/dataService.ts`, `src/app/admin/projetos/[id]/page.tsx` & `/controladoria/auditoria/[token]/page.tsx`):**
+  - Eliminação da adição manual redundante de economias: o ganho operacional bruto mensal passou a ser alimentado 100% diretamente pela divisão dos Ganhos Brutos das 7 Fontes Tradicionais (`gross7SourcesAvoided / 12`).
+  - Preservação e enriquecimento da funcionalidade de **Outras Despesas Operacionais Recorrentes (-)**: disponibilizado botão "+ Adicionar Outra Despesa (-)" e tabela intuitiva para registrar custos e despesas recorrentes decorrentes da melhoria (ex: novos insumos, manutenção adicional de ferramentas, energia complementar), que abatem do ganho bruto das 7 fontes para apuração do Resultado Operacional antes do IR na DRE de Lucro Real.
+  - Sincronização em tempo real e dirty-checking estrito para `operationalItems`, garantindo persistência sem conflito com o auto-save.
 - **Atualização das Telas de Auditoria e Kanbans (`src/app/controladoria/auditoria/[token]/page.tsx` & `ActivityAttachmentModal.tsx`):**
   - Modais de anexos e auditoria da Controladoria migrados para o upload leve via Supabase Storage.
 

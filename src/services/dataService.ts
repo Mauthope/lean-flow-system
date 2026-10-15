@@ -1698,7 +1698,7 @@ export const dataService = {
     const incomeTaxRate = costs.incomeTaxRate !== undefined ? Number(costs.incomeTaxRate) : 34.0; // 34% IRPJ + CSLL
     costs.incomeTaxRate = incomeTaxRate;
 
-    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais)
+    // 4. Fluxo Operacional Mensal da Melhoria (Ganhos Brutos das 7 Fontes Tradicionais deduzido de Outras Despesas Recorrentes)
     const gross7SourcesAvoided =
       (Number(action.costBreakdown?.laborSavings) || 0) +
       (Number(action.costBreakdown?.productionIncrease) || 0) +
@@ -1712,7 +1712,14 @@ export const dataService = {
       gross7SourcesAvoided > 0
         ? gross7SourcesAvoided
         : Number(action.actualCostAvoided) || Number(action.estimatedCostAvoided) || 0;
-    const grossMonthlyGain = grossAvoided > 0 ? grossAvoided / 12 : 0;
+    const grossMonthlyGain7Sources = grossAvoided > 0 ? grossAvoided / 12 : 0;
+
+    // Outras despesas / custos recorrentes decorrentes do projeto (-)
+    const operationalCostsMonthly = (costs.operationalItems || [])
+      .filter((it) => it.type === 'custo' || Number(it.monthlyValue) < 0)
+      .reduce((acc, it) => acc + Math.abs(Number(it.monthlyValue) || 0), 0);
+
+    const grossMonthlyGain = Math.max(0, grossMonthlyGain7Sources - operationalCostsMonthly);
     costs.grossOperationalGainMonthly = Math.round(grossMonthlyGain);
 
     // 5. Efeito Fiscal do IRPJ/CSLL (34%) e Escudo Fiscal da Depreciação
