@@ -969,16 +969,42 @@ export const dataService = {
     setStoredData(STORAGE_KEYS.CURRENT_USER, user);
   },
 
+  getTenantPrefix(tenantId?: string): string {
+    const effectiveTenantId = tenantId || this.getCurrentTenant()?.id;
+    if (!effectiveTenantId) return 'LEAN';
+    const t = this.getTenantById(effectiveTenantId);
+    if (!t) {
+      if (effectiveTenantId.toLowerCase().includes('propex')) return 'PROPEX';
+      if (effectiveTenantId.toLowerCase().includes('rafitec')) return 'RAFITEC';
+      return 'LEAN';
+    }
+    const cleanSlug = (t.slug || t.name || '').toUpperCase().trim();
+    if (cleanSlug.includes('RAFITEC')) return 'RAFITEC';
+    if (cleanSlug.includes('PROPEX')) return 'PROPEX';
+    return cleanSlug.replace(/[^A-Z0-9]/g, '') || 'LEAN';
+  },
+
   // ================= LEAN ACTIONS / DEMANDS =================
   getNextActionProtocol(tenantId?: string): string {
     const year = new Date().getFullYear();
-    const actions = this.getActions(tenantId);
-    const prefix = `LEAN-${year}-`;
+    const effectiveTenantId = tenantId || this.getCurrentTenant()?.id;
+    const actions = this.getActions(effectiveTenantId);
+    const tenantPrefix = this.getTenantPrefix(effectiveTenantId);
+    const prefix = `${tenantPrefix}-${year}-`;
+    const legacyPrefix = `LEAN-${year}-`;
     let maxSeq = 0;
 
     actions.forEach((a) => {
-      if (a.protocol && a.protocol.toUpperCase().startsWith(prefix)) {
-        const numPart = a.protocol.toUpperCase().replace(prefix, '');
+      if (!a.protocol) return;
+      const upper = a.protocol.toUpperCase();
+      if (upper.startsWith(prefix)) {
+        const numPart = upper.replace(prefix, '');
+        const parsed = parseInt(numPart, 10);
+        if (!isNaN(parsed) && parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      } else if (upper.startsWith(legacyPrefix)) {
+        const numPart = upper.replace(legacyPrefix, '');
         const parsed = parseInt(numPart, 10);
         if (!isNaN(parsed) && parsed > maxSeq) {
           maxSeq = parsed;
@@ -987,7 +1013,7 @@ export const dataService = {
     });
 
     const nextSeq = maxSeq + 1;
-    return `LEAN-${year}-${String(nextSeq).padStart(4, '0')}`;
+    return `${tenantPrefix}-${year}-${String(nextSeq).padStart(4, '0')}`;
   },
 
   /**
@@ -1618,7 +1644,18 @@ export const dataService = {
       }
 
       // Adiciona ações locais que ainda não existem na nuvem
-      const unsyncedLocals = localActions.filter((a) => !cloudIdSet.has(a.id));
+      const currentUser = this.getCurrentUser();
+      const isMaster = currentUser?.isMaster || currentUser?.email?.toLowerCase() === 'mauricio.grigol@rafitec.com.br';
+      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+
+      // SecOps Isolamento Multi-Tenant: Para usuários de unidade (não-master), 
+      // processa e tenta sincronizar APENAS ações que pertencem à entidade autorizada
+      const unsyncedLocals = localActions.filter((a) => {
+        if (cloudIdSet.has(a.id)) return false;
+        if (isMaster) return true;
+        return effective ? a.tenantId === effective : true;
+      });
+
       for (const localAct of unsyncedLocals) {
         finalActions.push(localAct);
         await this.persistActionToCloud(localAct);
@@ -1629,9 +1666,14 @@ export const dataService = {
           this.persistActionToCloud(act).catch(() => {});
         }
       });
-      setStoredData(STORAGE_KEYS.ACTIONS, finalActions);
 
-      const effective = tenantId === 'all' ? undefined : (tenantId || this.getCurrentTenant()?.id);
+      // SecOps Pilar 1 & 8: Usuários locais de planta nunca devem persistir dados cruzados de outras plantas no navegador
+      const actionsToStore = isMaster
+        ? finalActions
+        : finalActions.filter((a) => !effective || a.tenantId === effective);
+
+      setStoredData(STORAGE_KEYS.ACTIONS, actionsToStore);
+
       if (!effective) return finalActions;
       return finalActions.filter((a) => a.tenantId === effective);
     } catch (err) {
@@ -2523,6 +2565,7 @@ export const dataService = {
       requesterEmail: demand.requesterEmail,
       requesterDepartment: demand.requesterDepartment,
       status: 'aberta',
+      pdcaStage: 'plan',
       priority: demand.priority || 'media',
       estimatedCostAvoided: 0,
       actualCostAvoided: 0,
@@ -2575,6 +2618,8 @@ export const dataService = {
       ...actionData,
       id: actionId,
       protocol: this.getNextActionProtocol(actionData.tenantId),
+      pdcaStage: actionData.pdcaStage || 'plan',
+      checklist: actionData.checklist || [],
       originSectorName: originSector?.name || actionData.originSectorName,
       assignedAgentName: agent?.name || actionData.assignedAgentName,
       assignedAgentAvatar: agent?.avatarUrl || actionData.assignedAgentAvatar,
@@ -3640,13 +3685,24 @@ export const dataService = {
   // ================= CANAL KAIZEN (BANCO DE IDEIAS) =================
   getNextKaizenIdeaProtocol(tenantId?: string): string {
     const year = new Date().getFullYear();
-    const ideas = this.getKaizenIdeas(tenantId);
-    const prefix = `KZN-${year}-`;
+    const effectiveTenantId = tenantId || this.getCurrentTenant()?.id;
+    const ideas = this.getKaizenIdeas(effectiveTenantId);
+    const tenantPrefix = this.getTenantPrefix(effectiveTenantId);
+    const prefix = `${tenantPrefix}-KZN-${year}-`;
+    const legacyPrefix = `KZN-${year}-`;
     let maxSeq = 0;
 
     ideas.forEach((k) => {
-      if (k.protocol && k.protocol.toUpperCase().startsWith(prefix)) {
-        const numPart = k.protocol.toUpperCase().replace(prefix, '');
+      if (!k.protocol) return;
+      const upper = k.protocol.toUpperCase();
+      if (upper.startsWith(prefix)) {
+        const numPart = upper.replace(prefix, '');
+        const parsed = parseInt(numPart, 10);
+        if (!isNaN(parsed) && parsed > maxSeq) {
+          maxSeq = parsed;
+        }
+      } else if (upper.startsWith(legacyPrefix)) {
+        const numPart = upper.replace(legacyPrefix, '');
         const parsed = parseInt(numPart, 10);
         if (!isNaN(parsed) && parsed > maxSeq) {
           maxSeq = parsed;
@@ -3655,7 +3711,7 @@ export const dataService = {
     });
 
     const nextSeq = maxSeq + 1;
-    return `KZN-${year}-${String(nextSeq).padStart(4, '0')}`;
+    return `${tenantPrefix}-KZN-${year}-${String(nextSeq).padStart(4, '0')}`;
   },
 
   getKaizenIdeas(tenantId?: string): KaizenIdea[] {

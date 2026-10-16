@@ -18,20 +18,20 @@ export default function AdminKanbanPage() {
   }, [dataVersion, currentTenant?.id]);
 
   React.useEffect(() => {
-    dataService.syncActionsFromCloud().then(() => {
+    dataService.syncActionsFromCloud(currentTenant?.id).then(() => {
       refreshData();
     }).catch(() => {});
-  }, [refreshData]);
+  }, [refreshData, currentTenant?.id]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', fontFamily: 'var(--font-heading)' }}>
             Fluxo Geral de Trabalho Lean (Kanban)
           </h2>
           <p style={{ fontSize: '0.8125rem', color: isDark ? '#94a3b8' : '#64748b' }}>
-            Acompanhamento global de todas as ações abertas, em execução, concluídas e não aprovadas
+            Acompanhamento global de ações da unidade <strong style={{ color: isDark ? '#38bdf8' : '#0284c7' }}>{currentTenant?.name || 'Unidade'}</strong> ({actions.length} {actions.length === 1 ? 'projeto registrado' : 'projetos registrados'})
           </p>
         </div>
       </div>

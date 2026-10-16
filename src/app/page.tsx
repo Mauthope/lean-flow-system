@@ -246,9 +246,19 @@ export default function LoginPage() {
         // Garante que o tenant ativo seja o da unidade do colaborador
         const userTenantId = authTenantId || matchedUser.tenantId;
         if (userTenantId && !matchedUser.isMaster) {
-          const targetTenant = dataService.getTenantById(userTenantId);
+          const targetTenant =
+            dataService.getTenantById(userTenantId) ||
+            dataService.getTenants().find((t) => t.id === userTenantId);
           if (targetTenant) {
             dataService.setCurrentTenant(targetTenant);
+          }
+          // SecOps Pilar 1 & 8: Remove ações em cache local de outros tenants para evitar vazamento
+          try {
+            const allActions = dataService.getActions('all');
+            const sanitizedActions = allActions.filter((a) => !a.tenantId || a.tenantId === userTenantId);
+            setStoredData(STORAGE_KEYS.ACTIONS, sanitizedActions);
+          } catch {
+            // ignore
           }
         }
 

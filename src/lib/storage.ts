@@ -49,6 +49,19 @@ export const INITIAL_TENANTS: Tenant[] = [
       autoNotifyControladoria: true,
     },
   },
+  {
+    id: 'tenant_1791372560425_q3oqm',
+    name: 'Propex',
+    slug: 'propex',
+    cnpjOrCode: '325235234534252342342',
+    plan: 'enterprise',
+    createdAt: '2026-10-07T13:48:53.251Z',
+    aiSettings: {
+      controladoriaEmail: 'controladoria@rafitec.com.br',
+      controladoriaName: 'Gerência de Controladoria & Custos',
+      autoNotifyControladoria: true,
+    },
+  },
 ];
 
 export const INITIAL_TENANT: Tenant = INITIAL_TENANTS[0];

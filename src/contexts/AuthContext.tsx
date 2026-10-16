@@ -200,19 +200,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (tenantsChanged) {
               setStoredData(STORAGE_KEYS.TENANTS, currentTenants);
               setAllTenants([...currentTenants]);
+            }
+
+            // Garante que o tenant ativo corresponda à governança e autorização do usuário
+            const activeUser = dataService.getCurrentUser();
+            let effectiveTenant: Tenant | undefined = undefined;
+
+            if (activeUser && !activeUser.isMaster && activeUser.tenantId) {
+              effectiveTenant = currentTenants.find((t) => t.id === activeUser.tenantId);
+            } else {
               const cur = dataService.getCurrentTenant();
-              const refreshed = currentTenants.find((t) => t.id === cur?.id);
-              if (refreshed) {
-                dataService.setCurrentTenant(refreshed);
-                setCurrentTenant(refreshed);
-              }
+              effectiveTenant = currentTenants.find((t) => t.id === cur?.id) || currentTenants[0];
+            }
+
+            if (effectiveTenant) {
+              dataService.setCurrentTenant(effectiveTenant);
+              setCurrentTenant(effectiveTenant);
             }
           }
 
           // 2. Sincronização dos usuários autorizados (public.authorized_users e public.profiles)
           const [authUsersRes, profilesRes] = await Promise.all([
             supabase.from('authorized_users').select('*'),
-            supabase.from('profiles').select('email, name, job_title, avatar_url'),
+            supabase.from('profiles').select('email, name, job_title, avatar_url, tenant_id, is_master'),
           ]);
 
           const dbUsers = authUsersRes.data;
@@ -255,17 +265,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 (u) => u.email.toLowerCase() === cleanDbEmail
               );
 
+              const effectiveTenantId = prof?.tenant_id || dbU.tenant_id || tenant.id;
+              const effectiveIsMaster = prof?.is_master ?? (dbU.role === 'admin' && cleanDbEmail === 'mauricio.grigol@rafitec.com.br');
+
               if (existingIdx === -1) {
                 filteredUsers.push({
                   id: dbU.id || `usr_supa_${cleanDbEmail.replace(/[^a-z0-9]/g, '_')}`,
-                  tenantId: dbU.tenant_id || tenant.id,
+                  tenantId: effectiveTenantId,
                   name: effectiveName,
                   email: cleanDbEmail,
                   role: dbU.role || 'agent',
                   jobTitle: effectiveJobTitle || 'Agente de Melhoria Contínua',
                   avatarUrl: effectiveAvatar,
                   active: dbU.active !== false,
-                  isMaster: dbU.role === 'admin' && cleanDbEmail === 'mauricio.grigol@rafitec.com.br',
+                  isMaster: effectiveIsMaster,
                   createdAt: dbU.created_at || new Date().toISOString(),
                 });
                 changed = true;
@@ -275,6 +288,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (
                   curr.active !== dbU.active ||
                   curr.role !== dbU.role ||
+                  curr.tenantId !== effectiveTenantId ||
+                  curr.isMaster !== effectiveIsMaster ||
                   (effectiveName && curr.name !== effectiveName) ||
                   (effectiveJobTitle && curr.jobTitle !== effectiveJobTitle) ||
                   (resolvedAvatar && curr.avatarUrl !== resolvedAvatar)
@@ -283,6 +298,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     ...curr,
                     active: dbU.active,
                     role: dbU.role,
+                    tenantId: effectiveTenantId,
+                    isMaster: effectiveIsMaster,
                     name: effectiveName || curr.name,
                     jobTitle: effectiveJobTitle || curr.jobTitle,
                     avatarUrl: resolvedAvatar,
@@ -301,9 +318,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const activeUsr = dataService.getCurrentUser();
               if (activeUsr) {
                 const refreshed = filteredUsers.find((u) => u.email.toLowerCase() === activeUsr.email.toLowerCase());
-                if (refreshed && (refreshed.avatarUrl !== activeUsr.avatarUrl || refreshed.name !== activeUsr.name)) {
+                if (refreshed) {
                   dataService.setCurrentUser(refreshed);
                   setCurrentUser(refreshed);
+
+                  // Se o usuário ativo for de uma unidade fabril específica (não-master), fixa o tenant correspondente
+                  if (!refreshed.isMaster && refreshed.tenantId) {
+                    const uTenant = currentTenants.find((t) => t.id === refreshed.tenantId);
+                    if (uTenant && uTenant.id !== dataService.getCurrentTenant()?.id) {
+                      dataService.setCurrentTenant(uTenant);
+                      setCurrentTenant(uTenant);
+                    }
+                  }
                 }
               }
             }

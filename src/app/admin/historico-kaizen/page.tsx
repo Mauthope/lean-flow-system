@@ -45,11 +45,14 @@ import {
   X,
   Send,
   Target,
+  Factory,
 } from 'lucide-react';
 
 interface UnifiedKaizen {
   id: string;
   protocol: string;
+  tenantId?: string;
+  tenantName?: string;
   title: string;
   description: string;
   origin: 'projeto' | 'canal_kaizen';
@@ -107,7 +110,7 @@ const MONTH_NAMES = [
 const MONTH_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export default function HistoricoKaizenPage() {
-  const { currentTenant, currentUser } = useAuth();
+  const { currentTenant, currentUser, allTenants } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const isAdmin = currentUser?.role === 'admin';
@@ -119,6 +122,7 @@ export default function HistoricoKaizenPage() {
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTenantFilter, setSelectedTenantFilter] = useState<string>('all');
   const [originFilter, setOriginFilter] = useState<'all' | 'projeto' | 'canal_kaizen'>('all');
   const [selectedYear, setSelectedYear] = useState<number | 'all'>(2026);
   const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
@@ -135,20 +139,33 @@ export default function HistoricoKaizenPage() {
     {
       id: 'msg_welcome',
       sender: 'ai',
-      text: 'Olá! Sou o Sensei, seu especialista de Inteligência Artificial e Lean Manufacturing da fábrica.\n\nTenho acesso a toda a memória histórica de Kaizens e Projetos Lean (PDCA) concluídos. Posso analisar causas raízes (Ishikawa 6M / 5 Porquês), Pareto, ganhos financeiros e lições aprendidas (Yokoten) para encontrar soluções comprovadas para o seu setor.\n\nO que você gostaria de pesquisar hoje?',
+      text: 'Olá! Sou o Sensei, seu especialista corporativo de Inteligência Artificial e Lean Manufacturing do Grupo Vaccaro.\n\nTenho acesso à memória técnica integrada de Kaizens e Projetos Lean (PDCA) de todas as fábricas (Rafitec S.A. e Propex). Posso analisar causas raízes (Ishikawa 6M / 5 Porquês), Pareto, ganhos financeiros e lições aprendidas para identificar precedentes e sugerir a replicação lateral (Yokoten) de boas práticas para o seu setor.\n\nO que você gostaria de pesquisar ou comparar hoje?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Load data
+  // Load data - Repositório Integrado de Todas as Entidades Fabris (Holding Grupo Vaccaro)
   useEffect(() => {
-    const rawActions = dataService.getActions(currentTenant?.id);
-    const rawIdeas = dataService.getKaizenIdeas(currentTenant?.id);
+    const rawActions = dataService.getActions('all');
+    const rawIdeas = dataService.getKaizenIdeas('all');
     setActions(rawActions);
     setIdeas(rawIdeas);
     setLoading(false);
-  }, [currentTenant]);
+
+    // Sincronização em segundo plano das ações e ideias de todas as unidades
+    dataService.syncActionsFromCloud('all').then((synced) => {
+      if (synced && synced.length > 0) {
+        setActions(synced);
+      }
+    }).catch(() => {});
+
+    dataService.syncKaizenIdeasFromCloud('all').then((syncedIdeas) => {
+      if (syncedIdeas && syncedIdeas.length > 0) {
+        setIdeas(syncedIdeas);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Auto scroll chat to bottom
   useEffect(() => {
@@ -157,9 +174,11 @@ export default function HistoricoKaizenPage() {
     }
   }, [chatMessages, isAiThinking, isAiChatOpen]);
 
-  // Unify and filter completed Kaizens
+  // Unify and filter completed Kaizens de todas as entidades
   const unifiedKaizens = useMemo<UnifiedKaizen[]>(() => {
     const list: UnifiedKaizen[] = [];
+    const tenantMap = new Map<string, string>();
+    (allTenants || []).forEach((t) => tenantMap.set(t.id, t.name));
 
     // 1. Process Actions (Projetos Lean PDCA Concluídos)
     actions.forEach((act) => {
@@ -175,9 +194,15 @@ export default function HistoricoKaizenPage() {
       const year = isNaN(d.getFullYear()) ? 2026 : d.getFullYear();
       const month = isNaN(d.getMonth()) ? 1 : d.getMonth();
 
+      const resolvedTenantName = act.tenantId
+        ? (tenantMap.get(act.tenantId) || (act.tenantId.toLowerCase().includes('propex') ? 'Propex' : 'Rafitec S.A.'))
+        : (currentTenant?.name || 'Unidade Fabril');
+
       list.push({
         id: act.id,
         protocol: act.protocol,
+        tenantId: act.tenantId,
+        tenantName: resolvedTenantName,
         title: act.title,
         description: act.description,
         origin: 'projeto',
@@ -227,9 +252,15 @@ export default function HistoricoKaizenPage() {
       const year = isNaN(d.getFullYear()) ? 2026 : d.getFullYear();
       const month = isNaN(d.getMonth()) ? 1 : d.getMonth();
 
+      const resolvedTenantName = idea.tenantId
+        ? (tenantMap.get(idea.tenantId) || (idea.tenantId.toLowerCase().includes('propex') ? 'Propex' : 'Rafitec S.A.'))
+        : (currentTenant?.name || 'Unidade Fabril');
+
       list.push({
         id: idea.id,
         protocol: idea.protocol,
+        tenantId: idea.tenantId,
+        tenantName: resolvedTenantName,
         title: idea.summary,
         description: idea.rootCauseAnalysis || idea.summary,
         origin: 'canal_kaizen',
@@ -261,7 +292,7 @@ export default function HistoricoKaizenPage() {
 
     // Sort descending by completion date
     return list.sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
-  }, [actions, ideas]);
+  }, [actions, ideas, allTenants, currentTenant]);
 
   // Extract available years
   const availableYears = useMemo(() => {
@@ -313,6 +344,9 @@ export default function HistoricoKaizenPage() {
   // Filtered Kaizens list
   const filteredKaizens = useMemo(() => {
     return unifiedKaizens.filter((k) => {
+      // Tenant / Factory filter
+      if (selectedTenantFilter !== 'all' && k.tenantId !== selectedTenantFilter) return false;
+
       // Origin filter
       if (originFilter !== 'all' && k.origin !== originFilter) return false;
 
@@ -336,6 +370,7 @@ export default function HistoricoKaizenPage() {
         const matchesDesc = k.description?.toLowerCase().includes(q);
         const matchesAuthor = k.leaderOrAuthor.toLowerCase().includes(q);
         const matchesSector = k.sectorName.toLowerCase().includes(q);
+        const matchesTenant = k.tenantName?.toLowerCase().includes(q);
         const matchesProblem = k.problemStatement?.toLowerCase().includes(q);
         const matchesLessons = k.lessonsLearned?.toLowerCase().includes(q);
         const matchesYokoten = k.yokotenReplication?.toLowerCase().includes(q);
@@ -347,6 +382,7 @@ export default function HistoricoKaizenPage() {
           !matchesDesc &&
           !matchesAuthor &&
           !matchesSector &&
+          !matchesTenant &&
           !matchesProblem &&
           !matchesLessons &&
           !matchesYokoten &&
@@ -358,7 +394,7 @@ export default function HistoricoKaizenPage() {
 
       return true;
     });
-  }, [unifiedKaizens, originFilter, selectedYear, selectedMonth, selectedSector, selectedWaste, searchQuery]);
+  }, [unifiedKaizens, selectedTenantFilter, originFilter, selectedYear, selectedMonth, selectedSector, selectedWaste, searchQuery]);
 
   // Summary Metrics for the filtered subset
   const metrics = useMemo(() => {
@@ -400,6 +436,7 @@ export default function HistoricoKaizenPage() {
     const q = textToSend.toLowerCase();
     const matched = unifiedKaizens.filter((k) => {
       const textToSearch = [
+        k.tenantName,
         k.protocol,
         k.title,
         k.description,
@@ -428,26 +465,27 @@ export default function HistoricoKaizenPage() {
     const items = matched.length > 0 ? matched : unifiedKaizens.slice(0, 3);
     const totalSavingsFound = items.reduce((acc, k) => acc + (k.actualCostAvoided || 0), 0);
 
-    // Contexto resumido dos Kaizens para o Sensei analisar
-    const contextSummary = items.slice(0, 5).map((k) =>
-      `• [${k.protocol}] "${k.title}" (${k.sectorName}): Economia ${formatCurrency(k.actualCostAvoided)}/ano. Causa raiz: ${k.problemStatement || 'N/A'}. Padronização/Yokoten: ${k.lessonsLearned || k.yokotenReplication || 'N/A'}`
+    // Contexto resumido dos Kaizens para o Sensei analisar cross-tenant
+    const contextSummary = items.slice(0, 6).map((k) =>
+      `• [UNIDADE: ${k.tenantName || 'Holding'}] [${k.protocol}] "${k.title}" (${k.sectorName}): Economia ${formatCurrency(k.actualCostAvoided)}/ano. Causa raiz: ${k.problemStatement || 'N/A'}. Padronização/Yokoten: ${k.lessonsLearned || k.yokotenReplication || 'N/A'}`
     ).join('\n');
 
     let answer = '';
 
     try {
       const senseiReply = await callSenseiBackend({
-        systemInstruction: `Você é o "Sensei", o Consultor Especialista Sênior em Lean Manufacturing, TPS e PDCA da fábrica.
-O usuário está consultando o histórico de Kaizens e Projetos Lean concluídos sobre: "${textToSend}".
+        systemInstruction: `Você é o "Sensei", o Consultor Especialista Sênior em Lean Manufacturing, TPS e PDCA de todas as unidades industriais do Grupo Vaccaro (Rafitec S.A., Propex e demais entidades).
+O usuário está consultando a Memória Técnica Corporativa e Repositório Integrado de Kaizens e Projetos Lean concluídos sobre: "${textToSend}".
 
-HISTÓRICO DE KAIZENS ENCONTRADOS NO GEMBA:
+ACERVO HISTÓRICO DE KAIZENS E LIÇÕES APRENDIDAS (CROSS-TENANT / GRUPO VACCARO):
 ${contextSummary}
 
 SUAS DIRETRIZES DE RESPOSTA:
-1. Responda com a voz técnica, pedagógica e encorajadora do Sensei.
-2. Destaque os números consolidados (ex: ${formatCurrency(totalSavingsFound)}/ano) e as soluções comprovadas que a fábrica já desenvolveu.
-3. Forneça uma recomendação técnica Lean prática com foco em trabalho padronizado (POP) e replicação lateral (Yokoten).
-4. Responda em português direto e bem estruturado em 2 a 3 parágrafos.`,
+1. Responda com a voz técnica, pedagógica, respeitosa e encorajadora do Sensei Corporativo.
+2. Reconheça e cite explicitamente a unidade/fábrica de origem de cada solução encontrada (destacando se foi desenvolvido na Rafitec ou na Propex) para incentivar o compartilhamento de melhores práticas e benchmark entre as plantas industriais.
+3. Destaque os números financeiros e operacionais consolidados (ex: ${formatCurrency(totalSavingsFound)}/ano) e as soluções comprovadas desenvolvidas no Gemba.
+4. Forneça uma recomendação técnica Lean prática com foco em replicação lateral entre plantas (Yokoten) e trabalho padronizado (POP / LPP).
+5. Responda em português direto e bem estruturado em 2 a 3 parágrafos, sem emojis infantis, com foco em disciplina operacional e rigor industrial.`,
         prompt: textToSend,
         temperature: 0.35,
         maxTokens: 800,
@@ -461,9 +499,12 @@ SUAS DIRETRIZES DE RESPOSTA:
     }
 
     if (!answer) {
-      answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" na memória técnica da fábrica.`;
+      answer = `Localizei **${items.length} Kaizen(s)** relacionados a "*${textToSend}*" no repositório integrado de fábricas da holding (Grupo Vaccaro).`;
       if (totalSavingsFound > 0) {
         answer += `\n\n**Impacto Financeiro Acumulado**: ${formatCurrency(totalSavingsFound)}/ano economizados.`;
+      }
+      if (items[0]) {
+        answer += `\n\n**Solução Destaque (${items[0].tenantName || 'Fábrica'} - ${items[0].protocol})**: ${items[0].title}`;
       }
       if (items[0]?.problemStatement) {
         answer += `\n\n**Causa Raiz Comprovada**: ${items[0].problemStatement}`;
@@ -487,6 +528,7 @@ SUAS DIRETRIZES DE RESPOSTA:
 
   const clearFilters = () => {
     setSearchQuery('');
+    setSelectedTenantFilter('all');
     setOriginFilter('all');
     setSelectedYear('all');
     setSelectedMonth('all');
@@ -522,10 +564,10 @@ SUAS DIRETRIZES DE RESPOSTA:
           </div>
 
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--text-heading)', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
-            Acompanhamento & Histórico de Kaizens Concluídos
+            Memória Kaizen Corporativa & Benchmark Integrado
           </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
-            Banco de conhecimento unificado com todos os Projetos Lean e Ideias do Chão de Fábrica concluídos ao longo do tempo.
+            Repositório corporativo único com todos os Projetos Lean e Kaizens concluídos de todas as fábricas da holding (Grupo Vaccaro), com pesquisa transversal inteligente e lições aprendidas (Yokoten).
           </p>
         </div>
 
@@ -997,6 +1039,31 @@ SUAS DIRETRIZES DE RESPOSTA:
             <Filter size={12} /> Filtros:
           </span>
 
+          {/* Factory / Tenant Filter */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <select
+              className="form-control form-control-sm"
+              value={selectedTenantFilter}
+              onChange={(e) => setSelectedTenantFilter(e.target.value)}
+              style={{
+                width: 'auto',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.12)' : '#f0f9ff',
+                borderColor: isDark ? 'rgba(56, 189, 248, 0.35)' : '#bae6fd',
+                color: isDark ? '#38bdf8' : '#0369a1',
+              }}
+              title="Filtrar por unidade fabril ou exibir consolidado corporativo do Grupo"
+            >
+              <option value="all">Todas as Fábricas (Holding Grupo Vaccaro)</option>
+              {allTenants.map((t) => (
+                <option key={t.id} value={t.id}>
+                  Fábrica: {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Year Filter */}
           <select
             className="form-control form-control-sm"
@@ -1137,25 +1204,48 @@ SUAS DIRETRIZES DE RESPOSTA:
               >
                 {/* Header do Card */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
-                    <span
-                      style={{
-                        fontSize: '0.6875rem',
-                        fontWeight: 900,
-                        color: isProject ? '#0284c7' : '#d97706',
-                        backgroundColor: isProject
-                          ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.08)')
-                          : (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(217, 119, 6, 0.08)'),
-                        border: `1px solid ${isProject ? (isDark ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd') : (isDark ? 'rgba(245, 158, 11, 0.3)' : '#fde68a')}`,
-                        padding: '0.15rem 0.5rem',
-                        borderRadius: '9999px',
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      {isProject ? 'PROJETO PDCA' : 'CANAL KAIZEN'} • {k.protocol}
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {/* Badge da Fábrica / Entidade */}
+                      <span
+                        style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: 800,
+                          color: k.tenantName?.toLowerCase().includes('propex') ? '#059669' : '#2563eb',
+                          backgroundColor: k.tenantName?.toLowerCase().includes('propex')
+                            ? (isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)')
+                            : (isDark ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.1)'),
+                          border: `1px solid ${k.tenantName?.toLowerCase().includes('propex') ? 'rgba(16, 185, 129, 0.35)' : 'rgba(37, 99, 235, 0.35)'}`,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                        }}
+                      >
+                        <Factory size={11} />
+                        {k.tenantName || 'Unidade'}
+                      </span>
 
-                    <span style={{ fontSize: '0.7rem', color: isDark ? 'var(--text-muted)' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.6875rem',
+                          fontWeight: 900,
+                          color: isProject ? '#0284c7' : '#d97706',
+                          backgroundColor: isProject
+                            ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(2, 132, 199, 0.08)')
+                            : (isDark ? 'rgba(245, 158, 11, 0.12)' : 'rgba(217, 119, 6, 0.08)'),
+                          border: `1px solid ${isProject ? (isDark ? 'rgba(56, 189, 248, 0.3)' : '#bae6fd') : (isDark ? 'rgba(245, 158, 11, 0.3)' : '#fde68a')}`,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '9999px',
+                          fontFamily: 'var(--font-mono)',
+                        }}
+                      >
+                        {isProject ? 'PROJETO PDCA' : 'CANAL KAIZEN'} • {k.protocol}
+                      </span>
+                    </div>
+
+                    <span style={{ fontSize: '0.7rem', color: isDark ? 'var(--text-muted)' : '#64748b', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
                       <Calendar size={11} /> {formatDate(k.completedAt)}
                     </span>
                   </div>
@@ -1304,6 +1394,7 @@ SUAS DIRETRIZES DE RESPOSTA:
             <table className="table" style={{ margin: 0, fontSize: '0.8125rem' }}>
               <thead>
                 <tr style={{ backgroundColor: isDark ? '#090e1a' : '#f8fafc', color: isDark ? '#94a3b8' : '#475569', borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #cbd5e1' }}>
+                  <th style={{ padding: '0.85rem 1rem' }}>Fábrica</th>
                   <th style={{ padding: '0.85rem 1rem' }}>Protocolo & Origem</th>
                   <th style={{ padding: '0.85rem 1rem' }}>Título do Kaizen</th>
                   <th style={{ padding: '0.85rem 1rem' }}>Setor & Líder</th>
@@ -1316,6 +1407,29 @@ SUAS DIRETRIZES DE RESPOSTA:
               <tbody>
                 {filteredKaizens.map((k) => (
                   <tr key={k.id} style={{ borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.04)' : '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <span
+                        style={{
+                          fontSize: '0.725rem',
+                          fontWeight: 800,
+                          color: k.tenantName?.toLowerCase().includes('propex') ? '#059669' : '#2563eb',
+                          backgroundColor: k.tenantName?.toLowerCase().includes('propex')
+                            ? (isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)')
+                            : (isDark ? 'rgba(37, 99, 235, 0.15)' : 'rgba(37, 99, 235, 0.1)'),
+                          border: `1px solid ${k.tenantName?.toLowerCase().includes('propex') ? 'rgba(16, 185, 129, 0.35)' : 'rgba(37, 99, 235, 0.35)'}`,
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '9999px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <Factory size={11} />
+                        {k.tenantName || 'Unidade'}
+                      </span>
+                    </td>
+
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 800, color: k.origin === 'projeto' ? (isDark ? '#38bdf8' : '#0284c7') : (isDark ? '#fbbf24' : '#d97706'), fontFamily: 'var(--font-mono)', display: 'block' }}>
                         {k.protocol}
@@ -1580,9 +1694,14 @@ SUAS DIRETRIZES DE RESPOSTA:
                           }}
                         >
                           <div style={{ overflow: 'hidden' }}>
-                            <span style={{ fontSize: '0.625rem', color: mk.origin === 'projeto' ? '#0284c7' : '#d97706', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                              {mk.protocol}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <span style={{ fontSize: '0.625rem', color: mk.tenantName?.toLowerCase().includes('propex') ? '#059669' : '#2563eb', fontWeight: 800 }}>
+                                {mk.tenantName || 'Unidade'}
+                              </span>
+                              <span style={{ fontSize: '0.625rem', color: mk.origin === 'projeto' ? '#0284c7' : '#d97706', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                                • {mk.protocol}
+                              </span>
+                            </div>
                             <span style={{ fontSize: '0.725rem', color: 'var(--text-heading)', fontWeight: 600, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {mk.title}
                             </span>
@@ -1604,7 +1723,7 @@ SUAS DIRETRIZES DE RESPOSTA:
             {isAiThinking && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.85rem', backgroundColor: isDark ? 'var(--bg-muted)' : '#f1f5f9', borderRadius: '12px', width: 'fit-content' }}>
                 <Sparkles size={13} color="#22d3ee" className="animate-spin" />
-                <span style={{ fontSize: '0.75rem', color: isDark ? 'var(--text-secondary)' : '#334155' }}>Sensei vasculhando memória de Kaizens e padrões Lean...</span>
+                <span style={{ fontSize: '0.75rem', color: isDark ? 'var(--text-secondary)' : '#334155' }}>Sensei correlacionando soluções entre todas as fábricas...</span>
               </div>
             )}
             <div ref={chatEndRef} />
@@ -1624,9 +1743,10 @@ SUAS DIRETRIZES DE RESPOSTA:
             }}
           >
             {[
-              'Setup na Extrusora',
-              'Paradas na Tecelagem',
-              'Refugo no Acabamento',
+              'Yokoten entre fábricas',
+              'Setup e troca de bobina',
+              'Lições aprendidas Propex',
+              '5S e Otimização Rafitec',
               'Maiores economias R$',
             ].map((prompt, idx) => (
               <button

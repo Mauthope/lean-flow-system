@@ -2130,7 +2130,17 @@ export default function AdminProjectDetailPage() {
 
     const nextList = [...checklistItems, newItem];
     setChecklistItems(nextList);
-    dataService.updateAction(action.id, { checklist: nextList });
+    const shouldAdvanceToDo = !action.pdcaStage || action.pdcaStage === 'plan';
+    const nextStage = shouldAdvanceToDo ? 'do' : action.pdcaStage;
+    if (shouldAdvanceToDo) {
+      setActiveTab('do');
+    }
+    const fresh = dataService.updateAction(action.id, {
+      checklist: nextList,
+      pdcaStage: nextStage,
+    });
+    if (fresh) setAction(fresh);
+
     setNewActionLabel('');
     setNewActionResp('');
     setNewActionSector('');
@@ -2279,18 +2289,34 @@ export default function AdminProjectDetailPage() {
       setSelectedDiagnosticTools((prev) => (prev.includes('ishikawa') ? prev : [...prev, 'ishikawa']));
     }
     if (refinement.suggestedActions && refinement.suggestedActions.length > 0) {
-      setChecklistItems((prev) => [
-        ...prev,
-        ...refinement.suggestedActions.map((act) => ({
-          id: 'item-' + Math.random().toString(36).substring(2, 9),
-          label: act.label,
-          completed: false,
-          what: act.what || act.label,
-          why: act.why || 'Ação estruturada pelo Sensei',
-          how: act.how || '',
-          responsibleName: act.responsibleName || action?.assignedAgentName || 'Líder Kaizen',
-        })),
-      ]);
+      const generated = refinement.suggestedActions.map((act) => ({
+        id: 'chk_' + Math.random().toString(36).substring(2, 9),
+        label: act.label,
+        completed: false,
+        what: act.what || act.label,
+        why: act.why || 'Ação estruturada pelo Sensei',
+        how: act.how || '',
+        responsibleName: act.responsibleName || action?.assignedAgentName || 'Líder Kaizen',
+        responsibleSectorName: action?.originSectorName || 'Fábrica',
+        status: 'pendente' as const,
+      }));
+
+      setChecklistItems((prev) => {
+        const next = [...prev, ...generated];
+        if (action) {
+          const shouldAdvanceToDo = !action.pdcaStage || action.pdcaStage === 'plan';
+          const nextStage = shouldAdvanceToDo ? 'do' : action.pdcaStage;
+          if (shouldAdvanceToDo) {
+            setActiveTab('do');
+          }
+          const fresh = dataService.updateAction(action.id, {
+            checklist: next,
+            pdcaStage: nextStage,
+          });
+          if (fresh) setAction(fresh);
+        }
+        return next;
+      });
     }
     if (refinement.suggestedSop?.docRef) {
       setStandardWorkDocRef(refinement.suggestedSop.docRef);
@@ -2703,7 +2729,7 @@ export default function AdminProjectDetailPage() {
           <strong style={{ fontSize: '0.875rem', color: isDark ? '#ffffff' : '#0f172a', display: 'block', marginTop: '0.2rem', fontFamily: 'var(--font-heading)' }}>
             Diagnóstico & Causas
           </strong>
-          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>5W2H • 5 Porquês • Ishikawa 6M</span>
+          <span style={{ fontSize: '0.7rem', color: isDark ? '#94a3b8' : '#64748b' }}>Diagnóstico & Causa Raiz • 5 Porquês • Ishikawa 6M</span>
         </button>
 
         {/* D - DO */}
@@ -3928,8 +3954,59 @@ export default function AdminProjectDetailPage() {
             {/* List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
               {checklistItems.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                  Nenhuma atividade cadastrada no plano de ação. Adicione no formulário abaixo.
+                <div
+                  style={{
+                    padding: '2rem 1.5rem',
+                    textAlign: 'center',
+                    backgroundColor: '#090e1a',
+                    borderRadius: '14px',
+                    border: '1px dashed rgba(255, 255, 255, 0.15)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <CheckSquare size={20} color="#fbbf24" />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#ffffff', margin: '0 0 0.25rem 0' }}>
+                      Nenhuma contramedida 5W2H cadastrada ainda
+                    </h4>
+                    <p style={{ fontSize: '0.8125rem', color: '#94a3b8', margin: 0, maxWidth: '540px', lineHeight: 1.45 }}>
+                      Cadastre as atividades no formulário abaixo ou solicite ao Sensei IA para estruturar um plano de contramedidas com base no diagnóstico. O projeto avança para a fase <strong>2. DO (Executar)</strong> automaticamente ao registrar a primeira ação.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSenseiCopilot(true)}
+                    className="btn btn-primary btn-sm"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      marginTop: '0.25rem',
+                      fontWeight: 700,
+                      backgroundColor: '#7c3aed',
+                      borderColor: '#a855f7',
+                    }}
+                  >
+                    <Sparkles size={14} color="#facc15" />
+                    <span>Pedir ao Sensei para Estruturar Ações 5W2H</span>
+                  </button>
                 </div>
               ) : (
                 checklistItems.map((item, index) => {

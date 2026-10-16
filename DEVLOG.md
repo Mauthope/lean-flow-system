@@ -24,6 +24,105 @@
 | **Outubro / 2026** | 10 | 98 | **48,0h** | 71,2h | Magnetic Dock 60fps, Orbe 3D Sensei, LGPD, Supabase Realtime, Ganho Pontual, Triagem e Concorrência Multi-Usuário. |
 | **TOTAL GERAL** | **24** | **264** | **105,4h** | **139,4h** | **Software Industrial Completo em Produção** |
 
+## [2026-10-15] Inicialização Limpa de Projetos PDCA (Estágio PLAN) & Transição Reativa para DO com 5W2H e Sensei IA
+**Agentes Responsáveis:** `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Eliminação das 3 ações padrão criadas automaticamente no estágio "DO" (`ck_init_1`, `ck_init_2`, `ck_init_3`); inicialização estrita de novos projetos em `pdcaStage = 'plan'` com checklist vazio (`checklist: []`); avanço automático e transparente para a etapa `2. DO (Executar)` somente após o preenchimento da primeira contramedida 5W2H (pelo usuário ou via solicitação ao Sensei IA); melhoria ergonômica da aba DO vazia com atalho proativo para o Sensei Copilot e saneamento retroativo de projetos de teste no Supabase Cloud.
+
+### 1. Diagnóstico do Problema
+- **Criação de Tarefas Não Solicitadas:** Ao cadastrar um novo projeto no modal `NewActionModal`, o componente injetava rigidamente 3 tarefas no checklist (*"Mapeamento do estado atual"*, *"Elaboração do plano de contramedidas"* e *"Validação dos ganhos"*).
+- **Avanço Precoce para o DO:** A função `calculateDynamicPdcaStatus` avaliava `action.checklist.length > 0` e imediatamente forçava o estágio do projeto para `'do'`. Consequentemente, o projeto recém-criado pulava a fase fundamental de Planejamento e Diagnóstico (PLAN) e nascia poluído com 3 tarefas genéricas.
+- **Diretriz do Usuário:** O projeto deve nascer limpo na etapa 1 (PLAN) com zero tarefas. O avanço para a etapa 2 (DO) deve ocorrer de forma automática e reativa apenas quando a equipe registrar a primeira ação 5W2H (manualmente ou a pedido do usuário através do Sensei IA).
+
+### 2. Ações de Engenharia Executadas
+- **Sanitização do Modal de Criação (`src/components/forms/NewActionModal.tsx`):**
+  - Removido o array estático com `ck_init_1`, `ck_init_2` e `ck_init_3`.
+  - Definido explicitamente `checklist: []`, `pdcaStage: 'plan'` e `status: 'aberta'`.
+- **Serviço de Dados (`src/services/dataService.ts`):**
+  - Em `createActionByAdmin` e `createAction`, garantido `pdcaStage: actionData.pdcaStage || 'plan'` e `checklist: actionData.checklist || []`.
+  - A regra 2 de `calculateDynamicPdcaStatus` agora opera com perfeição: enquanto `checklist` estiver vazio, o projeto permanece em `'plan'`; ao ser adicionado qualquer item no 5W2H (`length > 0`), o projeto avança automaticamente para `'do'`.
+- **Gatilhos Reativos de Avanço de Etapa (`src/app/admin/projetos/[id]/page.tsx`):**
+  - Em `commitNewChecklistItem`: ao salvar a primeira contramedida no 5W2H, caso o projeto esteja em `'plan'`, ele comuta automaticamente para `pdcaStage = 'do'` e atualiza a aba ativa para `'do'`.
+  - Em `handleApplySenseiRefinement`: quando o usuário solicita ao Sensei IA para estruturar contramedidas a partir do diagnóstico e aceita o plano, as ações sugeridas são adicionadas e o projeto transiciona reativamente para `'do'`.
+  - Em `handleGenerateActionFromRootCause`: contramedidas geradas a partir do Ishikawa / 5 Porquês comutam o projeto para `'do'`.
+  - Na aba DO vazia (`checklistItems.length === 0`), implementado card executivo com botão de 1 clique *"Pedir ao Sensei para Estruturar Ações 5W2H"* e aviso explicativo.
+  - No botão da aba PLAN, subtítulo corrigido para *"Diagnóstico & Causa Raiz • 5 Porquês • Ishikawa 6M"*.
+- **Saneamento no Supabase Cloud:**
+  - Executado DML no PostgreSQL limpando as 3 ações `ck_init_` dos projetos de teste `PROPEX-2026-0002`, `0003` e `0004`, retornando-os ao estágio `'plan'`.
+
+### 3. Validação Técnica
+- **Compilação Estrita:** `npx tsc --noEmit` executado com 0 erros.
+- **Design System:** Padrão Obsidian Navy, Lucide React, proibição total de emojis.
+
+---
+
+## [2026-10-15] Protocolos Nominais por Entidade (RAFITEC / PROPEX) & Repositório Histórico Kaizen Integrado (Cross-Tenant Yokoten com Sensei IA)
+**Agentes Responsáveis:** `security-expert`, `cleancod`, `designer`, `copywriter`, `chronicler`  
+**Escopo:** Substituição da numeração genérica `LEAN-2026-XXXX` e `KZN-2026-XXXX` pelo prefixo nominal/slug da entidade em maiúsculas (`RAFITEC-2026-0001`, `PROPEX-2026-0001`, `RAFITEC-KZN-2026-0001` e `PROPEX-KZN-2026-0001`); migração de dados no Supabase PostgreSQL de todas as ações e ideias existentes com integridade referencial; reestruturação de RLS com permissão de leitura transversal (`SELECT USING (true)`) e mutações estritamente isoladas por tenant (`INSERT/UPDATE/DELETE`); transformação da tela de Histórico Kaizen (`/admin/historico-kaizen` e `/agente/historico-kaizen`) em um repositório corporativo único e integrado de benchmark inter-unidades (Yokoten); implementação de filtros por fábrica, badges de entidade com ícone `Factory` nos cards e tabelas executivas; e expansão do Sensei IA com capacidade de pesquisa transversal entre todas as plantas do Grupo Vaccaro e viés pedagógico de replicação lateral de soluções de chão de fábrica.
+
+### 1. Diagnóstico e Solicitação Estratégica
+- **Identificação Visual de Unidade:** A numeração genérica `LEAN-2026-XXXX` não permitia saber visualmente a qual unidade fabril a melhoria pertencia em relatórios gerenciais, relatórios A3 executivos ou impressões.
+- **Isolamento vs. Memória Corporativa (Dilema Lean):** Embora as mutações (criação, edição e exclusão de projetos) devam ser rigorosamente isoladas por fábrica para garantir a governança operacional e segurança de dados, o acervo de lições aprendidas, diagnósticos de causa raiz (Ishikawa 6M / 5 Porquês) e relatórios A3 concluídos constitui patrimônio intelectual corporativo do Grupo Vaccaro. Bloquear a visualização de soluções de outra unidade impedia o principal valor do Lean: a prática do **Yokoten** (replicação lateral e benchmark entre unidades).
+- **Projetos Descobertos na Propex:** Com a remoção da chave única global no banco, 3 projetos do Leonardo (`PROPEX-2026-0002`, `0003` e `0004`) sincronizaram automaticamente do LocalStorage para a nuvem.
+
+### 2. Ações de Engenharia e Componentes Implementados
+- **Banco de Dados Supabase PostgreSQL (DDL & DML):**
+  - Migração de todos os protocolos existentes para a nova nomenclatura corporativa:
+    - `PROPEX-2026-0001` (*"XXM - Redução de tempo de troca de bobina"*), `PROPEX-2026-0002` (*"Executar teste..."*), `PROPEX-2026-0003` (*"Redução de tempo de setup"*), `PROPEX-2026-0004` (*"Redução de tempo de movimentação"*).
+    - `RAFITEC-2026-0001` (*"Otimização de Layout 5S na Extrusão"*), `RAFITEC-2026-0002` (*"Padronização 5S..."*), `RAFITEC-2026-0003` (*"Análise de Retrabalho..."*), `RAFITEC-2026-0004` (*"Doctor Blade..."*), `RAFITEC-2026-0005` (*"Redução de Perdas..."*).
+    - `PROPEX-KZN-2026-0001` e `PROPEX-KZN-2026-0002`.
+  - **Políticas RLS Granulares:**
+    - Leitura autorizada para benchmark (`SELECT` com `USING (true)` para usuários autenticados).
+    - Gravação estritamente isolada: `INSERT` e `UPDATE` exigem `private.is_master_user() OR (tenant_id = private.current_user_tenant_id())`.
+    - Triggers de integridade `trg_protect_delete_lean_actions` e `trg_protect_delete_kaizen_ideas` com `private.check_tenant_delete_permission()` impedindo qualquer tentativa de exclusão de dados de outras entidades.
+- **Gerador de Protocolos Nominais (`src/services/dataService.ts`):**
+  - Implementado `getTenantPrefix(tenantId?: string): string` gerando `RAFITEC` para Rafitec S.A., `PROPEX` para Propex ou o slug sanitizado em maiúsculas para novos tenants.
+  - Atualizados `getNextActionProtocol` (`{PREFIX}-{YEAR}-{SEQ}`) e `getNextKaizenIdeaProtocol` (`{PREFIX}-KZN-{YEAR}-{SEQ}`).
+- **Repositório Integrado & UI Executiva (`src/app/admin/historico-kaizen/page.tsx`):**
+  - Unificação de leitura: carga de projetos e ideias Kaizen com escopo `'all'`, agregando automaticamente todas as unidades fabris.
+  - Seletor de Fábrica/Entidade na barra de filtros avançados (`Todas as Fábricas`, `Rafitec S.A.`, `Propex`), permitindo ao usuário filtrar por unidade ou explorar o acervo consolidado.
+  - Badge visual de Unidade com ícone `Factory` estilizado em Obsidian Navy / Emerald tanto nos cards da visualização em grade (`grid`) quanto na tabela executiva comparativa (`table`).
+- **Sensei IA Corporativo com Yokoten Cross-Tenant:**
+  - O algoritmo de busca textual do Sensei agora indexa `k.tenantName`, reconhecendo consultas por fábrica (ex: *"Lições aprendidas Propex"*, *"Setup na Rafitec"*).
+  - Prompt executivo aprimorado com instruções explícitas de Yokoten: o Sensei identifica a planta de origem de cada solução, correlaciona causas raízes semelhantes e sugere procedimentos padronizados (POP / LPP) para replicação lateral entre plantas.
+  - Badges de fábrica nos cards de soluções recomendadas dentro do drawer de chat e botões de prompts rápidos temáticos.
+
+### 3. Validação e Qualidade Técnica
+- **Compilação Estrita TypeScript:** `npx tsc --noEmit` executado com exit code 0 e 0 erros.
+- **Conformidade de Design e Segurança:** Rigor com a paleta Obsidian Navy, Lucide React, proibição absoluta de emojis infantis e conformidade estrita com o SecOps do Grupo Vaccaro.
+
+---
+
+## [2026-10-15] Correção da Hierarquia Multi-Tenant, Isolamento de Unidades Fabris (Propex vs Rafitec) & Desbloqueio de Protocolos
+**Agentes Responsáveis:** `security-expert`, `designer`, `cleancod`, `chronicler`  
+**Escopo:** Diagnóstico de causa raiz e saneamento completo do isolamento multi-tenant entre entidades fabris (`Propex` e `Rafitec S.A.`); migração de constraint no PostgreSQL do Supabase de unicidade global de protocolo para unicidade composta por entidade (`tenant_id`, `protocol`); inclusão da entidade Propex no seeding inicial; blindagem contra vazamento e contaminação de cache no LocalStorage; sincronização estrita de tenant para usuários não-master; implementação de seletor executivo no Topbar para o Gestor Master e badge corporativo de unidade fabril.
+
+### 1. Diagnóstico e Causas Raiz Identificadas
+- **Sintoma Relatado:** O usuário Master (Mauricio) visualizava apenas 1 projeto ao selecionar a Propex (`LEAN-2026-0001`), enquanto o Gestor Local (Leonardo) visualizava múltiplos projetos na tela dele acreditando estar operando na Propex.
+- **Causa Raiz 1 (Supabase PostgreSQL - Colisão de Protocolo):** A tabela `public.lean_actions` continha a constraint `lean_actions_protocol_key UNIQUE (protocol)` de escopo global no banco. Como a Rafitec já utilizava os protocolos `LEAN-2026-0002` a `0005`, qualquer projeto novo criado na Propex gerava sequencialmente `LEAN-2026-0002` (visto que a RLS só exibia o projeto 0001 para a Propex). Ao tentar inserir no banco, o Postgres rejeitava com violação de chave única. O erro era tratado silenciosamente no front-end e a ação ficava salva exclusivamente no `localStorage` do Leonardo, nunca subindo para o Supabase nem ficando visível para o Master. O mesmo ocorria com `public.kaizen_ideas`.
+- **Causa Raiz 2 (Storage Inicial sem Propex):** A constante `INITIAL_TENANTS` em `src/lib/storage.ts` possuía apenas a Rafitec. Ao abrir o sistema em novas abas ou máquinas limpas, `dataService.getTenantById(user.tenantId)` retornava `undefined` antes da resposta assíncrona da nuvem, deixando o usuário preso no tenant Rafitec.
+- **Causa Raiz 3 (Falta de Travamento Estrito de Tenant para Não-Master no AuthContext):** Após o retorno dos tenants da nuvem, o `AuthContext` atualizava `currentTenant` buscando pelo ID anteriormente ativo (`cur?.id`), mantendo Rafitec mesmo quando o usuário logado (`profiles.tenant_id`) pertencia à Propex.
+- **Causa Raiz 4 (Contaminação de Cache Local em `syncActionsFromCloud`):** O código de conciliação interpretava qualquer ação do LocalStorage não retornada pela nuvem (pois a RLS do Leonardo barrava ações da Rafitec) como "ação local nova não sincronizada", mantendo registros órfãos de outras entidades na máquina do usuário.
+- **Causa Raiz 5 (Falta de Seletor Ágil para o Master):** O Master não possuía seletor no cabeçalho superior para alternar rapidamente entre Rafitec e Propex e saber com clareza em qual entidade estava navegando no Kanban e Dashboard.
+
+### 2. Ações de Engenharia Executadas
+- **Migração no Banco Supabase Cloud (DDL SQL):**
+  - Removida a constraint global `lean_actions_protocol_key` e criada a constraint composta `lean_actions_tenant_protocol_key UNIQUE (tenant_id, protocol)`.
+  - Removida a constraint global `kaizen_ideas_protocol_key` e criada a constraint composta `kaizen_ideas_tenant_protocol_key UNIQUE (tenant_id, protocol)`.
+- **Inicialização Definitiva de Entidades (`src/lib/storage.ts`):**
+  - Adicionado o tenant da `Propex` (`tenant_1791372560425_q3oqm`) na lista estática `INITIAL_TENANTS`, eliminando race condition de carregamento inicial.
+- **Governança de Sessão & Travamento de Tenant (`src/contexts/AuthContext.tsx` & `src/app/page.tsx`):**
+  - Adicionados campos `tenant_id` e `is_master` na query de `profiles`.
+  - Travamento forçado: usuários não-master (`!isMaster`) são obrigatoriamente vinculados ao seu próprio tenant fabril em todas as fases do ciclo de vida da sessão (inicialização, login SSO e atualização de sessão em tempo real).
+  - No login, expurgo automático de ações em cache local pertencentes a outros tenants (Pilar 1 e 8 de SecOps - Isolamento Multi-Tenant).
+- **Conciliação Blindada de Ações (`src/services/dataService.ts`):**
+  - Em `syncActionsFromCloud`, as ações locais não sincronizadas agora são filtradas estritamente pelo tenant autorizado, evitando contaminação cruzada e vazamento entre plantas fabris.
+- **Design System Executivo & Usabilidade (`src/components/layout/Topbar.tsx` & `src/app/admin/kanban/page.tsx`):**
+  - Inserido no Topbar um seletor executivo com ícone `Factory` para o Gestor Master alternar entre Rafitec e Propex com 1 clique a partir de qualquer tela, com o título refletindo a unidade ativa (`Painel Master de Governança • {Unidade}`).
+  - Para gestores e colaboradores locais (como Leonardo), exibição de badge fixo: `Unidade: Propex`.
+  - No Kanban, subtítulo atualizado com identificação explícita da unidade e contagem de projetos.
+
+---
+
 ## [2026-10-15] Destaque dos Pilares de Segurança e Pessoas no Lean Assessment (Alinhamento SQCDP & Dimensão 6)
 **Agentes Responsáveis:** `copywriter`, `designer`, `cleancod`, `chronicler`  
 **Escopo:** Adequação semântica e visual de alta visibilidade para responder formalmente aos questionamentos de auditores e controladores sobre a localização dos pilares de "Segurança" e "Pessoas" no Lean Assessment; renomeação da Dimensão 6 para `Segurança, Pessoas & Cultura Kaizen` (com rótulo executivo `Segurança & Pessoas`), mapeamento cruzado dos 11 critérios mestres auditados no Gemba conforme o framework SQCDP (Safety, Quality, Cost, Delivery, People), enriquecimento visual com chips/badges temáticas e card executivo de alinhamento metodológico sem necessidade de migrações estruturais no banco de dados.

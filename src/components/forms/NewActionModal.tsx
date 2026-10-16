@@ -99,17 +99,14 @@ export const NewActionModal: React.FC<NewActionModalProps> = ({
       assignedAgentId: assignedAgentId || undefined,
       priority,
       status: 'aberta',
+      pdcaStage: 'plan',
       isPublicDemand: false,
       estimatedCostAvoided: 0,
       actualCostAvoided: 0,
       hoursSaved: 0,
       dueDate: undefined,
       notes: [],
-      checklist: [
-        { id: 'ck_init_1', label: 'Mapeamento do estado atual e coleta de dados', completed: false },
-        { id: 'ck_init_2', label: 'Elaboração do plano de contramedidas Lean', completed: false },
-        { id: 'ck_init_3', label: 'Validação dos ganhos e padronização (SOP)', completed: false },
-      ],
+      checklist: [],
     });
 
     setPokaYokeOpen(false);

@@ -11,6 +11,7 @@ import {
   LogOut,
   Sun,
   Moon,
+  Factory,
 } from 'lucide-react';
 import Link from 'next/link';
 import { dataService } from '@/services/dataService';
@@ -23,7 +24,7 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
   onNewAction,
 }) => {
   const router = useRouter();
-  const { currentUser, currentTenant, refreshData, logout } = useAuth();
+  const { currentUser, currentTenant, allTenants, switchTenant, refreshData, logout } = useAuth();
   const { theme, isDark, toggleTheme } = useTheme();
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -56,13 +57,12 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
       }}
     >
       {/* Route Title Context */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <div>
           <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: isDark ? '#ffffff' : '#0f172a', letterSpacing: '-0.02em', margin: 0, fontFamily: 'var(--font-heading)' }}>
             {title || (
               isMaster
-                ? 'Painel Master de Governança Fabril'
+                ? `Painel Master de Governança • ${currentTenant?.name || 'Visão Global'}`
                 : isEntityMgr
                 ? `Painel de Gestão Lean • ${currentTenant?.name || 'Unidade'}`
                 : isViewer
@@ -76,6 +76,77 @@ export const Topbar: React.FC<{ title?: string; subtitle?: string; onNewAction?:
 
       {/* Actions */}
       <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+        {/* Seletor Master de Entidades Fabris */}
+        {isMaster && allTenants.length > 0 && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.3rem 0.6rem',
+              borderRadius: '8px',
+              backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : '#f0f9ff',
+              border: isDark ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #bae6fd',
+            }}
+          >
+            <Factory size={14} color={isDark ? '#38bdf8' : '#0284c7'} />
+            <span
+              className="hidden lg:inline"
+              style={{
+                fontSize: '0.725rem',
+                fontWeight: 700,
+                color: isDark ? '#94a3b8' : '#64748b',
+              }}
+            >
+              Entidade:
+            </span>
+            <select
+              value={currentTenant?.id || ''}
+              onChange={(e) => {
+                switchTenant(e.target.value);
+              }}
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                padding: '0.2rem 0.5rem',
+                borderRadius: '6px',
+                backgroundColor: isDark ? '#0f172a' : '#ffffff',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid #cbd5e1',
+                color: isDark ? '#38bdf8' : '#0369a1',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+              title="Alternar entre entidades fabris do Grupo"
+            >
+              {allTenants.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {!isMaster && currentTenant && (
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.3rem 0.6rem',
+              borderRadius: '8px',
+              backgroundColor: isDark ? 'rgba(16, 185, 129, 0.08)' : '#f0fdf4',
+              border: isDark ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid #bbf7d0',
+              color: isDark ? '#34d399' : '#047857',
+              fontSize: '0.725rem',
+              fontWeight: 700,
+            }}
+            title={`Unidade Fabril autorizada: ${currentTenant.name}`}
+          >
+            <Factory size={13} color={isDark ? '#34d399' : '#047857'} />
+            <span>Unidade: {currentTenant.name}</span>
+          </div>
+        )}
         {/* Refresh & Reset Seed Data Button */}
         <button
           onClick={() => {
